@@ -41,12 +41,17 @@ interface FinancialState {
   // Actions - Contracts
   fetchContracts: () => Promise<void>;
   createContract: (data: Partial<Contract>, milestones?: Partial<PaymentMilestone>[]) => Promise<Contract | null>;
+  createContractForProject: (projectId: string, projectName: string, clientName: string | null, totalValue: number, paymentTerms?: string) => Promise<Contract | null>;
   updateContract: (id: string, data: Partial<Contract>) => Promise<void>;
   deleteContract: (id: string) => Promise<void>;
+  finalizeContract: (id: string) => Promise<void>;
   
   // Actions - Milestones
   createMilestone: (contractId: string, data: Partial<PaymentMilestone>) => Promise<PaymentMilestone | null>;
+  updateMilestone: (id: string, data: Partial<PaymentMilestone>) => Promise<void>;
+  deleteMilestone: (id: string) => Promise<void>;
   markMilestonePaid: (milestoneId: string, date?: string) => Promise<void>;
+  getMilestonesByContract: (contractId: string) => PaymentMilestone[];
   
   // Getters
   getStats: () => FinancialStats;
@@ -218,6 +223,38 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     set((state) => ({ contracts: state.contracts.filter((c) => c.id !== id) }));
   },
 
+  createContractForProject: async (projectId, projectName, clientName, totalValue, paymentTerms) => {
+    const insertData = { 
+      project_id: projectId, 
+      project_name: projectName,
+      client_name: clientName,
+      total_value: totalValue,
+      payment_terms: paymentTerms || '50/50',
+      status: 'active',
+      start_date: new Date().toISOString().split('T')[0],
+    };
+    const { data: newContract, error } = await supabase
+      .from('contracts')
+      .insert([insertData as any])
+      .select()
+      .single();
+    
+    if (!error && newContract) {
+      await get().fetchContracts();
+      return newContract as Contract;
+    }
+    return null;
+  },
+
+  finalizeContract: async (id) => {
+    await supabase.from('contracts').update({ status: 'completed' }).eq('id', id);
+    set((state) => ({
+      contracts: state.contracts.map((c) => 
+        c.id === id ? { ...c, status: 'completed' as const } : c
+      ),
+    }));
+  },
+
   // Milestones
   createMilestone: async (contractId, data) => {
     const insertData = { 
@@ -237,21 +274,83 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     if (!error && newMilestone) {
       // Create corresponding revenue
       const contract = get().contracts.find(c => c.id === contractId);
-      await get().createRevenue({
+      const newRevenue = await get().createRevenue({
         project_id: contract?.project_id,
         description: `${contract?.project_name || 'Projeto'} - ${newMilestone.title}`,
         amount: newMilestone.amount,
         due_date: newMilestone.due_date,
       });
       
+      // Link revenue to milestone
+      if (newRevenue) {
+        await supabase.from('payment_milestones').update({ revenue_id: newRevenue.id }).eq('id', newMilestone.id);
+      }
+      
+      await get().fetchContracts();
       return newMilestone as PaymentMilestone;
     }
     return null;
   },
 
+  updateMilestone: async (id, data) => {
+    await supabase.from('payment_milestones').update(data as any).eq('id', id);
+    
+    // Update local state
+    set((state) => ({
+      contracts: state.contracts.map((c) => ({
+        ...c,
+        milestones: c.milestones?.map((m) => 
+          m.id === id ? { ...m, ...data } : m
+        ),
+      })),
+    }));
+    
+    // If revenue_id exists, update corresponding revenue
+    const contract = get().contracts.find(c => c.milestones?.some(m => m.id === id));
+    const milestone = contract?.milestones?.find(m => m.id === id);
+    if (milestone?.revenue_id && (data.amount || data.due_date)) {
+      const updateData: any = {};
+      if (data.amount) updateData.amount = data.amount;
+      if (data.due_date) updateData.due_date = data.due_date;
+      if (data.title) updateData.description = `${contract?.project_name || 'Projeto'} - ${data.title}`;
+      await get().updateRevenue(milestone.revenue_id, updateData);
+    }
+  },
+
+  deleteMilestone: async (id) => {
+    // Find milestone to get revenue_id
+    const contract = get().contracts.find(c => c.milestones?.some(m => m.id === id));
+    const milestone = contract?.milestones?.find(m => m.id === id);
+    
+    // Delete milestone
+    await supabase.from('payment_milestones').delete().eq('id', id);
+    
+    // Delete corresponding revenue if exists
+    if (milestone?.revenue_id) {
+      await get().deleteRevenue(milestone.revenue_id);
+    }
+    
+    // Update local state
+    set((state) => ({
+      contracts: state.contracts.map((c) => ({
+        ...c,
+        milestones: c.milestones?.filter((m) => m.id !== id),
+      })),
+    }));
+  },
+
   markMilestonePaid: async (milestoneId, date) => {
     const paidDate = date || new Date().toISOString().split('T')[0];
     await supabase.from('payment_milestones').update({ status: 'paid', paid_date: paidDate }).eq('id', milestoneId);
+    
+    // Find milestone to get revenue_id
+    const contract = get().contracts.find(c => c.milestones?.some(m => m.id === milestoneId));
+    const milestone = contract?.milestones?.find(m => m.id === milestoneId);
+    
+    // Also mark corresponding revenue as received
+    if (milestone?.revenue_id) {
+      await get().markRevenueReceived(milestone.revenue_id, paidDate);
+    }
     
     // Update local state
     set((state) => ({
@@ -262,6 +361,11 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
         ),
       })),
     }));
+  },
+
+  getMilestonesByContract: (contractId) => {
+    const contract = get().contracts.find(c => c.id === contractId);
+    return contract?.milestones || [];
   },
 
   // Getters

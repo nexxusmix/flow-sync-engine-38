@@ -4,9 +4,10 @@ import { useFinancialStore } from "@/stores/financialStore";
 import { useRealtimeTable } from "@/hooks/useRealtimeSync";
 import { FINANCIAL_STATUS_CONFIG } from "@/types/financial";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
+import { ProjectFinanceDetailPanel } from "@/components/finance/ProjectFinanceDetailPanel";
 import { 
   Search, AlertTriangle, CheckCircle, AlertCircle,
-  TrendingUp, TrendingDown
+  TrendingUp, FileText
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,7 @@ export default function ProjectsFinancePage() {
     getProjectFinancials,
     getRevenuesByProject,
     getExpensesByProject,
+    getContractByProject,
   } = useFinancialStore();
 
   const [search, setSearch] = useState('');
@@ -66,9 +68,16 @@ export default function ProjectsFinancePage() {
 
   const selectedProjectData = selectedProject ? {
     project: projectFinancials.find(p => p.project_id === selectedProject),
+    contract: getContractByProject(selectedProject),
     revenues: getRevenuesByProject(selectedProject),
     expenses: getExpensesByProject(selectedProject),
   } : null;
+
+  const handleRefresh = useCallback(() => {
+    fetchRevenues();
+    fetchExpenses();
+    fetchContracts();
+  }, [fetchRevenues, fetchExpenses, fetchContracts]);
 
   const StatusIcon = {
     ok: CheckCircle,
@@ -106,6 +115,7 @@ export default function ProjectsFinancePage() {
             {filteredProjects.map((project) => {
               const statusConfig = FINANCIAL_STATUS_CONFIG[project.status];
               const Icon = StatusIcon[project.status];
+              const contract = getContractByProject(project.project_id);
               const progress = project.contracted_value > 0 
                 ? (project.received / project.contracted_value) * 100 
                 : 0;
@@ -122,12 +132,21 @@ export default function ProjectsFinancePage() {
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                         project.status === 'ok' ? 'bg-emerald-500/10' :
-                        project.status === 'blocked' ? 'bg-red-500/10' : 'bg-amber-500/10'
+                        project.status === 'blocked' ? 'bg-destructive/10' : 'bg-amber-500/10'
                       }`}>
                         <Icon className={`w-5 h-5 ${statusConfig.textColor}`} />
                       </div>
                       <div>
-                        <h3 className="font-medium text-foreground">{project.project_name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-foreground">{project.project_name}</h3>
+                          {contract ? (
+                            <FileText className="w-3 h-3 text-primary" />
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1 text-amber-500 border-amber-500/50">
+                              Sem contrato
+                            </Badge>
+                          )}
+                        </div>
                         {project.client_name && (
                           <p className="text-xs text-muted-foreground">{project.client_name}</p>
                         )}
@@ -152,15 +171,15 @@ export default function ProjectsFinancePage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Recebido</p>
-                      <p className="text-sm font-medium text-emerald-500">{formatCurrency(project.received)}</p>
+                      <p className="text-sm font-medium text-emerald-600">{formatCurrency(project.received)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">A receber</p>
-                      <p className="text-sm font-medium text-amber-500">{formatCurrency(project.pending)}</p>
+                      <p className="text-sm font-medium text-amber-600">{formatCurrency(project.pending)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Despesas</p>
-                      <p className="text-sm font-medium text-red-500">{formatCurrency(project.expenses)}</p>
+                      <p className="text-sm font-medium text-destructive">{formatCurrency(project.expenses)}</p>
                     </div>
                   </div>
 
@@ -172,9 +191,9 @@ export default function ProjectsFinancePage() {
                   </div>
 
                   {project.has_overdue && (
-                    <div className="mt-3 p-2 rounded-lg bg-red-500/10 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-500" />
-                      <span className="text-xs text-red-500 font-medium">
+                    <div className="mt-3 p-2 rounded-lg bg-destructive/10 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-destructive" />
+                      <span className="text-xs text-destructive font-medium">
                         Pagamento vencido - Projeto bloqueado
                       </span>
                     </div>
@@ -194,73 +213,13 @@ export default function ProjectsFinancePage() {
           {/* Project Detail */}
           <div>
             {selectedProjectData?.project ? (
-              <Card className="glass-card p-6 sticky top-6">
-                <h3 className="font-medium text-foreground mb-4">
-                  {selectedProjectData.project.project_name}
-                </h3>
-
-                {/* Summary */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-sm text-muted-foreground">Valor contratado</span>
-                    <span className="font-medium">{formatCurrency(selectedProjectData.project.contracted_value)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-sm text-muted-foreground">Total recebido</span>
-                    <span className="font-medium text-emerald-500">{formatCurrency(selectedProjectData.project.received)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-sm text-muted-foreground">A receber</span>
-                    <span className="font-medium text-amber-500">{formatCurrency(selectedProjectData.project.pending)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-sm text-muted-foreground">Despesas</span>
-                    <span className="font-medium text-red-500">{formatCurrency(selectedProjectData.project.expenses)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm font-medium text-foreground">Lucro</span>
-                    <span className={`font-semibold ${selectedProjectData.project.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {formatCurrency(selectedProjectData.project.profit)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Revenues */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
-                    Receitas ({selectedProjectData.revenues.length})
-                  </h4>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {selectedProjectData.revenues.map(r => (
-                      <div key={r.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
-                        <span className="text-muted-foreground truncate mr-2">{r.description}</span>
-                        <span className={r.status === 'received' ? 'text-emerald-500' : 'text-amber-500'}>
-                          {formatCurrency(Number(r.amount))}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Expenses */}
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                    <TrendingDown className="w-4 h-4 text-red-500" />
-                    Despesas ({selectedProjectData.expenses.length})
-                  </h4>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {selectedProjectData.expenses.map(e => (
-                      <div key={e.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
-                        <span className="text-muted-foreground truncate mr-2">{e.description}</span>
-                        <span className="text-red-500">
-                          {formatCurrency(Number(e.amount))}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
+              <ProjectFinanceDetailPanel
+                project={selectedProjectData.project}
+                contract={selectedProjectData.contract}
+                revenues={selectedProjectData.revenues}
+                expenses={selectedProjectData.expenses}
+                onRefresh={handleRefresh}
+              />
             ) : (
               <Card className="glass-card p-6 text-center text-muted-foreground">
                 <p className="text-sm">Selecione um projeto para ver detalhes</p>
