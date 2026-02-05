@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.generate-30day-plan]
 verify_jwt = false
+
+[functions.creative-studio]
+verify_jwt = false
+
+[functions.generate-image]
+verify_jwt = false

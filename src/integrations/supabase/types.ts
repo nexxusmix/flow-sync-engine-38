@@ -616,6 +616,100 @@ export type Database = {
         }
         Relationships: []
       }
+      creative_briefs: {
+        Row: {
+          account_id: string | null
+          brand_kit_id: string | null
+          created_at: string
+          extracted_context: Json | null
+          id: string
+          input_files: Json | null
+          input_text: string | null
+          package_type: string | null
+          project_id: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          brand_kit_id?: string | null
+          created_at?: string
+          extracted_context?: Json | null
+          id?: string
+          input_files?: Json | null
+          input_text?: string | null
+          package_type?: string | null
+          project_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          account_id?: string | null
+          brand_kit_id?: string | null
+          created_at?: string
+          extracted_context?: Json | null
+          id?: string
+          input_files?: Json | null
+          input_text?: string | null
+          package_type?: string | null
+          project_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_briefs_brand_kit_id_fkey"
+            columns: ["brand_kit_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_outputs: {
+        Row: {
+          brief_id: string
+          content: Json
+          created_at: string
+          format: string | null
+          id: string
+          type: string
+          version: number | null
+        }
+        Insert: {
+          brief_id: string
+          content?: Json
+          created_at?: string
+          format?: string | null
+          id?: string
+          type: string
+          version?: number | null
+        }
+        Update: {
+          brief_id?: string
+          content?: Json
+          created_at?: string
+          format?: string | null
+          id?: string
+          type?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_outputs_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "creative_briefs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       do_not_contact: {
         Row: {
           blocked_by: string | null
@@ -725,6 +819,69 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      generated_images: {
+        Row: {
+          account_id: string | null
+          brief_id: string | null
+          created_at: string
+          height: number | null
+          id: string
+          project_id: string | null
+          prompt: string
+          public_url: string | null
+          purpose: string | null
+          scene_id: string | null
+          storage_path: string | null
+          width: number | null
+          workspace_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          brief_id?: string | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          project_id?: string | null
+          prompt: string
+          public_url?: string | null
+          purpose?: string | null
+          scene_id?: string | null
+          storage_path?: string | null
+          width?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          account_id?: string | null
+          brief_id?: string | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          project_id?: string | null
+          prompt?: string
+          public_url?: string | null
+          purpose?: string | null
+          scene_id?: string | null
+          storage_path?: string | null
+          width?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_images_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "creative_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_images_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "storyboard_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       instagram_connections: {
         Row: {
@@ -1263,6 +1420,69 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      storyboard_scenes: {
+        Row: {
+          audio: string | null
+          brief_id: string
+          camera: string | null
+          created_at: string
+          description: string | null
+          duration_sec: number | null
+          emotion: string | null
+          id: string
+          image_url: string | null
+          notes: string | null
+          output_id: string | null
+          scene_number: number
+          title: string | null
+        }
+        Insert: {
+          audio?: string | null
+          brief_id: string
+          camera?: string | null
+          created_at?: string
+          description?: string | null
+          duration_sec?: number | null
+          emotion?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          output_id?: string | null
+          scene_number: number
+          title?: string | null
+        }
+        Update: {
+          audio?: string | null
+          brief_id?: string
+          camera?: string | null
+          created_at?: string
+          description?: string | null
+          duration_sec?: number | null
+          emotion?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          output_id?: string | null
+          scene_number?: number
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storyboard_scenes_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "creative_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storyboard_scenes_output_id_fkey"
+            columns: ["output_id"]
+            isOneToOne: false
+            referencedRelation: "creative_outputs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
