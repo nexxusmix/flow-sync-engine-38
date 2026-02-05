@@ -1,29 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
+import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { PROJECT_TEMPLATES, STATUS_CONFIG, STAGE_COLORS, PROJECT_STAGES } from "@/data/projectTemplates";
 import { 
   Ban, 
   ChevronRight, 
-  MoreVertical,
-  Edit,
-  Trash2,
   ExternalLink,
-  Globe,
-  Copy,
   Loader2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
 
 function HealthIndicator({ score }: { score: number }) {
   const color = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
@@ -44,25 +31,10 @@ function HealthIndicator({ score }: { score: number }) {
 
 function ProjectCard({ project }: { project: ProjectWithStages }) {
   const navigate = useNavigate();
-  const { setSelectedProjectId, setEditProjectModalOpen } = useProjectsStore();
-  const { deleteProject } = useProjects();
 
   const template = PROJECT_TEMPLATES.find(t => t.id === project.template);
   const stageInfo = PROJECT_STAGES.find(s => s.type === project.stage_current);
   const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.ok;
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedProjectId(project.id);
-    setEditProjectModalOpen(true);
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm(`Tem certeza que deseja excluir o projeto "${project.name}"?`)) {
-      deleteProject(project.id);
-    }
-  };
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
@@ -103,7 +75,7 @@ function ProjectCard({ project }: { project: ProjectWithStages }) {
                 {project.name}
               </h3>
               {project.has_payment_block && (
-                <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <Ban className="w-4 h-4 text-destructive flex-shrink-0" />
               )}
             </div>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -114,28 +86,7 @@ function ProjectCard({ project }: { project: ProjectWithStages }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projetos/${project.id}`); }}>
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Abrir Projeto
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleEdit}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Excluir
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ProjectActionsMenu project={project} />
             <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
         </div>

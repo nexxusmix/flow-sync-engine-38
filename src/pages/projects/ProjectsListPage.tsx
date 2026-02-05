@@ -8,6 +8,7 @@ import { ProjectsKanban } from "@/components/projects/list/ProjectsKanban";
 import { NewProjectModal } from "@/components/projects/modals/NewProjectModal";
 import { EditProjectModal } from "@/components/projects/modals/EditProjectModal";
 import { AIProjectModal } from "@/components/projects/modals/AIProjectModal";
+import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
@@ -225,10 +226,15 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
         <div 
           key={project.id}
           onClick={() => navigate(`/projetos/${project.id}`)}
-          className="glass-card rounded-2xl p-6 cursor-pointer hover:border-primary/30 transition-all group"
+          className="glass-card rounded-2xl p-6 cursor-pointer hover:border-primary/30 transition-all group relative"
         >
+          {/* Actions Menu */}
+          <div className="absolute top-4 right-4 z-10">
+            <ProjectActionsMenu project={project} />
+          </div>
+
           {/* Header */}
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start justify-between mb-4 pr-10">
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{project.client_name}</p>
               <h3 className="text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.name}</h3>

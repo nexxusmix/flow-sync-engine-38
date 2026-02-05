@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
+import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { PROJECT_STAGES, STAGE_COLORS, STATUS_CONFIG } from "@/data/projectTemplates";
-import { Ban, Plus, ChevronRight, Globe, GripVertical, Loader2 } from "lucide-react";
+import { Ban, Plus, ChevronRight, GripVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -50,13 +51,18 @@ function KanbanCard({
     <div 
       draggable
       onDragStart={(e) => onDragStart(e, project)}
-      className={`glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-all group border border-transparent hover:border-primary/20 ${
+      className={`glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-all group border border-transparent hover:border-primary/20 relative ${
         isDragging ? 'opacity-50 scale-95' : ''
       }`}
       onClick={() => navigate(`/projetos/${project.id}`)}
     >
+      {/* Actions Menu */}
+      <div className="absolute top-2 right-2 z-10">
+        <ProjectActionsMenu project={project} />
+      </div>
+
       {/* Drag Handle */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 pr-8">
         <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
@@ -67,7 +73,7 @@ function KanbanCard({
           </h4>
         </div>
         {project.has_payment_block && (
-          <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <Ban className="w-4 h-4 text-destructive flex-shrink-0" />
         )}
       </div>
 
