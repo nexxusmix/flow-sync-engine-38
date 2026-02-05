@@ -25,11 +25,18 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Grain Overlay */}
+      <div className="grain" />
+      
+      {/* Background Blobs */}
+      <div className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]" />
+      <div className="blob w-[800px] h-[800px] bg-white bottom-[-20%] right-[-10%] opacity-5" />
+      
       <Sidebar />
-      <div className="ml-60">
+      <div className="ml-20 md:ml-64 relative z-10">
         <Header title={title} onOpenSearch={() => setSearchOpen(true)} />
-        <main className="p-6">{children}</main>
+        <main className="p-6 md:p-12 max-w-[1800px] mx-auto">{children}</main>
       </div>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>

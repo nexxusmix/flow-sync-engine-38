@@ -13,43 +13,40 @@ import {
   Settings,
   Plug,
   Sparkles,
-  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainMenuItems = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "CRM", href: "/crm", icon: Users },
-  { name: "Inbox", href: "/inbox", icon: Inbox, badge: 3 },
-  { name: "Projetos", href: "/projetos", icon: FolderKanban },
-  { name: "Propostas", href: "/propostas", icon: FileText },
-  { name: "Contratos", href: "/contratos", icon: FileSignature },
-  { name: "Financeiro", href: "/financeiro", icon: Wallet },
-  { name: "Conteúdo", href: "/conteudo", icon: Film },
-  { name: "Knowledge Base", href: "/knowledge", icon: BookOpen },
-  { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
-  { name: "Configurações", href: "/configuracoes", icon: Settings },
+  { name: "Overview", href: "/", icon: "dashboard" },
+  { name: "Cine CRM", href: "/crm", icon: "radar", badge: 3 },
+  { name: "Inbox", href: "/inbox", icon: "mail" },
+  { name: "Produção", href: "/projetos", icon: "movie_edit" },
+  { name: "Propostas", href: "/propostas", icon: "description" },
+  { name: "Contratos", href: "/contratos", icon: "contract" },
+  { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
+  { name: "Conteúdo", href: "/conteudo", icon: "perm_media" },
+  { name: "Knowledge", href: "/knowledge", icon: "menu_book" },
+  { name: "Relatórios", href: "/relatorios", icon: "monitoring" },
+  { name: "Configurações", href: "/configuracoes", icon: "settings" },
 ];
 
 const integrationItems = [
-  { name: "Integrações", href: "/integracoes", icon: Plug },
+  { name: "Integrações", href: "/integracoes", icon: "hub" },
 ];
 
 export function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-60 bg-sidebar-background border-r border-sidebar-border flex flex-col">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-20 md:w-64 bg-[#050505] border-r border-white/5 flex flex-col transition-all duration-500">
       {/* Logo */}
-      <div className="flex h-14 items-center gap-2.5 px-4 border-b border-sidebar-border">
-        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-foreground">
-          <Sparkles className="h-4 w-4 text-background" />
-        </div>
-        <span className="font-semibold text-foreground tracking-tight">SQUAD Hub</span>
+      <div className="flex h-20 items-center gap-3 px-6 border-b border-white/5">
+        <span className="material-symbols-outlined text-primary text-3xl">stars</span>
+        <span className="hidden md:block squad-logo-text text-xl text-foreground">SQUAD Hub</span>
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
         {mainMenuItems.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -57,16 +54,26 @@ export function Sidebar() {
               key={item.name}
               to={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
+                "w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 group",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+                  ? "bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.1)]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
               )}
             >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              <span className="flex-1">{item.name}</span>
+              <span className={cn(
+                "material-symbols-outlined",
+                isActive ? "text-black" : "text-muted-foreground group-hover:text-primary"
+              )}>
+                {item.icon}
+              </span>
+              <span className="hidden md:block text-[10px] font-black uppercase tracking-widest flex-1">
+                {item.name}
+              </span>
               {item.badge && (
-                <span className="flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-foreground/10 text-[10px] font-medium">
+                <span className={cn(
+                  "hidden md:flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black",
+                  isActive ? "bg-black/10 text-black" : "bg-primary/20 text-primary"
+                )}>
                   {item.badge}
                 </span>
               )}
@@ -75,7 +82,7 @@ export function Sidebar() {
         })}
 
         {/* Separator */}
-        <div className="my-4 border-t border-sidebar-border" />
+        <div className="my-6 border-t border-white/5" />
 
         {/* Integrations */}
         {integrationItems.map((item) => {
@@ -85,31 +92,37 @@ export function Sidebar() {
               key={item.name}
               to={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
+                "w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 group",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:text-foreground hover:bg-sidebar-accent/50"
+                  ? "bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.1)]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
               )}
             >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              <span>{item.name}</span>
+              <span className={cn(
+                "material-symbols-outlined",
+                isActive ? "text-black" : "text-muted-foreground group-hover:text-primary"
+              )}>
+                {item.icon}
+              </span>
+              <span className="hidden md:block text-[10px] font-black uppercase tracking-widest">
+                {item.name}
+              </span>
             </Link>
           );
         })}
       </nav>
 
       {/* User section */}
-      <div className="px-3 py-3 border-t border-sidebar-border">
-        <button className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-sidebar-accent/50 transition-colors">
-          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted text-xs font-medium">
-            JS
+      <div className="px-6 py-6 border-t border-white/5">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-black">
+            RS
           </div>
-          <div className="flex-1 text-left">
-            <p className="text-sm font-medium text-foreground">João Silva</p>
-            <p className="text-xs text-muted-foreground">Dono</p>
+          <div className="hidden md:block">
+            <p className="text-[10px] text-foreground font-black uppercase">Rodrigo S.</p>
+            <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tighter">Admin Root</p>
           </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        </button>
+        </div>
       </div>
     </aside>
   );
