@@ -55,12 +55,12 @@ export function Sidebar() {
               )}>
                 {item.icon}
               </span>
-              <span className="hidden md:block text-[10px] font-black uppercase tracking-widest flex-1">
+              <span className="hidden md:block text-[10px] font-medium uppercase tracking-widest flex-1">
                 {item.name}
               </span>
               {item.badge && (
                 <span className={cn(
-                  "hidden md:flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[9px] font-black",
+                  "hidden md:flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[9px] font-medium",
                   isActive ? "bg-black/10 text-black" : "bg-primary/20 text-primary"
                 )}>
                   {item.badge}
@@ -93,7 +93,7 @@ export function Sidebar() {
               )}>
                 {item.icon}
               </span>
-              <span className="hidden md:block text-[10px] font-black uppercase tracking-widest">
+              <span className="hidden md:block text-[10px] font-medium uppercase tracking-widest">
                 {item.name}
               </span>
             </Link>
@@ -104,12 +104,12 @@ export function Sidebar() {
       {/* User section */}
       <div className="px-6 py-6 border-t border-white/5">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-black">
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-medium">
             RS
           </div>
           <div className="hidden md:block">
-            <p className="text-[10px] text-foreground font-black uppercase">Rodrigo S.</p>
-            <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tighter">Admin Root</p>
+            <p className="text-[10px] text-foreground font-medium uppercase">Rodrigo S.</p>
+            <p className="text-[9px] text-muted-foreground font-light uppercase tracking-tighter">Admin Root</p>
           </div>
         </div>
       </div>
