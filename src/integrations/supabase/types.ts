@@ -1120,6 +1120,270 @@ export type Database = {
           },
         ]
       }
+      proposal_acceptance: {
+        Row: {
+          accepted_at: string
+          accepted_by_email: string
+          accepted_by_name: string
+          id: string
+          ip_address: string | null
+          notes: string | null
+          proposal_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by_email: string
+          accepted_by_name: string
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          proposal_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by_email?: string
+          accepted_by_name?: string
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          proposal_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_acceptance_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_deliverables: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          notes: string | null
+          proposal_id: string
+          quantity: number | null
+          title: string
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          proposal_id: string
+          quantity?: number | null
+          title: string
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          proposal_id?: string
+          quantity?: number | null
+          title?: string
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_deliverables_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_links: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          last_viewed_at: string | null
+          proposal_id: string
+          share_token: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_viewed_at?: string | null
+          proposal_id: string
+          share_token: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_viewed_at?: string | null
+          proposal_id?: string
+          share_token?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_links_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_sections: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+          order_index: number
+          proposal_id: string
+          title: string | null
+          type: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          order_index?: number
+          proposal_id: string
+          title?: string | null
+          type: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          order_index?: number
+          proposal_id?: string
+          title?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_sections_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_timeline: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          order_index: number | null
+          phase: string
+          proposal_id: string
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          order_index?: number | null
+          phase: string
+          proposal_id: string
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          order_index?: number | null
+          phase?: string
+          proposal_id?: string
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_timeline_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposals: {
+        Row: {
+          client_email: string | null
+          client_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes_internal: string | null
+          opportunity_id: string | null
+          project_id: string | null
+          status: string
+          title: string
+          total_value: number
+          updated_at: string
+          valid_until: string | null
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes_internal?: string | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          status?: string
+          title: string
+          total_value?: number
+          updated_at?: string
+          valid_until?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes_internal?: string | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          status?: string
+          title?: string
+          total_value?: number
+          updated_at?: string
+          valid_until?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_activities: {
         Row: {
           cadence_step_id: string | null

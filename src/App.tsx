@@ -14,7 +14,10 @@ import InboxPage from "./pages/InboxPage";
 import ProjectsListPage from "./pages/projects/ProjectsListPage";
 import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
 import ClientPortalPage from "./pages/ClientPortalPage";
-import ProposalsPage from "./pages/ProposalsPage";
+import ProposalsListPage from "./pages/proposals/ProposalsListPage";
+import ProposalDetailPage from "./pages/proposals/ProposalDetailPage";
+import ProposalPreviewPage from "./pages/proposals/ProposalPreviewPage";
+import ProposalClientPage from "./pages/proposals/ProposalClientPage";
 import ContractsPage from "./pages/ContractsPage";
 import ContentPage from "./pages/ContentPage";
 import KnowledgePage from "./pages/KnowledgePage";
@@ -83,7 +86,11 @@ function AppRoutes() {
       <Route path="/prospeccao/oportunidades" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
       <Route path="/prospeccao/atividades" element={<ProtectedRoute><ActivitiesPage /></ProtectedRoute>} />
       <Route path="/prospeccao/cadencias" element={<ProtectedRoute><CadencesPage /></ProtectedRoute>} />
-      <Route path="/propostas" element={<ProtectedRoute><ProposalsPage /></ProtectedRoute>} />
+      <Route path="/propostas" element={<ProtectedRoute><ProposalsListPage /></ProtectedRoute>} />
+      <Route path="/propostas/list" element={<ProtectedRoute><ProposalsListPage /></ProtectedRoute>} />
+      <Route path="/propostas/:proposalId" element={<ProtectedRoute><ProposalDetailPage /></ProtectedRoute>} />
+      <Route path="/propostas/:proposalId/preview" element={<ProtectedRoute><ProposalPreviewPage /></ProtectedRoute>} />
+      <Route path="/propostas/:proposalId/client" element={<ProposalClientPage />} />
       <Route path="/contratos" element={<ProtectedRoute><ContractsPage /></ProtectedRoute>} />
       {/* Financeiro */}
       <Route path="/financeiro" element={<ProtectedRoute><FinanceDashboard /></ProtectedRoute>} />
