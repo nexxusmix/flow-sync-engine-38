@@ -80,12 +80,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </span>
               {!collapsed && (
                 <>
-                  <span className="text-[11px] font-medium uppercase tracking-wider flex-1">
+                  <span className="text-[11px] font-normal uppercase tracking-wider flex-1">
                     {item.name}
                   </span>
                   {item.badge && (
                     <span className={cn(
-                      "flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[9px] font-medium",
+                      "flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[9px] font-light",
                       isActive ? "bg-black/10 text-black" : "bg-primary/20 text-primary"
                     )}>
                       {item.badge}
@@ -123,7 +123,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {item.icon}
               </span>
               {!collapsed && (
-                <span className="text-[11px] font-medium uppercase tracking-wider">
+                <span className="text-[11px] font-normal uppercase tracking-wider">
                   {item.name}
                 </span>
               )}
@@ -146,7 +146,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-[11px] text-foreground font-medium uppercase truncate">Rodrigo S.</p>
+              <p className="text-[11px] text-foreground font-normal uppercase truncate">Rodrigo S.</p>
               <p className="text-[9px] text-muted-foreground font-light uppercase tracking-tight">Admin Root</p>
             </div>
           )}
