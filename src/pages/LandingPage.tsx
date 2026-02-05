@@ -77,13 +77,13 @@ export default function LandingPage() {
             {/* Video */}
             <div className="relative">
               <div className="aspect-video rounded-2xl overflow-hidden border border-border/50 shadow-2xl bg-black">
-                <iframe
-                  src="https://www.youtube.com/embed/_g9NrlfizbQ?si=N8AQvQTuVaMRN9j9&controls=0"
-                  title="SQUAD Hub Demo"
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
+                <video
+                  src="/videos/hero-demo.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
                 />
               </div>
               {/* Glow effect */}
