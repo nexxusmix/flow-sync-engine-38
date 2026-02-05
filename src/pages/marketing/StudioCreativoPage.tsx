@@ -44,7 +44,7 @@ export default function StudioCreativoPage() {
   // Form State
   const [title, setTitle] = useState("");
   const [inputText, setInputText] = useState("");
-  const [selectedBrandKit, setSelectedBrandKit] = useState<string>("");
+  const [selectedBrandKit, setSelectedBrandKit] = useState<string>("none");
   const [packageType, setPackageType] = useState<PackageType>("full");
   
   // Loading States
@@ -129,7 +129,7 @@ export default function StudioCreativoPage() {
         .insert([{
           title,
           input_text: inputText,
-          brand_kit_id: selectedBrandKit || null,
+          brand_kit_id: selectedBrandKit === "none" ? null : selectedBrandKit || null,
           package_type: packageType,
           status: 'processing',
         }])
@@ -142,7 +142,7 @@ export default function StudioCreativoPage() {
 
       // Get brand kit details
       let brandKit: BrandKit | undefined;
-      if (selectedBrandKit) {
+      if (selectedBrandKit && selectedBrandKit !== "none") {
         const bk = brandKits.find(b => b.id === selectedBrandKit);
         if (bk) brandKit = bk;
       }
@@ -232,7 +232,7 @@ export default function StudioCreativoPage() {
       // Reset form and reload
       setTitle("");
       setInputText("");
-      setSelectedBrandKit("");
+      setSelectedBrandKit("none");
       fetchBriefs();
       
       // Select the new brief
@@ -374,7 +374,7 @@ export default function StudioCreativoPage() {
                     <SelectValue placeholder="Selecionar cliente" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="none">Nenhum</SelectItem>
                     {brandKits.map(kit => (
                       <SelectItem key={kit.id} value={kit.id}>{kit.name}</SelectItem>
                     ))}
