@@ -5,20 +5,19 @@ import squadHubLogo from "@/assets/squad-hub-logo.png";
 
 const mainMenuItems = [
   { name: "Overview", href: "/", icon: "dashboard" },
-  { name: "Cine CRM", href: "/crm", icon: "radar", badge: 3 },
-  { name: "Inbox", href: "/inbox", icon: "mail" },
   { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8 },
+  { name: "CRM", href: "/crm", icon: "radar", badge: 3 },
+  { name: "Marketing & Conteúdo", href: "/conteudo", icon: "perm_media" },
+  { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
   { name: "Propostas", href: "/propostas", icon: "description" },
   { name: "Contratos", href: "/contratos", icon: "contract" },
-  { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
-  { name: "Conteúdo", href: "/conteudo", icon: "perm_media" },
-  { name: "Knowledge", href: "/knowledge", icon: "menu_book" },
   { name: "Relatórios", href: "/relatorios", icon: "monitoring" },
-  { name: "Configurações", href: "/configuracoes", icon: "settings" },
+  { name: "Knowledge", href: "/knowledge", icon: "menu_book" },
 ];
 
-const integrationItems = [
+const settingsItems = [
   { name: "Integrações", href: "/integracoes", icon: "hub" },
+  { name: "Configurações", href: "/configuracoes", icon: "settings" },
 ];
 
 interface SidebarProps {
@@ -100,8 +99,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {/* Separator */}
         <div className="my-4 border-t border-white/5" />
 
-        {/* Integrations */}
-        {integrationItems.map((item) => {
+        {/* Settings & Integrations */}
+        {settingsItems.map((item) => {
           const isActive = location.pathname === item.href;
           return (
             <Link
