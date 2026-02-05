@@ -1,105 +1,128 @@
 
-# Plano: Landing Page + Fix Processamento IA
 
-## Resumo
-Implementar duas correções principais:
-1. Redirecionar usuários não autenticados para a Landing Page
-2. Corrigir o erro de processamento de documentos no novo projeto (edge function não deployada)
-3. Garantir acesso à IA em mais pontos da plataforma
+# Plano: Correção Definitiva do Loading nas Páginas Overview, Projetos e CRM
 
----
+## Problema Identificado
+As páginas ficam em loading infinito porque a lógica de estado não trata corretamente cenários onde:
+- O usuário não está autenticado (queries desabilitadas)
+- A verificação de sessão falha silenciosamente
+- O React Query v5 retorna estados inconsistentes para queries desabilitadas
 
-## 1. Routing da Landing Page
+## Solução
 
-**Problema Atual:**
-- Usuários não logados são redirecionados para `/login`
-- Landing page está em `/landing` (rota separada)
+### 1. Corrigir `useAuth.tsx`
+Adicionar tratamento de erro no `getSession()` e timeout de segurança:
 
-**Solução:**
-Modificar `src/App.tsx` para:
-- Se NÃO autenticado: mostrar `LandingPage` na rota `/`
-- Se autenticado: mostrar `Dashboard` na rota `/`
+```typescript
+useEffect(() => {
+  let mounted = true;
+  
+  supabase.auth.getSession()
+    .then(({ data: { session } }) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+      }
+    })
+    .catch((error) => {
+      console.error('Auth session error:', error);
+      if (mounted) {
+        setIsLoading(false);
+      }
+    });
 
-```text
-Fluxo atual:
-  / ────> ProtectedRoute ────> Redireciona para /login
+  // Timeout de segurança - 5 segundos
+  const timeout = setTimeout(() => {
+    if (mounted && isLoading) {
+      setIsLoading(false);
+    }
+  }, 5000);
 
-Fluxo novo:
-  / ────> isAuthenticated? ────> SIM: Dashboard
-                            └──> NÃO: LandingPage
+  return () => { 
+    mounted = false; 
+    clearTimeout(timeout);
+  };
+}, []);
 ```
 
-**Arquivos afetados:**
-- `src/App.tsx` - Ajustar rota raiz para condicional
+### 2. Corrigir `useProjects.tsx`
+Alterar a lógica de loading para verificar se existe usuário:
 
----
-
-## 2. Correção do Erro "Processar Documento"
-
-**Diagnóstico:**
-A edge function `extract-project-from-document` retorna erro 404 - ela **não está deployada**.
-
-**Solução:**
-Deployar a edge function existente em `supabase/functions/extract-project-from-document/index.ts`
-
-**Dependências:**
-- LOVABLE_API_KEY: Configurado
-
----
-
-## 3. Botão IA em Mais Lugares
-
-**Componente Atual:**
-O `AICommandButton` já está presente globalmente via `DashboardLayout`.
-
-**Melhorias sugeridas:**
-Adicionar acesso rápido à IA dentro de:
-- Modal de novo projeto (já tem opção "Criar com IA")
-- Header de páginas específicas
-- Ações contextuais em cards
-
----
-
-## Detalhes Técnicos
-
-### Alteração em `src/App.tsx`
-
-```tsx
-// Substituir a rota "/" de:
-<Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+```typescript
+// De:
+const isLoading = queryLoading;
 
 // Para:
-<Route 
-  path="/" 
-  element={
-    isAuthenticated 
-      ? <Dashboard /> 
-      : <LandingPage />
-  } 
-/>
+const isLoading = !!user && queryLoading;
 ```
 
-Também remover a rota `/landing` separada pois não será mais necessária.
+### 3. Corrigir `useDashboardMetrics.tsx`
+A lógica já está correta, mas garantir consistência:
 
-### Deploy da Edge Function
+```typescript
+return {
+  ...query,
+  isLoading: !!user && query.isLoading,
+};
+```
 
-Executar deploy da função `extract-project-from-document` que já existe no código mas não está disponível no ambiente.
+### 4. Corrigir `useCRM.tsx`
+A lógica já está correta:
 
----
+```typescript
+const isLoading = !!user && (isLoadingDeals || isLoadingContacts);
+```
 
-## Sequência de Implementação
+### 5. Simplificar lógica nas páginas
 
-| Ordem | Tarefa | Impacto |
-|-------|--------|---------|
-| 1 | Deploy edge function `extract-project-from-document` | Corrige erro imediato |
-| 2 | Ajustar routing em `App.tsx` | Landing page como home |
-| 3 | Remover rota `/landing` duplicada | Limpeza |
+**Dashboard.tsx:**
+```typescript
+const { user, isLoading: authLoading } = useAuth();
+const { data, isLoading: dataLoading } = useDashboardMetrics();
 
----
+// Loading apenas durante auth ou (usuário existe E dados carregando)
+const isLoading = authLoading || dataLoading;
+
+if (isLoading) {
+  return <Loading />;
+}
+```
+
+**ProjectsListPage.tsx:**
+```typescript
+const { isLoading: authLoading } = useAuth();
+const { projects, isLoading: dataLoading } = useProjects();
+
+const isLoading = authLoading || dataLoading;
+
+if (isLoading) {
+  return <Loading />;
+}
+```
+
+**CRMPage.tsx:**
+```typescript
+const { user, isLoading: authLoading } = useAuth();
+const { deals, isLoading: dataLoading } = useCRM();
+
+const isLoading = authLoading || dataLoading;
+
+if (isLoading) {
+  return <Loading />;
+}
+```
+
+## Arquivos a Modificar
+1. `src/hooks/useAuth.tsx` - Adicionar error handling e timeout
+2. `src/hooks/useProjects.tsx` - Corrigir lógica de isLoading
+3. `src/pages/Dashboard.tsx` - Simplificar verificação de loading
+4. `src/pages/projects/ProjectsListPage.tsx` - Simplificar verificação de loading
+5. `src/pages/CRMPage.tsx` - Simplificar verificação de loading
 
 ## Resultado Esperado
+- Páginas carregam em no máximo 5 segundos (timeout de segurança)
+- Usuários não autenticados veem conteúdo/empty state sem loading infinito
+- Usuários autenticados veem loading apenas enquanto dados são buscados
+- Erros de rede não travam a interface
 
-- Visitantes verão a Landing Page ao acessar a plataforma
-- Usuários logados vão direto para o Dashboard
-- "Criar Projeto com IA" funcionará corretamente
-- Botão flutuante de IA continuará disponível em todas as páginas internas
