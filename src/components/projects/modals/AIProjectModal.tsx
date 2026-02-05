@@ -14,6 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -21,6 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { 
   Wand2, 
   Upload, 
@@ -29,9 +38,14 @@ import {
   X, 
   Loader2, 
   Sparkles,
-  AlertCircle,
   CheckCircle2,
-  File
+  File,
+  ChevronDown,
+  Package,
+  Calendar,
+  DollarSign,
+  FileCheck,
+  ClipboardList
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,19 +60,72 @@ interface UploadedFile {
   type: 'pdf' | 'image' | 'other';
 }
 
+interface Deliverable {
+  title: string;
+  type: 'video' | 'imagem' | 'pdf' | 'zip' | 'audio' | 'outro';
+  specifications?: string;
+  quantity?: number;
+  selected?: boolean;
+}
+
+interface PaymentMilestone {
+  title: string;
+  percentage?: number;
+  amount: number;
+  dueDate?: string;
+  trigger?: string;
+}
+
+interface StageSchedule {
+  stage: string;
+  plannedStart?: string;
+  plannedEnd?: string;
+  durationDays?: number;
+}
+
 interface ExtractedData {
   title: string;
   clientName: string;
   clientCompany: string;
   clientEmail: string;
   clientPhone: string;
+  clientDocument: string;
   template: string;
   contractValue: number;
   startDate: string;
   deliveryDate: string;
-  scope: string;
   revisionLimit: number;
+  executiveSummary: string;
+  fullScope: string;
+  deliverables: Deliverable[];
+  paymentMilestones: PaymentMilestone[];
+  stageSchedule: StageSchedule[];
+  paymentTerms: string;
+  additionalNotes: string;
+  rawExtractedContent: string;
+  has_payment_block: boolean;
 }
+
+const STAGE_NAMES: Record<string, string> = {
+  briefing: "Briefing",
+  roteiro: "Roteiro",
+  pre_producao: "Pré-Produção",
+  captacao: "Captação",
+  edicao: "Edição",
+  revisao: "Revisão",
+  aprovacao: "Aprovação",
+  entrega: "Entrega",
+  pos_venda: "Pós-Venda"
+};
+
+const DELIVERABLE_TYPE_LABELS: Record<string, string> = {
+  video: "Vídeo",
+  imagem: "Imagem",
+  pdf: "PDF",
+  zip: "Arquivo ZIP",
+  audio: "Áudio",
+  outro: "Outro"
+};
 
 export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
   const { createProject, isCreating } = useProjects();
@@ -71,19 +138,29 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
   const [processingProgress, setProcessingProgress] = useState(0);
   const [processingStep, setProcessingStep] = useState("");
   const [autoCreateClient, setAutoCreateClient] = useState(true);
+  const [activeTab, setActiveTab] = useState("projeto");
+  const [scopeExpanded, setScopeExpanded] = useState(false);
   
-  const [formData, setFormData] = useState<ExtractedData & { has_payment_block: boolean }>({
+  const [formData, setFormData] = useState<ExtractedData>({
     title: "",
     clientName: "",
     clientCompany: "",
     clientEmail: "",
     clientPhone: "",
+    clientDocument: "",
     template: "",
     contractValue: 0,
     startDate: new Date().toISOString().split('T')[0],
     deliveryDate: "",
-    scope: "",
     revisionLimit: 2,
+    executiveSummary: "",
+    fullScope: "",
+    deliverables: [],
+    paymentMilestones: [],
+    stageSchedule: [],
+    paymentTerms: "",
+    additionalNotes: "",
+    rawExtractedContent: "",
     has_payment_block: true,
   });
 
@@ -94,18 +171,28 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     setIsProcessing(false);
     setProcessingProgress(0);
     setProcessingStep("");
+    setActiveTab("projeto");
+    setScopeExpanded(false);
     setFormData({
       title: "",
       clientName: "",
       clientCompany: "",
       clientEmail: "",
       clientPhone: "",
+      clientDocument: "",
       template: "",
       contractValue: 0,
       startDate: new Date().toISOString().split('T')[0],
       deliveryDate: "",
-      scope: "",
       revisionLimit: 2,
+      executiveSummary: "",
+      fullScope: "",
+      deliverables: [],
+      paymentMilestones: [],
+      stageSchedule: [],
+      paymentTerms: "",
+      additionalNotes: "",
+      rawExtractedContent: "",
       has_payment_block: true,
     });
   };
@@ -126,7 +213,6 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
 
     setUploadedFiles(prev => [...prev, ...newFiles]);
     
-    // Reset the input so the same file can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -149,7 +235,6 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
       reader.readAsDataURL(file);
       reader.onload = () => {
         const result = reader.result as string;
-        // Remove data URL prefix
         const base64 = result.split(',')[1];
         resolve(base64);
       };
@@ -169,19 +254,16 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     setProcessingStep("Preparando arquivos...");
 
     try {
-      // Separate PDFs and images
       const pdfFiles = uploadedFiles.filter(f => f.type === 'pdf');
       const imageFiles = uploadedFiles.filter(f => f.type === 'image');
       
       setProcessingProgress(20);
       setProcessingStep("Convertendo documentos...");
 
-      // Convert to base64
       let documentBase64: string | undefined;
       let imageBase64List: string[] = [];
 
       if (pdfFiles.length > 0) {
-        // Use the first PDF as main document
         documentBase64 = await fileToBase64(pdfFiles[0].file);
       }
 
@@ -193,13 +275,8 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
         imageBase64List.push(base64);
       }
 
-      // If no PDF but has images, process images
-      if (!documentBase64 && imageBase64List.length === 0 && additionalText) {
-        // Text-only processing
-      }
-
       setProcessingProgress(60);
-      setProcessingStep("Extraindo informações com IA...");
+      setProcessingStep("Extraindo informações com IA (detalhamento completo)...");
 
       const { data, error } = await supabase.functions.invoke('extract-project-from-document', {
         body: {
@@ -217,25 +294,40 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
 
       if (data.projectData) {
         const extracted = data.projectData;
+        
+        // Mark all deliverables as selected by default
+        const deliverablesWithSelection = (extracted.deliverables || []).map((d: Deliverable) => ({
+          ...d,
+          selected: true
+        }));
+
         setFormData({
           title: extracted.title || "",
           clientName: extracted.clientName || "",
           clientCompany: extracted.clientCompany || "",
           clientEmail: extracted.clientEmail || "",
           clientPhone: extracted.clientPhone || "",
+          clientDocument: extracted.clientDocument || "",
           template: extracted.template || "",
           contractValue: extracted.contractValue || 0,
           startDate: extracted.startDate || new Date().toISOString().split('T')[0],
           deliveryDate: extracted.deliveryDate || "",
-          scope: extracted.scope || "",
           revisionLimit: extracted.revisionLimit || 2,
+          executiveSummary: extracted.executiveSummary || "",
+          fullScope: extracted.fullScope || "",
+          deliverables: deliverablesWithSelection,
+          paymentMilestones: extracted.paymentMilestones || [],
+          stageSchedule: extracted.stageSchedule || [],
+          paymentTerms: extracted.paymentTerms || "",
+          additionalNotes: extracted.additionalNotes || "",
+          rawExtractedContent: extracted.rawExtractedContent || "",
           has_payment_block: true,
         });
       }
 
       setProcessingProgress(100);
       setStep('review');
-      toast.success("Dados extraídos com sucesso!");
+      toast.success("Dados extraídos com sucesso! Revise todas as abas.");
 
     } catch (error) {
       console.error("Error processing:", error);
@@ -246,6 +338,47 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     }
   };
 
+  const buildCompleteDescription = (): string => {
+    const parts: string[] = [];
+
+    if (formData.executiveSummary) {
+      parts.push(`## RESUMO EXECUTIVO\n${formData.executiveSummary}`);
+    }
+
+    if (formData.fullScope) {
+      parts.push(`## ESCOPO DETALHADO\n${formData.fullScope}`);
+    }
+
+    if (formData.deliverables.length > 0) {
+      const selectedDeliverables = formData.deliverables.filter(d => d.selected !== false);
+      const deliverablesList = selectedDeliverables
+        .map(d => `- ${d.title} (${DELIVERABLE_TYPE_LABELS[d.type] || d.type})${d.specifications ? `: ${d.specifications}` : ''}${d.quantity ? ` x${d.quantity}` : ''}`)
+        .join('\n');
+      parts.push(`## ENTREGAS\n${deliverablesList}`);
+    }
+
+    if (formData.paymentTerms || formData.paymentMilestones.length > 0) {
+      let conditionsText = "";
+      if (formData.paymentTerms) {
+        conditionsText += formData.paymentTerms + "\n\n";
+      }
+      if (formData.paymentMilestones.length > 0) {
+        conditionsText += "Parcelas:\n" + formData.paymentMilestones
+          .map(m => `- ${m.title}: R$ ${m.amount.toLocaleString('pt-BR')}${m.dueDate ? ` (${m.dueDate})` : ''}${m.trigger ? ` - ${m.trigger}` : ''}`)
+          .join('\n');
+      }
+      parts.push(`## CONDIÇÕES FINANCEIRAS\n${conditionsText}`);
+    }
+
+    if (formData.additionalNotes) {
+      parts.push(`## OBSERVAÇÕES\n${formData.additionalNotes}`);
+    }
+
+    parts.push(`## CONFIGURAÇÕES\n- Limite de revisões: ${formData.revisionLimit}`);
+
+    return parts.join('\n\n');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -254,16 +387,12 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
       return;
     }
 
-    // Determine client name (use company if name is empty)
     const clientName = formData.clientName || formData.clientCompany || "Cliente não identificado";
-    
-    // Auto-create client logic is implicit - we just use the extracted name
-    // The actual client record could be created in a separate CRM system
     
     const projectData: CreateProjectInput = {
       name: formData.title,
       client_name: clientName,
-      description: formData.scope || undefined,
+      description: buildCompleteDescription(),
       template: formData.template || undefined,
       start_date: formData.startDate || undefined,
       due_date: formData.deliveryDate || undefined,
@@ -273,13 +402,21 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
 
     createProject(projectData);
     
-    // Show success message with auto-created client info
     if (autoCreateClient && clientName) {
       toast.success(`Projeto criado! Cliente "${clientName}" adicionado automaticamente.`);
     }
     
     resetForm();
     onOpenChange(false);
+  };
+
+  const toggleDeliverable = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      deliverables: prev.deliverables.map((d, i) => 
+        i === index ? { ...d, selected: !d.selected } : d
+      )
+    }));
   };
 
   const getFileIcon = (type: UploadedFile['type']) => {
@@ -296,12 +433,16 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(open) => {
       if (!open) resetForm();
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
@@ -310,7 +451,7 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
         </DialogHeader>
 
         {step === 'upload' && (
-          <div className="space-y-6 pt-4">
+          <div className="space-y-6 pt-4 overflow-y-auto">
             {/* File Upload Area */}
             <div 
               onClick={() => fileInputRef.current?.click()}
@@ -437,136 +578,366 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
             </div>
             <Progress value={processingProgress} className="h-2" />
             <p className="text-xs text-muted-foreground text-center">
-              A IA está analisando seus documentos para extrair informações do projeto.
+              A IA está analisando seus documentos para extrair TODAS as informações do projeto.
             </p>
           </div>
         )}
 
         {step === 'review' && (
-          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-            <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/30 rounded-xl">
-              <CheckCircle2 className="w-5 h-5 text-primary" />
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/30 rounded-xl mb-4">
+              <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
               <span className="text-sm text-primary">
-                Dados extraídos com sucesso! Revise e ajuste se necessário.
+                Dados extraídos! Revise todas as abas antes de criar.
               </span>
             </div>
 
-            {/* Project Name */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Nome do Projeto *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Ex: Campanha Institucional 2025"
-                required
-              />
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid w-full grid-cols-4 mb-4">
+                <TabsTrigger value="projeto" className="gap-1 text-xs">
+                  <FileCheck className="w-3 h-3" />
+                  Projeto
+                </TabsTrigger>
+                <TabsTrigger value="escopo" className="gap-1 text-xs">
+                  <ClipboardList className="w-3 h-3" />
+                  Escopo
+                </TabsTrigger>
+                <TabsTrigger value="entregas" className="gap-1 text-xs">
+                  <Package className="w-3 h-3" />
+                  Entregas
+                  {formData.deliverables.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                      {formData.deliverables.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="financeiro" className="gap-1 text-xs">
+                  <DollarSign className="w-3 h-3" />
+                  Financeiro
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Client Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="clientName">Nome do Contato</Label>
-                <Input
-                  id="clientName"
-                  value={formData.clientName}
-                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                  placeholder="João Silva"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="clientCompany">Empresa</Label>
-                <Input
-                  id="clientCompany"
-                  value={formData.clientCompany}
-                  onChange={(e) => setFormData({ ...formData, clientCompany: e.target.value })}
-                  placeholder="Empresa ABC"
-                />
-              </div>
-            </div>
+              <ScrollArea className="flex-1 pr-4">
+                {/* Tab: Projeto */}
+                <TabsContent value="projeto" className="space-y-4 mt-0">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Nome do Projeto *</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Ex: Campanha Institucional 2025"
+                      required
+                    />
+                  </div>
 
-            {/* Template */}
-            <div className="space-y-2">
-              <Label>Template do Projeto</Label>
-              <Select 
-                value={formData.template} 
-                onValueChange={(value) => setFormData({ ...formData, template: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROJECT_TEMPLATES.map(template => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name} ({template.defaultSLADays} dias)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="clientName">Nome do Contato</Label>
+                      <Input
+                        id="clientName"
+                        value={formData.clientName}
+                        onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                        placeholder="João Silva"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="clientCompany">Empresa</Label>
+                      <Input
+                        id="clientCompany"
+                        value={formData.clientCompany}
+                        onChange={(e) => setFormData({ ...formData, clientCompany: e.target.value })}
+                        placeholder="Empresa ABC"
+                      />
+                    </div>
+                  </div>
 
-            {/* Dates */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Data de Início</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="deliveryDate">Entrega Estimada</Label>
-                <Input
-                  id="deliveryDate"
-                  type="date"
-                  value={formData.deliveryDate}
-                  onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
-                />
-              </div>
-            </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="clientEmail">Email</Label>
+                      <Input
+                        id="clientEmail"
+                        type="email"
+                        value={formData.clientEmail}
+                        onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                        placeholder="email@empresa.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="clientPhone">Telefone</Label>
+                      <Input
+                        id="clientPhone"
+                        value={formData.clientPhone}
+                        onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                  </div>
 
-            {/* Contract Value */}
-            <div className="space-y-2">
-              <Label htmlFor="contractValue">Valor do Contrato (R$)</Label>
-              <Input
-                id="contractValue"
-                type="number"
-                value={formData.contractValue || ""}
-                onChange={(e) => setFormData({ ...formData, contractValue: parseFloat(e.target.value) || 0 })}
-                placeholder="0"
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label>Template do Projeto</Label>
+                    <Select 
+                      value={formData.template} 
+                      onValueChange={(value) => setFormData({ ...formData, template: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROJECT_TEMPLATES.map(template => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name} ({template.defaultSLADays} dias)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {/* Scope */}
-            <div className="space-y-2">
-              <Label htmlFor="scope">Escopo / Descrição</Label>
-              <Textarea
-                id="scope"
-                value={formData.scope}
-                onChange={(e) => setFormData({ ...formData, scope: e.target.value })}
-                placeholder="Descrição do escopo do projeto..."
-                rows={3}
-              />
-            </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startDate">Data de Início</Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        value={formData.startDate}
+                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="deliveryDate">Entrega Estimada</Label>
+                      <Input
+                        id="deliveryDate"
+                        type="date"
+                        value={formData.deliveryDate}
+                        onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
 
-            {/* Block Payment Toggle */}
-            <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <Label>Bloquear entrega se inadimplente</Label>
-                <p className="text-xs text-muted-foreground">
-                  Impede entrega final se houver fatura em atraso
-                </p>
-              </div>
-              <Switch
-                checked={formData.has_payment_block}
-                onCheckedChange={(checked) => setFormData({ ...formData, has_payment_block: checked })}
-              />
-            </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div className="space-y-0.5">
+                      <Label>Bloquear entrega se inadimplente</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Impede entrega final se houver fatura em atraso
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.has_payment_block}
+                      onCheckedChange={(checked) => setFormData({ ...formData, has_payment_block: checked })}
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Tab: Escopo */}
+                <TabsContent value="escopo" className="space-y-4 mt-0">
+                  {formData.executiveSummary && (
+                    <div className="space-y-2">
+                      <Label>Resumo Executivo</Label>
+                      <div className="p-4 bg-muted/30 rounded-xl text-sm text-foreground whitespace-pre-wrap">
+                        {formData.executiveSummary}
+                      </div>
+                    </div>
+                  )}
+
+                  <Collapsible open={scopeExpanded} onOpenChange={setScopeExpanded}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        <span className="flex items-center gap-2">
+                          <ClipboardList className="w-4 h-4" />
+                          Escopo Completo ({formData.fullScope.length} caracteres)
+                        </span>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${scopeExpanded ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <Textarea
+                        value={formData.fullScope}
+                        onChange={(e) => setFormData({ ...formData, fullScope: e.target.value })}
+                        placeholder="Escopo detalhado do projeto..."
+                        rows={12}
+                        className="font-mono text-xs"
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {formData.additionalNotes && (
+                    <div className="space-y-2">
+                      <Label>Observações e Cláusulas</Label>
+                      <Textarea
+                        value={formData.additionalNotes}
+                        onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
+                        placeholder="Cláusulas especiais, restrições..."
+                        rows={4}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="revisionLimit">Limite de Revisões</Label>
+                    <Input
+                      id="revisionLimit"
+                      type="number"
+                      min={0}
+                      value={formData.revisionLimit}
+                      onChange={(e) => setFormData({ ...formData, revisionLimit: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+
+                  {formData.stageSchedule.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Cronograma por Etapa
+                      </Label>
+                      <div className="space-y-2">
+                        {formData.stageSchedule.map((schedule, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                            <span className="text-sm font-medium">
+                              {STAGE_NAMES[schedule.stage] || schedule.stage}
+                            </span>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              {schedule.plannedStart && (
+                                <span>Início: {schedule.plannedStart}</span>
+                              )}
+                              {schedule.plannedEnd && (
+                                <span>Fim: {schedule.plannedEnd}</span>
+                              )}
+                              {schedule.durationDays && (
+                                <Badge variant="secondary">{schedule.durationDays} dias</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Tab: Entregas */}
+                <TabsContent value="entregas" className="space-y-4 mt-0">
+                  {formData.deliverables.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Nenhuma entrega identificada no documento</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Entregas Previstas</Label>
+                        <span className="text-xs text-muted-foreground">
+                          {formData.deliverables.filter(d => d.selected !== false).length} selecionadas
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {formData.deliverables.map((deliverable, index) => (
+                          <div 
+                            key={index}
+                            className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                              deliverable.selected !== false 
+                                ? 'bg-primary/5 border-primary/30' 
+                                : 'bg-muted/20 border-transparent'
+                            }`}
+                          >
+                            <Checkbox
+                              checked={deliverable.selected !== false}
+                              onCheckedChange={() => toggleDeliverable(index)}
+                              className="mt-0.5"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{deliverable.title}</span>
+                                <Badge variant="outline" className="text-[10px]">
+                                  {DELIVERABLE_TYPE_LABELS[deliverable.type] || deliverable.type}
+                                </Badge>
+                                {deliverable.quantity && deliverable.quantity > 1 && (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    x{deliverable.quantity}
+                                  </Badge>
+                                )}
+                              </div>
+                              {deliverable.specifications && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {deliverable.specifications}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Tab: Financeiro */}
+                <TabsContent value="financeiro" className="space-y-4 mt-0">
+                  <div className="space-y-2">
+                    <Label htmlFor="contractValue">Valor Total do Contrato</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                      <Input
+                        id="contractValue"
+                        type="number"
+                        value={formData.contractValue || ""}
+                        onChange={(e) => setFormData({ ...formData, contractValue: parseFloat(e.target.value) || 0 })}
+                        placeholder="0,00"
+                        className="pl-10"
+                      />
+                    </div>
+                    {formData.contractValue > 0 && (
+                      <p className="text-lg font-semibold text-primary">
+                        {formatCurrency(formData.contractValue)}
+                      </p>
+                    )}
+                  </div>
+
+                  {formData.paymentMilestones.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" />
+                        Parcelas / Milestones
+                      </Label>
+                      <div className="space-y-2">
+                        {formData.paymentMilestones.map((milestone, index) => (
+                          <div key={index} className="p-3 bg-muted/30 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{milestone.title}</span>
+                              <span className="text-sm font-semibold text-primary">
+                                {formatCurrency(milestone.amount)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              {milestone.percentage && (
+                                <span>{milestone.percentage}% do total</span>
+                              )}
+                              {milestone.dueDate && (
+                                <span>Vencimento: {milestone.dueDate}</span>
+                              )}
+                              {milestone.trigger && (
+                                <Badge variant="outline" className="text-[10px]">
+                                  {milestone.trigger}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.paymentTerms && (
+                    <div className="space-y-2">
+                      <Label>Condições de Pagamento</Label>
+                      <div className="p-3 bg-muted/30 rounded-lg text-sm">
+                        {formData.paymentTerms}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
 
             {/* Actions */}
-            <div className="flex justify-between gap-3 pt-4">
+            <div className="flex justify-between gap-3 pt-4 mt-4 border-t">
               <Button 
                 type="button" 
                 variant="outline" 
