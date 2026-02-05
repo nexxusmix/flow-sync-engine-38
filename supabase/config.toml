@@ -1,1 +1,10 @@
 project_id = "gfyeuhfapscxfvjnrssn"
+
+[functions.generate-ideas]
+verify_jwt = false
+
+[functions.generate-captions]
+verify_jwt = false
+
+[functions.repurpose-project]
+verify_jwt = false

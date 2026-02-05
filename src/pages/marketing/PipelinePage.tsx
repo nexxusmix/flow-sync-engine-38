@@ -58,13 +58,11 @@ function ContentCard({
       }}
       onDragEnd={() => setIsDragging(false)}
       onClick={onClick}
-      className={`glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing border transition-all ${
+      className={`glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing border transition-all hover:scale-[1.02] ${
         isDragging ? 'opacity-50 scale-95 border-primary' : 
         isOverdue ? 'border-l-2 border-l-red-500 border-transparent' : 
         'border-transparent hover:border-primary/20'
       }`}
-      whileHover={{ scale: 1.02 }}
-      layout
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0 flex-1">
