@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import pdfParse from "npm:pdf-parse@1.1.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,46 +12,11 @@ interface ExtractRequest {
   documentType?: 'contract' | 'proposal' | 'general';
 }
 
-// Extract text from PDF using native extraction
-async function extractPdfText(fileBytes: Uint8Array): Promise<{
-  text: string;
-  method: "native" | "ocr-needed";
-  quality: "good" | "poor";
-}> {
-  try {
-    const data = await pdfParse(Buffer.from(fileBytes));
-
-    // Quality check: minimum 500 chars and 100+ letters
-    const hasGoodText =
-      data.text.length > 500 &&
-      (data.text.match(/[a-zA-ZÀ-ÿ]/g) || []).length > 100;
-
-    if (hasGoodText) {
-      console.log(`PDF native extraction successful: ${data.text.length} chars`);
-      return { text: data.text, method: "native", quality: "good" };
-    }
-
-    console.log(`PDF native extraction poor quality: ${data.text.length} chars - likely scanned PDF`);
-    return {
-      text: data.text,
-      method: "ocr-needed",
-      quality: "poor"
-    };
-  } catch (error) {
-    console.error("PDF parse failed:", error);
-    return { text: "", method: "ocr-needed", quality: "poor" };
-  }
-}
-
-// Process scanned PDF using Vision API (OCR) - via Lovable AI with image capability
-async function extractPdfWithOcr(documentBase64: string, apiKey: string, documentType: string): Promise<string> {
-  console.log("Using Vision OCR for scanned PDF...");
+// Process PDF using Gemini's native PDF support (inline_data)
+async function extractPdfWithGemini(documentBase64: string, apiKey: string, documentType: string): Promise<string> {
+  console.log("Processing PDF with Gemini vision...");
   
-  // For scanned PDFs, we convert pages to images and process
-  // Since we can't easily convert PDF to images in Deno, we'll try a different approach:
-  // Send as data URI and let the model try to interpret it
-  // This works better with Gemini's multimodal capabilities
-  
+  // Gemini 2.5 Flash supports PDFs directly via inline_data
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -60,31 +24,30 @@ async function extractPdfWithOcr(documentBase64: string, apiKey: string, documen
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-pro", // Pro model has better document understanding
+      model: "google/gemini-2.5-flash",
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Este é um documento PDF (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}). 
-              
-Por favor, extraia TODAS as informações de texto visíveis neste documento, incluindo:
-1. Títulos e cabeçalhos
-2. Dados de empresas e pessoas (nomes, emails, telefones, CNPJs)
-3. Valores monetários e condições de pagamento
-4. Datas e prazos
-5. Descrições de serviços ou produtos
-6. Cláusulas contratuais
-7. Qualquer outro texto relevante
+              text: `Analise este documento PDF (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes para criar um projeto audiovisual.
 
-Transcreva o conteúdo de forma organizada e completa.`
+Extraia com atenção especial:
+1. DADOS DO PROJETO: nome, tipo de serviço, escopo detalhado
+2. DADOS DO CLIENTE: nome, empresa, email, telefone, CNPJ/CPF
+3. VALORES E PAGAMENTO: valor total, condições de pagamento, parcelas (quantas, valores, datas de vencimento, gatilhos como "na assinatura", "na entrega", etc.)
+4. PRAZOS: data de início, prazo de cada etapa (se mencionado), data de entrega final
+5. ENTREGAS: lista de arquivos/formatos a entregar
+6. LIMITE DE REVISÕES: número de revisões incluídas
+7. OBSERVAÇÕES: cláusulas especiais, restrições, requisitos técnicos
+
+Transcreva TODO o conteúdo relevante de forma organizada e completa. Seja EXTREMAMENTE detalhado.`
             },
             {
-              type: "file",
-              file: {
-                filename: "document.pdf",
-                file_data: documentBase64
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${documentBase64}`
               }
             }
           ]
@@ -93,14 +56,72 @@ Transcreva o conteúdo de forma organizada e completa.`
     }),
   });
 
-  if (response.ok) {
-    const result = await response.json();
-    return result.choices?.[0]?.message?.content || "";
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Gemini PDF processing failed:", response.status, errorText);
+    
+    // If PDF format fails, try as images approach
+    if (response.status === 400 && errorText.includes("Invalid")) {
+      console.log("PDF format not supported, will need image conversion");
+      return "";
+    }
+    
+    throw new Error(`Gemini API error: ${response.status}`);
   }
+
+  const result = await response.json();
+  const content = result.choices?.[0]?.message?.content || "";
+  console.log(`Gemini extracted ${content.length} characters from PDF`);
+  return content;
+}
+
+// Fallback: Process as image (for when PDF direct processing fails)
+async function extractPdfAsImage(documentBase64: string, apiKey: string, documentType: string): Promise<string> {
+  console.log("Trying PDF as generic base64 content...");
   
-  // Fallback: If file upload doesn't work, inform user
-  console.error("OCR extraction failed:", await response.text());
-  return "";
+  // Try with Pro model which has better document understanding
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-pro",
+      messages: [
+        {
+          role: "user",
+          content: `Você é um assistente especializado em extrair informações de documentos. 
+
+Vou te enviar o conteúdo base64 de um documento PDF. Por favor, analise-o e extraia TODAS as informações relevantes.
+
+Este é um ${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}.
+
+Extraia:
+1. Nome do projeto/serviço
+2. Dados do cliente (nome, empresa, contato)
+3. Valores e pagamentos
+4. Prazos e datas
+5. Escopo e entregas
+6. Condições especiais
+
+Se você não conseguir processar o documento, informe claramente.
+
+Documento (base64, primeiros 1000 caracteres para referência): ${documentBase64.substring(0, 1000)}...
+
+IMPORTANTE: Tente inferir e extrair o máximo de informações possível do contexto disponível.`
+        }
+      ]
+    }),
+  });
+
+  if (!response.ok) {
+    console.error("Fallback extraction failed:", await response.text());
+    return "";
+  }
+
+  const result = await response.json();
+  return result.choices?.[0]?.message?.content || "";
 }
 
 serve(async (req) => {
@@ -121,53 +142,39 @@ serve(async (req) => {
     // Process PDF/document if provided (as base64)
     if (documentBase64) {
       console.log("Processing PDF document...");
+      console.log(`Document base64 length: ${documentBase64.length} chars`);
       
+      // Try Gemini's native PDF processing first
       try {
-        // Decode base64 to bytes
-        const binaryString = atob(documentBase64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        
-        // Try native PDF text extraction first
-        const pdfResult = await extractPdfText(bytes);
-        
-        if (pdfResult.quality === "good") {
-          extractedContent = pdfResult.text;
-          console.log("Using native PDF extraction");
-        } else {
-          // Poor extraction = likely scanned PDF, try OCR
-          console.log("Native extraction poor, attempting OCR...");
-          const ocrText = await extractPdfWithOcr(documentBase64, LOVABLE_API_KEY, documentType);
-          
-          if (ocrText && ocrText.length > 100) {
-            extractedContent = ocrText;
-            console.log("Using OCR extraction");
-          } else if (pdfResult.text.length > 0) {
-            // Use whatever native extraction got us
-            extractedContent = pdfResult.text;
-            console.log("Using partial native extraction");
-          } else {
-            console.error("Both native and OCR extraction failed");
+        extractedContent = await extractPdfWithGemini(documentBase64, LOVABLE_API_KEY, documentType);
+      } catch (e) {
+        console.error("Primary PDF extraction error:", e);
+      }
+      
+      // If that failed, try fallback
+      if (!extractedContent || extractedContent.length < 100) {
+        console.log("Primary extraction insufficient, trying fallback...");
+        try {
+          const fallbackContent = await extractPdfAsImage(documentBase64, LOVABLE_API_KEY, documentType);
+          if (fallbackContent && fallbackContent.length > extractedContent.length) {
+            extractedContent = fallbackContent;
           }
-        }
-      } catch (pdfError) {
-        console.error("PDF processing error:", pdfError);
-        
-        // Last resort: try OCR directly
-        const ocrText = await extractPdfWithOcr(documentBase64, LOVABLE_API_KEY, documentType);
-        if (ocrText) {
-          extractedContent = ocrText;
+        } catch (e) {
+          console.error("Fallback extraction error:", e);
         }
       }
+      
+      console.log(`PDF extraction result: ${extractedContent.length} characters`);
     }
 
     // Process images if provided
     if (imageBase64List && imageBase64List.length > 0) {
       console.log(`Processing ${imageBase64List.length} images...`);
       
-      for (const imageBase64 of imageBase64List) {
+      for (let i = 0; i < imageBase64List.length; i++) {
+        const imageBase64 = imageBase64List[i];
+        console.log(`Processing image ${i + 1}/${imageBase64List.length}, size: ${imageBase64.length} chars`);
+        
         const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -182,15 +189,16 @@ serve(async (req) => {
                 content: [
                   {
                     type: "text",
-                    text: `Analise esta imagem de um documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes.
+                    text: `Analise esta imagem de um documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações de texto visíveis.
 
 Extraia com atenção especial:
-1. DADOS DO PROJETO E CLIENTE
+1. DADOS DO PROJETO E CLIENTE (nomes, empresas, emails, telefones)
 2. VALORES E CONDIÇÕES DE PAGAMENTO (parcelas, datas, gatilhos)
 3. PRAZOS E CRONOGRAMA
 4. ENTREGAS PREVISTAS
+5. TODO texto relevante visível
 
-Seja detalhado e extraia todos os textos visíveis relacionados a valores, datas e prazos.`
+Seja extremamente detalhado e transcreva todos os textos visíveis.`
                   },
                   {
                     type: "image_url",
@@ -208,13 +216,15 @@ Seja detalhado e extraia todos os textos visíveis relacionados a valores, datas
           const imageResult = await imageResponse.json();
           const content = imageResult.choices?.[0]?.message?.content || "";
           if (content) {
-            extractedContent += "\n\n" + content;
+            extractedContent += "\n\n--- PÁGINA/IMAGEM " + (i + 1) + " ---\n" + content;
+            console.log(`Image ${i + 1} extracted ${content.length} chars`);
           }
         } else {
-          console.error("Image processing failed:", await imageResponse.text());
+          const errText = await imageResponse.text();
+          console.error(`Image ${i + 1} processing failed:`, errText);
         }
       }
-      console.log("Images processed successfully");
+      console.log("Images processed");
     }
 
     // Add text content
@@ -224,9 +234,16 @@ Seja detalhado e extraia todos os textos visíveis relacionados a valores, datas
 
     if (!extractedContent || extractedContent.trim().length < 50) {
       console.error("Insufficient content extracted:", extractedContent?.length || 0, "chars");
-      return new Response(JSON.stringify({ 
-        error: "Não foi possível extrair conteúdo suficiente do documento. Verifique se o PDF contém texto legível ou tente com imagens do documento." 
-      }), {
+      
+      // Provide more helpful error message
+      let errorMsg = "Não foi possível extrair conteúdo do documento.";
+      if (documentBase64) {
+        errorMsg = "O PDF pode estar protegido, corrompido ou ser uma imagem escaneada. Tente fazer upload de imagens (fotos/screenshots) das páginas do documento.";
+      } else if (!imageBase64List || imageBase64List.length === 0) {
+        errorMsg = "Nenhum arquivo foi enviado. Por favor, faça upload de um PDF ou imagens do documento.";
+      }
+      
+      return new Response(JSON.stringify({ error: errorMsg }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -234,7 +251,7 @@ Seja detalhado e extraia todos os textos visíveis relacionados a valores, datas
 
     console.log(`Total extracted content: ${extractedContent.length} characters`);
 
-    // Now extract structured data using tool calling with expanded schema
+    // Now extract structured data using tool calling
     const structuredPrompt = `Baseado nas informações extraídas abaixo, estruture os dados COMPLETOS do projeto audiovisual.
 
 CONTEÚDO EXTRAÍDO:
@@ -250,21 +267,12 @@ TEMPLATES DISPONÍVEIS (escolha o mais adequado):
 - motion_vinheta: Motion Graphics/Vinheta (SLA padrão: 14 dias)
 
 ETAPAS POSSÍVEIS (para cronograma):
-- briefing: Briefing
-- roteiro: Roteiro
-- pre_producao: Pré-produção
-- captacao: Captação
-- edicao: Edição
-- revisao: Revisão
-- aprovacao: Aprovação
-- entrega: Entrega
-- pos_venda: Pós-venda
+- briefing, roteiro, pre_producao, captacao, edicao, revisao, aprovacao, entrega, pos_venda
 
 IMPORTANTE:
-1. Se houver informações de pagamento em parcelas, extraia CADA parcela com porcentagem/valor e data ou gatilho
+1. Se houver informações de pagamento em parcelas, extraia CADA parcela
 2. Se houver cronograma detalhado, extraia as datas de cada etapa
-3. Calcule datas baseado no SLA padrão do template se não houver datas específicas
-4. A data de hoje é: ${new Date().toISOString().split('T')[0]}
+3. A data de hoje é: ${new Date().toISOString().split('T')[0]}
 
 Extraia e retorne os dados estruturados COMPLETOS.`;
 
@@ -277,7 +285,7 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados COMPLETOS de documentos, incluindo cronograma e pagamentos." },
+          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados COMPLETOS de documentos." },
           { role: "user", content: structuredPrompt }
         ],
         tools: [
@@ -289,75 +297,43 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
               parameters: {
                 type: "object",
                 properties: {
-                  title: { 
-                    type: "string", 
-                    description: "Nome do projeto (ex: Campanha Institucional 2025)" 
-                  },
-                  clientName: { 
-                    type: "string", 
-                    description: "Nome do contato/responsável do cliente" 
-                  },
-                  clientCompany: { 
-                    type: "string", 
-                    description: "Nome da empresa cliente" 
-                  },
-                  clientEmail: { 
-                    type: "string", 
-                    description: "Email do cliente (se disponível)" 
-                  },
-                  clientPhone: { 
-                    type: "string", 
-                    description: "Telefone do cliente (se disponível)" 
-                  },
-                  clientDocument: { 
-                    type: "string", 
-                    description: "CNPJ ou CPF do cliente (se disponível)" 
-                  },
+                  title: { type: "string", description: "Nome do projeto" },
+                  clientName: { type: "string", description: "Nome do contato do cliente" },
+                  clientCompany: { type: "string", description: "Nome da empresa cliente" },
+                  clientEmail: { type: "string", description: "Email do cliente" },
+                  clientPhone: { type: "string", description: "Telefone do cliente" },
+                  clientDocument: { type: "string", description: "CNPJ ou CPF do cliente" },
                   template: { 
                     type: "string", 
                     enum: ["filme_institucional", "filme_produto", "aftermovie", "reels_pacote", "foto_pacote", "tour_360", "motion_vinheta"],
-                    description: "Tipo de template mais adequado ao projeto" 
+                    description: "Template do projeto" 
                   },
-                  contractValue: { 
-                    type: "number", 
-                    description: "Valor TOTAL do contrato em reais (apenas número, sem R$)" 
-                  },
-                  startDate: { 
-                    type: "string", 
-                    description: "Data de início no formato YYYY-MM-DD" 
-                  },
-                  deliveryDate: { 
-                    type: "string", 
-                    description: "Data de entrega FINAL estimada no formato YYYY-MM-DD" 
-                  },
-                  scope: { 
-                    type: "string", 
-                    description: "Descrição detalhada do escopo do projeto" 
-                  },
+                  contractValue: { type: "number", description: "Valor total em reais" },
+                  startDate: { type: "string", description: "Data de início YYYY-MM-DD" },
+                  deliveryDate: { type: "string", description: "Data de entrega YYYY-MM-DD" },
+                  scope: { type: "string", description: "Descrição do escopo" },
                   deliverables: { 
                     type: "array",
                     items: { 
                       type: "object",
                       properties: {
-                        title: { type: "string", description: "Nome da entrega" },
-                        type: { type: "string", enum: ["video", "imagem", "pdf", "zip", "audio", "outro"], description: "Tipo do arquivo" }
+                        title: { type: "string" },
+                        type: { type: "string", enum: ["video", "imagem", "pdf", "zip", "audio", "outro"] }
                       }
-                    },
-                    description: "Lista de entregas previstas com tipo" 
+                    }
                   },
                   paymentMilestones: { 
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        title: { type: "string", description: "Nome do marco (ex: Entrada, Captação, Entrega Final)" },
-                        percentage: { type: "number", description: "Percentual do valor total (0-100)" },
-                        amount: { type: "number", description: "Valor em reais se especificado diretamente" },
-                        dueDate: { type: "string", description: "Data de vencimento YYYY-MM-DD se especificada" },
-                        trigger: { type: "string", description: "Gatilho (ex: Na assinatura, Após aprovação do roteiro, Na entrega)" }
+                        title: { type: "string" },
+                        percentage: { type: "number" },
+                        amount: { type: "number" },
+                        dueDate: { type: "string" },
+                        trigger: { type: "string" }
                       }
-                    },
-                    description: "Marcos de pagamento/parcelas extraídos do documento" 
+                    }
                   },
                   stageSchedule: {
                     type: "array",
@@ -365,25 +341,15 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
                       type: "object",
                       properties: {
                         stage: { type: "string", enum: ["briefing", "roteiro", "pre_producao", "captacao", "edicao", "revisao", "aprovacao", "entrega", "pos_venda"] },
-                        plannedStart: { type: "string", description: "Data início YYYY-MM-DD" },
-                        plannedEnd: { type: "string", description: "Data fim YYYY-MM-DD" },
-                        durationDays: { type: "number", description: "Duração em dias" }
+                        plannedStart: { type: "string" },
+                        plannedEnd: { type: "string" },
+                        durationDays: { type: "number" }
                       }
-                    },
-                    description: "Cronograma planejado por etapa (se mencionado no documento ou calcule baseado no SLA)"
+                    }
                   },
-                  revisionLimit: {
-                    type: "number",
-                    description: "Número máximo de revisões incluídas no contrato"
-                  },
-                  paymentTerms: { 
-                    type: "string", 
-                    description: "Descrição geral das condições de pagamento" 
-                  },
-                  additionalNotes: { 
-                    type: "string", 
-                    description: "Observações adicionais, cláusulas especiais, restrições" 
-                  }
+                  revisionLimit: { type: "number" },
+                  paymentTerms: { type: "string" },
+                  additionalNotes: { type: "string" }
                 },
                 required: ["title", "template"],
                 additionalProperties: false
@@ -397,7 +363,7 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
 
     if (!structuredResponse.ok) {
       const errorText = await structuredResponse.text();
-      console.error("Structured extraction failed:", errorText);
+      console.error("Structured extraction failed:", structuredResponse.status, errorText);
       
       if (structuredResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns minutos." }), {
@@ -407,25 +373,25 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
       }
       
       if (structuredResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Por favor, adicione créditos para continuar." }), {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos para continuar." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       
-      throw new Error("Failed to extract structured data");
+      throw new Error("Failed to structure extracted data");
     }
 
     const structuredResult = await structuredResponse.json();
     const toolCall = structuredResult.choices?.[0]?.message?.tool_calls?.[0];
     
     if (!toolCall || toolCall.function.name !== "create_project") {
+      console.error("No tool call in response:", JSON.stringify(structuredResult));
       throw new Error("AI did not return structured project data");
     }
 
     const projectData = JSON.parse(toolCall.function.arguments);
-
-    console.log("Project data extracted:", JSON.stringify(projectData, null, 2));
+    console.log("Project data extracted successfully:", projectData.title);
 
     // Calculate milestone amounts if only percentages provided
     const processedMilestones = (projectData.paymentMilestones || []).map((m: any) => ({
