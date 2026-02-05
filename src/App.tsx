@@ -37,6 +37,15 @@ import CashflowPage from "./pages/finance/CashflowPage";
 import FinanceContractsPage from "./pages/finance/ContractsPage";
 import ProjectsFinancePage from "./pages/finance/ProjectsFinancePage";
 
+// Marketing Pages
+import MarketingDashboard from "./pages/marketing/MarketingDashboard";
+import CalendarPage from "./pages/marketing/CalendarPage";
+import IdeasPage from "./pages/marketing/IdeasPage";
+import PipelinePage from "./pages/marketing/PipelinePage";
+import CampaignsPage from "./pages/marketing/CampaignsPage";
+import AssetsPage from "./pages/marketing/AssetsPage";
+import InstagramPage from "./pages/marketing/InstagramPage";
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -59,7 +68,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
-      {/* Projetos - Multiple Views */}
+      {/* Projetos */}
       <Route path="/projetos" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
       <Route path="/projetos/board" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
       <Route path="/projetos/kanban" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
@@ -82,7 +91,15 @@ function AppRoutes() {
       <Route path="/financeiro/despesas" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
       <Route path="/financeiro/contratos" element={<ProtectedRoute><FinanceContractsPage /></ProtectedRoute>} />
       <Route path="/financeiro/projetos" element={<ProtectedRoute><ProjectsFinancePage /></ProtectedRoute>} />
-      <Route path="/conteudo" element={<ProtectedRoute><ContentPage /></ProtectedRoute>} />
+      {/* Marketing */}
+      <Route path="/marketing" element={<ProtectedRoute><MarketingDashboard /></ProtectedRoute>} />
+      <Route path="/marketing/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+      <Route path="/marketing/ideas" element={<ProtectedRoute><IdeasPage /></ProtectedRoute>} />
+      <Route path="/marketing/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
+      <Route path="/marketing/campaigns" element={<ProtectedRoute><CampaignsPage /></ProtectedRoute>} />
+      <Route path="/marketing/assets" element={<ProtectedRoute><AssetsPage /></ProtectedRoute>} />
+      <Route path="/marketing/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
+      <Route path="/conteudo" element={<Navigate to="/marketing" replace />} />
       <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
       <Route path="/relatorios" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
       <Route path="/configuracoes" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.repurpose-project]
 verify_jwt = false
+
+[functions.generate-script]
+verify_jwt = false
+
+[functions.generate-30day-plan]
+verify_jwt = false
