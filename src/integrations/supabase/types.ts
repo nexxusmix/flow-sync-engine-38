@@ -235,12 +235,15 @@ export type Database = {
           attendees: Json | null
           color: string | null
           created_at: string | null
+          deal_id: string | null
           description: string | null
           end_at: string
+          event_type: string | null
           id: string
           location: string | null
           meet_url: string | null
           owner_user_id: string | null
+          project_id: string | null
           provider: string
           provider_event_id: string | null
           recurrence: string | null
@@ -259,12 +262,15 @@ export type Database = {
           attendees?: Json | null
           color?: string | null
           created_at?: string | null
+          deal_id?: string | null
           description?: string | null
           end_at: string
+          event_type?: string | null
           id?: string
           location?: string | null
           meet_url?: string | null
           owner_user_id?: string | null
+          project_id?: string | null
           provider?: string
           provider_event_id?: string | null
           recurrence?: string | null
@@ -283,12 +289,15 @@ export type Database = {
           attendees?: Json | null
           color?: string | null
           created_at?: string | null
+          deal_id?: string | null
           description?: string | null
           end_at?: string
+          event_type?: string | null
           id?: string
           location?: string | null
           meet_url?: string | null
           owner_user_id?: string | null
+          project_id?: string | null
           provider?: string
           provider_event_id?: string | null
           recurrence?: string | null
@@ -302,7 +311,22 @@ export type Database = {
           visibility?: string | null
           workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campaign_creatives: {
         Row: {
@@ -2314,6 +2338,134 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      project_stages: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          created_at: string | null
+          id: string
+          order_index: number
+          planned_end: string | null
+          planned_start: string | null
+          project_id: string
+          stage_key: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string | null
+          id?: string
+          order_index: number
+          planned_end?: string | null
+          planned_start?: string | null
+          project_id: string
+          stage_key: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string | null
+          id?: string
+          order_index?: number
+          planned_end?: string | null
+          planned_start?: string | null
+          project_id?: string
+          stage_key?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_stages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          client_name: string
+          contract_value: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          has_payment_block: boolean | null
+          health_score: number | null
+          id: string
+          name: string
+          owner_id: string | null
+          owner_name: string | null
+          stage_current: string
+          start_date: string | null
+          status: string | null
+          template: string | null
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          client_name: string
+          contract_value?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          has_payment_block?: boolean | null
+          health_score?: number | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          owner_name?: string | null
+          stage_current?: string
+          start_date?: string | null
+          status?: string | null
+          template?: string | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          client_name?: string
+          contract_value?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          has_payment_block?: boolean | null
+          health_score?: number | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          owner_name?: string | null
+          stage_current?: string
+          start_date?: string | null
+          status?: string | null
+          template?: string | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       proposal_acceptance: {
         Row: {

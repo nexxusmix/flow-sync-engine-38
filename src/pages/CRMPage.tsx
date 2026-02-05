@@ -1,21 +1,10 @@
 import { useState, useRef, MouseEvent } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KanbanColumn } from "@/components/crm/KanbanColumn";
-import { Deal } from "@/components/crm/KanbanCard";
-import { Filter, ChevronDown, Plus, Sparkles, Users } from "lucide-react";
+import { useCRM, CRM_STAGES, Deal } from "@/hooks/useCRM";
+import { Filter, ChevronDown, Plus, Sparkles, Users, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-
-const stages = [
-  { id: 'lead', title: 'Leads', color: 'bg-zinc-500' },
-  { id: 'qualificacao', title: 'Qualificação', color: 'bg-blue-500' },
-  { id: 'diagnostico', title: 'Diagnóstico', color: 'bg-indigo-500' },
-  { id: 'proposta', title: 'Proposta', color: 'bg-amber-500' },
-  { id: 'negociacao', title: 'Negociação', color: 'bg-orange-500' },
-  { id: 'fechado', title: 'Fechado', color: 'bg-emerald-500' },
-  { id: 'onboarding', title: 'Onboarding', color: 'bg-purple-500' },
-  { id: 'posvenda', title: 'Pós-Venda', color: 'bg-pink-500' }
-];
 
 export default function CRMPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -24,8 +13,7 @@ export default function CRMPage() {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [activeView, setActiveView] = useState<'kanban' | 'lista'>('kanban');
   
-  // Empty state - no mock data
-  const [deals] = useState<Deal[]>([]);
+  const { deals, metrics, isLoading, moveDealToStage } = useCRM();
 
   const handleMouseDown = (e: MouseEvent) => {
     if (!scrollRef.current) return;
@@ -45,8 +33,34 @@ export default function CRMPage() {
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  const totalForecast = deals.reduce((acc, deal) => acc + deal.value, 0);
+  // Transform deals for KanbanColumn format
+  const transformedDeals = deals.map(deal => ({
+    id: deal.id,
+    title: deal.title,
+    company: deal.company,
+    value: deal.value,
+    probability: deal.probability,
+    stage: deal.stage,
+    initials: deal.prospectName.split(' ').map(n => n[0]).slice(0, 2),
+    daysInStage: 0,
+    nextAction: null,
+    score: 0,
+    tags: [] as string[],
+    ownerInitials: 'SQ',
+    lastActivity: new Date().toISOString(),
+  }));
+
   const hasDeals = deals.length > 0;
+
+  if (isLoading) {
+    return (
+      <DashboardLayout title="Cine CRM">
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Cine CRM">
@@ -98,7 +112,7 @@ export default function CRMPage() {
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-[10px] font-black text-primary uppercase tracking-wider">
-                Forecast: R$ {(totalForecast / 1000).toFixed(0)}.000
+                Forecast: R$ {(metrics.forecast / 1000).toFixed(0)}.000
               </span>
             </div>
 
@@ -121,13 +135,13 @@ export default function CRMPage() {
             onMouseMove={handleMouseMove}
           >
             <div className="flex gap-4 min-w-max p-1">
-              {stages.map(stage => (
+              {CRM_STAGES.map(stage => (
                 <KanbanColumn
                   key={stage.id}
                   title={stage.title}
                   color={stage.color}
-                  count={deals.filter(d => d.stage === stage.id).length}
-                  deals={deals.filter(d => d.stage === stage.id)}
+                  count={transformedDeals.filter(d => d.stage === stage.id).length}
+                  deals={transformedDeals.filter(d => d.stage === stage.id)}
                 />
               ))}
             </div>
