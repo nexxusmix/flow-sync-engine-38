@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SQUAD Hub - Polo-inspired Premium Dark Design System */
+/* SQUAD Hub - Polo-inspired Ultra Dark Design System */
 
 @layer base {
   :root {
@@ -56,38 +56,38 @@
   }
 
   .dark {
-    /* Polo-inspired ultra dark backgrounds */
-    --background: 0 0% 2%;
-    --foreground: 0 0% 100%;
+    /* Polo exact colors */
+    --background: 0 0% 2%;        /* #050505 */
+    --foreground: 0 0% 100%;      /* #ffffff */
 
-    /* Surface cards - slightly elevated */
-    --card: 0 0% 7%;
+    /* Surface/Card - elevated */
+    --card: 0 0% 7%;              /* #121212 */
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 9%;
+    --popover: 0 0% 7%;
     --popover-foreground: 0 0% 100%;
 
-    /* Primary - Clean white accent */
+    /* Primary - Clean white */
     --primary: 0 0% 100%;
     --primary-foreground: 0 0% 2%;
 
     /* Secondary - Subtle surface */
-    --secondary: 0 0% 12%;
+    --secondary: 0 0% 10%;        /* Slightly lighter than card */
     --secondary-foreground: 0 0% 100%;
 
-    /* Muted - For backgrounds and disabled states */
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
+    /* Muted */
+    --muted: 0 0% 10%;
+    --muted-foreground: 220 14% 64%;  /* #9ca3af */
 
     /* Accent */
-    --accent: 0 0% 15%;
+    --accent: 0 0% 12%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive */
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders - Subtle separation */
+    /* Borders - Polo exact #272727 */
     --border: 0 0% 15%;
     --input: 0 0% 15%;
     --ring: 0 0% 100%;
@@ -100,14 +100,14 @@
     --info: 199 89% 55%;
     --info-foreground: 0 0% 100%;
 
-    /* Sidebar - Matching dark */
+    /* Sidebar - Same as background */
     --sidebar-background: 0 0% 2%;
-    --sidebar-foreground: 0 0% 65%;
+    --sidebar-foreground: 220 14% 64%;
     --sidebar-primary: 0 0% 100%;
     --sidebar-primary-foreground: 0 0% 2%;
     --sidebar-accent: 0 0% 10%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 12%;
+    --sidebar-border: 0 0% 15%;
     --sidebar-ring: 0 0% 100%;
   }
 }
@@ -126,7 +126,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Custom scrollbar - Minimal */
+  /* Custom scrollbar - Minimal Polo style */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -141,23 +141,51 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
+    background: hsl(0 0% 25%);
+  }
+}
+
+@layer components {
+  /* Polo Card - Exact styling */
+  .polo-card {
+    @apply rounded-2xl border border-border bg-card p-6;
+    transition: border-color 0.2s ease;
+  }
+
+  .polo-card:hover {
+    border-color: hsl(0 0% 23%);
+  }
+
+  /* Polo Pill/Badge */
+  .polo-pill {
+    @apply inline-flex items-center px-4 py-1.5 rounded-full border border-border bg-transparent text-sm text-foreground;
+    transition: border-color 0.2s ease;
+  }
+
+  .polo-pill:hover {
+    border-color: hsl(0 0% 25%);
+  }
+
+  .polo-pill-active {
+    @apply polo-pill bg-card;
+  }
+
+  /* Polo Label - Uppercase section headers */
+  .polo-label {
+    @apply text-xs uppercase tracking-wider text-muted-foreground;
+    letter-spacing: 0.1em;
   }
 }
 
 @layer utilities {
-  /* Bento card styles */
+  /* Legacy bento card - maps to polo-card */
   .bento-card {
-    @apply rounded-2xl border border-border bg-card p-6 transition-all duration-300;
-  }
-
-  .bento-card:hover {
-    @apply border-muted-foreground/20;
+    @apply polo-card;
   }
 
   /* Subtle glow for interactive elements */
   .glow-hover:hover {
-    box-shadow: 0 0 30px -10px hsl(var(--primary) / 0.15);
+    box-shadow: 0 0 30px -10px hsl(var(--primary) / 0.1);
   }
 
   /* Glass effect */

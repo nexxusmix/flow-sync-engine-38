@@ -61,10 +61,10 @@ const typeConfig = {
 
 export function RecentActivityTimeline() {
   return (
-    <div className="bento-card h-full">
-      <h3 className="font-medium mb-5">Atividade Recente</h3>
+    <div className="polo-card h-full">
+      <span className="polo-label">Atividade Recente</span>
       
-      <div className="space-y-4">
+      <div className="space-y-4 mt-5">
         {mockActivities.map((activity, index) => {
           const config = typeConfig[activity.type];
           const Icon = config.icon;
@@ -73,7 +73,7 @@ export function RecentActivityTimeline() {
           return (
             <div key={activity.id} className="flex gap-3 group cursor-pointer">
               <div className="flex flex-col items-center">
-                <div className="p-1.5 rounded-lg bg-secondary">
+                <div className="p-1.5 rounded-lg bg-secondary border border-border">
                   <Icon className={cn("h-3.5 w-3.5", config.color)} />
                 </div>
                 {!isLast && (

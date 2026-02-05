@@ -5,16 +5,16 @@ export function WelcomeCard() {
   const greeting = currentHour < 12 ? "Bom dia" : currentHour < 18 ? "Boa tarde" : "Boa noite";
 
   return (
-    <div className="bento-card bg-gradient-to-br from-card to-secondary/30">
+    <div className="polo-card h-full">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-muted-foreground text-sm">{greeting}! 👋</p>
-          <h1 className="text-2xl font-semibold mt-1 tracking-tight">Dashboard</h1>
+          <span className="polo-label">{greeting} 👋</span>
+          <h1 className="text-2xl font-semibold mt-2 tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-2">
             Visão geral do seu negócio
           </p>
         </div>
-        <div className="p-3 rounded-2xl bg-secondary">
+        <div className="p-3 rounded-xl bg-secondary border border-border">
           <Sparkles className="h-5 w-5 text-muted-foreground" />
         </div>
       </div>

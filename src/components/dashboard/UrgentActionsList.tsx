@@ -52,11 +52,11 @@ const typeConfig = {
 
 export function UrgentActionsList() {
   return (
-    <div className="bento-card h-full">
+    <div className="polo-card h-full">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-warning" />
-          <h3 className="font-medium">Ações Urgentes</h3>
+          <span className="polo-label">Ações Urgentes</span>
         </div>
         <span className="text-xs text-muted-foreground">{mockActions.length} pendentes</span>
       </div>
@@ -69,7 +69,7 @@ export function UrgentActionsList() {
           return (
             <div
               key={action.id}
-              className="group flex items-start gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
+              className="group flex items-start gap-3 p-3 rounded-xl bg-secondary/50 border border-transparent hover:border-border transition-colors cursor-pointer"
             >
               <Icon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
               <div className="flex-1 min-w-0">
