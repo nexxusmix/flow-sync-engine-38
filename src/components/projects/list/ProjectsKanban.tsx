@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { Project, ProjectStageType } from "@/types/projects";
 import { PROJECT_STAGES, STAGE_COLORS, STATUS_CONFIG } from "@/data/projectTemplates";
-import { Ban, Plus, ChevronRight, Globe } from "lucide-react";
+import { Ban, Plus, ChevronRight, Globe, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -17,12 +18,20 @@ function HealthBar({ score }: { score: number }) {
           style={{ width: `${score}%` }}
         />
       </div>
-      <span className="text-[10px] font-bold text-muted-foreground">{score}%</span>
+      <span className="text-[10px] font-medium text-muted-foreground">{score}%</span>
     </div>
   );
 }
 
-function KanbanCard({ project }: { project: Project }) {
+function KanbanCard({ 
+  project, 
+  onDragStart,
+  isDragging 
+}: { 
+  project: Project;
+  onDragStart: (e: React.DragEvent, project: Project) => void;
+  isDragging: boolean;
+}) {
   const navigate = useNavigate();
   const statusConfig = STATUS_CONFIG[project.status];
 
@@ -36,14 +45,19 @@ function KanbanCard({ project }: { project: Project }) {
 
   return (
     <div 
-      className="glass-card rounded-xl p-4 cursor-pointer hover:bg-muted/30 transition-all group border border-transparent hover:border-primary/20"
+      draggable
+      onDragStart={(e) => onDragStart(e, project)}
+      className={`glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-all group border border-transparent hover:border-primary/20 ${
+        isDragging ? 'opacity-50 scale-95' : ''
+      }`}
       onClick={() => navigate(`/projetos/${project.id}`)}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      {/* Drag Handle */}
+      <div className="flex items-center gap-2 mb-3">
+        <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[10px] text-primary font-bold uppercase">{project.client.company}</span>
+            <span className="text-[10px] text-primary font-medium uppercase">{project.client.company}</span>
             {project.portalLink?.isActive && (
               <Globe className="w-3 h-3 text-primary" />
             )}
@@ -59,7 +73,7 @@ function KanbanCard({ project }: { project: Project }) {
 
       {/* Value & Status */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-foreground">{formatCurrency(project.contractValue)}</span>
+        <span className="text-sm font-medium text-foreground">{formatCurrency(project.contractValue)}</span>
         <span className={`text-[9px] px-2 py-0.5 rounded border font-medium ${statusConfig.color}`}>
           {statusConfig.label}
         </span>
@@ -97,47 +111,84 @@ function KanbanCard({ project }: { project: Project }) {
 
 function KanbanColumn({ 
   stage, 
-  projects 
+  projects,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  draggedProject,
 }: { 
   stage: { type: ProjectStageType; name: string }; 
-  projects: Project[] 
+  projects: Project[];
+  onDragStart: (e: React.DragEvent, project: Project) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, stageType: ProjectStageType) => void;
+  draggedProject: Project | null;
 }) {
   const { setNewProjectModalOpen } = useProjectsStore();
   const stageColor = STAGE_COLORS[stage.type];
+  const [isDragOver, setIsDragOver] = useState(false);
 
-  // Calculate column totals
   const totalValue = projects.reduce((acc, p) => acc + p.contractValue, 0);
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+    onDragOver(e);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    setIsDragOver(false);
+    onDrop(e, stage.type);
+  };
+
   return (
-    <div className="flex-shrink-0 w-72 md:w-80">
+    <div 
+      className="flex-shrink-0 w-72 md:w-80"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Column Header */}
       <div className="glass-card rounded-t-2xl p-4 border-b-0">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className={`w-2.5 h-2.5 rounded-full ${stageColor}`} />
-            <h3 className="font-semibold text-foreground text-sm">{stage.name}</h3>
+            <h3 className="font-medium text-foreground text-sm">{stage.name}</h3>
           </div>
-          <span className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
+          <span className="text-xs font-medium text-foreground bg-muted px-2 py-0.5 rounded-full">
             {projects.length}
           </span>
         </div>
-        <p className="text-[10px] text-muted-foreground font-medium">
+        <p className="text-[10px] text-muted-foreground font-light">
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(totalValue)}
         </p>
       </div>
 
       {/* Column Content */}
-      <div className="glass-card rounded-b-2xl rounded-t-none p-3 space-y-3 max-h-[calc(100vh-380px)] overflow-y-auto custom-scrollbar">
+      <div className={`glass-card rounded-b-2xl rounded-t-none p-3 space-y-3 max-h-[calc(100vh-380px)] overflow-y-auto custom-scrollbar transition-all ${
+        isDragOver ? 'bg-primary/5 border-primary/30' : ''
+      }`}>
         {projects.map(project => (
-          <KanbanCard key={project.id} project={project} />
+          <KanbanCard 
+            key={project.id} 
+            project={project} 
+            onDragStart={onDragStart}
+            isDragging={draggedProject?.id === project.id}
+          />
         ))}
 
         {projects.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className={`text-center py-8 text-muted-foreground rounded-xl transition-all ${
+            isDragOver ? 'bg-primary/10 border-2 border-dashed border-primary/30' : ''
+          }`}>
             <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
               <ChevronRight className="w-5 h-5" />
             </div>
-            <p className="text-sm">Nenhum projeto</p>
+            <p className="text-sm font-light">{isDragOver ? 'Solte aqui' : 'Nenhum projeto'}</p>
           </div>
         )}
 
@@ -157,21 +208,48 @@ function KanbanColumn({
 }
 
 export function ProjectsKanban() {
-  const { getFilteredProjects } = useProjectsStore();
+  const { getFilteredProjects, moveProjectToStage } = useProjectsStore();
   const projects = getFilteredProjects();
+  const [draggedProject, setDraggedProject] = useState<Project | null>(null);
 
   const getProjectsByStage = (stageType: ProjectStageType) => {
     return projects.filter(p => p.currentStage === stageType);
   };
 
+  const handleDragStart = (e: React.DragEvent, project: Project) => {
+    setDraggedProject(project);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, stageType: ProjectStageType) => {
+    e.preventDefault();
+    if (draggedProject && draggedProject.currentStage !== stageType) {
+      moveProjectToStage(draggedProject.id, stageType);
+    }
+    setDraggedProject(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedProject(null);
+  };
+
   return (
-    <ScrollArea className="w-full pb-4">
+    <ScrollArea className="w-full pb-4" onDragEnd={handleDragEnd}>
       <div className="flex gap-4 min-w-max pb-4 px-1">
         {PROJECT_STAGES.map(stage => (
           <KanbanColumn 
             key={stage.type} 
             stage={stage} 
-            projects={getProjectsByStage(stage.type)} 
+            projects={getProjectsByStage(stage.type)}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            draggedProject={draggedProject}
           />
         ))}
       </div>

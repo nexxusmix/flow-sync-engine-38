@@ -52,6 +52,7 @@ interface ProjectsState {
   // Stages
   updateStage: (projectId: string, stageId: string, data: Partial<ProjectStage>) => void;
   advanceStage: (projectId: string) => void;
+  moveProjectToStage: (projectId: string, newStage: ProjectStageType) => void;
   
   // Portal
   generatePortalLink: (projectId: string) => void;
@@ -395,6 +396,36 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
                 entityType: 'stage',
                 entityId: nextStage.id,
                 description: `Projeto avançou para etapa: ${nextStage.name}`,
+              }],
+              updatedAt: new Date().toISOString(),
+            }
+          : p
+      ),
+    };
+  }),
+
+  moveProjectToStage: (projectId, newStage) => set((state) => {
+    const project = state.projects.find(p => p.id === projectId);
+    if (!project) return state;
+
+    const stageName = PROJECT_STAGES.find(s => s.type === newStage)?.name || newStage;
+
+    return {
+      projects: state.projects.map(p => 
+        p.id === projectId 
+          ? {
+              ...p,
+              currentStage: newStage,
+              auditLogs: [...p.auditLogs, {
+                id: `${projectId}-log-${Date.now()}`,
+                projectId,
+                timestamp: new Date().toISOString(),
+                actor: 'Sistema',
+                actorType: 'system',
+                action: 'stage_change',
+                entityType: 'stage',
+                entityId: newStage,
+                description: `Projeto movido para etapa: ${stageName}`,
               }],
               updatedAt: new Date().toISOString(),
             }
