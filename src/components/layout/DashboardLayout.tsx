@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SearchModal } from "../search/SearchModal";
 import { AICommandButton } from "../ai/AICommandButton";
+import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Default collapsed
 
   // Cmd+K handler
   useEffect(() => {
@@ -34,11 +36,16 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       <div className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]" />
       <div className="blob w-[800px] h-[800px] bg-white bottom-[-20%] right-[-10%] opacity-5" />
       
-      <Sidebar />
-      <div className="ml-20 md:ml-64 relative z-10">
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      
+      <div className={cn(
+        "relative z-10 transition-all duration-300",
+        sidebarCollapsed ? "ml-16" : "ml-64"
+      )}>
         <Header title={title} onOpenSearch={() => setSearchOpen(true)} />
-        <main className="p-6 md:p-12 max-w-[1800px] mx-auto preserve-3d">{children}</main>
+        <main className="p-6 md:p-10 max-w-[1800px] mx-auto preserve-3d">{children}</main>
       </div>
+      
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       
       {/* Floating AI Command Button */}
