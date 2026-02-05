@@ -31,19 +31,14 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
     setInput('');
     setLoading(true);
 
-    // Mock AI response for now
+    // TODO: Integrar com Lovable AI quando configurado
     setTimeout(() => {
-      const mockResponses = [
-        "Analisando os dados do pipeline, você tem 3 deals quentes que precisam de follow-up urgente.",
-        "Detectei que há R$ 45.000 em inadimplência na faixa D+7. Recomendo priorizar essas cobranças.",
-        "O projeto 'Horizonte V' está em risco. O briefing ainda não foi completado pelo cliente.",
-        "Você tem 2 propostas aguardando assinatura há mais de 24h. Deseja que eu envie um lembrete?",
-        "O cash flow previsto para os próximos 7 dias está positivo em R$ 128.000.",
-      ];
-      const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
-      setMessages(prev => [...prev, { role: 'ai', content: randomResponse }]);
+      setMessages(prev => [...prev, { 
+        role: 'ai', 
+        content: "O assistente IA está em desenvolvimento. Esta funcionalidade estará disponível em breve com inteligência artificial real para ajudá-lo a gerenciar seus projetos, análises e muito mais." 
+      }]);
       setLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   return (

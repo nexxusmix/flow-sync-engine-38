@@ -2,9 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Building2, Users, Shield, FolderKanban, DollarSign, FileText, FileSignature,
-  Megaphone, Target, Plug, Bell, Palette, ScrollText, ArrowRight, AlertTriangle
+  Megaphone, Target, Plug, Bell, Palette, ScrollText, AlertTriangle
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const settingsSections = [
   {
@@ -15,6 +16,7 @@ const settingsSections = [
     path: '/configuracoes/workspace',
     color: 'text-primary',
     bgColor: 'bg-primary/10',
+    adminOnly: false,
   },
   {
     id: 'users',
@@ -24,6 +26,7 @@ const settingsSections = [
     path: '/configuracoes/usuarios',
     color: 'text-blue-500',
     bgColor: 'bg-blue-500/10',
+    adminOnly: false,
   },
   {
     id: 'roles',
@@ -33,6 +36,7 @@ const settingsSections = [
     path: '/configuracoes/papeis',
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
+    adminOnly: false,
   },
   {
     id: 'projects',
@@ -42,6 +46,7 @@ const settingsSections = [
     path: '/configuracoes/projetos',
     color: 'text-violet-500',
     bgColor: 'bg-violet-500/10',
+    adminOnly: false,
   },
   {
     id: 'finance',
@@ -51,6 +56,7 @@ const settingsSections = [
     path: '/configuracoes/financeiro',
     color: 'text-emerald-500',
     bgColor: 'bg-emerald-500/10',
+    adminOnly: false,
   },
   {
     id: 'proposals',
@@ -60,6 +66,7 @@ const settingsSections = [
     path: '/configuracoes/propostas',
     color: 'text-cyan-500',
     bgColor: 'bg-cyan-500/10',
+    adminOnly: false,
   },
   {
     id: 'contracts',
@@ -69,6 +76,7 @@ const settingsSections = [
     path: '/configuracoes/contratos',
     color: 'text-pink-500',
     bgColor: 'bg-pink-500/10',
+    adminOnly: false,
   },
   {
     id: 'marketing',
@@ -78,6 +86,7 @@ const settingsSections = [
     path: '/configuracoes/marketing',
     color: 'text-orange-500',
     bgColor: 'bg-orange-500/10',
+    adminOnly: false,
   },
   {
     id: 'prospecting',
@@ -87,6 +96,7 @@ const settingsSections = [
     path: '/configuracoes/prospeccao',
     color: 'text-red-500',
     bgColor: 'bg-red-500/10',
+    adminOnly: false,
   },
   {
     id: 'integrations',
@@ -96,6 +106,7 @@ const settingsSections = [
     path: '/configuracoes/integracoes',
     color: 'text-indigo-500',
     bgColor: 'bg-indigo-500/10',
+    adminOnly: false,
   },
   {
     id: 'notifications',
@@ -105,6 +116,7 @@ const settingsSections = [
     path: '/configuracoes/notificacoes',
     color: 'text-yellow-500',
     bgColor: 'bg-yellow-500/10',
+    adminOnly: false,
   },
   {
     id: 'branding',
@@ -114,6 +126,7 @@ const settingsSections = [
     path: '/configuracoes/branding',
     color: 'text-fuchsia-500',
     bgColor: 'bg-fuchsia-500/10',
+    adminOnly: false,
   },
   {
     id: 'audit',
@@ -123,6 +136,7 @@ const settingsSections = [
     path: '/configuracoes/auditoria',
     color: 'text-slate-500',
     bgColor: 'bg-slate-500/10',
+    adminOnly: false,
   },
   {
     id: 'danger-zone',
@@ -132,11 +146,19 @@ const settingsSections = [
     path: '/configuracoes/danger-zone',
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
+    adminOnly: true,
   },
 ];
 
 export default function SettingsDashboard() {
   const navigate = useNavigate();
+  const { isAdmin } = useUserRole();
+
+  // Filtrar seções baseado em permissão
+  const visibleSections = settingsSections.filter(section => {
+    if (section.adminOnly) return isAdmin;
+    return true;
+  });
 
   return (
     <DashboardLayout title="Configurações">
@@ -151,7 +173,7 @@ export default function SettingsDashboard() {
 
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {settingsSections.map((section) => {
+          {visibleSections.map((section) => {
             const Icon = section.icon;
             return (
               <Card
