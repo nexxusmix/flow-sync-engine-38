@@ -3,6 +3,8 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { AIChatSnippet } from "@/components/dashboard/AIChatSnippet";
 import { ActionsList } from "@/components/dashboard/ActionsList";
+import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
+import { dashboardMilestones } from "@/data/timelineMockData";
 import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap, Activity, Inbox, Eye, HardDrive } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -123,6 +125,9 @@ export default function Dashboard() {
             />
           ))}
         </div>
+
+        {/* Timeline Forecast 30D */}
+        <TimelineForecast30D milestones={dashboardMilestones} />
 
         {/* Visual Board Section - PROJETOS */}
         <div className="glass-card rounded-[2rem] p-6">

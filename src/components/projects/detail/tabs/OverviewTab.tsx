@@ -1,5 +1,7 @@
 import { Project } from "@/types/projects";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
+import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
+import { getProjectMilestones } from "@/data/timelineMockData";
 import { 
   AlertTriangle, 
   ArrowRight, 
@@ -218,6 +220,12 @@ export function OverviewTab({ project }: OverviewTabProps) {
           <p className="text-[10px] text-muted-foreground">Margem Projeto</p>
         </div>
       </div>
+
+      {/* Timeline Forecast 30D */}
+      <TimelineForecast30D 
+        milestones={getProjectMilestones(project.id)} 
+        projectId={project.id}
+      />
 
       {/* Visual Board Section */}
       <div className="glass-card rounded-2xl p-4 md:p-6">
