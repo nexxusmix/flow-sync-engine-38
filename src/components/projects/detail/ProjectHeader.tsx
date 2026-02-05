@@ -1,4 +1,5 @@
-import { ProjectWithStages, useProjects } from "@/hooks/useProjects";
+import { ProjectWithStages } from "@/hooks/useProjects";
+import { usePortalLink } from "@/hooks/usePortalLink";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { 
   Calendar, 
@@ -9,6 +10,7 @@ import {
   AlertTriangle,
   Activity,
   Copy,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
@@ -23,6 +25,10 @@ interface ProjectHeaderProps {
 
 export function ProjectHeader({ project }: ProjectHeaderProps) {
   const { setSelectedProjectId, setEditProjectModalOpen } = useProjectsStore();
+  const { portalLink, portalUrl, isLoading: portalLoading, createLink } = usePortalLink(project.id, {
+    name: project.name,
+    clientName: project.client_name || undefined,
+  });
   
   const stageInfo = PROJECT_STAGES.find(s => s.type === project.stage_current);
   const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG];
@@ -49,12 +55,40 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
     setEditProjectModalOpen(true);
   };
 
-  const handleOpenPortal = () => {
-    toast.info('Portal do cliente será implementado em breve');
+  const handleOpenPortal = async () => {
+    if (!portalLink) {
+      // Create portal link first
+      createLink.mutate(undefined, {
+        onSuccess: (data) => {
+          const url = `${window.location.origin}/client/${data.share_token}`;
+          window.open(url, '_blank');
+        }
+      });
+      return;
+    }
+    
+    if (portalUrl) {
+      window.open(portalUrl, '_blank');
+    }
   };
 
-  const handleCopyPortalLink = () => {
-    toast.info('Link do portal será implementado em breve');
+  const handleCopyPortalLink = async () => {
+    if (!portalLink) {
+      // Create portal link first
+      createLink.mutate(undefined, {
+        onSuccess: (data) => {
+          const url = `${window.location.origin}/client/${data.share_token}`;
+          navigator.clipboard.writeText(url);
+          toast.success('Link copiado para a área de transferência!');
+        }
+      });
+      return;
+    }
+    
+    if (portalUrl) {
+      navigator.clipboard.writeText(portalUrl);
+      toast.success('Link copiado para a área de transferência!');
+    }
   };
 
   return (
@@ -92,12 +126,31 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
           {/* Right - Quick Actions */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleCopyPortalLink} className="h-9 hidden sm:flex">
-              <Copy className="w-4 h-4 mr-2" />
-              Copiar Link
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCopyPortalLink} 
+              disabled={createLink.isPending}
+              className="h-9 hidden sm:flex"
+            >
+              {createLink.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Copy className="w-4 h-4 mr-2" />
+              )}
+              {portalLink ? 'Copiar Link' : 'Gerar Link'}
             </Button>
-            <Button size="sm" onClick={handleOpenPortal} className="h-9 hidden sm:flex">
-              <ExternalLink className="w-4 h-4 mr-2" />
+            <Button 
+              size="sm" 
+              onClick={handleOpenPortal} 
+              disabled={createLink.isPending}
+              className="h-9 hidden sm:flex"
+            >
+              {createLink.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <ExternalLink className="w-4 h-4 mr-2" />
+              )}
               Portal do Cliente
             </Button>
             <ProjectActionsMenu

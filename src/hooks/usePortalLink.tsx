@@ -33,7 +33,7 @@ function generateToken(): string {
   return token;
 }
 
-export function usePortalLink(projectId: string | undefined) {
+export function usePortalLink(projectId: string | undefined, projectData?: { name?: string; clientName?: string }) {
   const queryClient = useQueryClient();
 
   const { data: portalLink, isLoading, error } = useQuery({
@@ -81,6 +81,8 @@ export function usePortalLink(projectId: string | undefined) {
           project_id: projectId,
           share_token: generateToken(),
           is_active: true,
+          project_name: projectData?.name || null,
+          client_name: projectData?.clientName || null,
         })
         .select()
         .single();
@@ -222,7 +224,7 @@ export function usePortalLink(projectId: string | undefined) {
 
   // Generate portal URL
   const portalUrl = portalLink?.share_token 
-    ? `${window.location.origin}/portal/${portalLink.share_token}`
+    ? `${window.location.origin}/client/${portalLink.share_token}`
     : null;
 
   return {
