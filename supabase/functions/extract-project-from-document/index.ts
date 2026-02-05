@@ -12,6 +12,20 @@ interface ExtractRequest {
   documentType?: 'contract' | 'proposal' | 'general';
 }
 
+interface PaymentMilestone {
+  title: string;
+  percentage: number;
+  dueDate?: string;
+  trigger?: string; // ex: "Na assinatura", "Na entrega", "30 dias após início"
+}
+
+interface StageSchedule {
+  stage: string;
+  plannedStart: string;
+  plannedEnd: string;
+  duration: number; // days
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -45,7 +59,18 @@ serve(async (req) => {
               content: [
                 {
                   type: "text",
-                  text: `Analise este documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes para criar um projeto audiovisual. Extraia: nome do projeto, nome do cliente, empresa, valor do contrato, data de início, data de entrega, tipo de serviço (filme institucional, vídeo produto, aftermovie, pacote de reels, fotos, tour 360, motion/vinheta), escopo detalhado, entregas previstas. Seja detalhado.`
+                  text: `Analise este documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes para criar um projeto audiovisual.
+
+Extraia com atenção especial:
+1. DADOS DO PROJETO: nome, tipo de serviço, escopo detalhado
+2. DADOS DO CLIENTE: nome, empresa, email, telefone, CNPJ/CPF
+3. VALORES E PAGAMENTO: valor total, condições de pagamento, parcelas (quantas, valores, datas de vencimento, gatilhos como "na assinatura", "na entrega", etc.)
+4. PRAZOS: data de início, prazo de cada etapa (se mencionado), data de entrega final
+5. ENTREGAS: lista de arquivos/formatos a entregar
+6. LIMITE DE REVISÕES: número de revisões incluídas
+7. OBSERVAÇÕES: cláusulas especiais, restrições, requisitos técnicos
+
+Seja EXTREMAMENTE detalhado na extração de informações de pagamento e prazos.`
                 },
                 {
                   type: "image_url",
@@ -87,7 +112,15 @@ serve(async (req) => {
                 content: [
                   {
                     type: "text",
-                    text: `Analise esta imagem de um documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes para criar um projeto audiovisual. Extraia: nome do projeto, nome do cliente, empresa, valor do contrato, data de início, data de entrega, tipo de serviço, escopo, entregas. Seja detalhado e extraia todos os textos visíveis.`
+                    text: `Analise esta imagem de um documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes.
+
+Extraia com atenção especial:
+1. DADOS DO PROJETO E CLIENTE
+2. VALORES E CONDIÇÕES DE PAGAMENTO (parcelas, datas, gatilhos)
+3. PRAZOS E CRONOGRAMA
+4. ENTREGAS PREVISTAS
+
+Seja detalhado e extraia todos os textos visíveis relacionados a valores, datas e prazos.`
                   },
                   {
                     type: "image_url",
@@ -126,22 +159,39 @@ serve(async (req) => {
       });
     }
 
-    // Now extract structured data using tool calling
-    const structuredPrompt = `Baseado nas informações extraídas abaixo, estruture os dados do projeto audiovisual.
+    // Now extract structured data using tool calling with expanded schema
+    const structuredPrompt = `Baseado nas informações extraídas abaixo, estruture os dados COMPLETOS do projeto audiovisual.
 
 CONTEÚDO EXTRAÍDO:
 ${extractedContent}
 
 TEMPLATES DISPONÍVEIS (escolha o mais adequado):
-- filme_institucional: Filme Institucional
-- filme_produto: Vídeo Produto  
-- aftermovie: Aftermovie/Cobertura de Evento
-- reels_pacote: Pacote de Reels
-- foto_pacote: Pacote de Fotos
-- tour_360: Tour Virtual 360
-- motion_vinheta: Motion Graphics/Vinheta
+- filme_institucional: Filme Institucional (SLA padrão: 30 dias)
+- filme_produto: Vídeo Produto (SLA padrão: 21 dias)
+- aftermovie: Aftermovie/Cobertura de Evento (SLA padrão: 14 dias)
+- reels_pacote: Pacote de Reels (SLA padrão: 7 dias)
+- foto_pacote: Pacote de Fotos (SLA padrão: 5 dias)
+- tour_360: Tour Virtual 360 (SLA padrão: 10 dias)
+- motion_vinheta: Motion Graphics/Vinheta (SLA padrão: 14 dias)
 
-Extraia e retorne os dados estruturados.`;
+ETAPAS POSSÍVEIS (para cronograma):
+- briefing: Briefing
+- roteiro: Roteiro
+- pre_producao: Pré-produção
+- captacao: Captação
+- edicao: Edição
+- revisao: Revisão
+- aprovacao: Aprovação
+- entrega: Entrega
+- pos_venda: Pós-venda
+
+IMPORTANTE:
+1. Se houver informações de pagamento em parcelas, extraia CADA parcela com porcentagem/valor e data ou gatilho
+2. Se houver cronograma detalhado, extraia as datas de cada etapa
+3. Calcule datas baseado no SLA padrão do template se não houver datas específicas
+4. A data de hoje é: ${new Date().toISOString().split('T')[0]}
+
+Extraia e retorne os dados estruturados COMPLETOS.`;
 
     const structuredResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -152,7 +202,7 @@ Extraia e retorne os dados estruturados.`;
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados de documentos." },
+          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados COMPLETOS de documentos, incluindo cronograma e pagamentos." },
           { role: "user", content: structuredPrompt }
         ],
         tools: [
@@ -160,7 +210,7 @@ Extraia e retorne os dados estruturados.`;
             type: "function",
             function: {
               name: "create_project",
-              description: "Cria um projeto com os dados extraídos do documento",
+              description: "Cria um projeto COMPLETO com todos os dados extraídos do documento",
               parameters: {
                 type: "object",
                 properties: {
@@ -180,6 +230,14 @@ Extraia e retorne os dados estruturados.`;
                     type: "string", 
                     description: "Email do cliente (se disponível)" 
                   },
+                  clientPhone: { 
+                    type: "string", 
+                    description: "Telefone do cliente (se disponível)" 
+                  },
+                  clientDocument: { 
+                    type: "string", 
+                    description: "CNPJ ou CPF do cliente (se disponível)" 
+                  },
                   template: { 
                     type: "string", 
                     enum: ["filme_institucional", "filme_produto", "aftermovie", "reels_pacote", "foto_pacote", "tour_360", "motion_vinheta"],
@@ -187,7 +245,7 @@ Extraia e retorne os dados estruturados.`;
                   },
                   contractValue: { 
                     type: "number", 
-                    description: "Valor do contrato em reais (apenas número, sem R$)" 
+                    description: "Valor TOTAL do contrato em reais (apenas número, sem R$)" 
                   },
                   startDate: { 
                     type: "string", 
@@ -195,7 +253,7 @@ Extraia e retorne os dados estruturados.`;
                   },
                   deliveryDate: { 
                     type: "string", 
-                    description: "Data de entrega estimada no formato YYYY-MM-DD" 
+                    description: "Data de entrega FINAL estimada no formato YYYY-MM-DD" 
                   },
                   scope: { 
                     type: "string", 
@@ -203,16 +261,53 @@ Extraia e retorne os dados estruturados.`;
                   },
                   deliverables: { 
                     type: "array",
-                    items: { type: "string" },
-                    description: "Lista de entregas previstas" 
+                    items: { 
+                      type: "object",
+                      properties: {
+                        title: { type: "string", description: "Nome da entrega" },
+                        type: { type: "string", enum: ["video", "imagem", "pdf", "zip", "audio", "outro"], description: "Tipo do arquivo" }
+                      }
+                    },
+                    description: "Lista de entregas previstas com tipo" 
+                  },
+                  paymentMilestones: { 
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string", description: "Nome do marco (ex: Entrada, Captação, Entrega Final)" },
+                        percentage: { type: "number", description: "Percentual do valor total (0-100)" },
+                        amount: { type: "number", description: "Valor em reais se especificado diretamente" },
+                        dueDate: { type: "string", description: "Data de vencimento YYYY-MM-DD se especificada" },
+                        trigger: { type: "string", description: "Gatilho (ex: Na assinatura, Após aprovação do roteiro, Na entrega)" }
+                      }
+                    },
+                    description: "Marcos de pagamento/parcelas extraídos do documento" 
+                  },
+                  stageSchedule: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        stage: { type: "string", enum: ["briefing", "roteiro", "pre_producao", "captacao", "edicao", "revisao", "aprovacao", "entrega", "pos_venda"] },
+                        plannedStart: { type: "string", description: "Data início YYYY-MM-DD" },
+                        plannedEnd: { type: "string", description: "Data fim YYYY-MM-DD" },
+                        durationDays: { type: "number", description: "Duração em dias" }
+                      }
+                    },
+                    description: "Cronograma planejado por etapa (se mencionado no documento ou calcule baseado no SLA)"
+                  },
+                  revisionLimit: {
+                    type: "number",
+                    description: "Número máximo de revisões incluídas no contrato"
                   },
                   paymentTerms: { 
                     type: "string", 
-                    description: "Condições de pagamento (se disponível)" 
+                    description: "Descrição geral das condições de pagamento" 
                   },
                   additionalNotes: { 
                     type: "string", 
-                    description: "Observações adicionais relevantes" 
+                    description: "Observações adicionais, cláusulas especiais, restrições" 
                   }
                 },
                 required: ["title", "template"],
@@ -248,7 +343,13 @@ Extraia e retorne os dados estruturados.`;
 
     const projectData = JSON.parse(toolCall.function.arguments);
 
-    console.log("Project data extracted:", projectData);
+    console.log("Project data extracted:", JSON.stringify(projectData, null, 2));
+
+    // Calculate milestone amounts if only percentages provided
+    const processedMilestones = (projectData.paymentMilestones || []).map((m: any) => ({
+      ...m,
+      amount: m.amount || (m.percentage && projectData.contractValue ? (m.percentage / 100) * projectData.contractValue : 0)
+    }));
 
     return new Response(JSON.stringify({
       success: true,
@@ -258,12 +359,17 @@ Extraia e retorne os dados estruturados.`;
         clientName: projectData.clientName || "",
         clientCompany: projectData.clientCompany || "",
         clientEmail: projectData.clientEmail || "",
+        clientPhone: projectData.clientPhone || "",
+        clientDocument: projectData.clientDocument || "",
         template: projectData.template || "filme_institucional",
         contractValue: projectData.contractValue || 0,
         startDate: projectData.startDate || new Date().toISOString().split('T')[0],
         deliveryDate: projectData.deliveryDate || "",
         scope: projectData.scope || "",
         deliverables: projectData.deliverables || [],
+        paymentMilestones: processedMilestones,
+        stageSchedule: projectData.stageSchedule || [],
+        revisionLimit: projectData.revisionLimit || 2,
         paymentTerms: projectData.paymentTerms || "",
         additionalNotes: projectData.additionalNotes || ""
       }
