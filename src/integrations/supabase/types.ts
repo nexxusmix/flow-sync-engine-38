@@ -1202,6 +1202,175 @@ export type Database = {
           },
         ]
       }
+      crm_contacts: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          id: string
+          instagram: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          tags: string[] | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_deals: {
+        Row: {
+          contact_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          lost_reason: string | null
+          next_action: string | null
+          next_action_at: string | null
+          project_id: string | null
+          score: number | null
+          source: string | null
+          stage_key: string | null
+          temperature: string | null
+          title: string
+          updated_at: string | null
+          value: number | null
+          workspace_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lost_reason?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
+          project_id?: string | null
+          score?: number | null
+          source?: string | null
+          stage_key?: string | null
+          temperature?: string | null
+          title: string
+          updated_at?: string | null
+          value?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lost_reason?: string | null
+          next_action?: string | null
+          next_action_at?: string | null
+          project_id?: string | null
+          score?: number | null
+          source?: string | null
+          stage_key?: string | null
+          temperature?: string | null
+          title?: string
+          updated_at?: string | null
+          value?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deals_stage_key_fkey"
+            columns: ["stage_key"]
+            isOneToOne: false
+            referencedRelation: "crm_stages"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      crm_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          key: string
+          order_index: number
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          key: string
+          order_index: number
+          title: string
+          workspace_id?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          key?: string
+          order_index?: number
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       deadlines: {
         Row: {
           assignee_id: string | null
