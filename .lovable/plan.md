@@ -1,131 +1,80 @@
 
-# Plano: Correção do Layout Global - Sidebar Fixa + Scroll no Conteúdo
+# Plano: Finalizar Limpeza de Dados Mock
 
-## Problema Identificado
+## 1. Corrigir Erro de Build (ScheduleTab.tsx)
 
-O layout atual tem os seguintes problemas:
+**Problema:** O tipo `status` está como `string` mas precisa ser um literal type.
 
-1. **Container raiz** usa `min-h-screen` permitindo que a página toda role
-2. **Área de conteúdo** não tem `overflow-y-auto` configurado corretamente
-3. **Scroll global** afeta toda a viewport ao invés de apenas o conteúdo
-
-## Estrutura Atual vs. Desejada
-
-```text
-ATUAL (problemático):
-┌──────────────────────────────────────────┐
-│ body (min-h-screen, scroll global)       │
-│ ┌────────┐ ┌──────────────────────────┐  │
-│ │Sidebar │ │ Header                   │  │
-│ │(fixed) │ ├──────────────────────────┤  │
-│ │        │ │ Content (sem scroll)     │  │
-│ │        │ │                          │  │
-│ └────────┘ └──────────────────────────┘  │
-└──────────────────────────────────────────┘
-                    ↕ scroll afeta tudo
-
-
-DESEJADO:
-┌──────────────────────────────────────────┐
-│ body (h-screen, overflow-hidden)         │
-│ ┌────────┐ ┌──────────────────────────┐  │
-│ │Sidebar │ │ Header (sticky)          │  │
-│ │(fixed) │ ├──────────────────────────┤  │
-│ │100%    │ │ Content                  │  │
-│ │altura  │ │   ↕ scroll apenas aqui   │  │
-│ │        │ │                          │  │
-│ └────────┘ └──────────────────────────┘  │
-└──────────────────────────────────────────┘
+**Correção:**
+```typescript
+status: (stage.status === 'concluido' ? 'done' : 
+         stage.status === 'em_andamento' ? 'in_progress' : 
+         'not_started') as 'done' | 'in_progress' | 'not_started' | 'blocked',
 ```
 
 ---
 
-## Alterações Técnicas
+## 2. Limpar CRMPage.tsx
 
-### 1. Atualizar `DashboardLayout.tsx`
+Remover os arrays mock `initialDeals` e `initialColumns` e substituir por estado vazio com empty state elegante.
 
-**De:**
-```tsx
-<div className="min-h-screen bg-background relative flex flex-col">
-  ...
-  <motion.div className="relative z-10 flex flex-col flex-1" ...>
-    <Header ... />
-    <motion.main className="p-6 md:p-10 max-w-[1800px] mx-auto preserve-3d flex-1 w-full">
-```
-
-**Para:**
-```tsx
-<div className="h-screen bg-background relative flex overflow-hidden">
-  ...
-  <motion.div className="relative z-10 flex flex-col flex-1 h-screen overflow-hidden" ...>
-    <Header ... />
-    <motion.main className="flex-1 overflow-y-auto p-6 md:p-10">
-      <div className="max-w-[1800px] mx-auto preserve-3d w-full min-h-full">
-        {children}
-      </div>
-    </motion.main>
-```
-
-**Mudanças principais:**
-- Container raiz: `h-screen` + `overflow-hidden` (impede scroll global)
-- Área direita: `h-screen` + `overflow-hidden` (define altura fixa)
-- Main: `flex-1 overflow-y-auto` (habilita scroll apenas aqui)
-- Conteúdo interno: `min-h-full` (garante preenchimento mínimo)
-
-### 2. Atualizar `index.css` - Regras de body
-
-**Adicionar/modificar:**
-```css
-body {
-  @apply bg-background text-foreground antialiased;
-  font-family: 'Host Grotesk', sans-serif;
-  font-weight: 300;
-  overflow: hidden; /* Impede scroll no body */
-  height: 100vh;
-}
-
-html {
-  scroll-behavior: smooth;
-  perspective: 1500px;
-  font-size: 115%;
-  overflow: hidden; /* Impede scroll horizontal */
-}
-```
-
-### 3. Adicionar utilitários CSS para consistência
-
-```css
-/* Layout utilities */
-.layout-fixed-sidebar {
-  @apply h-screen overflow-hidden;
-}
-
-.layout-main-scroll {
-  @apply flex-1 overflow-y-auto;
-}
-
-.layout-content-fill {
-  @apply min-h-full w-full;
-}
-```
+**Mudanças:**
+- Remover dados hardcoded de deals e contacts
+- Mostrar empty state: "Nenhum deal no CRM" com CTA "Criar Primeiro Deal"
+- Manter estrutura do Kanban para quando houver dados reais
 
 ---
 
-## Resumo das Alterações
+## 3. Criar Página Danger Zone (Settings)
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/layout/DashboardLayout.tsx` | Reestruturar container e overflow |
-| `src/index.css` | Adicionar `overflow: hidden` ao body e utilitários |
+**Novo arquivo:** `src/pages/settings/DangerZoneSettingsPage.tsx`
+
+**Funcionalidades:**
+- Botão "Zerar Plataforma" (vermelho, danger zone)
+- Modal de confirmação pedindo digitar "ZERAR"
+- Só visível para admin/dono
+- Chama edge function para limpar dados
 
 ---
 
-## Comportamento Final
+## 4. Criar Edge Function para Reset
 
-- Sidebar sempre visível e fixa (100% altura)
-- Header sticky dentro da área de conteúdo
-- Scroll vertical apenas no conteúdo principal
-- Sem scroll horizontal em nenhum lugar
-- Cards preenchem o grid corretamente
-- Nenhum espaço vazio não intencional
-- Consistência em todos os módulos (Dashboard, Projetos, CRM, etc.)
+**Novo arquivo:** `supabase/functions/platform-reset/index.ts`
+
+**Lógica:**
+- Verificar autenticação e role do usuário
+- Deletar dados das tabelas operacionais em ordem (respeitando FKs):
+  - content_ideas, campaigns, content_posts
+  - revenues, expenses, contracts, invoices
+  - proposals
+  - (outras tabelas conforme existirem)
+- Manter tabelas de configuração e usuários
+- Registrar log do reset
+
+---
+
+## 5. Atualizar Roteamento
+
+Adicionar rota `/configuracoes/danger-zone` no `App.tsx`
+
+---
+
+## Resumo de Arquivos
+
+| Arquivo | Ação |
+|---------|------|
+| `src/components/projects/detail/tabs/ScheduleTab.tsx` | Corrigir tipo |
+| `src/pages/CRMPage.tsx` | Remover mock, adicionar empty state |
+| `src/pages/settings/DangerZoneSettingsPage.tsx` | Criar novo |
+| `src/pages/settings/SettingsDashboard.tsx` | Adicionar link para Danger Zone |
+| `supabase/functions/platform-reset/index.ts` | Criar novo |
+| `src/App.tsx` | Adicionar rota |
+
+---
+
+## Resultado Final
+
+- Plataforma 100% limpa
+- Todas as telas com empty states elegantes
+- Botão admin para zerar dados reais no Supabase
+- Segurança via verificação de role na edge function
