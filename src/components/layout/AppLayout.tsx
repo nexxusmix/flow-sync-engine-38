@@ -3,12 +3,10 @@ import { AppSidebar } from "./AppSidebar";
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex w-full">
       <AppSidebar />
-      <main className="pl-64 transition-all duration-300">
-        <div className="min-h-screen">
-          <Outlet />
-        </div>
+      <main className="flex-1 ml-64">
+        <Outlet />
       </main>
     </div>
   );

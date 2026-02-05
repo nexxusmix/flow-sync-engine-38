@@ -15,28 +15,28 @@ const mockActivities: Activity[] = [
     type: "payment_received",
     title: "Pagamento recebido",
     description: "Incorporadora Vista Mar - R$ 8.000,00",
-    timestamp: "Há 2 horas",
+    timestamp: "2h",
   },
   {
     id: "2",
     type: "contract_signed",
     title: "Contrato assinado",
-    description: "Restaurante Sabor & Arte - Pacote Reels",
-    timestamp: "Há 5 horas",
+    description: "Restaurante Sabor & Arte",
+    timestamp: "5h",
   },
   {
     id: "3",
     type: "proposal_sent",
     title: "Proposta enviada",
-    description: "Clínica Estética Premium - Filme Institucional",
-    timestamp: "Ontem às 15:30",
+    description: "Clínica Estética Premium",
+    timestamp: "1d",
   },
   {
     id: "4",
     type: "deal_closed",
     title: "Negócio fechado",
-    description: "Arquiteto João Silva - Tour 360°",
-    timestamp: "Ontem às 10:15",
+    description: "Arquiteto João Silva",
+    timestamp: "1d",
   },
 ];
 
@@ -44,29 +44,25 @@ const typeConfig = {
   proposal_sent: {
     icon: FileText,
     color: "text-info",
-    bg: "bg-info/20",
   },
   contract_signed: {
     icon: FileSignature,
-    color: "text-primary",
-    bg: "bg-primary/20",
+    color: "text-foreground",
   },
   payment_received: {
     icon: Wallet,
     color: "text-success",
-    bg: "bg-success/20",
   },
   deal_closed: {
     icon: CheckCircle,
     color: "text-success",
-    bg: "bg-success/20",
   },
 };
 
 export function RecentActivityTimeline() {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 card-shadow">
-      <h3 className="font-semibold text-card-foreground mb-4">Atividade Recente</h3>
+    <div className="bento-card h-full">
+      <h3 className="font-medium mb-5">Atividade Recente</h3>
       
       <div className="space-y-4">
         {mockActivities.map((activity, index) => {
@@ -75,24 +71,24 @@ export function RecentActivityTimeline() {
           const isLast = index === mockActivities.length - 1;
           
           return (
-            <div key={activity.id} className="flex gap-3">
+            <div key={activity.id} className="flex gap-3 group cursor-pointer">
               <div className="flex flex-col items-center">
-                <div className={cn("rounded-full p-2", config.bg)}>
-                  <Icon className={cn("h-4 w-4", config.color)} />
+                <div className="p-1.5 rounded-lg bg-secondary">
+                  <Icon className={cn("h-3.5 w-3.5", config.color)} />
                 </div>
                 {!isLast && (
-                  <div className="w-px h-full bg-border flex-1 my-2" />
+                  <div className="w-px h-full bg-border flex-1 my-1.5" />
                 )}
               </div>
-              <div className="flex-1 pb-4">
-                <p className="text-sm font-medium text-card-foreground">
-                  {activity.title}
-                </p>
-                <p className="text-sm text-muted-foreground">
+              <div className="flex-1 pb-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium group-hover:text-primary transition-colors">
+                    {activity.title}
+                  </p>
+                  <span className="text-xs text-muted-foreground">{activity.timestamp}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {activity.description}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {activity.timestamp}
                 </p>
               </div>
             </div>

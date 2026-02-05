@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, FileText, Wallet } from "lucide-react";
+import { AlertCircle, Clock, FileText, Wallet, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UrgentAction {
@@ -39,29 +39,29 @@ const typeConfig = {
   proposal: {
     icon: FileText,
     color: "text-warning",
-    bg: "bg-warning/10",
   },
   contract: {
     icon: Clock,
     color: "text-info",
-    bg: "bg-info/10",
   },
   payment: {
     icon: Wallet,
     color: "text-destructive",
-    bg: "bg-destructive/10",
   },
 };
 
 export function UrgentActionsList() {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 card-shadow">
-      <div className="flex items-center gap-2 mb-4">
-        <AlertCircle className="h-5 w-5 text-warning" />
-        <h3 className="font-semibold text-card-foreground">Ações Urgentes</h3>
+    <div className="bento-card h-full">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          <h3 className="font-medium">Ações Urgentes</h3>
+        </div>
+        <span className="text-xs text-muted-foreground">{mockActions.length} pendentes</span>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-2">
         {mockActions.map((action) => {
           const config = typeConfig[action.type];
           const Icon = config.icon;
@@ -69,33 +69,26 @@ export function UrgentActionsList() {
           return (
             <div
               key={action.id}
-              className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+              className="group flex items-start gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
             >
-              <div className={cn("rounded-lg p-2", config.bg)}>
-                <Icon className={cn("h-4 w-4", config.color)} />
-              </div>
+              <Icon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-card-foreground">
-                  {action.title}
-                </p>
-                <p className="text-sm text-muted-foreground truncate">
-                  {action.description}
-                </p>
+                <p className="text-sm font-medium truncate">{action.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{action.description}</p>
               </div>
-              <div className="text-right">
+              <div className="flex items-center gap-2">
                 {action.daysOverdue && (
                   <span className={cn(
                     "text-xs font-medium",
                     action.daysOverdue > 5 ? "text-destructive" : "text-warning"
                   )}>
-                    {action.daysOverdue}d atrás
+                    {action.daysOverdue}d
                   </span>
                 )}
                 {action.amount && (
-                  <p className="text-sm font-medium text-card-foreground">
-                    {action.amount}
-                  </p>
+                  <span className="text-xs font-medium">{action.amount}</span>
                 )}
+                <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
           );
@@ -103,9 +96,9 @@ export function UrgentActionsList() {
       </div>
       
       {mockActions.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-8">
-          Nenhuma ação urgente no momento 🎉
-        </p>
+        <div className="flex items-center justify-center h-32">
+          <p className="text-sm text-muted-foreground">Nenhuma ação urgente 🎉</p>
+        </div>
       )}
     </div>
   );
