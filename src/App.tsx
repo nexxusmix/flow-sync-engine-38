@@ -67,7 +67,7 @@ import ProjectsFinancePage from "./pages/finance/ProjectsFinancePage";
 
 // Marketing Pages
 import MarketingDashboard from "./pages/marketing/MarketingDashboard";
-import CalendarPage from "./pages/marketing/CalendarPage";
+import MarketingCalendarPage from "./pages/marketing/CalendarPage";
 import IdeasPage from "./pages/marketing/IdeasPage";
 import PipelinePage from "./pages/marketing/PipelinePage";
 import CampaignsPage from "./pages/marketing/CampaignsPage";
@@ -76,6 +76,7 @@ import InstagramPage from "./pages/marketing/InstagramPage";
 import StudioCreativoPage from "./pages/marketing/StudioCreativoPage";
 import LibraryPage from "./pages/marketing/LibraryPage";
 import ContentDetailPage from "./pages/marketing/ContentDetailPage";
+import UnifiedCalendarPage from "./pages/CalendarPage";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,7 @@ function AppRoutes() {
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage onLogin={login} />} 
       />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
       {/* Projetos */}
@@ -134,7 +136,7 @@ function AppRoutes() {
       <Route path="/financeiro/projetos" element={<ProtectedRoute><ProjectsFinancePage /></ProtectedRoute>} />
       {/* Marketing */}
       <Route path="/marketing" element={<ProtectedRoute><MarketingDashboard /></ProtectedRoute>} />
-      <Route path="/marketing/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+      <Route path="/marketing/calendar" element={<ProtectedRoute><MarketingCalendarPage /></ProtectedRoute>} />
       <Route path="/marketing/ideas" element={<ProtectedRoute><IdeasPage /></ProtectedRoute>} />
       <Route path="/marketing/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
       <Route path="/marketing/content/:contentItemId" element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>} />

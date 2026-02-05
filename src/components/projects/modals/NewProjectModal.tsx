@@ -275,14 +275,65 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       }
     }
 
-    // Add calendar events for key milestones
+    // Add calendar events for key milestones in Supabase
     try {
-      // Note: Calendar events would be created via Supabase if calendar table exists
-      // For now, we log them - the calendar module can read from project stages
-      console.log("Calendar events to create:", {
-        projectStart: { date: formData.startDate, title: `Início: ${formData.title}` },
-        projectDelivery: { date: formData.estimatedDelivery || deliveryDate.split('T')[0], title: `Entrega: ${formData.title}` },
+      const calendarEvents = [];
+      
+      // Event: Project Start
+      calendarEvents.push({
+        title: `Início: ${formData.title}`,
+        description: `Início do projeto ${formData.title}`,
+        start_at: `${formData.startDate}T09:00:00`,
+        end_at: `${formData.startDate}T10:00:00`,
+        related_type: 'project',
+        related_id: newProject?.id,
+        color: '#3b82f6',
+        all_day: true,
       });
+      
+      // Event: Project Delivery
+      const deliveryDateStr = formData.estimatedDelivery || deliveryDate.split('T')[0];
+      calendarEvents.push({
+        title: `Entrega: ${formData.title}`,
+        description: `Data prevista de entrega do projeto ${formData.title}`,
+        start_at: `${deliveryDateStr}T09:00:00`,
+        end_at: `${deliveryDateStr}T18:00:00`,
+        related_type: 'project',
+        related_id: newProject?.id,
+        color: '#22c55e',
+        all_day: true,
+      });
+      
+      // Events: Project Stages with planned dates
+      if (stageSchedule.length > 0) {
+        stageSchedule.forEach((schedule, index) => {
+          const stageName = 'stage' in schedule ? schedule.stage : schedule.type;
+          const stageDate = schedule.plannedStart || schedule.plannedEnd;
+          if (stageDate) {
+            calendarEvents.push({
+              title: `${stageName} - ${formData.title}`,
+              description: `Etapa do projeto: ${stageName}`,
+              start_at: `${stageDate}T09:00:00`,
+              end_at: `${stageDate}T18:00:00`,
+              related_type: 'project_stage',
+              related_id: newProject?.id,
+              color: '#8b5cf6',
+              all_day: true,
+            });
+          }
+        });
+      }
+      
+      // Insert all calendar events
+      if (calendarEvents.length > 0) {
+        const { error: calendarError } = await supabase
+          .from('calendar_events')
+          .insert(calendarEvents);
+        
+        if (calendarError) {
+          console.error("Error creating calendar events:", calendarError);
+        }
+      }
     } catch (error) {
       console.error("Error creating calendar events:", error);
     }
