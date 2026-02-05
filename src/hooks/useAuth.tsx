@@ -10,8 +10,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Auto-authenticate for development
-    return true;
+    // Check localStorage for persisted auth state
+    return localStorage.getItem('squad_auth') === 'true';
   });
 
   useEffect(() => {
