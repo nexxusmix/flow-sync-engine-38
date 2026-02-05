@@ -115,13 +115,16 @@
     scroll-behavior: smooth;
     perspective: 1500px;
     font-size: 115%;
+    overflow: hidden;
+    height: 100vh;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Host Grotesk', sans-serif;
     font-weight: 300;
-    overflow-x: hidden;
+    overflow: hidden;
+    height: 100vh;
   }
 
   /* Minimal scrollbar */
