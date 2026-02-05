@@ -5,6 +5,7 @@ import { AIChatSnippet } from "@/components/dashboard/AIChatSnippet";
 import { ActionsList } from "@/components/dashboard/ActionsList";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { useAuth } from "@/hooks/useAuth";
 import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap, Activity, Inbox, Eye, HardDrive, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import squadLogo from "@/assets/squad-hub-logo.png";
@@ -12,7 +13,11 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  const { data, isLoading } = useDashboardMetrics();
+  const { user, isLoading: authLoading } = useAuth();
+  const { data, isLoading: dataLoading } = useDashboardMetrics();
+  
+  // Show loading only during auth check or when user exists and data is loading
+  const isLoading = authLoading || (!!user && dataLoading);
   
   const metrics = data?.metrics;
   const projectsByStage = data?.projectsByStage || [];

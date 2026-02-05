@@ -10,6 +10,7 @@ import { EditProjectModal } from "@/components/projects/modals/EditProjectModal"
 import { AIProjectModal } from "@/components/projects/modals/AIProjectModal";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
+import { useAuth } from "@/hooks/useAuth";
 import { LayoutDashboard, List, Kanban, GanttChart, LayoutGrid, Loader2 } from "lucide-react";
 
 type ViewType = 'dashboard' | 'board' | 'kanban' | 'timeline' | 'list';
@@ -18,7 +19,11 @@ export default function ProjectsListPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isNewProjectModalOpen, isEditProjectModalOpen, isAIProjectModalOpen, selectedProjectId, setEditProjectModalOpen, setSelectedProjectId, setAIProjectModalOpen } = useProjectsStore();
-  const { projects, isLoading } = useProjects();
+  const { user, isLoading: authLoading } = useAuth();
+  const { projects, isLoading: dataLoading } = useProjects();
+  
+  // Show loading only during auth check or when user exists and data is loading
+  const isLoading = authLoading || (!!user && dataLoading);
   
   // Determine view from route
   const getViewFromRoute = (): ViewType => {

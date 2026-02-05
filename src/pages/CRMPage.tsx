@@ -2,6 +2,7 @@ import { useState, useRef, MouseEvent } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KanbanColumn } from "@/components/crm/KanbanColumn";
 import { useCRM, CRM_STAGES, Deal } from "@/hooks/useCRM";
+import { useAuth } from "@/hooks/useAuth";
 import { Filter, ChevronDown, Plus, Sparkles, Users, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,11 @@ export default function CRMPage() {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [activeView, setActiveView] = useState<'kanban' | 'lista'>('kanban');
   
-  const { deals, metrics, isLoading, moveDealToStage } = useCRM();
+  const { user, isLoading: authLoading } = useAuth();
+  const { deals, metrics, isLoading: dataLoading, moveDealToStage } = useCRM();
+  
+  // Show loading only during auth check or when user exists and data is loading
+  const isLoading = authLoading || (!!user && dataLoading);
 
   const handleMouseDown = (e: MouseEvent) => {
     if (!scrollRef.current) return;
