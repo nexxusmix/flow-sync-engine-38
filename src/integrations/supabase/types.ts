@@ -190,6 +190,120 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_connections: {
+        Row: {
+          access_token: string | null
+          calendar_id: string | null
+          connected_at: string | null
+          email: string | null
+          id: string
+          provider: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          calendar_id?: string | null
+          connected_at?: string | null
+          email?: string | null
+          id?: string
+          provider?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          calendar_id?: string | null
+          connected_at?: string | null
+          email?: string | null
+          id?: string
+          provider?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calendar_events: {
+        Row: {
+          all_day: boolean | null
+          attendees: Json | null
+          color: string | null
+          created_at: string | null
+          description: string | null
+          end_at: string
+          id: string
+          location: string | null
+          meet_url: string | null
+          owner_user_id: string | null
+          provider: string
+          provider_event_id: string | null
+          recurrence: string | null
+          related_id: string | null
+          related_type: string | null
+          start_at: string
+          status: string | null
+          timezone: string | null
+          title: string
+          updated_at: string | null
+          visibility: string | null
+          workspace_id: string
+        }
+        Insert: {
+          all_day?: boolean | null
+          attendees?: Json | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_at: string
+          id?: string
+          location?: string | null
+          meet_url?: string | null
+          owner_user_id?: string | null
+          provider?: string
+          provider_event_id?: string | null
+          recurrence?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          start_at: string
+          status?: string | null
+          timezone?: string | null
+          title: string
+          updated_at?: string | null
+          visibility?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          all_day?: boolean | null
+          attendees?: Json | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_at?: string
+          id?: string
+          location?: string | null
+          meet_url?: string | null
+          owner_user_id?: string | null
+          provider?: string
+          provider_event_id?: string | null
+          recurrence?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          start_at?: string
+          status?: string | null
+          timezone?: string | null
+          title?: string
+          updated_at?: string | null
+          visibility?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       campaign_creatives: {
         Row: {
           campaign_id: string | null
@@ -1064,6 +1178,57 @@ export type Database = {
           },
         ]
       }
+      deadlines: {
+        Row: {
+          assignee_id: string | null
+          assignee_name: string | null
+          block_reason: string | null
+          created_at: string | null
+          deliverable_id: string | null
+          description: string | null
+          due_at: string
+          id: string
+          priority: string | null
+          project_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          block_reason?: string | null
+          created_at?: string | null
+          deliverable_id?: string | null
+          description?: string | null
+          due_at: string
+          id?: string
+          priority?: string | null
+          project_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          block_reason?: string | null
+          created_at?: string | null
+          deliverable_id?: string | null
+          description?: string | null
+          due_at?: string
+          id?: string
+          priority?: string | null
+          project_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       do_not_contact: {
         Row: {
           blocked_by: string | null
@@ -1573,6 +1738,101 @@ export type Database = {
           id?: string
           recommended_frequency?: string | null
           updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      meeting_notes: {
+        Row: {
+          ai_generated: boolean | null
+          created_at: string | null
+          event_id: string
+          id: string
+          next_steps: Json | null
+          objections: string | null
+          owner: string | null
+          pain_points: string | null
+          recommendations: string | null
+          requirements: string | null
+          summary: string | null
+          transcript: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          created_at?: string | null
+          event_id: string
+          id?: string
+          next_steps?: Json | null
+          objections?: string | null
+          owner?: string | null
+          pain_points?: string | null
+          recommendations?: string | null
+          requirements?: string | null
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_generated?: boolean | null
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          next_steps?: Json | null
+          objections?: string | null
+          owner?: string | null
+          pain_points?: string | null
+          recommendations?: string | null
+          requirements?: string | null
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_notes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_events: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: string
+          meta: Json | null
+          read_at: string | null
+          severity: string | null
+          title: string
+          type: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          read_at?: string | null
+          severity?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          read_at?: string | null
+          severity?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
           workspace_id?: string
         }
         Relationships: []
@@ -2284,6 +2544,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reminders: {
+        Row: {
+          channel: string | null
+          created_at: string | null
+          id: string
+          related_id: string | null
+          related_type: string
+          remind_at: string
+          status: string | null
+          title: string | null
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string | null
+          id?: string
+          related_id?: string | null
+          related_type: string
+          remind_at: string
+          status?: string | null
+          title?: string | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string | null
+          id?: string
+          related_id?: string | null
+          related_type?: string
+          remind_at?: string
+          status?: string | null
+          title?: string | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
       }
       report_exports: {
         Row: {
