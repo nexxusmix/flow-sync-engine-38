@@ -29,7 +29,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background relative flex flex-col">
+    <div className="h-screen bg-background relative flex overflow-hidden">
       {/* Background Blobs */}
       <motion.div 
         className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]"
@@ -48,22 +48,25 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       
       <motion.div 
         className={cn(
-          "relative z-10 flex flex-col flex-1",
+          "relative z-10 flex flex-col h-screen overflow-hidden",
           sidebarCollapsed ? "ml-16" : "ml-64"
         )}
+        style={{ flex: 1 }}
         initial={false}
         animate={{ marginLeft: sidebarCollapsed ? 64 : 256 }}
         transition={{ type: "spring" as const, stiffness: 300, damping: 30 }}
       >
         <Header title={title} onOpenSearch={() => setSearchOpen(true)} />
-        <motion.main 
-          className="p-6 md:p-10 max-w-[1800px] mx-auto preserve-3d flex-1 w-full"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {children}
-        </motion.main>
+        <main className="flex-1 overflow-y-auto p-6 md:p-10">
+          <motion.div 
+            className="max-w-[1800px] mx-auto preserve-3d w-full min-h-full"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {children}
+          </motion.div>
+        </main>
       </motion.div>
       
       <AnimatePresence>
