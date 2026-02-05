@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HeaderProps {
   title: string;
@@ -16,6 +17,7 @@ const roles = [
 export function Header({ title, onOpenSearch }: HeaderProps) {
   const [selectedRole, setSelectedRole] = useState("dono");
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const { logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 h-20 bg-background/80 backdrop-blur-2xl border-b border-white/5 flex items-center justify-between px-6 md:px-12">
@@ -99,6 +101,15 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
             </>
           )}
         </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={logout}
+          className="w-10 h-10 rounded-2xl border border-border bg-muted/50 flex items-center justify-center hover:bg-destructive/20 hover:border-destructive/30 hover:text-destructive transition-all"
+          title="Sair"
+        >
+          <span className="material-symbols-outlined text-xl">logout</span>
+        </button>
       </div>
     </header>
   );
