@@ -1,78 +1,105 @@
 
-# Plano de Finalização do SQUAD Hub
+# Plano: Landing Page + Fix Processamento IA
 
-## ✅ FASE 1: Limpeza de Segurança RLS - CONCLUÍDA
-
-### Resultado
-- **Antes**: 472 policies, 165 warnings de "RLS Policy Always True"
-- **Depois**: ~200 policies, 0 warnings de RLS
-
-### Ações Executadas
-1. ✅ Removidas todas as policies duplicadas com padrão `"Users can X"` que tinham `USING(true)`
-2. ✅ Removidas policies com padrão `"Allow all for X"` 
-3. ✅ Removidas policies com padrão `"Anyone can X"`
-4. ✅ Mantidas apenas policies seguras com prefixo `"auth_"` usando `auth.uid() IS NOT NULL`
-5. ✅ Adicionadas policies faltantes para tabelas sem nenhuma policy
-
-### Warnings Restantes (não-RLS)
-- 1x Function Search Path Mutable (função sem search_path)
-- 1x Leaked Password Protection Disabled (config auth global)
-- 9x INFO - RLS Enabled No Policy (tabelas secundárias)
+## Resumo
+Implementar duas correções principais:
+1. Redirecionar usuários não autenticados para a Landing Page
+2. Corrigir o erro de processamento de documentos no novo projeto (edge function não deployada)
+3. Garantir acesso à IA em mais pontos da plataforma
 
 ---
 
-## ✅ FASE 2: Consolidação do CRM - CONCLUÍDA
+## 1. Routing da Landing Page
 
-### Resultado
-- CRM agora usa exclusivamente tabelas `crm_*`
-- Hook `useCRM.tsx` atualizado para usar `crm_contacts`, `crm_deals`, `crm_stages`
+**Problema Atual:**
+- Usuários não logados são redirecionados para `/login`
+- Landing page está em `/landing` (rota separada)
 
-### Ações Executadas
-1. ✅ Verificado que não havia dados em `prospects` e `prospect_opportunities` (0 registros)
-2. ✅ Confirmado que `crm_stages` já estava com seed correto (8 estágios)
-3. ✅ Atualizado `useCRM.tsx`:
-   - Queries agora usam `crm_deals` com join em `crm_contacts`
-   - Stages carregados dinamicamente de `crm_stages`
-   - Tipos atualizados para novo schema
-4. ✅ Atualizado `CRMPage.tsx` para usar novos tipos
+**Solução:**
+Modificar `src/App.tsx` para:
+- Se NÃO autenticado: mostrar `LandingPage` na rota `/`
+- Se autenticado: mostrar `Dashboard` na rota `/`
 
-### Schema Atual do CRM
-| Tabela | Status |
-|--------|--------|
-| `crm_contacts` | ✅ Em uso |
-| `crm_deals` | ✅ Em uso |
-| `crm_stages` | ✅ Em uso |
-| `prospects` | ⚠️ Ainda existe (vazia) |
-| `prospect_opportunities` | ⚠️ Ainda existe (vazia) |
+```text
+Fluxo atual:
+  / ────> ProtectedRoute ────> Redireciona para /login
 
-> **Nota**: Tabelas antigas mantidas para backward compatibility. Podem ser dropadas em migration futura.
+Fluxo novo:
+  / ────> isAuthenticated? ────> SIM: Dashboard
+                            └──> NÃO: LandingPage
+```
+
+**Arquivos afetados:**
+- `src/App.tsx` - Ajustar rota raiz para condicional
 
 ---
 
-## ✅ FASE 3: Ajustes no Frontend - CONCLUÍDA
+## 2. Correção do Erro "Processar Documento"
 
-1. ✅ `useCRM.tsx` refatorado com tipos corretos
-2. ✅ `CRMPage.tsx` atualizado para usar novos tipos `Deal`
-3. ✅ Build sem erros de TypeScript
+**Diagnóstico:**
+A edge function `extract-project-from-document` retorna erro 404 - ela **não está deployada**.
 
----
+**Solução:**
+Deployar a edge function existente em `supabase/functions/extract-project-from-document/index.ts`
 
-## Checklist de Validação Final
-
-- [x] Nenhuma policy com `USING(true)` em tabelas sensíveis
-- [x] Warnings de RLS reduzidos de 165 para 0
-- [x] CRM usando `crm_contacts`, `crm_deals`, `crm_stages`
-- [x] Build sem erros de TypeScript
-- [ ] Testes manuais: login, criar deal, mover no kanban (pendente validação)
+**Dependências:**
+- LOVABLE_API_KEY: Configurado
 
 ---
 
-## Métricas Finais
+## 3. Botão IA em Mais Lugares
 
-| Métrica | Antes | Depois |
-|---------|-------|--------|
-| Policies RLS | 472 | ~200 |
-| Warnings RLS | 165 | 0 |
-| Tabelas CRM em uso | `prospect_*` | `crm_*` |
-| Fontes de verdade CRM | 2 | 1 |
-| Erros TypeScript | - | 0 |
+**Componente Atual:**
+O `AICommandButton` já está presente globalmente via `DashboardLayout`.
+
+**Melhorias sugeridas:**
+Adicionar acesso rápido à IA dentro de:
+- Modal de novo projeto (já tem opção "Criar com IA")
+- Header de páginas específicas
+- Ações contextuais em cards
+
+---
+
+## Detalhes Técnicos
+
+### Alteração em `src/App.tsx`
+
+```tsx
+// Substituir a rota "/" de:
+<Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+// Para:
+<Route 
+  path="/" 
+  element={
+    isAuthenticated 
+      ? <Dashboard /> 
+      : <LandingPage />
+  } 
+/>
+```
+
+Também remover a rota `/landing` separada pois não será mais necessária.
+
+### Deploy da Edge Function
+
+Executar deploy da função `extract-project-from-document` que já existe no código mas não está disponível no ambiente.
+
+---
+
+## Sequência de Implementação
+
+| Ordem | Tarefa | Impacto |
+|-------|--------|---------|
+| 1 | Deploy edge function `extract-project-from-document` | Corrige erro imediato |
+| 2 | Ajustar routing em `App.tsx` | Landing page como home |
+| 3 | Remover rota `/landing` duplicada | Limpeza |
+
+---
+
+## Resultado Esperado
+
+- Visitantes verão a Landing Page ao acessar a plataforma
+- Usuários logados vão direto para o Dashboard
+- "Criar Projeto com IA" funcionará corretamente
+- Botão flutuante de IA continuará disponível em todas as páginas internas
