@@ -117,8 +117,7 @@ export function useProjects() {
   // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: async (input: CreateProjectInput) => {
-      // Create the project
-      // Note: owner_id not set to avoid FK constraint if profile doesn't exist
+      // Create the project without FK references to avoid constraint errors
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .insert({
@@ -131,7 +130,6 @@ export function useProjects() {
           contract_value: input.contract_value || 0,
           has_payment_block: input.has_payment_block || false,
           owner_name: user?.email?.split('@')[0] || null,
-          created_by: user?.id || null,
           stage_current: 'briefing',
           status: 'active',
           health_score: 100,
