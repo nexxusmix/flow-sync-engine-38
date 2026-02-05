@@ -2,9 +2,25 @@ import { useNavigate } from "react-router-dom";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { Project, ProjectStageType } from "@/types/projects";
 import { PROJECT_STAGES, STAGE_COLORS, STATUS_CONFIG } from "@/data/projectTemplates";
-import { Ban, Plus } from "lucide-react";
+import { Ban, Plus, ChevronRight, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
+function HealthBar({ score }: { score: number }) {
+  const color = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
+  
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+        <div 
+          className={`h-full ${color} rounded-full`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-bold text-muted-foreground">{score}%</span>
+    </div>
+  );
+}
 
 function KanbanCard({ project }: { project: Project }) {
   const navigate = useNavigate();
@@ -20,48 +36,60 @@ function KanbanCard({ project }: { project: Project }) {
 
   return (
     <div 
-      className="glass-card rounded-xl p-4 cursor-pointer hover:bg-muted/30 transition-colors group"
+      className="glass-card rounded-xl p-4 cursor-pointer hover:bg-muted/30 transition-all group border border-transparent hover:border-primary/20"
       onClick={() => navigate(`/projetos/${project.id}`)}
     >
-      <div className="flex items-start justify-between mb-2">
-        <span className="text-xs text-muted-foreground">{project.client.company}</span>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-[10px] text-primary font-bold uppercase">{project.client.company}</span>
+            {project.portalLink?.isActive && (
+              <Globe className="w-3 h-3 text-primary" />
+            )}
+          </div>
+          <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+            {project.title}
+          </h4>
+        </div>
         {project.blockedByPayment && (
-          <Ban className="w-4 h-4 text-red-500" />
+          <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
         )}
       </div>
 
-      <h4 className="font-medium text-foreground text-sm mb-2 line-clamp-2">{project.title}</h4>
-
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-primary">{formatCurrency(project.contractValue)}</span>
-        <span className={`text-[10px] px-2 py-0.5 rounded border ${statusConfig.color}`}>
+      {/* Value & Status */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-foreground">{formatCurrency(project.contractValue)}</span>
+        <span className={`text-[9px] px-2 py-0.5 rounded border font-medium ${statusConfig.color}`}>
           {statusConfig.label}
         </span>
       </div>
 
       {/* Health bar */}
-      <div className="mt-3 pt-3 border-t border-border/50">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-muted-foreground">Saúde</span>
-          <span className="text-[10px] text-muted-foreground">{project.healthScore}%</span>
-        </div>
-        <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-          <div 
-            className={`h-full rounded-full ${
-              project.healthScore >= 80 ? 'bg-emerald-500' : 
-              project.healthScore >= 50 ? 'bg-amber-500' : 'bg-red-500'
-            }`}
-            style={{ width: `${project.healthScore}%` }}
-          />
-        </div>
+      <div className="mb-3">
+        <HealthBar score={project.healthScore} />
       </div>
 
-      {/* Owner */}
-      <div className="mt-3 flex items-center gap-2">
-        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-          <span className="text-[10px] font-medium text-primary">{project.owner.initials}</span>
+      {/* Footer - Team & Deadline */}
+      <div className="flex items-center justify-between pt-3 border-t border-border/50">
+        <div className="flex items-center -space-x-1.5">
+          {project.team.slice(0, 3).map((member, idx) => (
+            <div 
+              key={idx} 
+              className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border-2 border-card"
+            >
+              <span className="text-[9px] font-medium text-primary">{member.initials}</span>
+            </div>
+          ))}
+          {project.team.length > 3 && (
+            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-card">
+              <span className="text-[8px] font-medium text-muted-foreground">+{project.team.length - 3}</span>
+            </div>
+          )}
         </div>
-        <span className="text-xs text-muted-foreground">{project.owner.name.split(' ')[0]}</span>
+        <span className="text-[10px] text-muted-foreground">
+          {new Date(project.estimatedDelivery).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+        </span>
       </div>
     </div>
   );
@@ -77,37 +105,46 @@ function KanbanColumn({
   const { setNewProjectModalOpen } = useProjectsStore();
   const stageColor = STAGE_COLORS[stage.type];
 
+  // Calculate column totals
+  const totalValue = projects.reduce((acc, p) => acc + p.contractValue, 0);
+
   return (
-    <div className="flex-shrink-0 w-72 glass-card rounded-2xl overflow-hidden">
+    <div className="flex-shrink-0 w-72 md:w-80">
       {/* Column Header */}
-      <div className="p-4 border-b border-border/50">
-        <div className="flex items-center justify-between">
+      <div className="glass-card rounded-t-2xl p-4 border-b-0">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${stageColor}`} />
-            <h3 className="font-medium text-foreground text-sm">{stage.name}</h3>
-            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-              {projects.length}
-            </span>
+            <div className={`w-2.5 h-2.5 rounded-full ${stageColor}`} />
+            <h3 className="font-semibold text-foreground text-sm">{stage.name}</h3>
           </div>
+          <span className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
+            {projects.length}
+          </span>
         </div>
+        <p className="text-[10px] text-muted-foreground font-medium">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(totalValue)}
+        </p>
       </div>
 
       {/* Column Content */}
-      <div className="p-3 space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto custom-scrollbar">
+      <div className="glass-card rounded-b-2xl rounded-t-none p-3 space-y-3 max-h-[calc(100vh-380px)] overflow-y-auto custom-scrollbar">
         {projects.map(project => (
           <KanbanCard key={project.id} project={project} />
         ))}
 
         {projects.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            Nenhum projeto
+          <div className="text-center py-8 text-muted-foreground">
+            <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+              <ChevronRight className="w-5 h-5" />
+            </div>
+            <p className="text-sm">Nenhum projeto</p>
           </div>
         )}
 
         {stage.type === 'briefing' && (
           <Button
             variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
+            className="w-full justify-start text-muted-foreground hover:text-foreground rounded-xl h-10"
             onClick={() => setNewProjectModalOpen(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -129,7 +166,7 @@ export function ProjectsKanban() {
 
   return (
     <ScrollArea className="w-full pb-4">
-      <div className="flex gap-4 min-w-max pb-4">
+      <div className="flex gap-4 min-w-max pb-4 px-1">
         {PROJECT_STAGES.map(stage => (
           <KanbanColumn 
             key={stage.type} 

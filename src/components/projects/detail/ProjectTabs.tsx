@@ -18,6 +18,7 @@ import { FilesTab } from "./tabs/FilesTab";
 import { ScheduleTab } from "./tabs/ScheduleTab";
 import { PortalTab } from "./tabs/PortalTab";
 import { AuditTab } from "./tabs/AuditTab";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface ProjectTabsProps {
   project: Project;
@@ -39,48 +40,51 @@ const tabs = [
 export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProps) {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-6">
-      <TabsList className="w-full justify-start overflow-x-auto flex-nowrap bg-muted/50 p-1 rounded-xl">
-        {tabs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            className="flex items-center gap-2 whitespace-nowrap data-[state=active]:bg-background"
-          >
-            <tab.icon className="w-4 h-4" />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <ScrollArea className="w-full">
+        <TabsList className="w-full h-auto justify-start flex-nowrap bg-muted/30 p-1.5 rounded-xl border border-border/50 gap-1 min-w-max">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className="flex items-center gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm"
+            >
+              <tab.icon className="w-4 h-4" />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <ScrollBar orientation="horizontal" className="invisible" />
+      </ScrollArea>
 
-      <TabsContent value="overview">
+      <TabsContent value="overview" className="mt-6">
         <OverviewTab project={project} />
       </TabsContent>
       
-      <TabsContent value="tasks">
+      <TabsContent value="tasks" className="mt-6">
         <TasksTab project={project} />
       </TabsContent>
       
-      <TabsContent value="deliverables">
+      <TabsContent value="deliverables" className="mt-6">
         <DeliverablesTab project={project} />
       </TabsContent>
       
-      <TabsContent value="revisions">
+      <TabsContent value="revisions" className="mt-6">
         <RevisionsTab project={project} />
       </TabsContent>
       
-      <TabsContent value="files">
+      <TabsContent value="files" className="mt-6">
         <FilesTab project={project} />
       </TabsContent>
       
-      <TabsContent value="schedule">
+      <TabsContent value="schedule" className="mt-6">
         <ScheduleTab project={project} />
       </TabsContent>
       
-      <TabsContent value="portal">
+      <TabsContent value="portal" className="mt-6">
         <PortalTab project={project} />
       </TabsContent>
       
-      <TabsContent value="audit">
+      <TabsContent value="audit" className="mt-6">
         <AuditTab project={project} />
       </TabsContent>
     </Tabs>
