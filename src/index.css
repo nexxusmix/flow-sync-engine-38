@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SQUAD Hub - Polo-inspired Ultra Dark Design System */
+/* SQUAD Hub - Quiet Luxury Dark Mode Editorial Design System */
 
 @layer base {
   :root {
@@ -56,59 +56,59 @@
   }
 
   .dark {
-    /* Black background */
-    --background: 0 0% 0%;        /* Pure black */
-    --foreground: 0 0% 100%;      /* Pure white */
+    /* Quiet Luxury - Deep black & graphite */
+    --background: 0 0% 4%;           /* Deep black #0a0a0a */
+    --foreground: 0 0% 92%;          /* Soft white, not pure */
 
-    /* Surface/Card - slightly elevated */
-    --card: 0 0% 5%;              /* Very dark */
-    --card-foreground: 0 0% 100%;
+    /* Surface/Card - Graphite elevated */
+    --card: 0 0% 7%;                 /* Dark graphite #121212 */
+    --card-foreground: 0 0% 92%;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 92%;
 
-    /* Primary - Blue accent */
-    --primary: 217 91% 60%;       /* Blue #3b82f6 */
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Subtle warm accent */
+    --primary: 0 0% 85%;             /* Soft off-white */
+    --primary-foreground: 0 0% 4%;
 
-    /* Secondary - Subtle surface */
-    --secondary: 0 0% 8%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary - Graphite surface */
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 85%;
 
-    /* Muted */
-    --muted: 0 0% 8%;
-    --muted-foreground: 217 20% 60%;  /* Bluish gray */
+    /* Muted - Sophisticated gray */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%;
 
-    /* Accent - Blue */
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Subtle highlight */
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 92%;
 
     /* Destructive */
-    --destructive: 0 62% 45%;
+    --destructive: 0 50% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders - Blue tinted */
-    --border: 217 30% 20%;        /* Dark blue border */
-    --input: 217 30% 20%;
-    --ring: 217 91% 60%;
+    /* Borders - Very subtle */
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 0 0% 40%;
 
-    /* Status colors */
-    --success: 142 70% 45%;
+    /* Status colors - Muted versions */
+    --success: 142 40% 40%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 55%;
+    --warning: 38 60% 45%;
     --warning-foreground: 0 0% 0%;
-    --info: 217 91% 60%;
+    --info: 200 50% 45%;
     --info-foreground: 0 0% 100%;
 
     /* Sidebar */
-    --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 217 20% 60%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 30% 15%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217 30% 20%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 55%;
+    --sidebar-primary: 0 0% 85%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 85%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 0 0% 40%;
   }
 }
 
@@ -126,7 +126,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Custom scrollbar - Minimal Polo style */
+  /* Minimal scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -146,60 +146,121 @@
 }
 
 @layer components {
-  /* Polo Card - Blue accent styling */
-  .polo-card {
-    @apply rounded-2xl border border-border bg-card p-6;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+  /* Editorial Card */
+  .card-elevated {
+    @apply rounded-xl border border-border bg-card p-5;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .polo-card:hover {
-    border-color: hsl(217 91% 60% / 0.5);
+  .card-elevated:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px -12px hsl(0 0% 0% / 0.4);
   }
 
-  /* Polo Pill/Badge */
-  .polo-pill {
-    @apply inline-flex items-center px-4 py-1.5 rounded-full border border-border bg-transparent text-sm text-foreground;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+  /* Subtle card without hover effect */
+  .card-flat {
+    @apply rounded-xl border border-border bg-card p-5;
   }
 
-  .polo-pill:hover {
-    border-color: hsl(217 91% 60% / 0.5);
+  /* Badge styles */
+  .badge-subtle {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground;
   }
 
-  .polo-pill-active {
-    @apply inline-flex items-center px-4 py-1.5 rounded-full border border-primary bg-primary/10 text-sm text-foreground;
+  .badge-success {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/15 text-success;
   }
 
-  .polo-pill-active:hover {
-    border-color: hsl(217 91% 60%);
+  .badge-warning {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning/15 text-warning;
   }
 
-  /* Polo Label - Uppercase section headers */
-  .polo-label {
-    @apply text-xs uppercase tracking-wider text-primary font-medium;
-    letter-spacing: 0.1em;
+  .badge-danger {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive/15 text-destructive;
   }
 
-  /* Polo Section Header */
-  .polo-section {
-    @apply text-xs uppercase tracking-wider text-primary font-medium mb-4;
-    letter-spacing: 0.1em;
+  .badge-info {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-info/15 text-info;
+  }
+
+  /* Section label */
+  .section-label {
+    @apply text-[11px] uppercase tracking-wider text-muted-foreground font-medium;
+    letter-spacing: 0.08em;
+  }
+
+  /* Chip/pill for filters */
+  .chip {
+    @apply inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-transparent text-muted-foreground cursor-pointer;
+    transition: all 0.15s ease;
+  }
+
+  .chip:hover {
+    @apply border-muted-foreground/30 text-foreground;
+  }
+
+  .chip-active {
+    @apply inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border border-foreground/20 bg-foreground/5 text-foreground cursor-pointer;
+  }
+
+  /* KPI Card */
+  .kpi-card {
+    @apply rounded-xl border border-border bg-card p-4 flex flex-col gap-1;
+  }
+
+  .kpi-value {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .kpi-label {
+    @apply text-xs text-muted-foreground;
+  }
+
+  /* Mini kanban stage */
+  .kanban-stage {
+    @apply rounded-lg border border-border bg-muted/30 p-3 min-w-[140px];
+  }
+
+  /* Table row hover */
+  .table-row-hover {
+    @apply hover:bg-muted/30 transition-colors cursor-pointer;
+  }
+
+  /* Icon container */
+  .icon-box {
+    @apply flex items-center justify-center w-8 h-8 rounded-lg bg-muted;
+  }
+
+  /* Action button subtle */
+  .btn-subtle {
+    @apply inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors;
+  }
+
+  /* Quick action button */
+  .btn-action {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-transparent text-foreground hover:bg-muted transition-colors;
   }
 }
 
 @layer utilities {
-  /* Legacy bento card - maps to polo-card */
-  .bento-card {
-    @apply polo-card;
+  /* Fade animation */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
   }
 
-  /* Blue glow for interactive elements */
-  .glow-hover:hover {
-    box-shadow: 0 0 30px -10px hsl(217 91% 60% / 0.3);
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  /* Glass effect */
-  .glass {
-    @apply bg-card/80 backdrop-blur-xl;
+  /* Subtle glow */
+  .glow-subtle {
+    box-shadow: 0 0 20px -8px hsl(0 0% 100% / 0.05);
   }
 }
