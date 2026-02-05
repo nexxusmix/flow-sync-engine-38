@@ -19,6 +19,11 @@ import ProposalDetailPage from "./pages/proposals/ProposalDetailPage";
 import ProposalPreviewPage from "./pages/proposals/ProposalPreviewPage";
 import ProposalClientPage from "./pages/proposals/ProposalClientPage";
 import ContractsPage from "./pages/ContractsPage";
+import ContractsListPage from "./pages/contracts/ContractsListPage";
+import ContractTemplatesPage from "./pages/contracts/ContractTemplatesPage";
+import ContractDetailPage from "./pages/contracts/ContractDetailPage";
+import ContractPreviewPage from "./pages/contracts/ContractPreviewPage";
+import ContractClientPage from "./pages/contracts/ContractClientPage";
 import ContentPage from "./pages/ContentPage";
 import KnowledgePage from "./pages/KnowledgePage";
 import ReportsPage from "./pages/ReportsPage";
@@ -91,7 +96,12 @@ function AppRoutes() {
       <Route path="/propostas/:proposalId" element={<ProtectedRoute><ProposalDetailPage /></ProtectedRoute>} />
       <Route path="/propostas/:proposalId/preview" element={<ProtectedRoute><ProposalPreviewPage /></ProtectedRoute>} />
       <Route path="/propostas/:proposalId/client" element={<ProposalClientPage />} />
-      <Route path="/contratos" element={<ProtectedRoute><ContractsPage /></ProtectedRoute>} />
+      {/* Contratos */}
+      <Route path="/contratos" element={<ProtectedRoute><ContractsListPage /></ProtectedRoute>} />
+      <Route path="/contratos/templates" element={<ProtectedRoute><ContractTemplatesPage /></ProtectedRoute>} />
+      <Route path="/contratos/:contractId" element={<ProtectedRoute><ContractDetailPage /></ProtectedRoute>} />
+      <Route path="/contratos/:contractId/preview" element={<ProtectedRoute><ContractPreviewPage /></ProtectedRoute>} />
+      <Route path="/contratos/:contractId/client" element={<ContractClientPage />} />
       {/* Financeiro */}
       <Route path="/financeiro" element={<ProtectedRoute><FinanceDashboard /></ProtectedRoute>} />
       <Route path="/financeiro/caixa" element={<ProtectedRoute><CashflowPage /></ProtectedRoute>} />
