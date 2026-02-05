@@ -14,7 +14,7 @@ import {
   ProjectStageType
 } from '@/types/projects';
 import { ProjectUpdate } from '@/types/projectUpdates';
-import { MOCK_PROJECTS, TEAM_MEMBERS, CLIENTS } from '@/data/projectsMockData';
+import { TEAM_MEMBERS, CLIENTS } from '@/data/projectsMockData';
 import { getTemplateById, PROJECT_STAGES } from '@/data/projectTemplates';
 
 interface ProjectsState {
@@ -87,7 +87,7 @@ const defaultFilters: ProjectFilters = {
 };
 
 export const useProjectsStore = create<ProjectsState>((set, get) => ({
-  projects: MOCK_PROJECTS,
+  projects: [], // Start empty - no mock data
   selectedProject: null,
   filters: defaultFilters,
   viewMode: 'list',
