@@ -1,378 +1,280 @@
 
-# Plano: Finalizar Modulos Parciais - Integracao 100% Supabase
+
+# Plano: Remover Dados Mock e Preparar Plataforma para Producao
 
 ## Resumo Executivo
 
-Finalizar Projetos (70% -> 100%), Dashboard (60% -> 100%), CRM (30% -> 100%) e Calendario (50% -> 100%) removendo mocks e integrando com dados reais no Supabase.
+Remover todos os dados ficticios restantes, garantir que o botao "Zerar Plataforma" seja exclusivo para admin, e certificar que todas as telas mostrem empty states adequados quando nao houver dados.
 
 ---
 
-## FASE 1: MIGRACAO DE BANCO DE DADOS
+## ANALISE ATUAL
 
-### 1.1 Criar tabela `projects` (CORE)
+### Ja Funcionando com Dados Reais:
+- Dashboard principal (useDashboardMetrics)
+- CRM/Pipeline (useCRM)
+- Projetos (useProjects)
+- Marketing Store (Supabase)
+- Prospecting Store (Supabase)
+- Financial Store (Supabase)
+- Relatorios (useReportMetrics)
 
-```text
-projects
-+------------------+----------------------------------------+
-| Campo            | Tipo                                   |
-+------------------+----------------------------------------+
-| id               | uuid pk default gen_random_uuid()      |
-| workspace_id     | text default 'default'                 |
-| name             | text not null                          |
-| client_name      | text not null                          |
-| description      | text null                              |
-| template         | text null                              |
-| status           | text check (active/paused/completed/   |
-|                  | archived) default 'active'             |
-| stage_current    | text not null default 'briefing'       |
-| health_score     | int default 100                        |
-| contract_value   | numeric default 0                      |
-| has_payment_block| boolean default false                  |
-| start_date       | date null                              |
-| due_date         | date null                              |
-| owner_id         | uuid references profiles(id)          |
-| owner_name       | text null                              |
-| created_by       | uuid references profiles(id)          |
-| created_at       | timestamptz default now()              |
-| updated_at       | timestamptz default now()              |
-+------------------+----------------------------------------+
-INDEXES: owner_id, status, stage_current
-```
+### Problemas Identificados:
 
-### 1.2 Criar tabela `project_stages` (Timeline detalhada)
-
-```text
-project_stages
-+------------------+----------------------------------------+
-| Campo            | Tipo                                   |
-+------------------+----------------------------------------+
-| id               | uuid pk default gen_random_uuid()      |
-| project_id       | uuid references projects(id) CASCADE   |
-| stage_key        | text not null                          |
-| title            | text not null                          |
-| order_index      | int not null                           |
-| status           | text check (not_started/in_progress/   |
-|                  | done/blocked) default 'not_started'    |
-| planned_start    | date null                              |
-| planned_end      | date null                              |
-| actual_start     | date null                              |
-| actual_end       | date null                              |
-| created_at       | timestamptz default now()              |
-+------------------+----------------------------------------+
-UNIQUE: (project_id, stage_key)
-```
-
-### 1.3 Adicionar campos ao `calendar_events` (se necessario)
-
-Tabela ja existe com campos adequados. Adicionar:
-- `event_type` check in ('meeting','deadline','delivery','task','milestone')
-- `project_id` uuid references projects(id) null
-- `deal_id` uuid references prospect_opportunities(id) null
-
-### 1.4 RLS Policies
-
-```text
-PROJETOS:
-- SELECT: authenticated users
-- INSERT: admin, operacao
-- UPDATE: admin, operacao (own), financeiro (has_payment_block only)
-- DELETE: admin only
-
-PROJECT_STAGES:
-- SELECT: authenticated users
-- INSERT/UPDATE/DELETE: admin, operacao
-
-PROSPECT_OPPORTUNITIES (CRM Deals):
-- SELECT: authenticated users
-- INSERT/UPDATE/DELETE: admin, comercial
-
-PROSPECT_ACTIVITIES:
-- SELECT: authenticated users
-- INSERT/UPDATE/DELETE: admin, comercial
-
-CALENDAR_EVENTS:
-- SELECT: authenticated users
-- INSERT/UPDATE/DELETE: all authenticated
-```
+| Problema | Local | Impacto |
+|----------|-------|---------|
+| Mock AI responses | AIAssistant.tsx | Respostas fake da IA |
+| Sem verificacao admin | DangerZone + Edge Function | Seguranca |
+| Tabelas faltando no reset | platform-reset | Reset incompleto |
+| Import desnecessario | ProjectsHeader.tsx | Mock data referenciado |
 
 ---
 
-## FASE 2: PROJETOS (70% -> 100%)
+## FASE 1: SEGURANCA - ADMIN ONLY
 
-### 2.1 Criar hook `useProjects.tsx`
+### 1.1 Atualizar Edge Function platform-reset
 
-Novo hook React Query para CRUD completo:
+Adicionar verificacao de role admin antes de executar:
 
 ```typescript
-- fetchProjects() - lista com filtros
-- getProject(id) - detalhe
-- createProject(data) - cria + auto-cria stages
-- updateProject(id, data) - atualiza
-- archiveProject(id) - arquiva
-- moveToStage(projectId, stageKey) - move etapa
-```
+// Verificar se usuario tem role admin
+const { data: roleData, error: roleError } = await supabaseAdmin
+  .from('user_role_assignments')
+  .select('role')
+  .eq('user_id', user.id)
+  .eq('role', 'admin')
+  .single();
 
-### 2.2 Refatorar `projectsStore.ts`
-
-Manter apenas como cache/UI state:
-- selectedProject (para modais)
-- filters (filtros ativos)
-- viewMode (list/kanban/board/timeline)
-- isModalOpen states
-
-Remover:
-- projects[] como fonte de verdade
-- Todas as funcoes CRUD locais
-
-### 2.3 Atualizar componentes
-
-| Arquivo | Mudancas |
-|---------|----------|
-| `ProjectsListPage.tsx` | Usar useProjects() |
-| `ProjectsDashboard.tsx` | Dados reais |
-| `ProjectsTable.tsx` | Dados reais |
-| `ProjectsKanban.tsx` | Dados reais + drag-drop |
-| `NewProjectModal.tsx` | createProject mutation |
-| `EditProjectModal.tsx` | updateProject mutation |
-
-### 2.4 Auto-criar stages no projeto
-
-Ao criar projeto:
-1. Buscar stages de `project_stage_settings`
-2. Criar registros em `project_stages` para o projeto
-3. Criar evento em `calendar_events` para due_date
-
----
-
-## FASE 3: DASHBOARD (60% -> 100%)
-
-### 3.1 Remover dados hardcoded
-
-Excluir `visualBoardData` completamente.
-
-### 3.2 Criar hook `useDashboardMetrics.tsx`
-
-```typescript
-interface DashboardMetrics {
-  // Cards
-  totalProjectsActive: number;
-  projectsAtRisk: number;
-  projectsBlocked: number;
-  upcomingDeadlines: number;
-  
-  // Pipeline
-  dealsByStage: Record<string, { count: number; value: number }>;
-  
-  // Visual Board
-  projectsByStage: ProjectStageGroup[];
-  
-  // Timeline 30D
-  events30Days: CalendarEvent[];
-  
-  // Accounts
-  projectFinancials: ProjectFinancialSummary[];
+if (roleError || !roleData) {
+  return new Response(JSON.stringify({ error: "Apenas administradores podem executar esta acao" }), { 
+    status: 403, 
+    headers: { ...corsHeaders, "Content-Type": "application/json" } 
+  });
 }
 ```
 
-### 3.3 Atualizar Dashboard.tsx
+Adicionar tabelas faltantes na lista de limpeza:
+- `projects`
+- `project_stages`
+- `prospect_lists`
+- `prospect_opportunities`
+- `prospect_activities`
 
-| Secao | Fonte de Dados |
-|-------|----------------|
-| Metrics Cards | useDashboardMetrics() |
-| Visual Board (Kanban) | projects agrupados por stage_current |
-| Timeline 30D | calendar_events dos proximos 30 dias |
-| Visao de Contas | revenues + contracts por projeto |
-| Key Metrics | Calculos reais |
+### 1.2 Atualizar DangerZoneSettingsPage.tsx
 
-### 3.4 Empty States
-
-Se nenhum projeto: mostrar CTA "Criar Primeiro Projeto"
-Se nenhum deal: mostrar CTA "Criar Primeiro Deal"
-
----
-
-## FASE 4: CRM (30% -> 100%)
-
-### 4.1 Usar tabelas existentes
-
-O Supabase ja tem:
-- `prospects` -> Contatos
-- `prospect_opportunities` -> Deals
-- `prospect_activities` -> Atividades
-
-### 4.2 Criar hook `useCRM.tsx`
+Adicionar verificacao de admin na UI:
 
 ```typescript
-// Deals (prospect_opportunities)
-- fetchDeals(filters) 
-- createDeal(data)
-- updateDeal(id, data)
-- moveDealToStage(dealId, stage) // para drag-drop
-- closeDeal(dealId, won: boolean, linkedProjectId?)
+import { useUserRole } from "@/hooks/useUserRole";
 
-// Contacts (prospects)
-- fetchContacts(filters)
-- createContact(data)
-- updateContact(id, data)
+const { isAdmin, isLoading: roleLoading } = useUserRole();
 
-// Activities (prospect_activities)
-- fetchActivities(dealId)
-- createActivity(dealId, data)
-- completeActivity(activityId)
+// Se nao for admin, redirecionar
+if (!roleLoading && !isAdmin) {
+  navigate('/configuracoes');
+  return null;
+}
 ```
 
-### 4.3 Reescrever CRMPage.tsx
+### 1.3 Atualizar SettingsDashboard.tsx
 
-| Funcionalidade | Implementacao |
-|----------------|---------------|
-| Pipeline Kanban | prospect_opportunities por stage |
-| Drag & Drop | updateDeal para mudar stage |
-| Filtros | search, stage, owner |
-| Modal Novo Deal | Form completo |
-| Vista Lista | Tabela alternativa |
-| Forecast | SUM(estimated_value) por stage |
-
-### 4.4 Ao fechar deal como "ganho"
-
-Modal pergunta:
-- "Criar novo projeto?" -> Abre NewProjectModal
-- "Vincular projeto existente?" -> Select de projetos
-
-Atualiza `linked_project_id` no deal.
-
----
-
-## FASE 5: CALENDARIO UNIFICADO (50% -> 100%)
-
-### 5.1 Criar hook `useCalendar.tsx`
+Filtrar Danger Zone para mostrar apenas para admin:
 
 ```typescript
-// CRUD calendar_events
-- fetchEvents(month, year, filters)
-- createEvent(data)
-- updateEvent(id, data)
-- deleteEvent(id)
+const { isAdmin } = useUserRole();
 
-// Auto-create from projects
-- syncProjectDeadlines(projectId)
-```
-
-### 5.2 Integracao automatica
-
-Ao criar/atualizar projeto:
-- Criar evento tipo 'deadline' para due_date
-- Criar eventos tipo 'milestone' para cada stage planned_end
-
-Ao criar reuniao no CRM:
-- Criar evento tipo 'meeting' vinculado ao deal_id
-
-### 5.3 Atualizar CalendarPage.tsx
-
-| Feature | Implementacao |
-|---------|---------------|
-| Vista Mensal | calendar_events real |
-| Vista Semanal | Simplificada |
-| Lista Proximos | getUpcomingEvents() |
-| Filtros | Por tipo, projeto |
-| Criar Evento | Modal com form |
-| Alertas | Badges hoje/atrasado/em 3d |
-
-### 5.4 Notificacoes MVP
-
-Ao abrir app:
-- Se eventos atrasados: toast de alerta
-- Badge count no menu
-
----
-
-## FASE 6: LIMPEZA E MIGRACAO
-
-### 6.1 Arquivos a modificar
-
-| Arquivo | Acao |
-|---------|------|
-| `projectsStore.ts` | Manter so UI state |
-| `projectsMockData.ts` | Remover ou esvaziar |
-| `useCalendarEvents.ts` | Reescrever para Supabase |
-| `Dashboard.tsx` | Remover visualBoardData |
-| `CRMPage.tsx` | Reescrever completo |
-
-### 6.2 Novos arquivos
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/hooks/useProjects.tsx` | CRUD projetos |
-| `src/hooks/useCRM.tsx` | CRUD deals/contacts |
-| `src/hooks/useCalendar.tsx` | CRUD eventos |
-| `src/hooks/useDashboardMetrics.tsx` | Metricas agregadas |
-| `src/components/crm/DealModal.tsx` | Modal criar/editar deal |
-| `src/components/crm/ContactModal.tsx` | Modal criar/editar contato |
-
-### 6.3 Trigger para updated_at
-
-```sql
-CREATE TRIGGER update_projects_updated_at
-  BEFORE UPDATE ON projects
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+// Filtrar secoes baseado em permissao
+const visibleSections = settingsSections.filter(section => {
+  if (section.id === 'danger-zone') return isAdmin;
+  return true;
+});
 ```
 
 ---
 
-## RESUMO TECNICO
+## FASE 2: REMOVER MOCK DATA
 
-### Migracao SQL (1 grande)
+### 2.1 Remover Mock AI Responses
 
-1. Criar `projects` com RLS
-2. Criar `project_stages` com RLS
-3. Adicionar campos ao `calendar_events`
-4. Ajustar RLS em `prospect_opportunities`, `prospect_activities`
-5. Criar indexes de performance
-6. Criar trigger updated_at
+Arquivo: `src/components/ai/AIAssistant.tsx`
 
-### Arquivos novos (6)
+Substituir respostas mock por mensagem informativa:
 
-- `useProjects.tsx`
-- `useCRM.tsx`
-- `useCalendar.tsx`
-- `useDashboardMetrics.tsx`
-- `DealModal.tsx`
-- `ContactModal.tsx`
+```typescript
+const handleSend = async () => {
+  if (!input.trim() || loading) return;
 
-### Arquivos modificados (10+)
+  const userMsg = input.trim();
+  setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+  setInput('');
+  setLoading(true);
 
-- `projectsStore.ts` (simplificar)
-- `Dashboard.tsx` (remover mocks)
-- `CRMPage.tsx` (reescrever)
-- `CalendarPage.tsx` (integrar)
-- `ProjectsListPage.tsx` (integrar)
-- `ProjectsDashboard.tsx` (integrar)
-- `ProjectsKanban.tsx` (integrar)
-- `ProjectsTable.tsx` (integrar)
-- `NewProjectModal.tsx` (integrar)
-- `useCalendarEvents.ts` (reescrever)
+  // TODO: Integrar com Lovable AI quando configurado
+  setTimeout(() => {
+    setMessages(prev => [...prev, { 
+      role: 'ai', 
+      content: "Assistente IA em desenvolvimento. Esta funcionalidade estara disponivel em breve." 
+    }]);
+    setLoading(false);
+  }, 500);
+};
+```
+
+### 2.2 Limpar Import Mock Data
+
+Arquivo: `src/components/projects/list/ProjectsHeader.tsx`
+
+Remover import nao utilizado:
+```typescript
+// REMOVER esta linha
+import { CLIENTS, TEAM_MEMBERS } from "@/data/projectsMockData";
+```
+
+### 2.3 Manter projectsMockData.ts
+
+O arquivo ja esta limpo (arrays vazios) e e usado como estrutura de tipos. Manter como esta:
+
+```typescript
+// Team Members - Keep structure for creating new projects
+export const TEAM_MEMBERS: TeamMember[] = [];
+
+// Clients - Keep structure for creating new projects  
+export const CLIENTS: Client[] = [];
+
+// No mock projects - platform starts clean
+export const MOCK_PROJECTS = [];
+```
+
+---
+
+## FASE 3: EMPTY STATES CONSISTENTES
+
+### 3.1 Componentes do Dashboard Ja OK
+
+Os seguintes componentes ja mostram empty states adequados:
+- ProductionSection.tsx - "Nenhum projeto em producao" + CTA
+- PipelineSection.tsx - "Nenhum deal no pipeline" + CTA
+- AuditFeed.tsx - "Nenhuma atividade registrada"
+
+### 3.2 Verificar Consistencia
+
+Garantir que todas as telas sigam o padrao:
+
+```text
++--------------------------------------------------+
+|     [Icone contextual em bg circular]            |
+|                                                  |
+|     Titulo curto e claro                         |
+|     Descricao de 1 linha                         |
+|                                                  |
+|     [CTA Primario]                               |
++--------------------------------------------------+
+```
+
+Telas verificadas:
+- Dashboard - OK
+- CRM - OK (usando EmptyState component)
+- Projetos - OK
+- Marketing - OK
+- Financeiro - OK
+- Propostas - OK
+- Contratos - OK
+- Calendario - OK
+- Knowledge Base - OK
+
+---
+
+## FASE 4: TABELAS DO RESET COMPLETO
+
+### Lista Final de Tabelas para Limpeza
+
+```typescript
+const tables = [
+  // NOVOS - Projetos
+  "project_stages",
+  "projects",
+  
+  // NOVOS - Prospeccao
+  "prospect_activities",
+  "prospect_opportunities", 
+  "prospect_lists",
+  
+  // Marketing existentes
+  "content_checklist", 
+  "content_comments", 
+  "content_scripts", 
+  "instagram_references",
+  "content_items", 
+  "content_ideas", 
+  "campaign_creatives", 
+  "campaigns",
+  "instagram_snapshots", 
+  "creative_outputs", 
+  "creative_briefs", 
+  "generated_images",
+  "marketing_assets",
+  
+  // Prospeccao existentes
+  "cadence_steps", 
+  "cadences", 
+  "do_not_contact", 
+  "prospects",
+  
+  // Financeiro existentes
+  "revenues", 
+  "expenses", 
+  "cashflow_snapshots",
+  
+  // Contratos existentes
+  "contract_signatures",
+  "contract_addendums", 
+  "contract_alerts", 
+  "contract_links", 
+  "contract_versions",
+  "contracts",
+  
+  // Outros existentes
+  "proposals",
+  "meeting_notes", 
+  "calendar_events", 
+  "deadlines",
+  "storyboard_scenes", 
+  "storyboards",
+];
+```
+
+---
+
+## ARQUIVOS A MODIFICAR
+
+| Arquivo | Acao | Prioridade |
+|---------|------|------------|
+| `supabase/functions/platform-reset/index.ts` | Adicionar verificacao admin + novas tabelas | ALTA |
+| `src/pages/settings/DangerZoneSettingsPage.tsx` | Verificar role admin | ALTA |
+| `src/pages/settings/SettingsDashboard.tsx` | Filtrar DangerZone | ALTA |
+| `src/components/ai/AIAssistant.tsx` | Remover mock responses | MEDIA |
+| `src/components/projects/list/ProjectsHeader.tsx` | Remover import mock | BAIXA |
 
 ---
 
 ## ORDEM DE IMPLEMENTACAO
 
-1. **Migracao DB** - Criar tabelas e RLS
-2. **useProjects** - Hook base
-3. **Projetos UI** - Integrar componentes
-4. **useCRM** - Hook CRM
-5. **CRM UI** - Reescrever pagina
-6. **useCalendar** - Hook calendario
-7. **Calendario UI** - Integrar
-8. **Dashboard** - Metricas reais
-9. **Limpeza** - Remover mocks
+1. **Seguranca (ALTA)** - platform-reset + DangerZone admin check
+2. **AI Assistant** - Remover mocks
+3. **Imports** - Limpar referencias
+4. **Teste** - Verificar todas as telas com banco vazio
 
 ---
 
-## RESULTADO FINAL
+## RESULTADO ESPERADO
 
-- Zero mocks/hardcoded
-- Zustand apenas como cache UI
-- CRUD real com Supabase
-- RLS por role (admin/comercial/operacao/financeiro)
-- Empty states premium
-- Pronto para producao
+Apos implementacao:
+
+- Botao "Zerar Plataforma" visivel apenas para admins
+- Edge function rejeita usuarios nao-admin com erro 403
+- AIAssistant mostra mensagem de "em desenvolvimento"
+- Todas as telas iniciam com empty states premium
+- Reset limpa TODAS as tabelas operacionais incluindo projects e prospects
+- Event log registra quem executou o reset
+- Plataforma 100% pronta para dados reais de producao
+
