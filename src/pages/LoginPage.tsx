@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import squadHubLogo from "@/assets/squad-hub-logo.png";
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -36,14 +37,16 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
       <div className="relative z-10 w-full max-w-xl px-6 animate-fade-in">
         {/* Branding */}
-        <div className="text-center mb-16 space-y-4">
+        <div className="text-center mb-16 space-y-6">
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-border bg-card backdrop-blur-xl mb-4">
             <span className="material-symbols-outlined text-primary text-sm animate-pulse">lock</span>
             <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.5em]">Acesso Restrito // Studio Root</span>
           </div>
-          <h1 className="text-6xl md:text-8xl font-extrabold text-foreground uppercase tracking-tighter leading-none">
-            SQUAD <span className="squad-logo-text font-normal text-muted-foreground">Hub</span>
-          </h1>
+          <img 
+            src={squadHubLogo} 
+            alt="SQUAD Hub" 
+            className="h-16 md:h-20 w-auto mx-auto object-contain"
+          />
           <p className="text-muted-foreground text-[10px] uppercase tracking-[0.4em] font-bold">Inteligência Cinematográfica & Gestão de Luxo</p>
         </div>
 
