@@ -153,7 +153,8 @@ export function useCRM() {
     enabled: !!user,
   });
 
-  const isLoading = !!user && ((isLoadingDeals && isFetchingDeals) || (isLoadingContacts && isFetchingContacts));
+  // Only show loading when user exists and queries are actively fetching initial data
+  const isLoading = !!user && (isLoadingDeals || isLoadingContacts);
 
   // Create deal mutation
   const createDealMutation = useMutation({

@@ -269,9 +269,9 @@ export function useDashboardMetrics() {
     refetchInterval: 60000, // Refetch every minute
   });
 
-  // Only show loading when actually fetching, not when query is disabled
+  // Only show loading when user exists and query is loading initial data
   return {
     ...query,
-    isLoading: !!user && query.isLoading && query.isFetching,
+    isLoading: !!user && query.isLoading,
   };
 }
