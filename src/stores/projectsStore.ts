@@ -15,6 +15,7 @@ interface ProjectsUIState {
   viewMode: ViewMode;
   isNewProjectModalOpen: boolean;
   isEditProjectModalOpen: boolean;
+  isAIProjectModalOpen: boolean;
   
   // Local updates cache (for optimistic UI)
   projectUpdates: Record<string, ProjectUpdate[]>;
@@ -26,6 +27,7 @@ interface ProjectsUIState {
   setSelectedProjectId: (id: string | null) => void;
   setNewProjectModalOpen: (open: boolean) => void;
   setEditProjectModalOpen: (open: boolean) => void;
+  setAIProjectModalOpen: (open: boolean) => void;
   
   // Updates (local cache for UI)
   addProjectUpdate: (projectId: string, update: ProjectUpdate) => void;
@@ -50,6 +52,7 @@ export const useProjectsStore = create<ProjectsUIState>((set, get) => ({
   viewMode: 'list',
   isNewProjectModalOpen: false,
   isEditProjectModalOpen: false,
+  isAIProjectModalOpen: false,
   projectUpdates: {},
 
   // Filter actions
@@ -66,6 +69,8 @@ export const useProjectsStore = create<ProjectsUIState>((set, get) => ({
   setNewProjectModalOpen: (open) => set({ isNewProjectModalOpen: open }),
 
   setEditProjectModalOpen: (open) => set({ isEditProjectModalOpen: open }),
+
+  setAIProjectModalOpen: (open) => set({ isAIProjectModalOpen: open }),
 
   // Project updates (local cache for UI optimism)
   addProjectUpdate: (projectId, update) => set((state) => ({
@@ -95,8 +100,10 @@ export const useProjectViewMode = () => useProjectsStore((state) => ({
 export const useProjectModals = () => useProjectsStore((state) => ({
   isNewProjectModalOpen: state.isNewProjectModalOpen,
   isEditProjectModalOpen: state.isEditProjectModalOpen,
+  isAIProjectModalOpen: state.isAIProjectModalOpen,
   setNewProjectModalOpen: state.setNewProjectModalOpen,
   setEditProjectModalOpen: state.setEditProjectModalOpen,
+  setAIProjectModalOpen: state.setAIProjectModalOpen,
   selectedProjectId: state.selectedProjectId,
   setSelectedProjectId: state.setSelectedProjectId,
 }));

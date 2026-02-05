@@ -7,6 +7,7 @@ import { ProjectsTable } from "@/components/projects/list/ProjectsTable";
 import { ProjectsKanban } from "@/components/projects/list/ProjectsKanban";
 import { NewProjectModal } from "@/components/projects/modals/NewProjectModal";
 import { EditProjectModal } from "@/components/projects/modals/EditProjectModal";
+import { AIProjectModal } from "@/components/projects/modals/AIProjectModal";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { LayoutDashboard, List, Kanban, GanttChart, LayoutGrid, Loader2 } from "lucide-react";
@@ -16,7 +17,7 @@ type ViewType = 'dashboard' | 'board' | 'kanban' | 'timeline' | 'list';
 export default function ProjectsListPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isNewProjectModalOpen, isEditProjectModalOpen, selectedProjectId, setEditProjectModalOpen, setSelectedProjectId } = useProjectsStore();
+  const { isNewProjectModalOpen, isEditProjectModalOpen, isAIProjectModalOpen, selectedProjectId, setEditProjectModalOpen, setSelectedProjectId, setAIProjectModalOpen } = useProjectsStore();
   const { projects, isLoading } = useProjects();
   
   // Determine view from route
@@ -138,6 +139,11 @@ export default function ProjectsListPage() {
       <NewProjectModal 
         open={isNewProjectModalOpen} 
         onOpenChange={(open) => useProjectsStore.getState().setNewProjectModalOpen(open)} 
+      />
+      
+      <AIProjectModal
+        open={isAIProjectModalOpen}
+        onOpenChange={setAIProjectModalOpen}
       />
       
       {selectedProject && (

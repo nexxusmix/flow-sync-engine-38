@@ -8,17 +8,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, LayoutList, LayoutGrid, Filter, X, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, LayoutList, LayoutGrid, Filter, X, SlidersHorizontal, Sparkles } from "lucide-react";
 import { PROJECT_TEMPLATES } from "@/data/projectTemplates";
 import { CLIENTS, TEAM_MEMBERS } from "@/data/projectsMockData";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function ProjectsHeader() {
   const { 
     filters, 
-    setFilters, 
+    setFilters,
     viewMode, 
-    setViewMode, 
+    setViewMode,
+    setAIProjectModalOpen,
     setNewProjectModalOpen,
     resetFilters 
   } = useProjectsStore();
@@ -89,14 +96,25 @@ export function ProjectsHeader() {
             </Button>
           </div>
 
-          {/* New Project Button */}
-          <Button 
-            onClick={() => setNewProjectModalOpen(true)}
-            className="h-11 px-6 rounded-xl gap-2 shadow-lg shadow-primary/20"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Novo Projeto</span>
-          </Button>
+          {/* New Project Button with Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="h-11 px-6 rounded-xl gap-2 shadow-lg shadow-primary/20">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Novo Projeto</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setNewProjectModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Criar Manualmente
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setAIProjectModalOpen(true)}>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Criar com IA
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
