@@ -2339,6 +2339,41 @@ export type Database = {
           },
         ]
       }
+      portal_activities: {
+        Row: {
+          action: string
+          created_at: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          portal_link_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          portal_link_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          portal_link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_activities_portal_link_id_fkey"
+            columns: ["portal_link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_approvals: {
         Row: {
           approved_at: string
@@ -2530,6 +2565,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      project_files: {
+        Row: {
+          created_at: string | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          folder: string
+          id: string
+          name: string
+          project_id: string
+          tags: string[] | null
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          visible_in_portal: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          folder?: string
+          id?: string
+          name: string
+          project_id: string
+          tags?: string[] | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          visible_in_portal?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          folder?: string
+          id?: string
+          name?: string
+          project_id?: string
+          tags?: string[] | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          visible_in_portal?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_stage_settings: {
         Row: {
