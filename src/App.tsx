@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { useRealtimeSync } from "./hooks/useRealtimeSync";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
@@ -91,6 +92,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { isAuthenticated, login } = useAuth();
+  
+  // Inicializa sincronização realtime global
+  useRealtimeSync();
 
   return (
     <Routes>
