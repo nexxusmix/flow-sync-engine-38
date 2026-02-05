@@ -24,11 +24,11 @@ const bottomNavigation = [
 
 export function AppSidebar() {
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-background border-r border-border flex flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2 px-5 border-b border-sidebar-border">
-        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary">
-          <Sparkles className="h-4 w-4 text-primary-foreground" />
+      <div className="flex h-16 items-center gap-2.5 px-5 border-b border-border">
+        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-card border border-border">
+          <Sparkles className="h-4 w-4 text-foreground" />
         </div>
         <span className="font-semibold text-foreground tracking-tight">SQUAD Hub</span>
       </div>
@@ -43,8 +43,8 @@ export function AppSidebar() {
               cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-sidebar-accent text-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                  ? "bg-card text-foreground border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
               )
             }
           >
@@ -55,7 +55,7 @@ export function AppSidebar() {
       </nav>
 
       {/* Bottom navigation */}
-      <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
+      <div className="px-3 py-4 border-t border-border space-y-1">
         {bottomNavigation.map((item) => (
           <NavLink
             key={item.name}
@@ -64,8 +64,8 @@ export function AppSidebar() {
               cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-sidebar-accent text-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                  ? "bg-card text-foreground border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
               )
             }
           >
