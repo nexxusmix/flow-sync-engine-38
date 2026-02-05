@@ -18,7 +18,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
         <div className="flex items-center gap-3">
-          <img src={squadLogo} alt="SQUAD Hub" className="h-10 w-auto" />
+          <img src={squadLogo} alt="SQUAD Hub" className="h-10 max-h-10 object-contain" />
         </div>
         <Button onClick={() => navigate('/login')} variant="outline" className="gap-2">
           Entrar
@@ -144,7 +144,7 @@ export default function LandingPage() {
       <footer className="relative z-10 px-6 md:px-12 py-8 border-t border-border/50">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src={squadLogo} alt="SQUAD Hub" className="h-8 w-auto opacity-50" />
+            <img src={squadLogo} alt="SQUAD Hub" className="h-8 max-h-8 object-contain opacity-50" />
           </div>
           <p className="text-sm text-muted-foreground">
             © 2025 SQUAD Hub. Todos os direitos reservados.
