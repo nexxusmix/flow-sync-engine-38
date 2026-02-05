@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjectsStore } from "@/stores/projectsStore";
-import { Project, ProjectStageType } from "@/types/projects";
+import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { PROJECT_STAGES, STAGE_COLORS, STATUS_CONFIG } from "@/data/projectTemplates";
-import { Ban, Plus, ChevronRight, Globe, GripVertical } from "lucide-react";
+import { Ban, Plus, ChevronRight, Globe, GripVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
+type ProjectStageType = typeof PROJECT_STAGES[number]['type'];
 
 function HealthBar({ score }: { score: number }) {
   const color = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
@@ -28,12 +30,13 @@ function KanbanCard({
   onDragStart,
   isDragging 
 }: { 
-  project: Project;
-  onDragStart: (e: React.DragEvent, project: Project) => void;
+  project: ProjectWithStages;
+  onDragStart: (e: React.DragEvent, project: ProjectWithStages) => void;
   isDragging: boolean;
 }) {
   const navigate = useNavigate();
-  const statusConfig = STATUS_CONFIG[project.status];
+  const status = project.status || 'active';
+  const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.ok;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -57,23 +60,20 @@ function KanbanCard({
         <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[10px] text-primary font-medium uppercase">{project.client.company}</span>
-            {project.portalLink?.isActive && (
-              <Globe className="w-3 h-3 text-primary" />
-            )}
+            <span className="text-[10px] text-primary font-medium uppercase">{project.client_name}</span>
           </div>
           <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
-            {project.title}
+            {project.name}
           </h4>
         </div>
-        {project.blockedByPayment && (
+        {project.has_payment_block && (
           <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
         )}
       </div>
 
       {/* Value & Status */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-foreground">{formatCurrency(project.contractValue)}</span>
+        <span className="text-sm font-medium text-foreground">{formatCurrency(project.contract_value || 0)}</span>
         <span className={`text-[9px] px-2 py-0.5 rounded border font-medium ${statusConfig.color}`}>
           {statusConfig.label}
         </span>
@@ -81,28 +81,18 @@ function KanbanCard({
 
       {/* Health bar */}
       <div className="mb-3">
-        <HealthBar score={project.healthScore} />
+        <HealthBar score={project.health_score || 100} />
       </div>
 
       {/* Footer - Team & Deadline */}
       <div className="flex items-center justify-between pt-3 border-t border-border/50">
         <div className="flex items-center -space-x-1.5">
-          {project.team.slice(0, 3).map((member, idx) => (
-            <div 
-              key={idx} 
-              className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border-2 border-card"
-            >
-              <span className="text-[9px] font-medium text-primary">{member.initials}</span>
-            </div>
-          ))}
-          {project.team.length > 3 && (
-            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center border-2 border-card">
-              <span className="text-[8px] font-medium text-muted-foreground">+{project.team.length - 3}</span>
-            </div>
-          )}
+          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border-2 border-card">
+            <span className="text-[9px] font-medium text-primary">{project.owner_name?.charAt(0) || 'S'}</span>
+          </div>
         </div>
         <span className="text-[10px] text-muted-foreground">
-          {new Date(project.estimatedDelivery).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+          {project.due_date ? new Date(project.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '-'}
         </span>
       </div>
     </div>
@@ -117,18 +107,18 @@ function KanbanColumn({
   onDrop,
   draggedProject,
 }: { 
-  stage: { type: ProjectStageType; name: string }; 
-  projects: Project[];
-  onDragStart: (e: React.DragEvent, project: Project) => void;
+  stage: { type: string; name: string }; 
+  projects: ProjectWithStages[];
+  onDragStart: (e: React.DragEvent, project: ProjectWithStages) => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, stageType: ProjectStageType) => void;
-  draggedProject: Project | null;
+  onDrop: (e: React.DragEvent, stageType: string) => void;
+  draggedProject: ProjectWithStages | null;
 }) {
   const { setNewProjectModalOpen } = useProjectsStore();
-  const stageColor = STAGE_COLORS[stage.type];
+  const stageColor = STAGE_COLORS[stage.type as keyof typeof STAGE_COLORS] || 'bg-muted';
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const totalValue = projects.reduce((acc, p) => acc + p.contractValue, 0);
+  const totalValue = projects.reduce((acc, p) => acc + (p.contract_value || 0), 0);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -208,15 +198,23 @@ function KanbanColumn({
 }
 
 export function ProjectsKanban() {
-  const { getFilteredProjects, moveProjectToStage } = useProjectsStore();
-  const projects = getFilteredProjects();
-  const [draggedProject, setDraggedProject] = useState<Project | null>(null);
+  const { projects, isLoading, moveToStage } = useProjects();
+  const { filters } = useProjectsStore();
+  const [draggedProject, setDraggedProject] = useState<ProjectWithStages | null>(null);
 
-  const getProjectsByStage = (stageType: ProjectStageType) => {
-    return projects.filter(p => p.currentStage === stageType);
+  // Apply filters
+  const filteredProjects = projects.filter(project => {
+    if (filters.search && !project.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.status !== 'all' && project.status !== filters.status) return false;
+    if (filters.stage !== 'all' && project.stage_current !== filters.stage) return false;
+    return true;
+  });
+
+  const getProjectsByStage = (stageType: string) => {
+    return filteredProjects.filter(p => p.stage_current === stageType);
   };
 
-  const handleDragStart = (e: React.DragEvent, project: Project) => {
+  const handleDragStart = (e: React.DragEvent, project: ProjectWithStages) => {
     setDraggedProject(project);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -226,10 +224,10 @@ export function ProjectsKanban() {
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e: React.DragEvent, stageType: ProjectStageType) => {
+  const handleDrop = (e: React.DragEvent, stageType: string) => {
     e.preventDefault();
-    if (draggedProject && draggedProject.currentStage !== stageType) {
-      moveProjectToStage(draggedProject.id, stageType);
+    if (draggedProject && draggedProject.stage_current !== stageType) {
+      moveToStage({ projectId: draggedProject.id, stageKey: stageType });
     }
     setDraggedProject(null);
   };
@@ -237,6 +235,14 @@ export function ProjectsKanban() {
   const handleDragEnd = () => {
     setDraggedProject(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <ScrollArea className="w-full pb-4" onDragEnd={handleDragEnd}>

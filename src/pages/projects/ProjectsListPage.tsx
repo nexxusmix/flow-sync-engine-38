@@ -8,14 +8,16 @@ import { ProjectsKanban } from "@/components/projects/list/ProjectsKanban";
 import { NewProjectModal } from "@/components/projects/modals/NewProjectModal";
 import { EditProjectModal } from "@/components/projects/modals/EditProjectModal";
 import { useProjectsStore } from "@/stores/projectsStore";
-import { LayoutDashboard, List, Kanban, GanttChart, LayoutGrid } from "lucide-react";
+import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
+import { LayoutDashboard, List, Kanban, GanttChart, LayoutGrid, Loader2 } from "lucide-react";
 
 type ViewType = 'dashboard' | 'board' | 'kanban' | 'timeline' | 'list';
 
 export default function ProjectsListPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { viewMode, isNewProjectModalOpen, isEditProjectModalOpen, selectedProject } = useProjectsStore();
+  const { isNewProjectModalOpen, isEditProjectModalOpen, selectedProjectId, setEditProjectModalOpen, setSelectedProjectId } = useProjectsStore();
+  const { projects, isLoading } = useProjects();
   
   // Determine view from route
   const getViewFromRoute = (): ViewType => {
@@ -48,6 +50,21 @@ export default function ProjectsListPage() {
     { id: 'timeline' as ViewType, label: 'Timeline', icon: GanttChart },
     { id: 'list' as ViewType, label: 'Lista', icon: List },
   ];
+
+  // Find selected project from Supabase data
+  const selectedProject = selectedProjectId 
+    ? projects.find(p => p.id === selectedProjectId) 
+    : null;
+
+  if (isLoading) {
+    return (
+      <DashboardLayout title="Projetos">
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Projetos">
@@ -84,7 +101,7 @@ export default function ProjectsListPage() {
           <>
             <ProjectsHeader />
             <div className="min-h-[400px]">
-              <BoardView />
+              <BoardView projects={projects} />
             </div>
           </>
         )}
@@ -102,7 +119,7 @@ export default function ProjectsListPage() {
           <>
             <ProjectsHeader />
             <div className="min-h-[400px]">
-              <TimelineView />
+              <TimelineView projects={projects} />
             </div>
           </>
         )}
@@ -126,7 +143,10 @@ export default function ProjectsListPage() {
       {selectedProject && (
         <EditProjectModal 
           open={isEditProjectModalOpen} 
-          onOpenChange={(open) => useProjectsStore.getState().setEditProjectModalOpen(open)}
+          onOpenChange={(open) => {
+            setEditProjectModalOpen(open);
+            if (!open) setSelectedProjectId(null);
+          }}
           project={selectedProject}
         />
       )}
@@ -135,17 +155,24 @@ export default function ProjectsListPage() {
 }
 
 // Board View - Visão Executiva com cards grandes
-function BoardView() {
-  const getFilteredProjects = useProjectsStore(state => state.getFilteredProjects);
-  const filteredProjects = getFilteredProjects();
+function BoardView({ projects }: { projects: ProjectWithStages[] }) {
   const navigate = useNavigate();
+  const { filters } = useProjectsStore();
+
+  // Apply filters
+  const filteredProjects = projects.filter(project => {
+    if (filters.search && !project.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.status !== 'all' && project.status !== filters.status) return false;
+    if (filters.stage !== 'all' && project.stage_current !== filters.stage) return false;
+    return true;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ok': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'em_risco': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'atrasado': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'bloqueado': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'active': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      case 'paused': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      case 'completed': return 'bg-primary/20 text-primary border-primary/30';
+      case 'archived': return 'bg-muted text-muted-foreground border-border';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -164,6 +191,22 @@ function BoardView() {
     }).format(value);
   };
 
+  const getStageProgress = (project: ProjectWithStages) => {
+    if (!project.stages || project.stages.length === 0) return 0;
+    const done = project.stages.filter(s => s.status === 'done').length;
+    return Math.round((done / project.stages.length) * 100);
+  };
+
+  if (filteredProjects.length === 0) {
+    return (
+      <div className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center min-h-[400px]">
+        <LayoutGrid className="w-12 h-12 text-muted-foreground/50 mb-4" />
+        <p className="text-lg text-muted-foreground">Nenhum projeto encontrado</p>
+        <p className="text-sm text-muted-foreground/60 mt-1">Ajuste os filtros ou crie um novo projeto</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {filteredProjects.map((project) => (
@@ -175,11 +218,11 @@ function BoardView() {
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{project.client.company}</p>
-              <h3 className="text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.title}</h3>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{project.client_name}</p>
+              <h3 className="text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.name}</h3>
             </div>
             <span className={`px-2 py-1 rounded-full text-[9px] font-bold uppercase border ${getStatusColor(project.status)}`}>
-              {project.status === 'ok' ? 'Ok' : project.status === 'em_risco' ? 'Em Risco' : project.status === 'atrasado' ? 'Atrasado' : 'Bloqueado'}
+              {project.status === 'active' ? 'Ativo' : project.status === 'paused' ? 'Pausado' : project.status === 'completed' ? 'Concluído' : 'Arquivado'}
             </span>
           </div>
 
@@ -187,12 +230,12 @@ function BoardView() {
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-[10px] text-muted-foreground uppercase font-bold">Progresso</span>
-              <span className="text-[10px] font-bold text-foreground">{Math.round((project.stages.filter(s => s.status === 'concluido').length / project.stages.length) * 100)}%</span>
+              <span className="text-[10px] font-bold text-foreground">{getStageProgress(project)}%</span>
             </div>
             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
               <div 
                 className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${(project.stages.filter(s => s.status === 'concluido').length / project.stages.length) * 100}%` }}
+                style={{ width: `${getStageProgress(project)}%` }}
               />
             </div>
           </div>
@@ -201,22 +244,16 @@ function BoardView() {
           <div className="flex items-center gap-2 mb-4">
             <span className="text-[9px] font-bold text-muted-foreground uppercase">Etapa:</span>
             <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg uppercase">
-              {project.currentStage.replace('_', ' ')}
+              {project.stage_current?.replace('_', ' ') || 'Briefing'}
             </span>
           </div>
 
           {/* Alerts */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {project.blockedByPayment && (
+            {project.has_payment_block && (
               <span className="px-2 py-1 bg-red-500/10 text-red-400 text-[8px] font-bold rounded-full flex items-center gap-1">
                 <span className="material-symbols-outlined text-[10px]">block</span>
                 Bloqueio Financeiro
-              </span>
-            )}
-            {project.status === 'atrasado' && (
-              <span className="px-2 py-1 bg-amber-500/10 text-amber-400 text-[8px] font-bold rounded-full flex items-center gap-1">
-                <span className="material-symbols-outlined text-[10px]">schedule</span>
-                Atrasado
               </span>
             )}
           </div>
@@ -225,13 +262,13 @@ function BoardView() {
           <div className="flex items-center justify-between pt-4 border-t border-border/50">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-bold text-primary">
-                {project.owner.initials}
+                {project.owner_name?.charAt(0) || 'S'}
               </div>
-              <span className="text-[10px] text-muted-foreground">{project.owner.name}</span>
+              <span className="text-[10px] text-muted-foreground">{project.owner_name || 'Squad'}</span>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-foreground">{formatCurrency(project.contractValue)}</p>
-              <p className={`text-[9px] font-bold ${getHealthColor(project.healthScore)}`}>{project.healthScore}% saúde</p>
+              <p className="text-[10px] font-bold text-foreground">{formatCurrency(project.contract_value || 0)}</p>
+              <p className={`text-[9px] font-bold ${getHealthColor(project.health_score)}`}>{project.health_score}% saúde</p>
             </div>
           </div>
         </div>
@@ -241,10 +278,17 @@ function BoardView() {
 }
 
 // Timeline View - Gantt simplificado
-function TimelineView() {
-  const getFilteredProjects = useProjectsStore(state => state.getFilteredProjects);
-  const filteredProjects = getFilteredProjects();
+function TimelineView({ projects }: { projects: ProjectWithStages[] }) {
   const navigate = useNavigate();
+  const { filters } = useProjectsStore();
+
+  // Apply filters
+  const filteredProjects = projects.filter(project => {
+    if (filters.search && !project.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.status !== 'all' && project.status !== filters.status) return false;
+    if (filters.stage !== 'all' && project.stage_current !== filters.stage) return false;
+    return true;
+  });
 
   const getProgressColor = (healthScore: number) => {
     if (healthScore >= 80) return 'bg-emerald-500';
@@ -258,9 +302,9 @@ function TimelineView() {
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
   const totalDays = Math.ceil((endOfMonth.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24));
 
-  const getProjectPosition = (project: typeof filteredProjects[0]) => {
-    const start = new Date(project.startDate);
-    const end = new Date(project.estimatedDelivery);
+  const getProjectPosition = (project: ProjectWithStages) => {
+    const start = project.start_date ? new Date(project.start_date) : today;
+    const end = project.due_date ? new Date(project.due_date) : new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
     
     const startOffset = Math.max(0, Math.ceil((start.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24)));
     const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
@@ -273,6 +317,16 @@ function TimelineView() {
 
   const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const currentMonth = today.getMonth();
+
+  if (filteredProjects.length === 0) {
+    return (
+      <div className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center min-h-[400px]">
+        <GanttChart className="w-12 h-12 text-muted-foreground/50 mb-4" />
+        <p className="text-lg text-muted-foreground">Nenhum projeto encontrado</p>
+        <p className="text-sm text-muted-foreground/60 mt-1">Ajuste os filtros ou crie um novo projeto</p>
+      </div>
+    );
+  }
 
   return (
     <div className="glass-card rounded-2xl p-6 overflow-hidden">
@@ -317,18 +371,18 @@ function TimelineView() {
             >
               {/* Project Info */}
               <div className="w-48 flex-shrink-0">
-                <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.title}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{project.client.company}</p>
+                <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.name}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{project.client_name}</p>
               </div>
               
               {/* Timeline Bar */}
               <div className="flex-1 h-8 relative bg-muted/20 rounded-lg">
                 <div 
-                  className={`absolute top-1 bottom-1 rounded-md ${getProgressColor(project.healthScore)} opacity-80 hover:opacity-100 transition-opacity`}
+                  className={`absolute top-1 bottom-1 rounded-md ${getProgressColor(project.health_score)} opacity-80 hover:opacity-100 transition-opacity`}
                   style={position}
                 >
                   <div className="h-full flex items-center justify-center">
-                    <span className="text-[8px] font-bold text-white px-2 truncate">{project.currentStage.replace('_', ' ')}</span>
+                    <span className="text-[8px] font-bold text-white px-2 truncate">{project.stage_current?.replace('_', ' ') || 'Briefing'}</span>
                   </div>
                 </div>
                 

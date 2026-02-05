@@ -4,79 +4,73 @@ import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { AIChatSnippet } from "@/components/dashboard/AIChatSnippet";
 import { ActionsList } from "@/components/dashboard/ActionsList";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
-import { useTimelineMilestones } from "@/hooks/useTimelineMilestones";
-import { useProjectsStore } from "@/stores/projectsStore";
-import { useFinancialStore } from "@/stores/financialStore";
-import { CLIENTS } from "@/data/projectsMockData";
-import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap, Activity, Inbox, Eye, HardDrive } from "lucide-react";
+import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap, Activity, Inbox, Eye, HardDrive, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import squadLogo from "@/assets/squad-hub-logo.png";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-// Mock data for Visual Board
-const visualBoardData = {
-  columns: [
-    { 
-      name: 'Roteiro', 
-      count: 1, 
-      projects: [
-        { id: 'SF-102', title: 'Legacy Private', client: 'Banco Legacy', initials: ['B', 'M'], status: 'Ok' }
-      ]
-    },
-    { 
-      name: 'Captação', 
-      count: 1, 
-      projects: [
-        { id: 'SF-108', title: 'Tour 360', client: 'Vértice Arq', initials: ['C', 'B'], status: 'Ok' }
-      ]
-    },
-    { 
-      name: 'Edição', 
-      count: 2, 
-      projects: [
-        { id: 'SF-092', title: 'Manifesto Matta', client: 'Lugasa Group', initials: ['M', 'V'], status: 'Ok' },
-        { id: 'SF-095', title: 'Brand Film Exotic', client: 'Sarto Imóveis', initials: ['V', 'R'], status: 'Em Risco' }
-      ]
-    },
-    { 
-      name: 'Review', 
-      count: 0, 
-      projects: []
-    }
-  ],
-  timeline: [
-    { name: 'Manifesto Matta', progress: 85, color: 'bg-primary' },
-    { name: 'Brand Film Exotic', progress: 45, color: 'bg-amber-500' },
-    { name: 'Legacy Private', progress: 25, color: 'bg-emerald-500' },
-    { name: 'Tour 360', progress: 60, color: 'bg-violet-500' }
-  ],
-  accounts: [
-    { id: 'SF-092', client: 'Lugasa Group', title: 'Manifesto Matta', value: 85, phase: 'Edição', health: 94 },
-    { id: 'SF-095', client: 'Sarto Imóveis', title: 'Brand Film Exotic', value: 45, phase: 'Edição', health: 68 },
-    { id: 'SF-102', client: 'Banco Legacy', title: 'Legacy Private', value: 120, phase: 'Roteiro', health: 98 },
-    { id: 'SF-108', client: 'Vértice Arq', title: 'Tour 360', value: 32, phase: 'Captação', health: 82 }
-  ]
-};
-
 export default function Dashboard() {
-  const timelineMilestones = useTimelineMilestones();
-  const { projects } = useProjectsStore();
+  const { data, isLoading } = useDashboardMetrics();
   
-  const metrics = [
-    { label: "Receita do Mês", value: "R$ 421.5k", trend: "+23%", trendUp: true, icon: DollarSign },
-    { label: "Pipeline Ativo", value: "R$ 1.2M", trend: "+8%", trendUp: true, icon: TrendingUp },
-    { label: "Novos Leads", value: "42", trend: "+12%", trendUp: true, icon: Users },
-    { label: "Projetos Ativos", value: String(projects.length), trend: projects.filter(p => p.status === 'atrasado').length > 0 ? `${projects.filter(p => p.status === 'atrasado').length} atrasados` : "Ok", trendUp: projects.filter(p => p.status === 'atrasado').length === 0, icon: Clapperboard },
+  const metrics = data?.metrics;
+  const projectsByStage = data?.projectsByStage || [];
+  const timeline30Days = data?.timeline30Days || [];
+  const recentProjects = data?.recentProjects || [];
+
+  // Transform timeline events to milestones format - map event types to MilestoneType
+  const typeMap: Record<string, 'delivery' | 'review' | 'payment' | 'internal' | 'start' | 'end'> = {
+    deadline: 'delivery',
+    delivery: 'delivery', 
+    meeting: 'internal',
+    milestone: 'start',
+    task: 'internal',
+  };
+  
+  const timelineMilestones = timeline30Days.map(event => ({
+    id: event.id,
+    title: event.title,
+    date: event.date,
+    type: typeMap[event.type] || 'internal',
+    severity: event.severity,
+    projectId: event.project_id || '',
+    projectName: undefined,
+  }));
+
+  const metricCards = [
+    { 
+      label: "Receita do Mês", 
+      value: `R$ ${((metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}k`, 
+      trend: metrics?.pendingPayments ? `${((metrics.pendingPayments / 1000).toFixed(0))}k pendente` : "Ok", 
+      trendUp: !metrics?.pendingPayments, 
+      icon: DollarSign 
+    },
+    { 
+      label: "Pipeline Ativo", 
+      value: `R$ ${((metrics?.totalPipelineValue || 0) / 1000).toFixed(0)}k`, 
+      trend: `Forecast: R$ ${((metrics?.forecast || 0) / 1000).toFixed(0)}k`, 
+      trendUp: true, 
+      icon: TrendingUp 
+    },
+    { 
+      label: "Deals Ativos", 
+      value: String(metrics?.totalDeals || 0), 
+      trend: metrics?.dealsByStage ? `${metrics.dealsByStage['fechado']?.count || 0} fechados` : "0 fechados", 
+      trendUp: true, 
+      icon: Users 
+    },
+    { 
+      label: "Projetos Ativos", 
+      value: String(metrics?.totalProjectsActive || 0), 
+      trend: metrics?.projectsAtRisk ? `${metrics.projectsAtRisk} em risco` : "Ok", 
+      trendUp: !metrics?.projectsAtRisk, 
+      icon: Clapperboard 
+    },
   ];
 
-  // Get recent projects (last 4)
-  const recentProjects = [...projects]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 4);
-
   const getStatusBadge = (status: string) => {
-    if (status === 'Ok') {
+    if (status === 'active') {
       return <span className="text-[8px] font-normal text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Ok</span>;
     }
     return <span className="text-[8px] font-normal text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Em Risco</span>;
@@ -87,6 +81,23 @@ export default function Dashboard() {
     if (health >= 70) return 'text-amber-500';
     return 'text-red-500';
   };
+
+  // Get only stages with projects for visual board
+  const activeStages = projectsByStage.filter(stage => stage.count > 0).slice(0, 4);
+  // If less than 4, pad with empty stages
+  const displayStages = activeStages.length < 4 
+    ? [...activeStages, ...projectsByStage.filter(s => s.count === 0).slice(0, 4 - activeStages.length)]
+    : activeStages;
+
+  if (isLoading) {
+    return (
+      <DashboardLayout title="Dashboard">
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Dashboard">
@@ -143,7 +154,7 @@ export default function Dashboard() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {metrics.map((metric, idx) => (
+          {metricCards.map((metric, idx) => (
             <MetricCard
               key={idx}
               label={metric.label}
@@ -176,26 +187,24 @@ export default function Dashboard() {
           
           {/* Mini Kanban */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {visualBoardData.columns.map((column) => (
-              <div key={column.name} className="bg-muted/30 rounded-xl p-3 min-h-[140px]">
+            {displayStages.map((stage) => (
+              <div key={stage.stage} className="bg-muted/30 rounded-xl p-3 min-h-[140px]">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wide">{column.name}</span>
-                  <span className="text-[10px] font-normal text-foreground bg-background/50 px-2 py-0.5 rounded-full">{column.count}</span>
+                  <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wide">{stage.stageName}</span>
+                  <span className="text-[10px] font-normal text-foreground bg-background/50 px-2 py-0.5 rounded-full">{stage.count}</span>
                 </div>
                 <div className="space-y-2">
-                  {column.projects.length > 0 ? (
-                    column.projects.map((proj) => (
+                  {stage.projects.length > 0 ? (
+                    stage.projects.slice(0, 2).map((proj) => (
                       <Link key={proj.id} to={`/projetos/${proj.id}`} className="block">
                         <div className="bg-background/50 rounded-lg p-2.5 border border-border/50 hover:border-primary/30 transition-colors">
-                          <p className="text-[10px] font-normal text-foreground truncate">{proj.title}</p>
-                          <p className="text-[8px] text-muted-foreground truncate">{proj.client}</p>
+                          <p className="text-[10px] font-normal text-foreground truncate">{proj.name}</p>
+                          <p className="text-[8px] text-muted-foreground truncate">{proj.client_name}</p>
                           <div className="flex items-center justify-between mt-2">
                             <div className="flex -space-x-1">
-                              {proj.initials.map((initial, idx) => (
-                                <div key={idx} className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-normal text-primary border border-background">
-                                  {initial}
-                                </div>
-                              ))}
+                              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-normal text-primary border border-background">
+                                {proj.owner_name?.charAt(0) || 'S'}
+                              </div>
                             </div>
                             {getStatusBadge(proj.status)}
                           </div>
@@ -223,17 +232,21 @@ export default function Dashboard() {
               </div>
               <p className="text-[8px] text-primary font-normal uppercase tracking-widest mb-3">SQUAD ENGINE</p>
               <div className="space-y-2">
-                {visualBoardData.timeline.length > 0 ? (
-                  visualBoardData.timeline.map((item) => (
-                    <div key={item.name} className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] text-foreground font-light truncate pr-2">{item.name}</span>
+                {recentProjects.length > 0 ? (
+                  recentProjects.slice(0, 4).map((project) => {
+                    const progress = Math.min(100, Math.max(0, project.health_score));
+                    const color = progress >= 80 ? 'bg-primary' : progress >= 60 ? 'bg-amber-500' : 'bg-red-500';
+                    return (
+                      <div key={project.id} className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] text-foreground font-light truncate pr-2">{project.name}</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${progress}%` }} />
+                        </div>
                       </div>
-                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${item.progress}%` }} />
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="flex flex-col items-center justify-center py-6 text-muted-foreground/50">
                     <Calendar className="w-5 h-5 mb-2" />
@@ -254,24 +267,24 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <Users className="w-3 h-3 text-primary" />
-                      <span className="text-[10px] text-foreground font-light">Workload Editores</span>
+                      <span className="text-[10px] text-foreground font-light">Projetos Ativos</span>
                     </div>
-                    <span className="text-[10px] font-normal text-primary">92%</span>
+                    <span className="text-[10px] font-normal text-primary">{metrics?.totalProjectsActive || 0}</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: '92%' }} />
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, (metrics?.totalProjectsActive || 0) * 10)}%` }} />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <HardDrive className="w-3 h-3 text-violet-500" />
-                      <span className="text-[10px] text-foreground font-light">Cloud Storage 10Gbps</span>
+                      <span className="text-[10px] text-foreground font-light">Eventos Próx. 30D</span>
                     </div>
-                    <span className="text-[10px] font-normal text-violet-500">78%</span>
+                    <span className="text-[10px] font-normal text-violet-500">{metrics?.eventsNext30Days || 0}</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-violet-500 rounded-full" style={{ width: '78%' }} />
+                    <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min(100, (metrics?.eventsNext30Days || 0) * 5)}%` }} />
                   </div>
                 </div>
               </div>
@@ -284,37 +297,37 @@ export default function Dashboard() {
           <div className="glass-card rounded-xl p-4 border-l-2 border-emerald-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-[8px] font-normal text-emerald-500 uppercase">+24.5%</span>
+              <span className="text-[8px] font-normal text-emerald-500 uppercase">Pipeline</span>
             </div>
             <p className="text-[10px] text-muted-foreground mb-1 font-light">Pipeline Ativo</p>
-            <p className="text-lg font-normal text-foreground">R$ 1.2M</p>
+            <p className="text-lg font-normal text-foreground">R$ {((metrics?.totalPipelineValue || 0) / 1000).toFixed(0)}k</p>
           </div>
 
           <div className="glass-card rounded-xl p-4 border-l-2 border-primary min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4 text-primary" />
-              <span className="text-[8px] font-normal text-primary uppercase">92% On-time</span>
+              <span className="text-[8px] font-normal text-primary uppercase">{metrics?.projectsAtRisk || 0} em risco</span>
             </div>
             <p className="text-[10px] text-muted-foreground mb-1 font-light">Projetos em Workflow</p>
-            <p className="text-lg font-normal text-foreground">18</p>
+            <p className="text-lg font-normal text-foreground">{metrics?.totalProjectsActive || 0}</p>
           </div>
 
           <div className="glass-card rounded-xl p-4 border-l-2 border-amber-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <Zap className="w-4 h-4 text-amber-500" />
-              <span className="text-[8px] font-normal text-amber-500 uppercase">High Perf</span>
+              <span className="text-[8px] font-normal text-amber-500 uppercase">Deadlines</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-1 font-light">Eficiência Squad</p>
-            <p className="text-lg font-normal text-foreground">98%</p>
+            <p className="text-[10px] text-muted-foreground mb-1 font-light">Próximas Entregas</p>
+            <p className="text-lg font-normal text-foreground">{metrics?.upcomingDeadlines || 0}</p>
           </div>
 
           <div className="glass-card rounded-xl p-4 border-l-2 border-violet-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-violet-500" />
-              <span className="text-[8px] font-normal text-violet-500 uppercase">Financial OK</span>
+              <span className="text-[8px] font-normal text-violet-500 uppercase">{metrics?.projectsBlocked || 0} bloqueados</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-1 font-light">Margem Líquida</p>
-            <p className="text-lg font-normal text-foreground">34.2%</p>
+            <p className="text-[10px] text-muted-foreground mb-1 font-light">Bloqueio Financeiro</p>
+            <p className="text-lg font-normal text-foreground">{metrics?.projectsBlocked || 0}</p>
           </div>
         </div>
 
@@ -327,28 +340,28 @@ export default function Dashboard() {
             </div>
           </div>
           
-          {visualBoardData.accounts.length > 0 ? (
+          {recentProjects.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {visualBoardData.accounts.map((account) => (
-                <Link key={account.id} to={`/projetos/${account.id}`}>
+              {recentProjects.slice(0, 4).map((project) => (
+                <Link key={project.id} to={`/projetos/${project.id}`}>
                   <div className="bg-muted/20 rounded-xl p-4 hover:bg-muted/30 transition-colors cursor-pointer min-h-[120px]">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[9px] font-normal text-primary">{account.client}</span>
-                      <span className="text-[8px] text-muted-foreground">{account.id}</span>
+                      <span className="text-[9px] font-normal text-primary">{project.client_name}</span>
+                      <span className="text-[8px] text-muted-foreground">{project.stage_current}</span>
                     </div>
-                    <p className="text-xs font-normal text-foreground mb-3 truncate">{account.title}</p>
+                    <p className="text-xs font-normal text-foreground mb-3 truncate">{project.name}</p>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-[8px] text-muted-foreground uppercase font-light">Valor</p>
-                        <p className="text-[10px] font-normal text-foreground">R$ {account.value}k</p>
+                        <p className="text-[10px] font-normal text-foreground">R$ {(project.contract_value / 1000).toFixed(0)}k</p>
                       </div>
                       <div>
                         <p className="text-[8px] text-muted-foreground uppercase font-light">Fase</p>
-                        <p className="text-[10px] font-normal text-foreground">{account.phase}</p>
+                        <p className="text-[10px] font-normal text-foreground">{project.stage_current}</p>
                       </div>
                       <div>
                         <p className="text-[8px] text-muted-foreground uppercase font-light">Saúde</p>
-                        <p className={`text-[10px] font-normal ${getHealthColor(account.health)}`}>{account.health}%</p>
+                        <p className={`text-[10px] font-normal ${getHealthColor(project.health_score)}`}>{project.health_score}%</p>
                       </div>
                     </div>
                   </div>
@@ -379,14 +392,14 @@ export default function Dashboard() {
               </div>
               {recentProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {recentProjects.map((project, idx) => (
+                  {recentProjects.slice(0, 4).map((project, idx) => (
                     <ProjectCard
                       key={project.id}
-                      title={project.title}
-                      client={project.client?.company || project.client?.name || 'Cliente'}
-                      status={project.status === 'ok' ? 'Em Produção' : project.status === 'em_risco' ? 'Em Risco' : project.status === 'atrasado' ? 'Atrasado' : 'Bloqueado'}
+                      title={project.name}
+                      client={project.client_name}
+                      status={project.status === 'active' ? 'Em Produção' : project.status === 'paused' ? 'Em Pausa' : project.status === 'completed' ? 'Concluído' : 'Arquivado'}
                       image="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&h=600&fit=crop"
-                      date={project.estimatedDelivery ? `Entrega: ${new Date(project.estimatedDelivery).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : 'Sem data'}
+                      date={`Saúde: ${project.health_score}%`}
                       index={idx}
                     />
                   ))}
@@ -396,6 +409,11 @@ export default function Dashboard() {
                   <Clapperboard className="w-10 h-10 mb-3" />
                   <p className="text-sm font-light">Nenhum projeto recente</p>
                   <p className="text-xs text-muted-foreground/40 mt-1">Projetos aparecerão aqui</p>
+                  <Link to="/projetos">
+                    <Button className="mt-4" size="sm">
+                      Criar Primeiro Projeto
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>

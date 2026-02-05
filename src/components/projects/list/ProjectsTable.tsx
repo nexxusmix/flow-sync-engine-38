@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useProjectsStore } from "@/stores/projectsStore";
-import { Project } from "@/types/projects";
-import { PROJECT_TEMPLATES, STATUS_CONFIG, STAGE_COLORS } from "@/data/projectTemplates";
-import { PROJECT_STAGES } from "@/data/projectTemplates";
+import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
+import { PROJECT_TEMPLATES, STATUS_CONFIG, STAGE_COLORS, PROJECT_STAGES } from "@/data/projectTemplates";
 import { 
   Ban, 
   ChevronRight, 
@@ -11,7 +10,8 @@ import {
   Trash2,
   ExternalLink,
   Globe,
-  Copy
+  Copy,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,38 +42,30 @@ function HealthIndicator({ score }: { score: number }) {
   );
 }
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({ project }: { project: ProjectWithStages }) {
   const navigate = useNavigate();
-  const { setSelectedProject, setEditProjectModalOpen, deleteProject } = useProjectsStore();
+  const { setSelectedProjectId, setEditProjectModalOpen } = useProjectsStore();
+  const { deleteProject } = useProjects();
 
   const template = PROJECT_TEMPLATES.find(t => t.id === project.template);
-  const stageInfo = PROJECT_STAGES.find(s => s.type === project.currentStage);
-  const statusConfig = STATUS_CONFIG[project.status];
+  const stageInfo = PROJECT_STAGES.find(s => s.type === project.stage_current);
+  const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.ok;
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedProject(project);
+    setSelectedProjectId(project.id);
     setEditProjectModalOpen(true);
   };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`Tem certeza que deseja excluir o projeto "${project.title}"?`)) {
+    if (confirm(`Tem certeza que deseja excluir o projeto "${project.name}"?`)) {
       deleteProject(project.id);
-      toast.success('Projeto excluído');
     }
   };
 
-  const handleCopyPortalLink = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (project.portalLink?.shareToken) {
-      const link = `${window.location.origin}/client/${project.portalLink.shareToken}`;
-      navigator.clipboard.writeText(link);
-      toast.success('Link copiado!');
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "-";
     try {
       return format(new Date(dateStr), "dd/MM", { locale: ptBR });
     } catch {
@@ -108,19 +100,16 @@ function ProjectCard({ project }: { project: Project }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                {project.title}
+                {project.name}
               </h3>
-              {project.blockedByPayment && (
+              {project.has_payment_block && (
                 <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
-              )}
-              {project.portalLink?.isActive && (
-                <Globe className="w-3.5 h-3.5 text-primary flex-shrink-0" />
               )}
             </div>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span>{project.client.company}</span>
+              <span>{project.client_name}</span>
               <span className="text-border">•</span>
-              <span className="text-primary font-medium">{formatCurrency(project.contractValue)}</span>
+              <span className="text-primary font-medium">{formatCurrency(project.contract_value || 0)}</span>
             </div>
           </div>
 
@@ -140,12 +129,6 @@ function ProjectCard({ project }: { project: Project }) {
                   <Edit className="w-4 h-4 mr-2" />
                   Editar
                 </DropdownMenuItem>
-                {project.portalLink?.isActive && (
-                  <DropdownMenuItem onClick={handleCopyPortalLink}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar Link Portal
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -161,12 +144,12 @@ function ProjectCard({ project }: { project: Project }) {
         <div className="flex flex-wrap items-center gap-3">
           {/* Template */}
           <span className="text-[10px] text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg font-medium">
-            {template?.name || project.template}
+            {template?.name || project.template || 'Projeto'}
           </span>
           
           {/* Stage */}
-          <span className={`text-[10px] px-2.5 py-1 rounded-lg font-medium ${STAGE_COLORS[project.currentStage]} bg-opacity-20 text-foreground`}>
-            {stageInfo?.name || project.currentStage}
+          <span className={`text-[10px] px-2.5 py-1 rounded-lg font-medium ${STAGE_COLORS[project.stage_current as keyof typeof STAGE_COLORS] || 'bg-muted'} bg-opacity-20 text-foreground`}>
+            {stageInfo?.name || project.stage_current}
           </span>
           
           {/* Status */}
@@ -178,32 +161,32 @@ function ProjectCard({ project }: { project: Project }) {
 
           {/* Health */}
           <div className="hidden sm:block">
-            <HealthIndicator score={project.healthScore} />
+            <HealthIndicator score={project.health_score || 100} />
           </div>
 
           {/* Delivery Date */}
           <div className="hidden md:flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Entrega:</span>
-            <span className="font-medium text-foreground">{formatDate(project.estimatedDelivery)}</span>
+            <span className="font-medium text-foreground">{formatDate(project.due_date)}</span>
           </div>
 
           {/* Owner */}
           <div className="hidden lg:flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-[10px] font-medium text-primary">{project.owner.initials}</span>
+              <span className="text-[10px] font-medium text-primary">{project.owner_name?.charAt(0) || 'S'}</span>
             </div>
-            <span className="text-sm text-muted-foreground">{project.owner.name.split(' ')[0]}</span>
+            <span className="text-sm text-muted-foreground">{project.owner_name?.split(' ')[0] || 'Squad'}</span>
           </div>
 
           {/* Updated */}
           <span className="hidden xl:block text-xs text-muted-foreground">
-            {getRelativeTime(project.updatedAt)}
+            {getRelativeTime(project.updated_at)}
           </span>
         </div>
 
         {/* Mobile Health */}
         <div className="sm:hidden">
-          <HealthIndicator score={project.healthScore} />
+          <HealthIndicator score={project.health_score || 100} />
         </div>
       </div>
     </div>
@@ -211,10 +194,26 @@ function ProjectCard({ project }: { project: Project }) {
 }
 
 export function ProjectsTable() {
-  const { getFilteredProjects } = useProjectsStore();
-  const projects = getFilteredProjects();
+  const { projects, isLoading } = useProjects();
+  const { filters } = useProjectsStore();
 
-  if (projects.length === 0) {
+  // Apply filters
+  const filteredProjects = projects.filter(project => {
+    if (filters.search && !project.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.status !== 'all' && project.status !== filters.status) return false;
+    if (filters.stage !== 'all' && project.stage_current !== filters.stage) return false;
+    return true;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[300px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (filteredProjects.length === 0) {
     return (
       <div className="glass-card rounded-3xl p-12 text-center min-h-[300px] flex flex-col items-center justify-center">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -230,7 +229,7 @@ export function ProjectsTable() {
 
   return (
     <div className="space-y-3 min-h-[200px]">
-      {projects.map(project => (
+      {filteredProjects.map(project => (
         <ProjectCard key={project.id} project={project} />
       ))}
     </div>
