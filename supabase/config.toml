@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.platform-reset]
 verify_jwt = false
+
+[functions.polo-ai-chat]
+verify_jwt = false
