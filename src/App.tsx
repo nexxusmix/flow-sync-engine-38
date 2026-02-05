@@ -26,7 +26,14 @@ import ContractPreviewPage from "./pages/contracts/ContractPreviewPage";
 import ContractClientPage from "./pages/contracts/ContractClientPage";
 import ContentPage from "./pages/ContentPage";
 import KnowledgePage from "./pages/KnowledgePage";
-import ReportsPage from "./pages/ReportsPage";
+import ReportsDashboard from "./pages/reports/ReportsDashboard";
+import OwnerDailyReport from "./pages/reports/OwnerDailyReport";
+import SalesReport from "./pages/reports/SalesReport";
+import OperationsReport from "./pages/reports/OperationsReport";
+import FinancialReport from "./pages/reports/FinancialReport";
+import MarketingReport from "./pages/reports/MarketingReport";
+import ProjectsReport from "./pages/reports/ProjectsReport";
+import ClientsReport from "./pages/reports/ClientsReport";
 import SettingsPage from "./pages/SettingsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 
@@ -120,7 +127,15 @@ function AppRoutes() {
       <Route path="/marketing/studio" element={<ProtectedRoute><StudioCreativoPage /></ProtectedRoute>} />
       <Route path="/conteudo" element={<Navigate to="/marketing" replace />} />
       <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
-      <Route path="/relatorios" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+      {/* Relatórios */}
+      <Route path="/relatorios" element={<ProtectedRoute><ReportsDashboard /></ProtectedRoute>} />
+      <Route path="/relatorios/dono" element={<ProtectedRoute><OwnerDailyReport /></ProtectedRoute>} />
+      <Route path="/relatorios/vendas" element={<ProtectedRoute><SalesReport /></ProtectedRoute>} />
+      <Route path="/relatorios/operacao" element={<ProtectedRoute><OperationsReport /></ProtectedRoute>} />
+      <Route path="/relatorios/financeiro" element={<ProtectedRoute><FinancialReport /></ProtectedRoute>} />
+      <Route path="/relatorios/marketing" element={<ProtectedRoute><MarketingReport /></ProtectedRoute>} />
+      <Route path="/relatorios/projetos" element={<ProtectedRoute><ProjectsReport /></ProtectedRoute>} />
+      <Route path="/relatorios/clientes" element={<ProtectedRoute><ClientsReport /></ProtectedRoute>} />
       <Route path="/configuracoes" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="/integracoes" element={<ProtectedRoute><IntegrationsPage /></ProtectedRoute>} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />

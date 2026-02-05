@@ -1913,6 +1913,72 @@ export type Database = {
           },
         ]
       }
+      report_exports: {
+        Row: {
+          created_at: string
+          file_url: string | null
+          format: string
+          id: string
+          report_type: string
+          scope_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_url?: string | null
+          format?: string
+          id?: string
+          report_type: string
+          scope_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string | null
+          format?: string
+          id?: string
+          report_type?: string
+          scope_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      report_snapshots: {
+        Row: {
+          generated_at: string
+          generated_by: string | null
+          id: string
+          metrics: Json
+          period_end: string
+          period_start: string
+          report_type: string
+          scope_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metrics?: Json
+          period_end: string
+          period_start: string
+          report_type: string
+          scope_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metrics?: Json
+          period_end?: string
+          period_start?: string
+          report_type?: string
+          scope_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       revenues: {
         Row: {
           amount: number
