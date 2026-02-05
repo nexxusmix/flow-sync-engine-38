@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Search, Plus, DollarSign, ChevronDown, Command } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -19,56 +18,57 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 h-14 bg-background/95 backdrop-blur border-b border-border flex items-center justify-between px-6">
-      {/* Left: Title */}
-      <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+    <header className="sticky top-0 z-30 h-20 bg-background/80 backdrop-blur-2xl border-b border-white/5 flex items-center justify-between px-6 md:px-12">
+      {/* Left: Title with version badge */}
+      <div className="flex items-center gap-4">
+        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/5 border border-primary/20">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          <span className="text-[9px] font-black text-primary uppercase tracking-widest">Single Source of Truth // Alpha v2.4</span>
+        </div>
+      </div>
 
       {/* Center: Search */}
       <button
         onClick={onOpenSearch}
-        className="flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50 border border-border hover:border-muted-foreground/30 transition-colors min-w-[280px]"
+        className="glass-card flex items-center gap-4 px-6 py-3 rounded-2xl hover:border-white/20 transition-all min-w-[280px]"
       >
-        <Search className="h-4 w-4 text-muted-foreground" />
+        <span className="material-symbols-outlined text-muted-foreground text-xl">search</span>
         <span className="text-sm text-muted-foreground flex-1 text-left">Buscar...</span>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground bg-background px-1.5 py-0.5 rounded">
-          <Command className="h-3 w-3" />
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-white/5 px-2 py-1 rounded font-bold">
+          <span>⌘</span>
           <span>K</span>
         </div>
       </button>
 
       {/* Right: Quick actions + Role switcher */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {/* Quick Action Buttons */}
-        <button className="btn-action">
-          <Plus className="h-3.5 w-3.5" />
+        <button className="btn-action hidden lg:flex">
+          <span className="material-symbols-outlined text-sm">add</span>
           <span>Novo Lead</span>
         </button>
-        <button className="btn-action">
-          <Plus className="h-3.5 w-3.5" />
+        <button className="btn-action hidden xl:flex">
+          <span className="material-symbols-outlined text-sm">add</span>
           <span>Nova Proposta</span>
         </button>
-        <button className="btn-action hidden lg:flex">
-          <Plus className="h-3.5 w-3.5" />
-          <span>Novo Projeto</span>
-        </button>
-        <button className="btn-action hidden xl:flex">
-          <DollarSign className="h-3.5 w-3.5" />
-          <span>Registrar Pagamento</span>
+        <button className="btn-primary hidden xl:flex">
+          <span className="material-symbols-outlined text-sm">payments</span>
+          <span>Pagamento</span>
         </button>
 
         {/* Separator */}
-        <div className="h-6 w-px bg-border mx-1" />
+        <div className="h-8 w-px bg-white/5 mx-2 hidden lg:block" />
 
         {/* Role Switcher */}
         <div className="relative">
           <button
             onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors"
           >
-            <span className="text-xs font-medium text-foreground">
+            <span className="text-[10px] font-black text-foreground uppercase tracking-widest">
               {roles.find((r) => r.id === selectedRole)?.label}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="material-symbols-outlined text-muted-foreground text-sm">expand_more</span>
           </button>
 
           {roleDropdownOpen && (
@@ -77,7 +77,7 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
                 className="fixed inset-0 z-40"
                 onClick={() => setRoleDropdownOpen(false)}
               />
-              <div className="absolute right-0 top-full mt-1 w-36 bg-popover border border-border rounded-lg shadow-lg z-50 py-1">
+              <div className="absolute right-0 top-full mt-2 w-40 glass-card rounded-2xl shadow-2xl z-50 py-2 border border-white/10">
                 {roles.map((role) => (
                   <button
                     key={role.id}
@@ -86,9 +86,9 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
                       setRoleDropdownOpen(false);
                     }}
                     className={cn(
-                      "w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors",
+                      "w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors",
                       selectedRole === role.id
-                        ? "text-foreground font-medium"
+                        ? "text-primary"
                         : "text-muted-foreground"
                     )}
                   >
