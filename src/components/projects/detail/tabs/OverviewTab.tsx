@@ -1,6 +1,7 @@
 import { Project } from "@/types/projects";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
+import { ProjectUpdatesSection } from "../ProjectUpdatesSection";
 import { getProjectMilestones } from "@/data/timelineMockData";
 import { 
   AlertTriangle, 
@@ -76,7 +77,8 @@ const visualBoardData = {
 };
 
 export function OverviewTab({ project }: OverviewTabProps) {
-  const { advanceStage } = useProjectsStore();
+  const { advanceStage, getProjectUpdates, addProjectUpdate } = useProjectsStore();
+  const projectUpdates = getProjectUpdates(project.id);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -225,6 +227,13 @@ export function OverviewTab({ project }: OverviewTabProps) {
       <TimelineForecast30D 
         milestones={getProjectMilestones(project.id)} 
         projectId={project.id}
+      />
+
+      {/* Project Updates Section */}
+      <ProjectUpdatesSection
+        project={project}
+        updates={projectUpdates}
+        onAddUpdate={(update) => addProjectUpdate(project.id, update)}
       />
 
       {/* Visual Board Section */}
