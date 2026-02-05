@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.extract-project-from-document]
 verify_jwt = false
+
+[functions.platform-reset]
+verify_jwt = false

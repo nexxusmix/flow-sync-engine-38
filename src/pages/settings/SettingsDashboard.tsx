@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Building2, Users, Shield, FolderKanban, DollarSign, FileText, FileSignature,
-  Megaphone, Target, Plug, Bell, Palette, ScrollText, ArrowRight
+  Megaphone, Target, Plug, Bell, Palette, ScrollText, ArrowRight, AlertTriangle
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
@@ -123,6 +123,15 @@ const settingsSections = [
     path: '/configuracoes/auditoria',
     color: 'text-slate-500',
     bgColor: 'bg-slate-500/10',
+  },
+  {
+    id: 'danger-zone',
+    title: 'Danger Zone',
+    description: 'Reset e ações críticas',
+    icon: AlertTriangle,
+    path: '/configuracoes/danger-zone',
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
   },
 ];
 
