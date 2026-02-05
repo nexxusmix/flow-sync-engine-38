@@ -2382,6 +2382,7 @@ export type Database = {
           deliverable_id: string
           id: string
           notes: string | null
+          project_file_id: string | null
         }
         Insert: {
           approved_at?: string
@@ -2390,6 +2391,7 @@ export type Database = {
           deliverable_id: string
           id?: string
           notes?: string | null
+          project_file_id?: string | null
         }
         Update: {
           approved_at?: string
@@ -2398,6 +2400,7 @@ export type Database = {
           deliverable_id?: string
           id?: string
           notes?: string | null
+          project_file_id?: string | null
         }
         Relationships: [
           {
@@ -2405,6 +2408,13 @@ export type Database = {
             columns: ["deliverable_id"]
             isOneToOne: false
             referencedRelation: "portal_deliverables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_approvals_project_file_id_fkey"
+            columns: ["project_file_id"]
+            isOneToOne: false
+            referencedRelation: "project_files"
             referencedColumns: ["id"]
           },
         ]
@@ -2417,6 +2427,7 @@ export type Database = {
           created_at: string
           deliverable_id: string
           id: string
+          project_file_id: string | null
           status: string | null
           timecode: string | null
         }
@@ -2427,6 +2438,7 @@ export type Database = {
           created_at?: string
           deliverable_id: string
           id?: string
+          project_file_id?: string | null
           status?: string | null
           timecode?: string | null
         }
@@ -2437,6 +2449,7 @@ export type Database = {
           created_at?: string
           deliverable_id?: string
           id?: string
+          project_file_id?: string | null
           status?: string | null
           timecode?: string | null
         }
@@ -2446,6 +2459,13 @@ export type Database = {
             columns: ["deliverable_id"]
             isOneToOne: false
             referencedRelation: "portal_deliverables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_comments_project_file_id_fkey"
+            columns: ["project_file_id"]
+            isOneToOne: false
+            referencedRelation: "project_files"
             referencedColumns: ["id"]
           },
         ]
