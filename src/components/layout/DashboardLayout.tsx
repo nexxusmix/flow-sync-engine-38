@@ -29,9 +29,6 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background relative flex flex-col">
-      {/* Grain Overlay */}
-      <div className="grain" />
-      
       {/* Background Blobs */}
       <div className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]" />
       <div className="blob w-[800px] h-[800px] bg-white bottom-[-20%] right-[-10%] opacity-5" />
