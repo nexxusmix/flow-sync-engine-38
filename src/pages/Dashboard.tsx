@@ -13,11 +13,11 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const { data, isLoading: dataLoading } = useDashboardMetrics();
   
-  // Show loading only during auth check or when user exists and data is loading
-  const isLoading = authLoading || (!!user && dataLoading);
+  // Loading during auth check or data fetch (hooks handle user existence internally)
+  const isLoading = authLoading || dataLoading;
   
   const metrics = data?.metrics;
   const projectsByStage = data?.projectsByStage || [];
