@@ -1,4 +1,4 @@
-import { Project } from "@/types/projects";
+import { ProjectWithStages } from "@/hooks/useProjects";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   LayoutDashboard, 
@@ -21,7 +21,7 @@ import { AuditTab } from "./tabs/AuditTab";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface ProjectTabsProps {
-  project: Project;
+  project: ProjectWithStages;
   activeTab: string;
   onTabChange: (tab: string) => void;
 }

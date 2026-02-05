@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useProjectsStore } from '@/stores/projectsStore';
+import { useProjects } from '@/hooks/useProjects';
 import { useFinancialStore } from '@/stores/financialStore';
 import { useMarketingStore } from '@/stores/marketingStore';
 import { differenceInDays, parseISO } from 'date-fns';
@@ -30,7 +30,7 @@ const TYPE_COLORS: Record<CalendarEvent['type'], string> = {
 };
 
 export function useCalendarEvents() {
-  const { projects } = useProjectsStore();
+  const { projects } = useProjects();
   const { revenues, contracts } = useFinancialStore();
   const { contentItems } = useMarketingStore();
 
@@ -41,8 +41,8 @@ export function useCalendarEvents() {
     // 1. Events from Projects (deliveries and stages)
     projects.forEach(project => {
       // Project delivery date
-      if (project.estimatedDelivery) {
-        const deliveryDate = parseISO(project.estimatedDelivery);
+      if (project.due_date) {
+        const deliveryDate = parseISO(project.due_date);
         const daysUntil = differenceInDays(deliveryDate, today);
         
         let severity: CalendarEvent['severity'] = 'normal';
@@ -52,12 +52,12 @@ export function useCalendarEvents() {
 
         allEvents.push({
           id: `proj-delivery-${project.id}`,
-          title: `Entrega: ${project.title}`,
-          date: project.estimatedDelivery,
+          title: `Entrega: ${project.name}`,
+          date: project.due_date,
           type: 'delivery',
           projectId: project.id,
-          projectName: project.title,
-          clientName: project.client?.name,
+          projectName: project.name,
+          clientName: project.client_name || undefined,
           severity,
           color: TYPE_COLORS.delivery,
           status: project.status,
@@ -66,8 +66,8 @@ export function useCalendarEvents() {
 
       // Project stages with planned dates
       project.stages?.forEach(stage => {
-        if (stage.plannedDate && stage.status !== 'concluido') {
-          const stageDate = parseISO(stage.plannedDate);
+        if (stage.planned_start && stage.status !== 'completed') {
+          const stageDate = parseISO(stage.planned_start);
           const daysUntil = differenceInDays(stageDate, today);
           
           let severity: CalendarEvent['severity'] = 'normal';
@@ -76,11 +76,11 @@ export function useCalendarEvents() {
 
           allEvents.push({
             id: `stage-${project.id}-${stage.id}`,
-            title: `${stage.name} - ${project.title}`,
-            date: stage.plannedDate,
+            title: `${stage.title} - ${project.name}`,
+            date: stage.planned_start,
             type: 'stage',
             projectId: project.id,
-            projectName: project.title,
+            projectName: project.name,
             severity,
             color: TYPE_COLORS.stage,
             status: stage.status,

@@ -1,5 +1,5 @@
-import { Project } from "@/types/projects";
-import { PROJECT_TEMPLATES, STATUS_CONFIG, PROJECT_STAGES } from "@/data/projectTemplates";
+import { ProjectWithStages } from "@/hooks/useProjects";
+import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { 
   Calendar, 
   DollarSign, 
@@ -26,15 +26,14 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 interface ProjectHeaderProps {
-  project: Project;
+  project: ProjectWithStages;
 }
 
 export function ProjectHeader({ project }: ProjectHeaderProps) {
-  const { setSelectedProject, setEditProjectModalOpen, generatePortalLink } = useProjectsStore();
+  const { setSelectedProjectId, setEditProjectModalOpen } = useProjectsStore();
   
-  const template = PROJECT_TEMPLATES.find(t => t.id === project.template);
-  const stageInfo = PROJECT_STAGES.find(s => s.type === project.currentStage);
-  const statusConfig = STATUS_CONFIG[project.status];
+  const stageInfo = PROJECT_STAGES.find(s => s.type === project.stage_current);
+  const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -44,7 +43,8 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
     }).format(value);
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "-";
     try {
       return format(new Date(dateStr), "dd MMM yyyy", { locale: ptBR });
     } catch {
@@ -53,27 +53,16 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   };
 
   const handleEdit = () => {
-    setSelectedProject(project);
+    setSelectedProjectId(project.id);
     setEditProjectModalOpen(true);
   };
 
   const handleOpenPortal = () => {
-    if (!project.portalLink) {
-      generatePortalLink(project.id);
-    }
-    if (project.portalLink?.shareToken) {
-      window.open(`/client/${project.portalLink.shareToken}`, '_blank');
-    }
+    toast.info('Portal do cliente será implementado em breve');
   };
 
   const handleCopyPortalLink = () => {
-    if (project.portalLink?.shareToken) {
-      const link = `${window.location.origin}/client/${project.portalLink.shareToken}`;
-      navigator.clipboard.writeText(link);
-      toast.success('Link copiado para a área de transferência!');
-    } else {
-      toast.error('Gere um link do portal primeiro');
-    }
+    toast.info('Link do portal será implementado em breve');
   };
 
   return (
@@ -85,22 +74,16 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           <div className="flex-1 min-w-0">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className={`text-[10px] md:text-xs px-2 py-1 rounded border font-medium ${statusConfig.color}`}>
-                {statusConfig.label}
+              <span className={`text-[10px] md:text-xs px-2 py-1 rounded border font-medium ${statusConfig?.color || 'text-muted-foreground'}`}>
+                {statusConfig?.label || project.status}
               </span>
               <span className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                {template?.name}
+                {project.template || 'Projeto'}
               </span>
               <span className="text-[10px] md:text-xs text-primary bg-primary/10 px-2 py-1 rounded font-medium">
-                {stageInfo?.name}
+                {stageInfo?.name || project.stage_current}
               </span>
-              {project.portalLink?.isActive && (
-                <span className="text-[10px] md:text-xs text-primary bg-primary/10 px-2 py-1 rounded flex items-center gap-1">
-                  <Globe className="w-3 h-3" />
-                  Portal Ativo
-                </span>
-              )}
-              {project.blockedByPayment && (
+              {project.has_payment_block && (
                 <span className="text-[10px] md:text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
                   <Ban className="w-3 h-3" />
                   Bloqueado
@@ -109,9 +92,9 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
             </div>
 
             {/* Title */}
-            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1 truncate">{project.title}</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1 truncate">{project.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {project.client.company} • {project.client.name}
+              {project.client_name || 'Sem cliente'}
             </p>
           </div>
 
@@ -168,7 +151,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-primary" />
             </div>
             <div className="min-w-0">
-              <p className="text-base md:text-lg font-bold text-foreground truncate">{formatCurrency(project.contractValue)}</p>
+              <p className="text-base md:text-lg font-bold text-foreground truncate">{formatCurrency(project.contract_value || 0)}</p>
               <p className="text-[10px] md:text-xs text-muted-foreground">Valor do Contrato</p>
             </div>
           </div>
@@ -176,16 +159,16 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           {/* Health Score */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
             <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-              project.healthScore >= 80 ? 'bg-emerald-500/20' : 
-              project.healthScore >= 50 ? 'bg-amber-500/20' : 'bg-red-500/20'
+              (project.health_score || 0) >= 80 ? 'bg-emerald-500/20' : 
+              (project.health_score || 0) >= 50 ? 'bg-amber-500/20' : 'bg-red-500/20'
             }`}>
               <Activity className={`w-4 h-4 md:w-5 md:h-5 ${
-                project.healthScore >= 80 ? 'text-emerald-500' : 
-                project.healthScore >= 50 ? 'text-amber-500' : 'text-red-500'
+                (project.health_score || 0) >= 80 ? 'text-emerald-500' : 
+                (project.health_score || 0) >= 50 ? 'text-amber-500' : 'text-red-500'
               }`} />
             </div>
             <div className="min-w-0">
-              <p className="text-base md:text-lg font-bold text-foreground">{project.healthScore}%</p>
+              <p className="text-base md:text-lg font-bold text-foreground">{project.health_score || 0}%</p>
               <p className="text-[10px] md:text-xs text-muted-foreground">Saúde</p>
             </div>
           </div>
@@ -196,41 +179,26 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               <Calendar className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
             <div className="min-w-0">
-              <p className="text-base md:text-lg font-bold text-foreground truncate">{formatDate(project.estimatedDelivery)}</p>
+              <p className="text-base md:text-lg font-bold text-foreground truncate">{formatDate(project.due_date)}</p>
               <p className="text-[10px] md:text-xs text-muted-foreground">Entrega</p>
             </div>
           </div>
 
-          {/* Team */}
+          {/* Owner */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0">
               <Users className="w-4 h-4 md:w-5 md:h-5 text-violet-500" />
             </div>
             <div className="min-w-0">
-              <div className="flex -space-x-1.5">
-                {project.team.slice(0, 3).map((member) => (
-                  <div 
-                    key={member.id} 
-                    className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center"
-                    title={member.name}
-                  >
-                    <span className="text-[9px] font-medium">{member.initials}</span>
-                  </div>
-                ))}
-                {project.team.length > 3 && (
-                  <div className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center">
-                    <span className="text-[9px] font-medium">+{project.team.length - 3}</span>
-                  </div>
-                )}
-              </div>
-              <p className="text-[10px] md:text-xs text-muted-foreground mt-1">Equipe</p>
+              <p className="text-sm font-medium text-foreground truncate">{project.owner_name || 'Não definido'}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Responsável</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Blockages Alert */}
-      {project.blockedByPayment && (
+      {project.has_payment_block && (
         <div className="glass-card rounded-2xl p-4 border-red-500/30 bg-red-500/5">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">

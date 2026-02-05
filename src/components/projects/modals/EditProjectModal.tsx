@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import { useProjectsStore } from "@/stores/projectsStore";
-import { Project, ProjectTemplate } from "@/types/projects";
-import { PROJECT_TEMPLATES } from "@/data/projectTemplates";
-import { CLIENTS, TEAM_MEMBERS } from "@/data/projectsMockData";
+import { useProjects, ProjectWithStages, DBProject } from "@/hooks/useProjects";
 import {
   Dialog,
   DialogContent,
@@ -24,52 +21,48 @@ import {
 interface EditProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  project: Project;
+  project: ProjectWithStages;
 }
 
 export function EditProjectModal({ open, onOpenChange, project }: EditProjectModalProps) {
-  const { updateProject } = useProjectsStore();
+  const { updateProject } = useProjects();
   
   const [formData, setFormData] = useState({
-    title: project.title,
-    clientId: project.clientId,
-    template: project.template,
-    startDate: new Date(project.startDate).toISOString().split('T')[0],
-    estimatedDelivery: new Date(project.estimatedDelivery).toISOString().split('T')[0],
-    ownerId: project.owner.id,
-    contractValue: project.contractValue.toString(),
-    blockPaymentEnabled: project.blockPaymentEnabled,
+    name: project.name,
+    client_name: project.client_name || '',
+    template: project.template || '',
+    start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
+    due_date: project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : '',
+    contract_value: (project.contract_value || 0).toString(),
+    has_payment_block: project.has_payment_block || false,
   });
 
   useEffect(() => {
     setFormData({
-      title: project.title,
-      clientId: project.clientId,
-      template: project.template,
-      startDate: new Date(project.startDate).toISOString().split('T')[0],
-      estimatedDelivery: new Date(project.estimatedDelivery).toISOString().split('T')[0],
-      ownerId: project.owner.id,
-      contractValue: project.contractValue.toString(),
-      blockPaymentEnabled: project.blockPaymentEnabled,
+      name: project.name,
+      client_name: project.client_name || '',
+      template: project.template || '',
+      start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
+      due_date: project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : '',
+      contract_value: (project.contract_value || 0).toString(),
+      has_payment_block: project.has_payment_block || false,
     });
   }, [project]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const owner = TEAM_MEMBERS.find(m => m.id === formData.ownerId) || project.owner;
-    const client = CLIENTS.find(c => c.id === formData.clientId) || project.client;
-    
-    updateProject(project.id, {
-      title: formData.title,
-      clientId: formData.clientId,
-      client,
-      template: formData.template as ProjectTemplate,
-      startDate: new Date(formData.startDate).toISOString(),
-      estimatedDelivery: new Date(formData.estimatedDelivery).toISOString(),
-      owner,
-      contractValue: parseFloat(formData.contractValue) || 0,
-      blockPaymentEnabled: formData.blockPaymentEnabled,
+    updateProject({
+      id: project.id,
+      data: {
+        name: formData.name,
+        client_name: formData.client_name || null,
+        template: formData.template || null,
+        start_date: formData.start_date || null,
+        due_date: formData.due_date || null,
+        contract_value: parseFloat(formData.contract_value) || 0,
+        has_payment_block: formData.has_payment_block,
+      },
     });
 
     onOpenChange(false);
@@ -83,13 +76,13 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          {/* Title */}
+          {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="title">Nome do Projeto *</Label>
+            <Label htmlFor="name">Nome do Projeto *</Label>
             <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Ex: Campanha Institucional 2025"
               required
             />
@@ -97,92 +90,52 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
 
           {/* Client */}
           <div className="space-y-2">
-            <Label>Cliente *</Label>
-            <Select
-              value={formData.clientId}
-              onValueChange={(value) => setFormData({ ...formData, clientId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {CLIENTS.map(client => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.company} - {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="client_name">Nome do Cliente</Label>
+            <Input
+              id="client_name"
+              value={formData.client_name}
+              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              placeholder="Ex: Empresa ABC"
+            />
           </div>
 
           {/* Template (Read-only for existing projects) */}
           <div className="space-y-2">
             <Label>Template</Label>
-            <Select value={formData.template} disabled>
-              <SelectTrigger className="opacity-60">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROJECT_TEMPLATES.map(template => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input value={formData.template || 'Não definido'} disabled className="opacity-60" />
             <p className="text-xs text-muted-foreground">Template não pode ser alterado após criação</p>
           </div>
 
           {/* Dates Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Data de Início</Label>
+              <Label htmlFor="start_date">Data de Início</Label>
               <Input
-                id="startDate"
+                id="start_date"
                 type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                value={formData.start_date}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="estimatedDelivery">Entrega Estimada</Label>
+              <Label htmlFor="due_date">Entrega Estimada</Label>
               <Input
-                id="estimatedDelivery"
+                id="due_date"
                 type="date"
-                value={formData.estimatedDelivery}
-                onChange={(e) => setFormData({ ...formData, estimatedDelivery: e.target.value })}
+                value={formData.due_date}
+                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
               />
             </div>
-          </div>
-
-          {/* Owner */}
-          <div className="space-y-2">
-            <Label>Responsável Principal</Label>
-            <Select
-              value={formData.ownerId}
-              onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                {TEAM_MEMBERS.map(member => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name} - {member.role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Contract Value */}
           <div className="space-y-2">
-            <Label htmlFor="contractValue">Valor do Contrato (R$)</Label>
+            <Label htmlFor="contract_value">Valor do Contrato (R$)</Label>
             <Input
-              id="contractValue"
+              id="contract_value"
               type="number"
-              value={formData.contractValue}
-              onChange={(e) => setFormData({ ...formData, contractValue: e.target.value })}
+              value={formData.contract_value}
+              onChange={(e) => setFormData({ ...formData, contract_value: e.target.value })}
               placeholder="0"
             />
           </div>
@@ -196,8 +149,8 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
               </p>
             </div>
             <Switch
-              checked={formData.blockPaymentEnabled}
-              onCheckedChange={(checked) => setFormData({ ...formData, blockPaymentEnabled: checked })}
+              checked={formData.has_payment_block}
+              onCheckedChange={(checked) => setFormData({ ...formData, has_payment_block: checked })}
             />
           </div>
 

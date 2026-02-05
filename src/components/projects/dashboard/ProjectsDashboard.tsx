@@ -1,6 +1,6 @@
 import { useProjectsStore } from "@/stores/projectsStore";
+import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
-import { Project } from "@/types/projects";
 import { 
   TrendingUp, 
   Ban, 
@@ -90,9 +90,9 @@ function RadialProgress({ value, size = 80, strokeWidth = 6, color = "hsl(var(--
 }
 
 // Mini Kanban Card for Visual Board
-function MiniKanbanCard({ project }: { project: Project }) {
+function MiniKanbanCard({ project }: { project: ProjectWithStages }) {
   const navigate = useNavigate();
-  const statusConfig = STATUS_CONFIG[project.status];
+  const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG];
 
   return (
     <div 
@@ -101,22 +101,20 @@ function MiniKanbanCard({ project }: { project: Project }) {
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <h4 className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
-          {project.title}
+          {project.name}
         </h4>
-        {project.blockedByPayment && <Ban className="w-3 h-3 text-red-500 flex-shrink-0" />}
+        {project.has_payment_block && <Ban className="w-3 h-3 text-red-500 flex-shrink-0" />}
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-muted-foreground">{project.client?.company || 'Sem cliente'}</span>
+        <span className="text-[10px] text-muted-foreground">{project.client_name || 'Sem cliente'}</span>
         <div className="flex items-center gap-1">
-          {project.team?.slice(0, 2).map((member, idx) => (
-            <div key={idx} className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center -ml-1 first:ml-0 border border-background">
-              <span className="text-[8px] font-medium text-primary">{member.initials}</span>
-            </div>
-          ))}
+          <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center border border-background">
+            <span className="text-[8px] font-medium text-primary">{project.owner_name?.charAt(0) || '?'}</span>
+          </div>
         </div>
       </div>
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-        <HealthScoreIndicator score={project.healthScore} compact />
+        <HealthScoreIndicator score={project.health_score || 0} compact />
         <span className={`text-[9px] px-1.5 py-0.5 rounded border ${statusConfig?.color || 'text-muted-foreground'}`}>
           {statusConfig?.label || 'Ok'}
         </span>
@@ -126,7 +124,7 @@ function MiniKanbanCard({ project }: { project: Project }) {
 }
 
 // Visual Board Column
-function VisualBoardColumn({ stage, projects }: { stage: string; projects: Project[] }) {
+function VisualBoardColumn({ stage, projects }: { stage: string; projects: ProjectWithStages[] }) {
   const stageInfo = PROJECT_STAGES.find(s => s.type === stage);
   
   return (
@@ -152,7 +150,8 @@ function VisualBoardColumn({ stage, projects }: { stage: string; projects: Proje
 
 export function ProjectsDashboard() {
   const navigate = useNavigate();
-  const { projects, setNewProjectModalOpen } = useProjectsStore();
+  const { setNewProjectModalOpen } = useProjectsStore();
+  const { projects } = useProjects();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -163,19 +162,19 @@ export function ProjectsDashboard() {
   };
 
   // Calculate dashboard metrics
-  const totalPipeline = projects.reduce((acc, p) => acc + (p.contractValue || 0), 0);
+  const totalPipeline = projects.reduce((acc, p) => acc + (p.contract_value || 0), 0);
   const avgHealth = projects.length > 0 
-    ? Math.round(projects.reduce((acc, p) => acc + (p.healthScore || 0), 0) / projects.length) 
+    ? Math.round(projects.reduce((acc, p) => acc + (p.health_score || 0), 0) / projects.length) 
     : 0;
 
   // Group projects by stage for visual board
   const projectsByStage = ['roteiro', 'captacao', 'edicao', 'revisao'].reduce((acc, stage) => {
-    acc[stage] = projects.filter(p => p.currentStage === stage);
+    acc[stage] = projects.filter(p => p.stage_current === stage);
     return acc;
-  }, {} as Record<string, Project[]>);
+  }, {} as Record<string, ProjectWithStages[]>);
 
   // Financial overview - top 4 projects by value
-  const topProjects = [...projects].sort((a, b) => (b.contractValue || 0) - (a.contractValue || 0)).slice(0, 4);
+  const topProjects = [...projects].sort((a, b) => (b.contract_value || 0) - (a.contract_value || 0)).slice(0, 4);
 
   // Empty state
   if (projects.length === 0) {
@@ -272,14 +271,14 @@ export function ProjectsDashboard() {
                       <div className="h-1.5 bg-muted rounded-full">
                         <div 
                           className={`h-full rounded-full ${
-                            (p.healthScore || 0) > 90 ? 'bg-emerald-500' : 
-                            (p.healthScore || 0) > 70 ? 'bg-primary' : 'bg-amber-500'
+                            (p.health_score || 0) > 90 ? 'bg-emerald-500' : 
+                            (p.health_score || 0) > 70 ? 'bg-primary' : 'bg-amber-500'
                           }`}
                           style={{ width: `${Math.min(100, (idx + 1) * 25 + 10)}%` }}
                         />
                       </div>
                     </div>
-                    <span className="text-[9px] font-medium text-foreground w-20 truncate">{p.title.split(' ').slice(0, 2).join(' ')}</span>
+                    <span className="text-[9px] font-medium text-foreground w-20 truncate">{p.name.split(' ').slice(0, 2).join(' ')}</span>
                   </div>
                 ))}
                 {projects.length === 0 && (
@@ -370,7 +369,7 @@ export function ProjectsDashboard() {
             {topProjects.length > 0 ? (
               <div className="space-y-3">
                 {topProjects.map(project => {
-                  const stageInfo = PROJECT_STAGES.find(s => s.type === project.currentStage);
+                  const stageInfo = PROJECT_STAGES.find(s => s.type === project.stage_current);
                   return (
                     <div 
                       key={project.id}
@@ -379,20 +378,20 @@ export function ProjectsDashboard() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="text-[10px] text-primary font-bold">{project.client?.company || 'Sem cliente'}</p>
-                          <p className="text-[9px] text-muted-foreground">{project.id.toUpperCase()}</p>
+                          <p className="text-[10px] text-primary font-bold">{project.client_name || 'Sem cliente'}</p>
+                          <p className="text-[9px] text-muted-foreground">{project.id.slice(0, 8).toUpperCase()}</p>
                         </div>
-                        <HealthScoreIndicator score={project.healthScore || 0} compact />
+                        <HealthScoreIndicator score={project.health_score || 0} compact />
                       </div>
-                      <p className="text-xs font-medium text-foreground truncate mb-2">{project.title}</p>
+                      <p className="text-xs font-medium text-foreground truncate mb-2">{project.name}</p>
                       <div className="flex items-center justify-between text-[9px]">
                         <div>
                           <span className="text-muted-foreground">Valor </span>
-                          <span className="font-bold text-foreground">{formatCurrency(project.contractValue || 0)}</span>
+                          <span className="font-bold text-foreground">{formatCurrency(project.contract_value || 0)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Fase </span>
-                          <span className="font-bold text-foreground">{stageInfo?.name || project.currentStage}</span>
+                          <span className="font-bold text-foreground">{stageInfo?.name || project.stage_current}</span>
                         </div>
                       </div>
                     </div>

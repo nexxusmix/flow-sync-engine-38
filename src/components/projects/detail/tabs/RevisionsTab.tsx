@@ -1,16 +1,13 @@
-import { Project } from "@/types/projects";
+import { ProjectWithStages } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Sparkles, MessageSquare, CheckCircle2, Clock, Inbox } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 interface RevisionsTabProps {
-  project: Project;
+  project: ProjectWithStages;
 }
 
 export function RevisionsTab({ project }: RevisionsTabProps) {
-  // Empty state - comments would come from project deliverables
+  // Empty state - comments would come from project deliverables (future feature)
   const comments: any[] = [];
   const openComments = comments.filter(c => c.status === 'open');
   const resolvedComments = comments.filter(c => c.status === 'resolved');
@@ -42,9 +39,9 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
         </div>
         <div className="glass-card rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs text-muted-foreground">Rodada Atual</span>
+            <span className="text-xs text-muted-foreground">Etapas</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{project.revisionsUsed + 1}</p>
+          <p className="text-2xl font-bold text-foreground">{project.stages?.length || 0}</p>
         </div>
       </div>
 
@@ -64,15 +61,6 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
           Comentários do cliente aparecerão aqui quando houver entregáveis em revisão.
         </p>
       </div>
-
-      {/* Revision Limit Warning */}
-      {project.revisionsUsed >= project.revisionLimit && (
-        <div className="glass-card rounded-xl p-4 bg-amber-500/10 border border-amber-500/30">
-          <p className="text-sm text-amber-400">
-            ⚠️ O limite de {project.revisionLimit} revisões incluídas foi atingido.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
