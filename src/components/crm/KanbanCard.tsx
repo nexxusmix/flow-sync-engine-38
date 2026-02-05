@@ -1,7 +1,7 @@
 import { MoreVertical, Clock, Sparkles } from "lucide-react";
 
 export interface Deal {
-  id: number;
+  id: string;
   title: string;
   company: string;
   value: number;
