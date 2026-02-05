@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AIAssistant } from "./AIAssistant";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function AICommandButton() {
   const [showAssistant, setShowAssistant] = useState(false);
@@ -7,19 +8,49 @@ export function AICommandButton() {
   return (
     <>
       {/* Floating AI Agent Trigger - positioned to not overlap content */}
-      <button 
+      <motion.button 
         onClick={() => setShowAssistant(!showAssistant)}
-        className="fixed bottom-6 right-6 z-50 p-4 bg-primary text-primary-foreground rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-300"
+        className="fixed bottom-6 right-6 z-50 p-4 bg-primary text-primary-foreground rounded-2xl shadow-lg"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring" as const, stiffness: 200, damping: 15, delay: 0.5 }}
+        whileHover={{ 
+          scale: 1.1, 
+          boxShadow: "0 20px 40px -10px rgba(0, 163, 211, 0.5)",
+          rotate: [0, -5, 5, 0],
+        }}
+        whileTap={{ scale: 0.9 }}
       >
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-xl">auto_awesome</span>
-          <span className="hidden md:inline font-medium uppercase text-[10px] tracking-wider">IA</span>
-        </div>
-      </button>
+        <motion.div 
+          className="flex items-center gap-2"
+          animate={{ 
+            scale: [1, 1.05, 1],
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <motion.span 
+            className="material-symbols-outlined text-xl"
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          >
+            auto_awesome
+          </motion.span>
+          <span className="hidden md:inline font-normal uppercase text-[10px] tracking-wider">IA</span>
+        </motion.div>
+      </motion.button>
 
-      {showAssistant && (
-        <AIAssistant onClose={() => setShowAssistant(false)} />
-      )}
+      <AnimatePresence>
+        {showAssistant && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring" as const, stiffness: 300, damping: 25 }}
+          >
+            <AIAssistant onClose={() => setShowAssistant(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

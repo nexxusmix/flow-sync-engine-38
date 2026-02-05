@@ -9,6 +9,7 @@ import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap,
 import { Link } from "react-router-dom";
 import squadLogo from "@/assets/squad-hub-logo.png";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 // Mock data for Visual Board
 const visualBoardData = {
@@ -95,27 +96,59 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Dashboard">
-      <div className="space-y-10 animate-fade-in">
+      <div className="space-y-10">
         {/* Header Title */}
-        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <img src={squadLogo} alt="SQUAD Hub" className="w-10 h-10 object-contain" />
+        <motion.div 
+          className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.div 
+            className="flex items-center gap-4"
+            whileHover={{ scale: 1.02 }}
+          >
+            <motion.img 
+              src={squadLogo} 
+              alt="SQUAD Hub" 
+              className="w-10 h-10 object-contain"
+              initial={{ opacity: 0, rotate: -180, scale: 0 }}
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              transition={{ type: "spring" as const, stiffness: 200, damping: 15, delay: 0.2 }}
+            />
             <h1 className="text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground">
               Over<span className="squad-logo-text font-light text-muted-foreground">view</span>
             </h1>
-          </div>
+          </motion.div>
           
-          <div className="glass-card px-6 py-4 rounded-2xl flex items-center gap-4">
-            <span className="material-symbols-outlined text-primary">calendar_today</span>
+          <motion.div 
+            className="glass-card px-6 py-4 rounded-2xl flex items-center gap-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.02, borderColor: "rgba(0, 163, 211, 0.2)" }}
+          >
+            <motion.span 
+              className="material-symbols-outlined text-primary"
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            >
+              calendar_today
+            </motion.span>
             <div>
               <p className="text-[9px] text-muted-foreground font-light uppercase">Data Atual</p>
               <p className="text-xs text-foreground font-normal">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Section: Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           {metrics.map((metric, idx) => (
             <MetricCard
               key={idx}
@@ -124,9 +157,10 @@ export default function Dashboard() {
               trend={metric.trend}
               trendUp={metric.trendUp}
               icon={metric.icon}
+              index={idx}
             />
           ))}
-        </div>
+        </motion.div>
 
         {/* Timeline Forecast 30D */}
         <TimelineForecast30D milestones={dashboardMilestones} />
