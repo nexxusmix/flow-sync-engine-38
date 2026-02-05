@@ -7,6 +7,7 @@ import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { dashboardMilestones } from "@/data/timelineMockData";
 import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap, Activity, Inbox, Eye, HardDrive } from "lucide-react";
 import { Link } from "react-router-dom";
+import squadLogo from "@/assets/squad-hub-logo.png";
 import { Button } from "@/components/ui/button";
 
 // Mock data for Visual Board
@@ -97,9 +98,10 @@ export default function Dashboard() {
       <div className="space-y-10 animate-fade-in">
         {/* Header Title */}
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-          <div>
+          <div className="flex items-center gap-4">
+            <img src={squadLogo} alt="SQUAD Hub" className="w-10 h-10 object-contain" />
             <h1 className="text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground">
-              Visão <span className="squad-logo-text font-light text-muted-foreground">Geral</span>
+              Over<span className="squad-logo-text font-light text-muted-foreground">view</span>
             </h1>
           </div>
           
