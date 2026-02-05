@@ -2,6 +2,7 @@ import { useState, useEffect, ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SearchModal } from "../search/SearchModal";
+import { AICommandButton } from "../ai/AICommandButton";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -36,9 +37,12 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       <Sidebar />
       <div className="ml-20 md:ml-64 relative z-10">
         <Header title={title} onOpenSearch={() => setSearchOpen(true)} />
-        <main className="p-6 md:p-12 max-w-[1800px] mx-auto">{children}</main>
+        <main className="p-6 md:p-12 max-w-[1800px] mx-auto preserve-3d">{children}</main>
       </div>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      
+      {/* Floating AI Command Button */}
+      <AICommandButton />
     </div>
   );
 }
