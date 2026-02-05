@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Calendar, Sparkles, AlertTriangle, CheckCircle, Clock,
   TrendingUp, Lightbulb, Megaphone, ArrowRight, Plus,
-  Instagram, BarChart3, Target
+  Instagram, BarChart3, Target, Wand2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -208,6 +208,11 @@ export default function MarketingDashboard() {
           <Card className="glass-card p-6">
             <h3 className="font-medium text-foreground mb-4">Ações Rápidas</h3>
             <div className="space-y-2">
+              <QuickAction 
+                icon={Wand2} 
+                label="Studio Criativo" 
+                onClick={() => navigate('/marketing/studio')} 
+              />
               <QuickAction 
                 icon={Plus} 
                 label="Nova Ideia" 
