@@ -28,7 +28,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative flex flex-col">
       {/* Grain Overlay */}
       <div className="grain" />
       
@@ -39,11 +39,11 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       
       <div className={cn(
-        "relative z-10 transition-all duration-300",
+        "relative z-10 transition-all duration-300 flex flex-col flex-1",
         sidebarCollapsed ? "ml-16" : "ml-64"
       )}>
         <Header title={title} onOpenSearch={() => setSearchOpen(true)} />
-        <main className="p-6 md:p-10 max-w-[1800px] mx-auto preserve-3d">{children}</main>
+        <main className="p-6 md:p-10 max-w-[1800px] mx-auto preserve-3d flex-1 w-full">{children}</main>
       </div>
       
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
