@@ -204,6 +204,29 @@ export function useProjects() {
     },
   });
 
+  // Complete project (mark as finished)
+  const completeProjectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          status: 'completed',
+          stage_current: 'entrega',
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Projeto finalizado com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Error completing project:', error);
+      toast.error('Erro ao finalizar projeto');
+    },
+  });
+
   // Archive project
   const archiveProjectMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -283,6 +306,7 @@ export function useProjects() {
     getProject,
     createProject: createProjectMutation.mutate,
     updateProject: updateProjectMutation.mutate,
+    completeProject: completeProjectMutation.mutate,
     archiveProject: archiveProjectMutation.mutate,
     deleteProject: deleteProjectMutation.mutate,
     updateStage: updateStageMutation.mutate,
