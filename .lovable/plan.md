@@ -1,280 +1,230 @@
 
+# Plano de Finalização do SQUAD Hub
 
-# Plano: Remover Dados Mock e Preparar Plataforma para Producao
+## Diagnóstico Completo
 
-## Resumo Executivo
+### Problema 1: Segurança RLS - Policies Duplicadas
+**Status: CRÍTICO**
 
-Remover todos os dados ficticios restantes, garantir que o botao "Zerar Plataforma" seja exclusivo para admin, e certificar que todas as telas mostrem empty states adequados quando nao houver dados.
+Foram identificadas **472 policies** no banco, com duplicação massiva:
+- Para CADA tabela existem 2 conjuntos de policies:
+  - **Antigas (INSEGURAS)**: `"Users can X table"` com `USING(true)` ou `WITH CHECK(true)`
+  - **Novas (CORRETAS)**: `"auth_X_table"` com `auth.uid() IS NOT NULL`
 
----
-
-## ANALISE ATUAL
-
-### Ja Funcionando com Dados Reais:
-- Dashboard principal (useDashboardMetrics)
-- CRM/Pipeline (useCRM)
-- Projetos (useProjects)
-- Marketing Store (Supabase)
-- Prospecting Store (Supabase)
-- Financial Store (Supabase)
-- Relatorios (useReportMetrics)
-
-### Problemas Identificados:
-
-| Problema | Local | Impacto |
-|----------|-------|---------|
-| Mock AI responses | AIAssistant.tsx | Respostas fake da IA |
-| Sem verificacao admin | DangerZone + Edge Function | Seguranca |
-| Tabelas faltando no reset | platform-reset | Reset incompleto |
-| Import desnecessario | ProjectsHeader.tsx | Mock data referenciado |
-
----
-
-## FASE 1: SEGURANCA - ADMIN ONLY
-
-### 1.1 Atualizar Edge Function platform-reset
-
-Adicionar verificacao de role admin antes de executar:
-
-```typescript
-// Verificar se usuario tem role admin
-const { data: roleData, error: roleError } = await supabaseAdmin
-  .from('user_role_assignments')
-  .select('role')
-  .eq('user_id', user.id)
-  .eq('role', 'admin')
-  .single();
-
-if (roleError || !roleData) {
-  return new Response(JSON.stringify({ error: "Apenas administradores podem executar esta acao" }), { 
-    status: 403, 
-    headers: { ...corsHeaders, "Content-Type": "application/json" } 
-  });
-}
-```
-
-Adicionar tabelas faltantes na lista de limpeza:
-- `projects`
-- `project_stages`
-- `prospect_lists`
-- `prospect_opportunities`
-- `prospect_activities`
-
-### 1.2 Atualizar DangerZoneSettingsPage.tsx
-
-Adicionar verificacao de admin na UI:
-
-```typescript
-import { useUserRole } from "@/hooks/useUserRole";
-
-const { isAdmin, isLoading: roleLoading } = useUserRole();
-
-// Se nao for admin, redirecionar
-if (!roleLoading && !isAdmin) {
-  navigate('/configuracoes');
-  return null;
-}
-```
-
-### 1.3 Atualizar SettingsDashboard.tsx
-
-Filtrar Danger Zone para mostrar apenas para admin:
-
-```typescript
-const { isAdmin } = useUserRole();
-
-// Filtrar secoes baseado em permissao
-const visibleSections = settingsSections.filter(section => {
-  if (section.id === 'danger-zone') return isAdmin;
-  return true;
-});
-```
-
----
-
-## FASE 2: REMOVER MOCK DATA
-
-### 2.1 Remover Mock AI Responses
-
-Arquivo: `src/components/ai/AIAssistant.tsx`
-
-Substituir respostas mock por mensagem informativa:
-
-```typescript
-const handleSend = async () => {
-  if (!input.trim() || loading) return;
-
-  const userMsg = input.trim();
-  setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-  setInput('');
-  setLoading(true);
-
-  // TODO: Integrar com Lovable AI quando configurado
-  setTimeout(() => {
-    setMessages(prev => [...prev, { 
-      role: 'ai', 
-      content: "Assistente IA em desenvolvimento. Esta funcionalidade estara disponivel em breve." 
-    }]);
-    setLoading(false);
-  }, 500);
-};
-```
-
-### 2.2 Limpar Import Mock Data
-
-Arquivo: `src/components/projects/list/ProjectsHeader.tsx`
-
-Remover import nao utilizado:
-```typescript
-// REMOVER esta linha
-import { CLIENTS, TEAM_MEMBERS } from "@/data/projectsMockData";
-```
-
-### 2.3 Manter projectsMockData.ts
-
-O arquivo ja esta limpo (arrays vazios) e e usado como estrutura de tipos. Manter como esta:
-
-```typescript
-// Team Members - Keep structure for creating new projects
-export const TEAM_MEMBERS: TeamMember[] = [];
-
-// Clients - Keep structure for creating new projects  
-export const CLIENTS: Client[] = [];
-
-// No mock projects - platform starts clean
-export const MOCK_PROJECTS = [];
-```
-
----
-
-## FASE 3: EMPTY STATES CONSISTENTES
-
-### 3.1 Componentes do Dashboard Ja OK
-
-Os seguintes componentes ja mostram empty states adequados:
-- ProductionSection.tsx - "Nenhum projeto em producao" + CTA
-- PipelineSection.tsx - "Nenhum deal no pipeline" + CTA
-- AuditFeed.tsx - "Nenhuma atividade registrada"
-
-### 3.2 Verificar Consistencia
-
-Garantir que todas as telas sigam o padrao:
-
+Exemplo na tabela `cadences`:
 ```text
-+--------------------------------------------------+
-|     [Icone contextual em bg circular]            |
-|                                                  |
-|     Titulo curto e claro                         |
-|     Descricao de 1 linha                         |
-|                                                  |
-|     [CTA Primario]                               |
-+--------------------------------------------------+
++------------------------------------+----------+------------------+
+| Policy Name                        | Command  | Condition        |
++------------------------------------+----------+------------------+
+| Users can delete cadences          | DELETE   | USING(true)      |  <- INSEGURA
+| auth_delete_cadences               | DELETE   | USING(auth.uid() IS NOT NULL) | <- CORRETA
+| Users can insert cadences          | INSERT   | WITH CHECK(true) | <- INSEGURA
+| auth_insert_cadences               | INSERT   | WITH CHECK(auth.uid() IS NOT NULL) | <- CORRETA
++------------------------------------+----------+------------------+
 ```
 
-Telas verificadas:
-- Dashboard - OK
-- CRM - OK (usando EmptyState component)
-- Projetos - OK
-- Marketing - OK
-- Financeiro - OK
-- Propostas - OK
-- Contratos - OK
-- Calendario - OK
-- Knowledge Base - OK
+**165 warnings** vem dessas policies antigas com `USING(true)`.
 
 ---
 
-## FASE 4: TABELAS DO RESET COMPLETO
+### Problema 2: CRM com Schema Duplicado
+**Status: MÉDIO**
 
-### Lista Final de Tabelas para Limpeza
+| Tabelas Antigas (em uso) | Tabelas Novas (criadas, não usadas) |
+|--------------------------|-------------------------------------|
+| `prospects`              | `crm_contacts`                      |
+| `prospect_opportunities` | `crm_deals`                         |
+| `prospect_activities`    | (não tem equivalente direto)        |
+| `prospect_lists`         | (não tem equivalente direto)        |
+
+O hook `useCRM.tsx` ainda referencia as tabelas antigas.
+
+---
+
+### Problema 3: Imports Mortos
+**Status: RESOLVIDO**
+
+O arquivo `ProjectsHeader.tsx` está limpo, sem imports de `CLIENTS` ou `TEAM_MEMBERS`.
+
+---
+
+## Plano de Execução
+
+### FASE 1: Limpeza de Segurança RLS
+
+**Objetivo**: Remover todas as policies antigas duplicadas e manter apenas as seguras.
+
+**Ações**:
+
+1. **Criar migração SQL para dropar policies antigas**
+   - Dropar todas as policies com padrão `"Users can X"` que têm `USING(true)` ou `WITH CHECK(true)`
+   - Manter apenas as policies `"auth_X"` com `auth.uid() IS NOT NULL`
+
+2. **Tabelas afetadas** (~40 tabelas):
+   - cadences, cadence_steps
+   - prospects, prospect_lists, prospect_opportunities, prospect_activities
+   - campaigns, content_comments, content_ideas, content_items, content_scripts
+   - contracts, contract_templates, contract_links, etc.
+   - proposals, proposal_items, proposal_settings
+   - revenues, expenses, financial_accounts
+   - calendar_events, deadlines
+   - inbox_threads, inbox_messages
+   - knowledge_articles
+   - E todas as demais...
+
+3. **Resultado esperado**:
+   - De ~472 policies para ~200 policies
+   - De 165 warnings para 0-5 warnings (restantes serão falso positivo do linter)
+
+---
+
+### FASE 2: Consolidação do CRM
+
+**Objetivo**: Migrar o CRM para usar exclusivamente as tabelas `crm_*`.
+
+**Ações**:
+
+1. **Migração de dados** (se existirem registros):
+   ```sql
+   -- prospects -> crm_contacts
+   INSERT INTO crm_contacts (name, company, email, phone, instagram, tags, created_at)
+   SELECT decision_maker_name, company_name, email, phone, instagram, tags, created_at
+   FROM prospects;
+   
+   -- prospect_opportunities -> crm_deals
+   INSERT INTO crm_deals (title, value, stage_key, contact_id, created_at)
+   SELECT po.title, po.estimated_value, po.stage, cc.id, po.created_at
+   FROM prospect_opportunities po
+   LEFT JOIN crm_contacts cc ON cc.name = (SELECT decision_maker_name FROM prospects WHERE id = po.prospect_id);
+   ```
+
+2. **Atualizar `useCRM.tsx`**:
+   - Trocar queries de `prospects` para `crm_contacts`
+   - Trocar queries de `prospect_opportunities` para `crm_deals`
+   - Buscar stages de `crm_stages` ao invés de constante hardcoded
+   - Remover referências a `prospect_activities`
+
+3. **Verificar seed de `crm_stages`**:
+   - Garantir que os 8 estágios existem: lead, qualificacao, diagnostico, proposta, negociacao, fechado, onboarding, pos_venda
+
+4. **Dropar tabelas antigas** (ou arquivar):
+   ```sql
+   -- Opção A: Dropar
+   DROP TABLE prospect_activities CASCADE;
+   DROP TABLE prospect_opportunities CASCADE;
+   DROP TABLE prospects CASCADE;
+   DROP TABLE prospect_lists CASCADE;
+   DROP TABLE do_not_contact CASCADE;
+   
+   -- Opção B: Arquivar (renomear)
+   ALTER TABLE prospects RENAME TO archived_prospects;
+   ```
+
+---
+
+### FASE 3: Ajustes no Frontend
+
+**Objetivo**: Sincronizar componentes CRM com novo schema.
+
+**Ações**:
+
+1. **Atualizar tipos em `useCRM.tsx`**:
+   ```typescript
+   // De:
+   from('prospect_opportunities').select('*, prospect:prospects(*)')
+   
+   // Para:
+   from('crm_deals').select('*, contact:crm_contacts(*), stage:crm_stages(*)')
+   ```
+
+2. **Atualizar `CRMPage.tsx`**:
+   - Buscar estágios dinamicamente de `crm_stages`
+   - Remover `CRM_STAGES` hardcoded do hook
+
+3. **Atualizar `KanbanColumn.tsx`**:
+   - Ajustar interface `Deal` para novo schema
+
+4. **Remover referências obsoletas**:
+   - `src/types/prospecting.ts` pode ser simplificado ou removido
+
+---
+
+## Detalhamento Técnico
+
+### Migração SQL - Fase 1 (RLS Cleanup)
+
+```sql
+-- PARTE 1: Dropar policies antigas (padrão "Users can X")
+-- Executar para CADA tabela com duplicação
+
+DO $$ 
+DECLARE
+  pol RECORD;
+BEGIN
+  FOR pol IN 
+    SELECT policyname, tablename, schemaname
+    FROM pg_policies 
+    WHERE schemaname = 'public'
+      AND (
+        policyname LIKE 'Users can%'
+        OR policyname LIKE '%_select'
+        OR policyname LIKE '%_insert'
+        OR policyname LIKE '%_update'
+        OR policyname LIKE '%_delete'
+      )
+      AND policyname NOT LIKE 'auth_%'
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', 
+      pol.policyname, pol.schemaname, pol.tablename);
+  END LOOP;
+END $$;
+```
+
+### Migração SQL - Fase 2 (CRM)
+
+```sql
+-- Verificar se há dados para migrar
+SELECT COUNT(*) FROM prospects;
+SELECT COUNT(*) FROM prospect_opportunities;
+
+-- Se houver, executar migração
+-- (script detalhado será gerado dinamicamente)
+```
+
+### Alterações em Código - Fase 3
+
+**Arquivo**: `src/hooks/useCRM.tsx`
 
 ```typescript
-const tables = [
-  // NOVOS - Projetos
-  "project_stages",
-  "projects",
-  
-  // NOVOS - Prospeccao
-  "prospect_activities",
-  "prospect_opportunities", 
-  "prospect_lists",
-  
-  // Marketing existentes
-  "content_checklist", 
-  "content_comments", 
-  "content_scripts", 
-  "instagram_references",
-  "content_items", 
-  "content_ideas", 
-  "campaign_creatives", 
-  "campaigns",
-  "instagram_snapshots", 
-  "creative_outputs", 
-  "creative_briefs", 
-  "generated_images",
-  "marketing_assets",
-  
-  // Prospeccao existentes
-  "cadence_steps", 
-  "cadences", 
-  "do_not_contact", 
-  "prospects",
-  
-  // Financeiro existentes
-  "revenues", 
-  "expenses", 
-  "cashflow_snapshots",
-  
-  // Contratos existentes
-  "contract_signatures",
-  "contract_addendums", 
-  "contract_alerts", 
-  "contract_links", 
-  "contract_versions",
-  "contracts",
-  
-  // Outros existentes
-  "proposals",
-  "meeting_notes", 
-  "calendar_events", 
-  "deadlines",
-  "storyboard_scenes", 
-  "storyboards",
-];
+// ANTES
+const { data } = await supabase
+  .from('prospect_opportunities')
+  .select('*, prospect:prospects(*)');
+
+// DEPOIS
+const { data } = await supabase
+  .from('crm_deals')
+  .select('*, contact:crm_contacts(*), stage:crm_stages(*)');
 ```
 
 ---
 
-## ARQUIVOS A MODIFICAR
+## Checklist de Validação Final
 
-| Arquivo | Acao | Prioridade |
-|---------|------|------------|
-| `supabase/functions/platform-reset/index.ts` | Adicionar verificacao admin + novas tabelas | ALTA |
-| `src/pages/settings/DangerZoneSettingsPage.tsx` | Verificar role admin | ALTA |
-| `src/pages/settings/SettingsDashboard.tsx` | Filtrar DangerZone | ALTA |
-| `src/components/ai/AIAssistant.tsx` | Remover mock responses | MEDIA |
-| `src/components/projects/list/ProjectsHeader.tsx` | Remover import mock | BAIXA |
-
----
-
-## ORDEM DE IMPLEMENTACAO
-
-1. **Seguranca (ALTA)** - platform-reset + DangerZone admin check
-2. **AI Assistant** - Remover mocks
-3. **Imports** - Limpar referencias
-4. **Teste** - Verificar todas as telas com banco vazio
+- [ ] Nenhuma policy com `USING(true)` ou `WITH CHECK(true)` em tabelas sensíveis
+- [ ] Warnings do linter reduzidos para < 10 (restantes são falso positivo)
+- [ ] CRM usando apenas `crm_contacts`, `crm_deals`, `crm_stages`
+- [ ] Tabelas `prospects` e `prospect_opportunities` arquivadas ou removidas
+- [ ] Build sem erros de TypeScript
+- [ ] Testes manuais: login, criar deal, mover no kanban
 
 ---
 
-## RESULTADO ESPERADO
+## Estimativa de Impacto
 
-Apos implementacao:
-
-- Botao "Zerar Plataforma" visivel apenas para admins
-- Edge function rejeita usuarios nao-admin com erro 403
-- AIAssistant mostra mensagem de "em desenvolvimento"
-- Todas as telas iniciam com empty states premium
-- Reset limpa TODAS as tabelas operacionais incluindo projects e prospects
-- Event log registra quem executou o reset
-- Plataforma 100% pronta para dados reais de producao
-
+| Métrica | Antes | Depois |
+|---------|-------|--------|
+| Policies RLS | 472 | ~200 |
+| Warnings Linter | 165 | < 10 |
+| Tabelas CRM | 6 (duplicadas) | 3 (consolidadas) |
+| Fontes de verdade CRM | 2 | 1 |
