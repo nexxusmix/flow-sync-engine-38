@@ -12,11 +12,88 @@ interface ExtractRequest {
   documentType?: 'contract' | 'proposal' | 'general';
 }
 
-// Process PDF using Gemini's native PDF support (inline_data)
+// Hyper-detailed extraction prompt
+const HYPER_DETAILED_PROMPT = `Você é um assistente ESPECIALISTA em extrair informações de documentos comerciais de produtoras audiovisuais.
+
+Sua tarefa é extrair ABSOLUTAMENTE TODO o conteúdo deste documento de forma EXTREMAMENTE DETALHADA.
+
+ESTRUTURE A EXTRAÇÃO ASSIM:
+
+## RESUMO EXECUTIVO
+[Resuma o projeto em 2-3 parágrafos - objetivo principal, tipo de serviço, contexto]
+
+## ESCOPO COMPLETO
+[Transcreva TODO o escopo PALAVRA POR PALAVRA, incluindo:
+- Objetivos do projeto
+- Necessidades identificadas
+- Abordagem proposta
+- Metodologia
+- Conceito criativo
+- Especificações técnicas
+- Requisitos do cliente
+- Qualquer detalhe mencionado sobre a execução]
+
+## ENTREGAS PREVISTAS
+[Liste CADA entrega individualmente com:
+- Nome/título do entregável
+- Formato (vídeo, imagem, PDF, etc.)
+- Especificações técnicas (resolução, duração, dimensões)
+- Quantidade se aplicável]
+
+## CRONOGRAMA DETALHADO
+[Cada etapa com:
+- Nome da etapa
+- Data de início prevista
+- Data de fim prevista
+- Duração em dias
+- Responsabilidades]
+
+## CONDIÇÕES FINANCEIRAS
+[Extraia TODOS os detalhes:
+- Valor total do contrato
+- Cada parcela/milestone com:
+  - Percentual
+  - Valor em R$
+  - Data de vencimento
+  - Gatilho/condição (na assinatura, na aprovação, na entrega, etc.)
+- Forma de pagamento
+- Condições especiais]
+
+## CLÁUSULAS E OBSERVAÇÕES
+[Inclua:
+- Limite de revisões incluídas
+- Penalidades por atraso
+- Restrições de uso
+- Direitos autorais
+- Cláusulas de rescisão
+- Qualquer observação especial]
+
+## DADOS DO CLIENTE
+[Extraia TODOS os dados disponíveis:
+- Nome do contato
+- Cargo/função
+- Nome da empresa
+- CNPJ/CPF
+- Email
+- Telefone
+- Endereço se disponível]
+
+## DADOS DO FORNECEDOR
+[Se disponível:
+- Nome da produtora
+- CNPJ
+- Contatos]
+
+IMPORTANTE: 
+- NÃO RESUMA. TRANSCREVA TUDO.
+- Se alguma informação não estiver clara, indique com [NÃO INFORMADO]
+- Preserve números, datas e valores EXATAMENTE como aparecem
+- Inclua aspas em textos literais importantes`;
+
+// Process PDF using Gemini's native PDF support
 async function extractPdfWithGemini(documentBase64: string, apiKey: string, documentType: string): Promise<string> {
-  console.log("Processing PDF with Gemini vision...");
+  console.log("Processing PDF with Gemini vision (hyper-detailed)...");
   
-  // Gemini 2.5 Flash supports PDFs directly via inline_data
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -31,18 +108,7 @@ async function extractPdfWithGemini(documentBase64: string, apiKey: string, docu
           content: [
             {
               type: "text",
-              text: `Analise este documento PDF (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes para criar um projeto audiovisual.
-
-Extraia com atenção especial:
-1. DADOS DO PROJETO: nome, tipo de serviço, escopo detalhado
-2. DADOS DO CLIENTE: nome, empresa, email, telefone, CNPJ/CPF
-3. VALORES E PAGAMENTO: valor total, condições de pagamento, parcelas (quantas, valores, datas de vencimento, gatilhos como "na assinatura", "na entrega", etc.)
-4. PRAZOS: data de início, prazo de cada etapa (se mencionado), data de entrega final
-5. ENTREGAS: lista de arquivos/formatos a entregar
-6. LIMITE DE REVISÕES: número de revisões incluídas
-7. OBSERVAÇÕES: cláusulas especiais, restrições, requisitos técnicos
-
-Transcreva TODO o conteúdo relevante de forma organizada e completa. Seja EXTREMAMENTE detalhado.`
+              text: HYPER_DETAILED_PROMPT
             },
             {
               type: "image_url",
@@ -60,7 +126,6 @@ Transcreva TODO o conteúdo relevante de forma organizada e completa. Seja EXTRE
     const errorText = await response.text();
     console.error("Gemini PDF processing failed:", response.status, errorText);
     
-    // If PDF format fails, try as images approach
     if (response.status === 400 && errorText.includes("Invalid")) {
       console.log("PDF format not supported, will need image conversion");
       return "";
@@ -75,11 +140,10 @@ Transcreva TODO o conteúdo relevante de forma organizada e completa. Seja EXTRE
   return content;
 }
 
-// Fallback: Process as image (for when PDF direct processing fails)
-async function extractPdfAsImage(documentBase64: string, apiKey: string, documentType: string): Promise<string> {
-  console.log("Trying PDF as generic base64 content...");
+// Fallback with Pro model
+async function extractPdfWithPro(documentBase64: string, apiKey: string): Promise<string> {
+  console.log("Trying with Gemini Pro for better extraction...");
   
-  // Try with Pro model which has better document understanding
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -91,32 +155,25 @@ async function extractPdfAsImage(documentBase64: string, apiKey: string, documen
       messages: [
         {
           role: "user",
-          content: `Você é um assistente especializado em extrair informações de documentos. 
-
-Vou te enviar o conteúdo base64 de um documento PDF. Por favor, analise-o e extraia TODAS as informações relevantes.
-
-Este é um ${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}.
-
-Extraia:
-1. Nome do projeto/serviço
-2. Dados do cliente (nome, empresa, contato)
-3. Valores e pagamentos
-4. Prazos e datas
-5. Escopo e entregas
-6. Condições especiais
-
-Se você não conseguir processar o documento, informe claramente.
-
-Documento (base64, primeiros 1000 caracteres para referência): ${documentBase64.substring(0, 1000)}...
-
-IMPORTANTE: Tente inferir e extrair o máximo de informações possível do contexto disponível.`
+          content: [
+            {
+              type: "text",
+              text: HYPER_DETAILED_PROMPT
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${documentBase64}`
+              }
+            }
+          ]
         }
       ]
     }),
   });
 
   if (!response.ok) {
-    console.error("Fallback extraction failed:", await response.text());
+    console.error("Pro extraction failed:", await response.text());
     return "";
   }
 
@@ -139,28 +196,28 @@ serve(async (req) => {
 
     let extractedContent = "";
     
-    // Process PDF/document if provided (as base64)
+    // Process PDF/document if provided
     if (documentBase64) {
       console.log("Processing PDF document...");
       console.log(`Document base64 length: ${documentBase64.length} chars`);
       
-      // Try Gemini's native PDF processing first
+      // Try Gemini Flash first
       try {
         extractedContent = await extractPdfWithGemini(documentBase64, LOVABLE_API_KEY, documentType);
       } catch (e) {
         console.error("Primary PDF extraction error:", e);
       }
       
-      // If that failed, try fallback
-      if (!extractedContent || extractedContent.length < 100) {
-        console.log("Primary extraction insufficient, trying fallback...");
+      // If extraction insufficient, try Pro model
+      if (!extractedContent || extractedContent.length < 500) {
+        console.log("Primary extraction insufficient, trying Pro model...");
         try {
-          const fallbackContent = await extractPdfAsImage(documentBase64, LOVABLE_API_KEY, documentType);
-          if (fallbackContent && fallbackContent.length > extractedContent.length) {
-            extractedContent = fallbackContent;
+          const proContent = await extractPdfWithPro(documentBase64, LOVABLE_API_KEY);
+          if (proContent && proContent.length > extractedContent.length) {
+            extractedContent = proContent;
           }
         } catch (e) {
-          console.error("Fallback extraction error:", e);
+          console.error("Pro extraction error:", e);
         }
       }
       
@@ -189,16 +246,9 @@ serve(async (req) => {
                 content: [
                   {
                     type: "text",
-                    text: `Analise esta imagem de um documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações de texto visíveis.
+                    text: `${HYPER_DETAILED_PROMPT}
 
-Extraia com atenção especial:
-1. DADOS DO PROJETO E CLIENTE (nomes, empresas, emails, telefones)
-2. VALORES E CONDIÇÕES DE PAGAMENTO (parcelas, datas, gatilhos)
-3. PRAZOS E CRONOGRAMA
-4. ENTREGAS PREVISTAS
-5. TODO texto relevante visível
-
-Seja extremamente detalhado e transcreva todos os textos visíveis.`
+Esta é a página ${i + 1} de ${imageBase64List.length} do documento.`
                   },
                   {
                     type: "image_url",
@@ -216,7 +266,7 @@ Seja extremamente detalhado e transcreva todos os textos visíveis.`
           const imageResult = await imageResponse.json();
           const content = imageResult.choices?.[0]?.message?.content || "";
           if (content) {
-            extractedContent += "\n\n--- PÁGINA/IMAGEM " + (i + 1) + " ---\n" + content;
+            extractedContent += "\n\n--- PÁGINA " + (i + 1) + " ---\n" + content;
             console.log(`Image ${i + 1} extracted ${content.length} chars`);
           }
         } else {
@@ -224,21 +274,19 @@ Seja extremamente detalhado e transcreva todos os textos visíveis.`
           console.error(`Image ${i + 1} processing failed:`, errText);
         }
       }
-      console.log("Images processed");
     }
 
     // Add text content
     if (text) {
-      extractedContent += "\n\nTEXTO ADICIONAL:\n" + text;
+      extractedContent += "\n\n## TEXTO ADICIONAL DO USUÁRIO:\n" + text;
     }
 
     if (!extractedContent || extractedContent.trim().length < 50) {
       console.error("Insufficient content extracted:", extractedContent?.length || 0, "chars");
       
-      // Provide more helpful error message
-      let errorMsg = "Não foi possível extrair conteúdo do documento.";
+      let errorMsg = "Não foi possível extrair conteúdo suficiente do documento.";
       if (documentBase64) {
-        errorMsg = "O PDF pode estar protegido, corrompido ou ser uma imagem escaneada. Tente fazer upload de imagens (fotos/screenshots) das páginas do documento.";
+        errorMsg = "O PDF pode estar protegido, corrompido ou ser apenas imagens escaneadas de baixa qualidade. Tente fazer upload de imagens (fotos/screenshots) claras das páginas do documento.";
       } else if (!imageBase64List || imageBase64List.length === 0) {
         errorMsg = "Nenhum arquivo foi enviado. Por favor, faça upload de um PDF ou imagens do documento.";
       }
@@ -251,30 +299,34 @@ Seja extremamente detalhado e transcreva todos os textos visíveis.`
 
     console.log(`Total extracted content: ${extractedContent.length} characters`);
 
-    // Now extract structured data using tool calling
-    const structuredPrompt = `Baseado nas informações extraídas abaixo, estruture os dados COMPLETOS do projeto audiovisual.
+    // Structure the extracted data
+    const structuredPrompt = `Baseado nas informações DETALHADAS extraídas abaixo, estruture os dados COMPLETOS do projeto.
 
 CONTEÚDO EXTRAÍDO:
 ${extractedContent}
 
 TEMPLATES DISPONÍVEIS (escolha o mais adequado):
-- filme_institucional: Filme Institucional (SLA padrão: 30 dias)
-- filme_produto: Vídeo Produto (SLA padrão: 21 dias)
-- aftermovie: Aftermovie/Cobertura de Evento (SLA padrão: 14 dias)
-- reels_pacote: Pacote de Reels (SLA padrão: 7 dias)
-- foto_pacote: Pacote de Fotos (SLA padrão: 5 dias)
-- tour_360: Tour Virtual 360 (SLA padrão: 10 dias)
-- motion_vinheta: Motion Graphics/Vinheta (SLA padrão: 14 dias)
+- filme_institucional: Filme Institucional
+- filme_produto: Vídeo Produto
+- aftermovie: Aftermovie/Cobertura de Evento
+- reels_pacote: Pacote de Reels
+- foto_pacote: Pacote de Fotos
+- tour_360: Tour Virtual 360
+- motion_vinheta: Motion Graphics/Vinheta
 
-ETAPAS POSSÍVEIS (para cronograma):
+ETAPAS DO PROJETO (use para stageSchedule):
 - briefing, roteiro, pre_producao, captacao, edicao, revisao, aprovacao, entrega, pos_venda
 
-IMPORTANTE:
-1. Se houver informações de pagamento em parcelas, extraia CADA parcela
-2. Se houver cronograma detalhado, extraia as datas de cada etapa
-3. A data de hoje é: ${new Date().toISOString().split('T')[0]}
+INSTRUÇÕES IMPORTANTES:
+1. O campo "executiveSummary" deve conter um RESUMO EXECUTIVO de 2-3 parágrafos
+2. O campo "fullScope" deve conter O ESCOPO COMPLETO, palavra por palavra, TUDO que foi extraído sobre o que será feito
+3. O campo "deliverables" deve listar CADA ENTREGA individualmente
+4. O campo "paymentMilestones" deve listar CADA PARCELA com valor, percentual, data e gatilho
+5. O campo "stageSchedule" deve incluir as etapas com datas se mencionadas
+6. O campo "additionalNotes" deve incluir cláusulas, restrições e observações
+7. O campo "rawExtractedContent" deve conter TODO o texto extraído original
 
-Extraia e retorne os dados estruturados COMPLETOS.`;
+Data de hoje: ${new Date().toISOString().split('T')[0]}`;
 
     const structuredResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -285,7 +337,7 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados COMPLETOS de documentos." },
+          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados COMPLETOS e DETALHADOS de documentos. Nunca resuma - preserve todo o conteúdo." },
           { role: "user", content: structuredPrompt }
         ],
         tools: [
@@ -293,7 +345,7 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
             type: "function",
             function: {
               name: "create_project",
-              description: "Cria um projeto COMPLETO com todos os dados extraídos do documento",
+              description: "Cria um projeto COMPLETO com TODOS os dados extraídos do documento",
               parameters: {
                 type: "object",
                 properties: {
@@ -311,47 +363,63 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
                   contractValue: { type: "number", description: "Valor total em reais" },
                   startDate: { type: "string", description: "Data de início YYYY-MM-DD" },
                   deliveryDate: { type: "string", description: "Data de entrega YYYY-MM-DD" },
-                  scope: { type: "string", description: "Descrição do escopo" },
+                  revisionLimit: { type: "number", description: "Limite de revisões" },
+                  
+                  // CAMPOS DETALHADOS
+                  executiveSummary: { type: "string", description: "Resumo executivo do projeto em 2-3 parágrafos" },
+                  fullScope: { type: "string", description: "Escopo COMPLETO do projeto, palavra por palavra, TODO o conteúdo extraído sobre o que será feito" },
+                  
                   deliverables: { 
                     type: "array",
+                    description: "Lista de TODAS as entregas previstas",
                     items: { 
                       type: "object",
                       properties: {
-                        title: { type: "string" },
-                        type: { type: "string", enum: ["video", "imagem", "pdf", "zip", "audio", "outro"] }
-                      }
+                        title: { type: "string", description: "Nome da entrega" },
+                        type: { type: "string", enum: ["video", "imagem", "pdf", "zip", "audio", "outro"], description: "Tipo do arquivo" },
+                        specifications: { type: "string", description: "Especificações técnicas (resolução, duração, etc.)" },
+                        quantity: { type: "number", description: "Quantidade se aplicável" }
+                      },
+                      required: ["title", "type"]
                     }
                   },
+                  
                   paymentMilestones: { 
                     type: "array",
+                    description: "Lista de TODAS as parcelas/milestones de pagamento",
                     items: {
                       type: "object",
                       properties: {
-                        title: { type: "string" },
-                        percentage: { type: "number" },
-                        amount: { type: "number" },
-                        dueDate: { type: "string" },
-                        trigger: { type: "string" }
-                      }
+                        title: { type: "string", description: "Descrição do milestone" },
+                        percentage: { type: "number", description: "Percentual do valor total" },
+                        amount: { type: "number", description: "Valor em R$" },
+                        dueDate: { type: "string", description: "Data de vencimento YYYY-MM-DD" },
+                        trigger: { type: "string", description: "Gatilho (na assinatura, na aprovação, na entrega, etc.)" }
+                      },
+                      required: ["title"]
                     }
                   },
+                  
                   stageSchedule: {
                     type: "array",
+                    description: "Cronograma detalhado por etapa",
                     items: {
                       type: "object",
                       properties: {
-                        stage: { type: "string", enum: ["briefing", "roteiro", "pre_producao", "captacao", "edicao", "revisao", "aprovacao", "entrega", "pos_venda"] },
-                        plannedStart: { type: "string" },
-                        plannedEnd: { type: "string" },
-                        durationDays: { type: "number" }
-                      }
+                        stage: { type: "string", enum: ["briefing", "roteiro", "pre_producao", "captacao", "edicao", "revisao", "aprovacao", "entrega", "pos_venda"], description: "Identificador da etapa" },
+                        plannedStart: { type: "string", description: "Data início YYYY-MM-DD" },
+                        plannedEnd: { type: "string", description: "Data fim YYYY-MM-DD" },
+                        durationDays: { type: "number", description: "Duração em dias" }
+                      },
+                      required: ["stage"]
                     }
                   },
-                  revisionLimit: { type: "number" },
-                  paymentTerms: { type: "string" },
-                  additionalNotes: { type: "string" }
+                  
+                  paymentTerms: { type: "string", description: "Condições de pagamento em texto livre" },
+                  additionalNotes: { type: "string", description: "Cláusulas especiais, restrições, observações importantes" },
+                  rawExtractedContent: { type: "string", description: "TODO o conteúdo extraído do documento, sem modificações" }
                 },
-                required: ["title", "template"],
+                required: ["title", "template", "executiveSummary", "fullScope"],
                 additionalProperties: false
               }
             }
@@ -392,16 +460,18 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
 
     const projectData = JSON.parse(toolCall.function.arguments);
     console.log("Project data extracted successfully:", projectData.title);
+    console.log("Scope length:", projectData.fullScope?.length || 0);
+    console.log("Deliverables count:", projectData.deliverables?.length || 0);
+    console.log("Milestones count:", projectData.paymentMilestones?.length || 0);
 
     // Calculate milestone amounts if only percentages provided
     const processedMilestones = (projectData.paymentMilestones || []).map((m: any) => ({
       ...m,
-      amount: m.amount || (m.percentage && projectData.contractValue ? (m.percentage / 100) * projectData.contractValue : 0)
+      amount: m.amount || (m.percentage && projectData.contractValue ? Math.round((m.percentage / 100) * projectData.contractValue * 100) / 100 : 0)
     }));
 
     return new Response(JSON.stringify({
       success: true,
-      extractedContent,
       projectData: {
         title: projectData.title || "",
         clientName: projectData.clientName || "",
@@ -413,13 +483,17 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
         contractValue: projectData.contractValue || 0,
         startDate: projectData.startDate || new Date().toISOString().split('T')[0],
         deliveryDate: projectData.deliveryDate || "",
-        scope: projectData.scope || "",
+        revisionLimit: projectData.revisionLimit || 2,
+        
+        // CAMPOS DETALHADOS
+        executiveSummary: projectData.executiveSummary || "",
+        fullScope: projectData.fullScope || "",
         deliverables: projectData.deliverables || [],
         paymentMilestones: processedMilestones,
         stageSchedule: projectData.stageSchedule || [],
-        revisionLimit: projectData.revisionLimit || 2,
         paymentTerms: projectData.paymentTerms || "",
-        additionalNotes: projectData.additionalNotes || ""
+        additionalNotes: projectData.additionalNotes || "",
+        rawExtractedContent: projectData.rawExtractedContent || extractedContent
       }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
