@@ -83,8 +83,8 @@ export default function Dashboard() {
             <div>
               <h1 className="text-2xl font-semibold text-foreground">João Silva</h1>
               <div className="flex items-center gap-2 mt-1">
-                <span className="w-2 h-2 rounded-full bg-success"></span>
-                <span className="text-xs uppercase tracking-wider text-muted-foreground">Disponível para projetos</span>
+                <span className="w-2 h-2 rounded-full bg-primary"></span>
+                <span className="text-xs uppercase tracking-wider text-primary">Disponível para projetos</span>
               </div>
             </div>
           </div>
