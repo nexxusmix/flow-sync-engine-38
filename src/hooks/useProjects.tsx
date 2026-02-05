@@ -42,7 +42,7 @@ export function useProjects() {
   const queryClient = useQueryClient();
 
   // Fetch all projects with their stages
-  const { data: projects = [], isLoading, error, refetch } = useQuery({
+  const { data: projects = [], isLoading: queryLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
       const { data: projectsData, error: projectsError } = await supabase
@@ -50,7 +50,10 @@ export function useProjects() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (projectsError) throw projectsError;
+      if (projectsError) {
+        console.error('Error fetching projects:', projectsError);
+        throw projectsError;
+      }
 
       // Fetch stages for all projects
       const projectIds = projectsData?.map(p => p.id) || [];
@@ -65,7 +68,10 @@ export function useProjects() {
         .in('project_id', projectIds)
         .order('order_index', { ascending: true });
 
-      if (stagesError) throw stagesError;
+      if (stagesError) {
+        console.error('Error fetching stages:', stagesError);
+        // Don't throw, just return projects without stages
+      }
 
       // Combine projects with their stages
       const projectsWithStages: ProjectWithStages[] = (projectsData || []).map(project => ({
@@ -77,6 +83,9 @@ export function useProjects() {
     },
     enabled: !!user,
   });
+
+  // Only show loading when actually fetching, not when query is disabled
+  const isLoading = !!user && queryLoading && isFetching;
 
   // Get a single project by ID
   const getProject = async (id: string): Promise<ProjectWithStages | null> => {

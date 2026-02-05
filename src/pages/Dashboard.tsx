@@ -89,6 +89,7 @@ export default function Dashboard() {
     ? [...activeStages, ...projectsByStage.filter(s => s.count === 0).slice(0, 4 - activeStages.length)]
     : activeStages;
 
+  // Show loading only when actually fetching data
   if (isLoading) {
     return (
       <DashboardLayout title="Dashboard">
