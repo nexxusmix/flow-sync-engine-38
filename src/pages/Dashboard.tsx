@@ -1,340 +1,225 @@
-import { ArrowUpRight, Sparkles, FileText, FileSignature, Wallet, TrendingUp, ChevronDown, Rocket } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Sparkles, Settings, ArrowUpRight, X, Instagram, Dribbble } from "lucide-react";
+import { Link } from "react-router-dom";
 
-// Filter Pills Component
-function FilterPills() {
-  const filters = ["Visão Geral", "Pipeline", "Propostas", "Contratos", "Financeiro"];
-  
+// Service Pill Component
+function ServicePill({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {filters.map((filter, index) => (
-        <button
-          key={filter}
-          className={cn(
-            "polo-pill",
-            index === 0 && "polo-pill-active"
-          )}
-        >
-          {filter}
-        </button>
-      ))}
-    </div>
+    <span className="inline-flex items-center px-4 py-2 rounded-full border border-border bg-transparent text-sm text-foreground hover:border-muted-foreground/50 transition-colors cursor-pointer">
+      {children}
+    </span>
   );
 }
 
-// Featured Card Component
-function FeaturedCard() {
+// Experience Item Component
+interface ExperienceItemProps {
+  role: string;
+  type: string;
+  company: string;
+  period: string;
+}
+
+function ExperienceItem({ role, type, company, period }: ExperienceItemProps) {
   return (
-    <div className="polo-card group cursor-pointer relative overflow-hidden lg:row-span-2">
-      <div className="absolute top-4 right-4">
-        <ArrowUpRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-      
-      <span className="polo-label">Featured</span>
-      
-      <div className="mt-auto pt-16">
-        <h2 className="text-2xl font-semibold tracking-tight">Visão do Negócio</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Métricas e KPIs em tempo real
-        </p>
-        <div className="polo-pill mt-4 w-fit">
-          Dashboard
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Metric Card Polo Style
-interface MetricCardPoloProps {
-  label: string;
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon?: React.ElementType;
-  trend?: { value: number; isPositive: boolean };
-  size?: "default" | "large";
-}
-
-function MetricCardPolo({ label, title, value, subtitle, icon: Icon, trend, size = "default" }: MetricCardPoloProps) {
-  return (
-    <div className="polo-card group cursor-pointer h-full">
-      <div className="flex items-start justify-between">
-        {Icon && (
-          <div className="p-2.5 rounded-xl bg-secondary border border-border">
-            <Icon className="h-5 w-5 text-muted-foreground" />
-          </div>
-        )}
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-      
-      <div className="mt-4">
-        <span className="polo-label">{label}</span>
-        <p className={cn(
-          "font-semibold tracking-tight mt-2",
-          size === "large" ? "text-4xl" : "text-3xl"
-        )}>{value}</p>
-        <p className="text-sm text-muted-foreground mt-1">{title}</p>
-        {trend && (
-          <p className={cn(
-            "text-sm font-medium mt-2",
-            trend.isPositive ? "text-success" : "text-destructive"
-          )}>
-            {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}% vs mês anterior
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Info Card Component
-interface InfoCardProps {
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
-  tag: string;
-}
-
-function InfoCard({ icon: Icon, title, subtitle, tag }: InfoCardProps) {
-  return (
-    <div className="polo-card group cursor-pointer h-full flex flex-col">
-      <div className="flex items-start justify-between mb-4">
-        <div className="p-2.5 rounded-xl bg-secondary border border-border">
-          <Icon className="h-5 w-5 text-muted-foreground" />
-        </div>
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-      
-      <div className="mt-auto">
-        <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
-        <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-        <div className="polo-pill mt-4 w-fit text-xs">
-          {tag}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Activity Item Component
-interface ActivityItemProps {
-  title: string;
-  description: string;
-  time: string;
-}
-
-function ActivityItem({ title, description, time }: ActivityItemProps) {
-  return (
-    <div className="group flex items-center justify-between py-3 border-b border-border last:border-0 cursor-pointer">
+    <div className="flex items-start justify-between py-3 border-b border-border last:border-0">
       <div>
-        <p className="text-sm font-medium group-hover:text-primary transition-colors">{title}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-sm font-medium text-foreground">{role}</p>
+        <p className="text-xs text-muted-foreground">{type}</p>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">{time}</span>
-        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="text-right">
+        <p className="text-sm font-medium text-foreground">{company}</p>
+        <p className="text-xs text-muted-foreground">{period}</p>
       </div>
     </div>
+  );
+}
+
+// Social Icon Button
+function SocialIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <button className="flex items-center justify-center w-12 h-12 rounded-full border border-border bg-transparent hover:border-muted-foreground/50 transition-colors">
+      {children}
+    </button>
   );
 }
 
 export default function Dashboard() {
   return (
-    <div className="p-6 lg:p-8 animate-fade-in">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">SQUAD Hub</span>
-        </div>
-        <p className="text-muted-foreground text-sm mb-6">
-          Sistema completo de gestão para produtores audiovisuais — propostas, contratos e financeiro.
-        </p>
-        
-        {/* Archive Filter */}
-        <div className="mb-4">
-          <span className="polo-label mb-3 block">Painel de Controle</span>
-          <FilterPills />
-        </div>
-      </div>
-
-      {/* Bento Grid */}
-      <div className="grid gap-4 lg:grid-cols-4 lg:grid-rows-[auto_auto_auto]">
-        
-        {/* Section: Métricas Vol. 01 */}
-        <div className="lg:col-span-4 mb-2">
-          <span className="polo-label">Métricas — Vol. 01</span>
+    <div className="min-h-screen bg-background">
+      {/* Top Navigation */}
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-foreground">
+            <Sparkles className="h-4 w-4 text-background" />
+          </div>
+          <span className="font-semibold text-foreground">SQUAD Hub</span>
         </div>
         
-        {/* Featured Card */}
-        <div className="lg:col-span-2 lg:row-span-2">
-          <FeaturedCard />
+        <div className="hidden md:flex items-center gap-8">
+          <Link to="/pipeline" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pipeline</Link>
+          <Link to="/propostas" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Propostas</Link>
+          <Link to="/contratos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contratos</Link>
+          <Link to="/financeiro" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Financeiro</Link>
         </div>
         
-        {/* Metric Cards */}
-        <MetricCardPolo
-          label="Propostas"
-          title="Aguardando resposta"
-          value={5}
-          icon={FileText}
-        />
-        <MetricCardPolo
-          label="Contratos"
-          title="Aguardando assinatura"
-          value={3}
-          icon={FileSignature}
-        />
-        <MetricCardPolo
-          label="A Receber"
-          title="Próximos 30 dias"
-          value="R$ 32.5k"
-          icon={Wallet}
-        />
-        <MetricCardPolo
-          label="Receita"
-          title="Este mês"
-          value="R$ 48k"
-          icon={TrendingUp}
-          trend={{ value: 12, isPositive: true }}
-        />
-
-        {/* Section: Operações Vol. 02 */}
-        <div className="lg:col-span-4 mt-4 mb-2">
-          <span className="polo-label">Operações — Vol. 02</span>
+        <div className="flex items-center gap-3">
+          <Link to="/configuracoes" className="p-2 rounded-lg hover:bg-card transition-colors">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+          </Link>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-transparent hover:bg-card transition-colors">
+            <Sparkles className="h-4 w-4" />
+            <span className="text-sm font-medium">Novo Projeto</span>
+          </button>
         </div>
-        
-        {/* Info Cards */}
-        <InfoCard
-          icon={Rocket}
-          title="Pipeline Ativo"
-          subtitle="12 leads em negociação"
-          tag="Pipeline"
-        />
-        <InfoCard
-          icon={FileText}
-          title="Propostas do Mês"
-          subtitle="Taxa de conversão 42%"
-          tag="Propostas"
-        />
-        
-        {/* Activity Section */}
-        <div className="lg:col-span-2 polo-card">
-          <div className="flex items-center justify-between mb-4">
-            <span className="polo-label">Atividade Recente</span>
-            <button className="polo-pill text-xs py-1">
-              Ver Mais <ChevronDown className="h-3 w-3 ml-1" />
+      </nav>
+      
+      {/* Main Content */}
+      <main className="px-6 py-8 max-w-7xl mx-auto">
+        {/* Profile Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-card border border-border overflow-hidden flex items-center justify-center">
+              <span className="text-2xl font-semibold text-foreground">JS</span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">João Silva</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 rounded-full bg-success"></span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">Disponível para projetos</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <SocialIcon><X className="h-4 w-4 text-muted-foreground" /></SocialIcon>
+            <SocialIcon><Instagram className="h-4 w-4 text-muted-foreground" /></SocialIcon>
+            <SocialIcon><Dribbble className="h-4 w-4 text-muted-foreground" /></SocialIcon>
+            <button className="flex items-center gap-2 px-6 py-3 rounded-full border border-border bg-card hover:border-muted-foreground/50 transition-colors ml-2">
+              <span className="text-sm font-medium">Connect with me</span>
+              <ArrowUpRight className="h-4 w-4" />
             </button>
           </div>
-          
-          <div>
-            <ActivityItem
-              title="Pagamento recebido"
-              description="Incorporadora Vista Mar - R$ 8.000"
-              time="2h"
-            />
-            <ActivityItem
-              title="Contrato assinado"
-              description="Restaurante Sabor & Arte"
-              time="5h"
-            />
-            <ActivityItem
-              title="Proposta enviada"
-              description="Clínica Estética Premium"
-              time="1d"
-            />
-            <ActivityItem
-              title="Negócio fechado"
-              description="Arquiteto João Silva"
-              time="1d"
-            />
-          </div>
-        </div>
-
-        {/* Section: Urgente Vol. 03 */}
-        <div className="lg:col-span-4 mt-4 mb-2">
-          <span className="polo-label">Atenção — Vol. 03</span>
         </div>
         
-        {/* Urgent Actions */}
-        <div className="lg:col-span-2 polo-card">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-warning animate-pulse" />
-              <span className="polo-label">Ações Urgentes</span>
-            </div>
-            <span className="text-xs text-muted-foreground">3 pendentes</span>
+        {/* Bento Grid - Row 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* About Card */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Sobre</span>
+            <p className="text-foreground mt-4 leading-relaxed">
+              Sou o João Silva, produtor audiovisual de São Paulo, Brasil. Especializado em combinar visão criativa com execução técnica impecável para criar experiências visuais excepcionais.
+            </p>
+            <p className="text-sm text-muted-foreground mt-6">
+              Produtor Audiovisual Baseado em São Paulo.
+            </p>
           </div>
           
-          <div className="space-y-2">
-            <div className="group flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary cursor-pointer transition-colors">
-              <div>
-                <p className="text-sm font-medium">Proposta sem resposta há 5 dias</p>
-                <p className="text-xs text-muted-foreground">Incorporadora Vista Mar</p>
-              </div>
-              <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          {/* Services Card */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Serviços</span>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <ServicePill>Filme Institucional</ServicePill>
+              <ServicePill>Reels</ServicePill>
+              <ServicePill>Documentário</ServicePill>
+              <ServicePill>Evento</ServicePill>
+              <ServicePill>Drone</ServicePill>
+              <ServicePill>Edição</ServicePill>
             </div>
-            <div className="group flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary cursor-pointer transition-colors">
-              <div>
-                <p className="text-sm font-medium">Contrato aguardando há 3 dias</p>
-                <p className="text-xs text-muted-foreground">Restaurante Sabor & Arte</p>
-              </div>
-              <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <div className="group flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary cursor-pointer transition-colors">
-              <div>
-                <p className="text-sm font-medium">Cobrança atrasada - R$ 4.500</p>
-                <p className="text-xs text-muted-foreground">Clínica Estética Premium</p>
-              </div>
-              <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          
+          {/* Experience Card */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Experiência</span>
+            <div className="mt-4">
+              <ExperienceItem
+                role="Freelance"
+                type="Produtor Sênior"
+                company="Studio Visual"
+                period="2022 - Presente"
+              />
+              <ExperienceItem
+                role="Diretor de Fotografia"
+                type="Cinegrafista"
+                company="Agência Motion"
+                period="2020 - 2022"
+              />
+              <ExperienceItem
+                role="Editor de Vídeo"
+                type="Pós-Produção"
+                company="CreativeHouse"
+                period="2018 - 2020"
+              />
             </div>
           </div>
         </div>
         
-        {/* Quick Stats */}
-        <div className="lg:col-span-2 polo-card">
-          <span className="polo-label">Resumo do Mês</span>
+        {/* Bento Grid - Row 2: Project Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Project Card 1 */}
+          <div className="relative rounded-2xl border border-border overflow-hidden h-80 group cursor-pointer">
+            <div className="absolute inset-0 bg-gradient-to-br from-card via-card to-secondary"></div>
+            {/* Wave pattern overlay */}
+            <div className="absolute inset-0 opacity-30">
+              <svg className="w-full h-full" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <pattern id="waves" x="0" y="0" width="100" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M0 10 Q25 0 50 10 T100 10" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#waves)"/>
+              </svg>
+            </div>
+            <div className="absolute bottom-6 left-6 z-10">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Filme Institucional</span>
+              <h3 className="text-2xl font-semibold text-foreground mt-1">Incorporadora Vista Mar</h3>
+            </div>
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ArrowUpRight className="h-5 w-5 text-foreground" />
+            </div>
+          </div>
           
-          <div className="mt-4 space-y-0 divide-y divide-border">
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-muted-foreground">Propostas enviadas</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">12</span>
-                <span className="text-xs text-success">+3</span>
-              </div>
+          {/* Project Card 2 */}
+          <div className="relative rounded-2xl border border-border overflow-hidden h-80 group cursor-pointer">
+            <div className="absolute inset-0 bg-gradient-to-br from-card via-secondary/50 to-card"></div>
+            {/* Grid pattern overlay */}
+            <div className="absolute inset-0 opacity-20">
+              <svg className="w-full h-full" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <rect width="40" height="40" fill="none" stroke="currentColor" strokeWidth="0.3" className="text-muted-foreground"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"/>
+              </svg>
             </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-muted-foreground">Taxa de conversão</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">42%</span>
-                <span className="text-xs text-success">+8%</span>
-              </div>
+            <div className="absolute bottom-6 left-6 z-10">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Pacote Reels</span>
+              <h3 className="text-2xl font-semibold text-foreground mt-1">Restaurante Sabor & Arte</h3>
             </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-muted-foreground">Ticket médio</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">R$ 6.200</span>
-                <span className="text-xs text-destructive">-5%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-muted-foreground">Tempo médio fechamento</span>
-              <span className="text-sm font-medium">8 dias</span>
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ArrowUpRight className="h-5 w-5 text-foreground" />
             </div>
           </div>
         </div>
-      </div>
+      </main>
       
       {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          © 2024 SQUAD Hub. Todos os direitos reservados.
-        </p>
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Ajuda</span>
-          <span className="text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Configurações</span>
+      <footer className="px-6 py-6 border-t border-border mt-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-card border border-border">
+              <Sparkles className="h-4 w-4 text-foreground" />
+            </div>
+            <span className="text-sm font-medium text-foreground">SQUAD Hub</span>
+          </div>
+          
+          <p className="text-sm text-muted-foreground">© 2024 SQUAD Hub. Crafted with Precision.</p>
+          
+          <div className="flex items-center gap-6">
+            <a href="#" className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">Política de Privacidade</a>
+            <a href="#" className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">Termos de Uso</a>
+          </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
