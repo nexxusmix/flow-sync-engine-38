@@ -74,6 +74,8 @@ import CampaignsPage from "./pages/marketing/CampaignsPage";
 import AssetsPage from "./pages/marketing/AssetsPage";
 import InstagramPage from "./pages/marketing/InstagramPage";
 import StudioCreativoPage from "./pages/marketing/StudioCreativoPage";
+import LibraryPage from "./pages/marketing/LibraryPage";
+import ContentDetailPage from "./pages/marketing/ContentDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -135,8 +137,10 @@ function AppRoutes() {
       <Route path="/marketing/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
       <Route path="/marketing/ideas" element={<ProtectedRoute><IdeasPage /></ProtectedRoute>} />
       <Route path="/marketing/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
+      <Route path="/marketing/content/:contentItemId" element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>} />
       <Route path="/marketing/campaigns" element={<ProtectedRoute><CampaignsPage /></ProtectedRoute>} />
       <Route path="/marketing/assets" element={<ProtectedRoute><AssetsPage /></ProtectedRoute>} />
+      <Route path="/marketing/library" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
       <Route path="/marketing/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
       <Route path="/marketing/studio" element={<ProtectedRoute><StudioCreativoPage /></ProtectedRoute>} />
       <Route path="/conteudo" element={<Navigate to="/marketing" replace />} />
