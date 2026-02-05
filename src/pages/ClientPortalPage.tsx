@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useClientPortal } from "@/hooks/useClientPortal";
-import { AlertTriangle, Lock, Loader2 } from "lucide-react";
+import { AlertTriangle, Lock, Loader2, Play, FileText, Image, Download } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -10,10 +10,35 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
+// Helper to detect file type
+function getFileType(file: { file_type?: string | null; name: string; file_url: string }) {
+  if (file.file_type) {
+    if (file.file_type.startsWith('video/')) return 'video';
+    if (file.file_type.startsWith('image/')) return 'image';
+    if (file.file_type === 'application/pdf') return 'pdf';
+    return 'document';
+  }
+  
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  if (['mp4', 'mov', 'webm', 'avi'].includes(ext)) return 'video';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'image';
+  if (ext === 'pdf') return 'pdf';
+  return 'document';
+}
+
+// Get icon for file type
+function getFileIcon(type: string) {
+  switch (type) {
+    case 'video': return <Play className="w-8 h-8" />;
+    case 'image': return <Image className="w-8 h-8" />;
+    default: return <FileText className="w-8 h-8" />;
+  }
+}
+
 export default function ClientPortalPage() {
   const { shareToken } = useParams();
-  const { data, isLoading, error, addComment, approveDeliverable, isApproving } = useClientPortal(shareToken);
-  const [selectedDeliverableId, setSelectedDeliverableId] = useState<string | null>(null);
+  const { data, isLoading, error, addComment, approveFile, isApproving } = useClientPortal(shareToken);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [commentForm, setCommentForm] = useState({ name: '', email: '', content: '' });
 
   // Loading
@@ -55,15 +80,15 @@ export default function ClientPortalPage() {
     );
   }
 
-  const { portal, deliverables, comments, approvals } = data;
-  const selectedDeliverable = deliverables.find(d => d.id === selectedDeliverableId);
-  const deliverableComments = comments.filter(c => c.deliverable_id === selectedDeliverableId);
-  const deliverableApproval = approvals.find(a => a.deliverable_id === selectedDeliverableId);
+  const { portal, files, comments, approvals } = data;
+  const selectedFile = files.find(f => f.id === selectedFileId);
+  const fileComments = comments.filter(c => c.project_file_id === selectedFileId);
+  const fileApproval = approvals.find(a => a.project_file_id === selectedFileId);
 
   const handleAddComment = () => {
-    if (!selectedDeliverableId || !commentForm.name || !commentForm.content) return;
+    if (!selectedFileId || !commentForm.name || !commentForm.content) return;
     addComment({
-      deliverableId: selectedDeliverableId,
+      fileId: selectedFileId,
       authorName: commentForm.name,
       authorEmail: commentForm.email,
       content: commentForm.content,
@@ -72,9 +97,9 @@ export default function ClientPortalPage() {
   };
 
   const handleApprove = () => {
-    if (!selectedDeliverableId || !commentForm.name) return;
-    approveDeliverable({
-      deliverableId: selectedDeliverableId,
+    if (!selectedFileId || !commentForm.name) return;
+    approveFile({
+      fileId: selectedFileId,
       approvedByName: commentForm.name,
       approvedByEmail: commentForm.email,
     });
@@ -111,63 +136,100 @@ export default function ClientPortalPage() {
           </div>
         )}
 
-        {/* Deliverables Grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {deliverables.map((deliverable) => {
-            const isApproved = approvals.some(a => a.deliverable_id === deliverable.id);
-            const isSelected = deliverable.id === selectedDeliverableId;
+        {/* Empty state */}
+        {files.length === 0 && (
+          <div className="glass-card rounded-2xl p-12 text-center">
+            <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">Nenhum arquivo disponível</h3>
+            <p className="text-sm text-muted-foreground">
+              Os arquivos do projeto aparecerão aqui assim que forem disponibilizados.
+            </p>
+          </div>
+        )}
 
-            return (
-              <button
-                key={deliverable.id}
-                onClick={() => setSelectedDeliverableId(deliverable.id)}
-                className={cn(
-                  "glass-card rounded-2xl p-4 text-left transition-all hover:border-primary/30",
-                  isSelected && "border-primary ring-1 ring-primary"
-                )}
-              >
-                <div className="aspect-video bg-muted rounded-xl mb-3 overflow-hidden">
-                  {deliverable.thumbnail_url ? (
-                    <img src={deliverable.thumbnail_url} alt={deliverable.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      {deliverable.type === 'video' ? '🎬' : '📄'}
-                    </div>
+        {/* Files Grid */}
+        {files.length > 0 && (
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {files.map((file) => {
+              const isApproved = approvals.some(a => a.project_file_id === file.id);
+              const isSelected = file.id === selectedFileId;
+              const fileType = getFileType(file);
+
+              return (
+                <button
+                  key={file.id}
+                  onClick={() => setSelectedFileId(file.id)}
+                  className={cn(
+                    "glass-card rounded-2xl p-4 text-left transition-all hover:border-primary/30",
+                    isSelected && "border-primary ring-1 ring-primary"
                   )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground">{deliverable.title}</h3>
-                  <Badge variant={isApproved ? "default" : "secondary"}>
-                    {isApproved ? 'Aprovado' : deliverable.status}
-                  </Badge>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                >
+                  <div className="aspect-video bg-muted rounded-xl mb-3 overflow-hidden flex items-center justify-center">
+                    {fileType === 'image' ? (
+                      <img src={file.file_url} alt={file.name} className="w-full h-full object-cover" />
+                    ) : fileType === 'video' ? (
+                      <video src={file.file_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-muted-foreground">
+                        {getFileIcon(fileType)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-foreground truncate">{file.name}</h3>
+                    <Badge variant={isApproved ? "default" : "secondary"}>
+                      {isApproved ? 'Aprovado' : 'Pendente'}
+                    </Badge>
+                  </div>
+                  {file.folder && (
+                    <p className="text-xs text-muted-foreground mt-1">{file.folder}</p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        {/* Selected Deliverable Detail */}
-        {selectedDeliverable && (
+        {/* Selected File Detail */}
+        {selectedFile && (
           <div className="glass-card rounded-2xl p-6 space-y-6">
-            <h2 className="text-xl font-bold">{selectedDeliverable.title}</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">{selectedFile.name}</h2>
+              <a
+                href={selectedFile.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <Download className="w-4 h-4" />
+                Baixar
+              </a>
+            </div>
             
             {/* File Preview */}
-            {selectedDeliverable.file_url && (
+            {selectedFile.file_url && (
               <div className="aspect-video bg-muted rounded-xl overflow-hidden">
-                {selectedDeliverable.type === 'video' ? (
-                  <video src={selectedDeliverable.file_url} controls className="w-full h-full" />
+                {getFileType(selectedFile) === 'video' ? (
+                  <video src={selectedFile.file_url} controls className="w-full h-full" />
+                ) : getFileType(selectedFile) === 'image' ? (
+                  <img src={selectedFile.file_url} alt={selectedFile.name} className="w-full h-full object-contain" />
+                ) : getFileType(selectedFile) === 'pdf' ? (
+                  <iframe src={selectedFile.file_url} className="w-full h-full" />
                 ) : (
-                  <iframe src={selectedDeliverable.file_url} className="w-full h-full" />
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    {getFileIcon(getFileType(selectedFile))}
+                    <span className="ml-2">Preview não disponível</span>
+                  </div>
                 )}
               </div>
             )}
 
             {/* Approval Status */}
-            {deliverableApproval ? (
+            {fileApproval ? (
               <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                <p className="text-green-500 font-semibold">✓ Aprovado por {deliverableApproval.approved_by_name}</p>
+                <p className="text-green-500 font-semibold">✓ Aprovado por {fileApproval.approved_by_name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(deliverableApproval.approved_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {format(new Date(fileApproval.approved_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </p>
               </div>
             ) : (
@@ -202,10 +264,10 @@ export default function ClientPortalPage() {
             )}
 
             {/* Comments */}
-            {deliverableComments.length > 0 && (
+            {fileComments.length > 0 && (
               <div className="space-y-3">
                 <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Comentários</h3>
-                {deliverableComments.map((comment) => (
+                {fileComments.map((comment) => (
                   <div key={comment.id} className="p-3 bg-muted/50 rounded-xl">
                     <div className="flex justify-between mb-1">
                       <span className="font-medium text-sm">{comment.author_name}</span>

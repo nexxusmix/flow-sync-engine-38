@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type DeliverableStatus = 'pending' | 'in_review' | 'approved' | 'rejected' | 'delivered';
-
 export interface PortalLink {
   id: string;
   project_id: string;
@@ -15,24 +13,21 @@ export interface PortalLink {
   created_at: string;
 }
 
-export interface PortalDeliverable {
+export interface PortalFile {
   id: string;
-  portal_link_id: string;
-  title: string;
-  description: string | null;
-  type: string;
-  file_url: string | null;
-  thumbnail_url: string | null;
-  status: DeliverableStatus;
+  project_id: string;
+  name: string;
+  folder: string;
+  file_url: string;
+  file_type: string | null;
   visible_in_portal: boolean;
-  sort_order: number;
   created_at: string;
-  updated_at: string;
 }
 
 export interface PortalComment {
   id: string;
-  deliverable_id: string;
+  deliverable_id: string | null;
+  project_file_id: string | null;
   author_name: string;
   author_email: string | null;
   content: string;
@@ -43,7 +38,8 @@ export interface PortalComment {
 
 export interface PortalApproval {
   id: string;
-  deliverable_id: string;
+  deliverable_id: string | null;
+  project_file_id: string | null;
   approved_by_name: string;
   approved_by_email: string | null;
   approved_at: string;
@@ -52,7 +48,7 @@ export interface PortalApproval {
 
 export interface PortalData {
   portal: PortalLink;
-  deliverables: PortalDeliverable[];
+  files: PortalFile[];
   comments: PortalComment[];
   approvals: PortalApproval[];
 }
@@ -87,29 +83,35 @@ export function useClientPortal(shareToken: string | undefined) {
         throw new Error('Portal inactive');
       }
 
-      // Get deliverables
-      const { data: deliverables, error: delivError } = await supabase
-        .from('portal_deliverables')
+      // Get files from project_files (instead of portal_deliverables)
+      const { data: files, error: filesError } = await supabase
+        .from('project_files')
         .select('*')
-        .eq('portal_link_id', portal.id)
+        .eq('project_id', portal.project_id)
         .eq('visible_in_portal', true)
-        .order('sort_order', { ascending: true });
+        .order('created_at', { ascending: false });
 
-      if (delivError) throw delivError;
+      if (filesError) throw filesError;
 
-      // Get comments for all deliverables
-      const deliverableIds = deliverables?.map(d => d.id) || [];
-      const { data: comments } = await supabase
-        .from('portal_comments')
-        .select('*')
-        .in('deliverable_id', deliverableIds)
-        .order('created_at', { ascending: true });
+      // Get file IDs for querying comments and approvals
+      const fileIds = files?.map(f => f.id) || [];
 
-      // Get approvals for all deliverables
-      const { data: approvals } = await supabase
-        .from('portal_approvals')
-        .select('*')
-        .in('deliverable_id', deliverableIds);
+      // Get comments for all files
+      const { data: comments } = fileIds.length > 0 
+        ? await supabase
+            .from('portal_comments')
+            .select('*')
+            .in('project_file_id', fileIds)
+            .order('created_at', { ascending: true })
+        : { data: [] };
+
+      // Get approvals for all files
+      const { data: approvals } = fileIds.length > 0
+        ? await supabase
+            .from('portal_approvals')
+            .select('*')
+            .in('project_file_id', fileIds)
+        : { data: [] };
 
       // Log portal visit
       await supabase.from('event_logs').insert({
@@ -120,7 +122,7 @@ export function useClientPortal(shareToken: string | undefined) {
 
       return {
         portal: portal as PortalLink,
-        deliverables: (deliverables || []) as PortalDeliverable[],
+        files: (files || []) as PortalFile[],
         comments: (comments || []) as PortalComment[],
         approvals: (approvals || []) as PortalApproval[],
       };
@@ -131,27 +133,29 @@ export function useClientPortal(shareToken: string | undefined) {
 
   const addComment = useMutation({
     mutationFn: async ({ 
-      deliverableId, 
+      fileId, 
       authorName, 
       authorEmail, 
       content, 
       timecode 
     }: {
-      deliverableId: string;
+      fileId: string;
       authorName: string;
       authorEmail?: string;
       content: string;
       timecode?: string;
     }) => {
+      // Using type assertion since types haven't been regenerated yet
       const { data, error } = await supabase
         .from('portal_comments')
         .insert({
-          deliverable_id: deliverableId,
+          project_file_id: fileId,
+          deliverable_id: null as unknown as string, // Required by old types, will be null
           author_name: authorName,
           author_email: authorEmail,
           content,
           timecode,
-        })
+        } as any)
         .select()
         .single();
 
@@ -171,37 +175,32 @@ export function useClientPortal(shareToken: string | undefined) {
     },
   });
 
-  const approveDeliverable = useMutation({
+  const approveFile = useMutation({
     mutationFn: async ({
-      deliverableId,
+      fileId,
       approvedByName,
       approvedByEmail,
       notes,
     }: {
-      deliverableId: string;
+      fileId: string;
       approvedByName: string;
       approvedByEmail?: string;
       notes?: string;
     }) => {
-      // Create approval
+      // Create approval - using type assertion since types haven't been regenerated yet
       const { data, error } = await supabase
         .from('portal_approvals')
         .insert({
-          deliverable_id: deliverableId,
+          project_file_id: fileId,
+          deliverable_id: null as unknown as string, // Required by old types, will be null
           approved_by_name: approvedByName,
           approved_by_email: approvedByEmail,
           notes,
-        })
+        } as any)
         .select()
         .single();
 
       if (error) throw error;
-
-      // Update deliverable status
-      await supabase
-        .from('portal_deliverables')
-        .update({ status: 'approved' })
-        .eq('id', deliverableId);
 
       // Log event
       await supabase.from('event_logs').insert({
@@ -219,36 +218,31 @@ export function useClientPortal(shareToken: string | undefined) {
 
   const requestRevision = useMutation({
     mutationFn: async ({
-      deliverableId,
+      fileId,
       authorName,
       authorEmail,
       content,
     }: {
-      deliverableId: string;
+      fileId: string;
       authorName: string;
       authorEmail?: string;
       content: string;
     }) => {
-      // Add comment with revision request
+      // Add comment with revision request - using type assertion since types haven't been regenerated yet
       const { data, error } = await supabase
         .from('portal_comments')
         .insert({
-          deliverable_id: deliverableId,
+          project_file_id: fileId,
+          deliverable_id: null as unknown as string, // Required by old types, will be null
           author_name: authorName,
           author_email: authorEmail,
           content,
           status: 'revision_requested',
-        })
+        } as any)
         .select()
         .single();
 
       if (error) throw error;
-
-      // Update deliverable status
-      await supabase
-        .from('portal_deliverables')
-        .update({ status: 'in_review' })
-        .eq('id', deliverableId);
 
       // Log event
       await supabase.from('event_logs').insert({
@@ -270,8 +264,8 @@ export function useClientPortal(shareToken: string | undefined) {
     error,
     addComment: addComment.mutate,
     isAddingComment: addComment.isPending,
-    approveDeliverable: approveDeliverable.mutate,
-    isApproving: approveDeliverable.isPending,
+    approveFile: approveFile.mutate,
+    isApproving: approveFile.isPending,
     requestRevision: requestRevision.mutate,
     isRequestingRevision: requestRevision.isPending,
   };
@@ -361,46 +355,11 @@ export function usePortalManagement(projectId?: string) {
     },
   });
 
-  const addDeliverable = useMutation({
-    mutationFn: async (deliverable: { 
-      portal_link_id: string;
-      title: string;
-      description?: string;
-      type?: string;
-      file_url?: string;
-      thumbnail_url?: string;
-      visible_in_portal?: boolean;
-      sort_order?: number;
-    }) => {
-      const { data, error } = await supabase
-        .from('portal_deliverables')
-        .insert({
-          portal_link_id: deliverable.portal_link_id,
-          title: deliverable.title,
-          description: deliverable.description,
-          type: deliverable.type || 'video',
-          file_url: deliverable.file_url,
-          thumbnail_url: deliverable.thumbnail_url,
-          visible_in_portal: deliverable.visible_in_portal ?? true,
-          sort_order: deliverable.sort_order ?? 0,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['portal-link', projectId] });
-    },
-  });
-
   return {
     portalLink,
     isLoading,
     createPortalLink: createPortalLink.mutate,
     updatePortalLink: updatePortalLink.mutate,
     regenerateToken: regenerateToken.mutate,
-    addDeliverable: addDeliverable.mutate,
   };
 }
