@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.generate-proposal]
 verify_jwt = false
+
+[functions.process-project-update]
+verify_jwt = false
+
+[functions.extract-project-from-document]
+verify_jwt = false
