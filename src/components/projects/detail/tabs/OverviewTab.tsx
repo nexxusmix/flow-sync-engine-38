@@ -11,7 +11,13 @@ import {
   Activity,
   DollarSign,
   Target,
-  Zap
+  Zap,
+  Inbox,
+  TrendingUp,
+  Calendar,
+  Users,
+  HardDrive,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
@@ -21,6 +27,51 @@ import { ptBR } from "date-fns/locale";
 interface OverviewTabProps {
   project: Project;
 }
+
+// Mock data for Visual Board
+const visualBoardData = {
+  columns: [
+    { 
+      name: 'Roteiro', 
+      count: 1, 
+      projects: [
+        { id: 'SF-102', title: 'Legacy Private', client: 'Banco Legacy', initials: ['B', 'M'], status: 'Ok' }
+      ]
+    },
+    { 
+      name: 'Captação', 
+      count: 1, 
+      projects: [
+        { id: 'SF-108', title: 'Tour 360', client: 'Vértice Arq', initials: ['C', 'B'], status: 'Ok' }
+      ]
+    },
+    { 
+      name: 'Edição', 
+      count: 2, 
+      projects: [
+        { id: 'SF-092', title: 'Manifesto Matta', client: 'Lugasa Group', initials: ['M', 'V'], status: 'Ok' },
+        { id: 'SF-095', title: 'Brand Film Exotic', client: 'Sarto Imóveis', initials: ['V', 'R'], status: 'Em Risco' }
+      ]
+    },
+    { 
+      name: 'Review', 
+      count: 0, 
+      projects: []
+    }
+  ],
+  timeline: [
+    { name: 'Manifesto Matta', progress: 85, color: 'bg-primary' },
+    { name: 'Brand Film Exotic', progress: 45, color: 'bg-amber-500' },
+    { name: 'Legacy Private', progress: 25, color: 'bg-emerald-500' },
+    { name: 'Tour 360', progress: 60, color: 'bg-violet-500' }
+  ],
+  accounts: [
+    { id: 'SF-092', client: 'Lugasa Group', title: 'Manifesto Matta', value: 85, phase: 'Edição', health: 94 },
+    { id: 'SF-095', client: 'Sarto Imóveis', title: 'Brand Film Exotic', value: 45, phase: 'Edição', health: 68 },
+    { id: 'SF-102', client: 'Banco Legacy', title: 'Legacy Private', value: 120, phase: 'Roteiro', health: 98 },
+    { id: 'SF-108', client: 'Vértice Arq', title: 'Tour 360', value: 32, phase: 'Captação', health: 82 }
+  ]
+};
 
 export function OverviewTab({ project }: OverviewTabProps) {
   const { advanceStage } = useProjectsStore();
@@ -36,7 +87,6 @@ export function OverviewTab({ project }: OverviewTabProps) {
   const getBlockages = () => {
     const blockages = [];
     
-    // Check for incomplete critical checklist items
     const criticalPending = project.checklist.filter(
       item => item.isCritical && item.status !== 'concluido'
     );
@@ -48,7 +98,6 @@ export function OverviewTab({ project }: OverviewTabProps) {
       });
     }
 
-    // Check payment
     if (project.blockedByPayment) {
       blockages.push({
         type: 'payment',
@@ -57,7 +106,6 @@ export function OverviewTab({ project }: OverviewTabProps) {
       });
     }
 
-    // Check if approaching revision limit
     if (project.revisionsUsed >= project.revisionLimit) {
       blockages.push({
         type: 'revisions',
@@ -73,7 +121,6 @@ export function OverviewTab({ project }: OverviewTabProps) {
     const steps = [];
     const currentStageIndex = PROJECT_STAGES.findIndex(s => s.type === project.currentStage);
     
-    // Check incomplete checklist for current stage
     const currentStageChecklist = project.checklist.filter(
       item => project.stages.find(s => s.id === item.stageId)?.type === project.currentStage && 
               item.status !== 'concluido'
@@ -87,7 +134,6 @@ export function OverviewTab({ project }: OverviewTabProps) {
       });
     }
 
-    // Suggest advancing stage
     if (currentStageChecklist.filter(i => i.isCritical).length === 0) {
       steps.push({
         action: 'Avançar para próxima etapa',
@@ -96,7 +142,6 @@ export function OverviewTab({ project }: OverviewTabProps) {
       });
     }
 
-    // Check deliverables
     const pendingDeliverables = project.deliverables.filter(d => d.status === 'rascunho');
     if (pendingDeliverables.length > 0) {
       steps.push({
@@ -112,9 +157,22 @@ export function OverviewTab({ project }: OverviewTabProps) {
   const blockages = getBlockages();
   const nextSteps = getNextSteps();
 
+  const getHealthColor = (health: number) => {
+    if (health >= 90) return 'text-emerald-500';
+    if (health >= 70) return 'text-amber-500';
+    return 'text-red-500';
+  };
+
+  const getStatusBadge = (status: string) => {
+    if (status === 'Ok') {
+      return <span className="text-[8px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">Ok</span>;
+    }
+    return <span className="text-[8px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Em Risco</span>;
+  };
+
   return (
     <div className="space-y-6">
-      {/* Metrics Cards */}
+      {/* Top Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div className="glass-card rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -158,6 +216,189 @@ export function OverviewTab({ project }: OverviewTabProps) {
           </div>
           <p className="text-lg font-bold text-foreground">32%</p>
           <p className="text-[10px] text-muted-foreground">Margem Projeto</p>
+        </div>
+      </div>
+
+      {/* Visual Board Section */}
+      <div className="glass-card rounded-2xl p-4 md:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Visual Board</h3>
+            <p className="text-[10px] text-muted-foreground">Controle de Fluxo Operacional</p>
+          </div>
+          <Button variant="ghost" size="sm" className="text-xs text-primary">
+            <Eye className="w-3 h-3 mr-1" />
+            Ver Tudo
+          </Button>
+        </div>
+        
+        {/* Mini Kanban */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {visualBoardData.columns.map((column) => (
+            <div key={column.name} className="bg-muted/30 rounded-xl p-3">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{column.name}</span>
+                <span className="text-[10px] font-bold text-foreground bg-background/50 px-2 py-0.5 rounded-full">{column.count}</span>
+              </div>
+              <div className="space-y-2">
+                {column.projects.length > 0 ? (
+                  column.projects.map((proj) => (
+                    <div key={proj.id} className="bg-background/50 rounded-lg p-2.5 border border-border/50">
+                      <p className="text-[10px] font-bold text-foreground truncate">{proj.title}</p>
+                      <p className="text-[8px] text-muted-foreground truncate">{proj.client}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex -space-x-1">
+                          {proj.initials.map((initial, idx) => (
+                            <div key={idx} className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary border border-background">
+                              {initial}
+                            </div>
+                          ))}
+                        </div>
+                        {getStatusBadge(proj.status)}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center py-4 text-muted-foreground">
+                    <Inbox className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Timeline 30D & Capacity Monitor */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Timeline 30D */}
+          <div className="bg-muted/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Timeline Janela 30D</span>
+            </div>
+            <p className="text-[8px] text-primary font-bold uppercase tracking-widest mb-3">SQUAD ENGINE</p>
+            <div className="space-y-2">
+              {visualBoardData.timeline.map((item) => (
+                <div key={item.name} className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] text-foreground font-medium truncate pr-2">{item.name}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${item.progress}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Capacity Monitor */}
+          <div className="bg-muted/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="w-4 h-4 text-primary" />
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Capacity Monitor</span>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] text-foreground font-medium">Workload Editores</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-primary">92%</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: '92%' }} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <HardDrive className="w-3 h-3 text-violet-500" />
+                    <span className="text-[10px] text-foreground font-medium">Cloud Storage 10Gbps</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-violet-500">78%</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-violet-500 rounded-full" style={{ width: '78%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Key Metrics Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="glass-card rounded-xl p-4 border-l-2 border-emerald-500">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-emerald-500" />
+            <span className="text-[8px] font-bold text-emerald-500 uppercase">+24.5%</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-1">Pipeline Ativo</p>
+          <p className="text-lg font-bold text-foreground">R$ 1.2M</p>
+        </div>
+
+        <div className="glass-card rounded-xl p-4 border-l-2 border-primary">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="w-4 h-4 text-primary" />
+            <span className="text-[8px] font-bold text-primary uppercase">92% On-time</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-1">Projetos em Workflow</p>
+          <p className="text-lg font-bold text-foreground">18</p>
+        </div>
+
+        <div className="glass-card rounded-xl p-4 border-l-2 border-amber-500">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span className="text-[8px] font-bold text-amber-500 uppercase">High Perf</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-1">Eficiência Squad</p>
+          <p className="text-lg font-bold text-foreground">98%</p>
+        </div>
+
+        <div className="glass-card rounded-xl p-4 border-l-2 border-violet-500">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="w-4 h-4 text-violet-500" />
+            <span className="text-[8px] font-bold text-violet-500 uppercase">Financial OK</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-1">Margem Líquida</p>
+          <p className="text-lg font-bold text-foreground">34.2%</p>
+        </div>
+      </div>
+
+      {/* Visão de Contas - Financeiro */}
+      <div className="glass-card rounded-2xl p-4 md:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Visão de Contas</h3>
+            <p className="text-[10px] text-muted-foreground">Financeiro</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {visualBoardData.accounts.map((account) => (
+            <div key={account.id} className="bg-muted/20 rounded-xl p-4 hover:bg-muted/30 transition-colors cursor-pointer">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[9px] font-bold text-primary">{account.client}</span>
+                <span className="text-[8px] text-muted-foreground">{account.id}</span>
+              </div>
+              <p className="text-xs font-bold text-foreground mb-3 truncate">{account.title}</p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[8px] text-muted-foreground uppercase">Valor</p>
+                  <p className="text-[10px] font-bold text-foreground">R$ {account.value}k</p>
+                </div>
+                <div>
+                  <p className="text-[8px] text-muted-foreground uppercase">Fase</p>
+                  <p className="text-[10px] font-bold text-foreground">{account.phase}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] text-muted-foreground uppercase">Saúde</p>
+                  <p className={`text-[10px] font-bold ${getHealthColor(account.health)}`}>{account.health}%</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
