@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useFinancialStore } from "@/stores/financialStore";
+import { useRealtimeTable } from "@/hooks/useRealtimeSync";
 import { FINANCIAL_STATUS_CONFIG } from "@/types/financial";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -86,11 +87,29 @@ export default function FinancePage() {
     getProjectFinancials,
   } = useFinancialStore();
 
+  // Fetch data on mount
   useEffect(() => {
     fetchRevenues();
     fetchExpenses();
     fetchContracts();
   }, []);
+
+  // Realtime sync - refetch when data changes
+  const handleRevenueChange = useCallback(() => {
+    fetchRevenues();
+  }, [fetchRevenues]);
+
+  const handleExpenseChange = useCallback(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
+
+  const handleContractChange = useCallback(() => {
+    fetchContracts();
+  }, [fetchContracts]);
+
+  useRealtimeTable('revenues', handleRevenueChange, handleRevenueChange, handleRevenueChange);
+  useRealtimeTable('expenses', handleExpenseChange, handleExpenseChange, handleExpenseChange);
+  useRealtimeTable('contracts', handleContractChange, handleContractChange, handleContractChange);
 
   const stats = getStats();
   const cashflow = getCashflow();

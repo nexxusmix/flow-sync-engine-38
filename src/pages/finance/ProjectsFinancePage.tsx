@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useFinancialStore } from "@/stores/financialStore";
+import { useRealtimeTable } from "@/hooks/useRealtimeSync";
 import { FINANCIAL_STATUS_CONFIG } from "@/types/financial";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -12,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useState } from "react";
 
 export default function ProjectsFinancePage() {
   const navigate = useNavigate();
@@ -28,11 +28,29 @@ export default function ProjectsFinancePage() {
   const [search, setSearch] = useState('');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
+  // Fetch data on mount
   useEffect(() => {
     fetchRevenues();
     fetchExpenses();
     fetchContracts();
   }, []);
+
+  // Realtime sync - refetch when data changes
+  const handleRevenueChange = useCallback(() => {
+    fetchRevenues();
+  }, [fetchRevenues]);
+
+  const handleExpenseChange = useCallback(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
+
+  const handleContractChange = useCallback(() => {
+    fetchContracts();
+  }, [fetchContracts]);
+
+  useRealtimeTable('revenues', handleRevenueChange, handleRevenueChange, handleRevenueChange);
+  useRealtimeTable('expenses', handleExpenseChange, handleExpenseChange, handleExpenseChange);
+  useRealtimeTable('contracts', handleContractChange, handleContractChange, handleContractChange);
 
   const projectFinancials = getProjectFinancials();
 
