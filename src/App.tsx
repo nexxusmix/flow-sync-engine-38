@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
+import LandingPage from "./pages/LandingPage";
 
 // Pages
 import CRMPage from "./pages/CRMPage";
@@ -89,6 +90,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/landing" element={<LandingPage />} />
       <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage onLogin={login} />} 
