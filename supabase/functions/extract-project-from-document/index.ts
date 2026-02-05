@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import pdfParse from "npm:pdf-parse@1.1.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,18 +13,94 @@ interface ExtractRequest {
   documentType?: 'contract' | 'proposal' | 'general';
 }
 
-interface PaymentMilestone {
-  title: string;
-  percentage: number;
-  dueDate?: string;
-  trigger?: string; // ex: "Na assinatura", "Na entrega", "30 dias após início"
+// Extract text from PDF using native extraction
+async function extractPdfText(fileBytes: Uint8Array): Promise<{
+  text: string;
+  method: "native" | "ocr-needed";
+  quality: "good" | "poor";
+}> {
+  try {
+    const data = await pdfParse(Buffer.from(fileBytes));
+
+    // Quality check: minimum 500 chars and 100+ letters
+    const hasGoodText =
+      data.text.length > 500 &&
+      (data.text.match(/[a-zA-ZÀ-ÿ]/g) || []).length > 100;
+
+    if (hasGoodText) {
+      console.log(`PDF native extraction successful: ${data.text.length} chars`);
+      return { text: data.text, method: "native", quality: "good" };
+    }
+
+    console.log(`PDF native extraction poor quality: ${data.text.length} chars - likely scanned PDF`);
+    return {
+      text: data.text,
+      method: "ocr-needed",
+      quality: "poor"
+    };
+  } catch (error) {
+    console.error("PDF parse failed:", error);
+    return { text: "", method: "ocr-needed", quality: "poor" };
+  }
 }
 
-interface StageSchedule {
-  stage: string;
-  plannedStart: string;
-  plannedEnd: string;
-  duration: number; // days
+// Process scanned PDF using Vision API (OCR) - via Lovable AI with image capability
+async function extractPdfWithOcr(documentBase64: string, apiKey: string, documentType: string): Promise<string> {
+  console.log("Using Vision OCR for scanned PDF...");
+  
+  // For scanned PDFs, we convert pages to images and process
+  // Since we can't easily convert PDF to images in Deno, we'll try a different approach:
+  // Send as data URI and let the model try to interpret it
+  // This works better with Gemini's multimodal capabilities
+  
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-pro", // Pro model has better document understanding
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Este é um documento PDF (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}). 
+              
+Por favor, extraia TODAS as informações de texto visíveis neste documento, incluindo:
+1. Títulos e cabeçalhos
+2. Dados de empresas e pessoas (nomes, emails, telefones, CNPJs)
+3. Valores monetários e condições de pagamento
+4. Datas e prazos
+5. Descrições de serviços ou produtos
+6. Cláusulas contratuais
+7. Qualquer outro texto relevante
+
+Transcreva o conteúdo de forma organizada e completa.`
+            },
+            {
+              type: "file",
+              file: {
+                filename: "document.pdf",
+                file_data: documentBase64
+              }
+            }
+          ]
+        }
+      ]
+    }),
+  });
+
+  if (response.ok) {
+    const result = await response.json();
+    return result.choices?.[0]?.message?.content || "";
+  }
+  
+  // Fallback: If file upload doesn't work, inform user
+  console.error("OCR extraction failed:", await response.text());
+  return "";
 }
 
 serve(async (req) => {
@@ -43,53 +120,46 @@ serve(async (req) => {
     
     // Process PDF/document if provided (as base64)
     if (documentBase64) {
-      console.log("Processing document...");
+      console.log("Processing PDF document...");
       
-      const docResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: `Analise este documento (${documentType === 'contract' ? 'contrato' : documentType === 'proposal' ? 'proposta comercial' : 'documento'}) e extraia TODAS as informações relevantes para criar um projeto audiovisual.
-
-Extraia com atenção especial:
-1. DADOS DO PROJETO: nome, tipo de serviço, escopo detalhado
-2. DADOS DO CLIENTE: nome, empresa, email, telefone, CNPJ/CPF
-3. VALORES E PAGAMENTO: valor total, condições de pagamento, parcelas (quantas, valores, datas de vencimento, gatilhos como "na assinatura", "na entrega", etc.)
-4. PRAZOS: data de início, prazo de cada etapa (se mencionado), data de entrega final
-5. ENTREGAS: lista de arquivos/formatos a entregar
-6. LIMITE DE REVISÕES: número de revisões incluídas
-7. OBSERVAÇÕES: cláusulas especiais, restrições, requisitos técnicos
-
-Seja EXTREMAMENTE detalhado na extração de informações de pagamento e prazos.`
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:application/pdf;base64,${documentBase64}`
-                  }
-                }
-              ]
-            }
-          ]
-        }),
-      });
-
-      if (docResponse.ok) {
-        const docResult = await docResponse.json();
-        extractedContent += docResult.choices?.[0]?.message?.content || "";
-        console.log("Document processed successfully");
-      } else {
-        console.error("Document processing failed:", await docResponse.text());
+      try {
+        // Decode base64 to bytes
+        const binaryString = atob(documentBase64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Try native PDF text extraction first
+        const pdfResult = await extractPdfText(bytes);
+        
+        if (pdfResult.quality === "good") {
+          extractedContent = pdfResult.text;
+          console.log("Using native PDF extraction");
+        } else {
+          // Poor extraction = likely scanned PDF, try OCR
+          console.log("Native extraction poor, attempting OCR...");
+          const ocrText = await extractPdfWithOcr(documentBase64, LOVABLE_API_KEY, documentType);
+          
+          if (ocrText && ocrText.length > 100) {
+            extractedContent = ocrText;
+            console.log("Using OCR extraction");
+          } else if (pdfResult.text.length > 0) {
+            // Use whatever native extraction got us
+            extractedContent = pdfResult.text;
+            console.log("Using partial native extraction");
+          } else {
+            console.error("Both native and OCR extraction failed");
+          }
+        }
+      } catch (pdfError) {
+        console.error("PDF processing error:", pdfError);
+        
+        // Last resort: try OCR directly
+        const ocrText = await extractPdfWithOcr(documentBase64, LOVABLE_API_KEY, documentType);
+        if (ocrText) {
+          extractedContent = ocrText;
+        }
       }
     }
 
@@ -140,6 +210,8 @@ Seja detalhado e extraia todos os textos visíveis relacionados a valores, datas
           if (content) {
             extractedContent += "\n\n" + content;
           }
+        } else {
+          console.error("Image processing failed:", await imageResponse.text());
         }
       }
       console.log("Images processed successfully");
@@ -150,14 +222,17 @@ Seja detalhado e extraia todos os textos visíveis relacionados a valores, datas
       extractedContent += "\n\nTEXTO ADICIONAL:\n" + text;
     }
 
-    if (!extractedContent) {
+    if (!extractedContent || extractedContent.trim().length < 50) {
+      console.error("Insufficient content extracted:", extractedContent?.length || 0, "chars");
       return new Response(JSON.stringify({ 
-        error: "Nenhum conteúdo para processar" 
+        error: "Não foi possível extrair conteúdo suficiente do documento. Verifique se o PDF contém texto legível ou tente com imagens do documento." 
       }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log(`Total extracted content: ${extractedContent.length} characters`);
 
     // Now extract structured data using tool calling with expanded schema
     const structuredPrompt = `Baseado nas informações extraídas abaixo, estruture os dados COMPLETOS do projeto audiovisual.
@@ -327,6 +402,13 @@ Extraia e retorne os dados estruturados COMPLETOS.`;
       if (structuredResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns minutos." }), {
           status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      if (structuredResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Por favor, adicione créditos para continuar." }), {
+          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
