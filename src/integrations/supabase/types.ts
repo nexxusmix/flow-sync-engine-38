@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_kits: {
+        Row: {
+          account_id: string | null
+          colors: Json | null
+          created_at: string
+          do_list: string | null
+          dont_list: string | null
+          fonts: Json | null
+          id: string
+          logo_url: string | null
+          name: string
+          reference_links: Json | null
+          tone_of_voice: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          colors?: Json | null
+          created_at?: string
+          do_list?: string | null
+          dont_list?: string | null
+          fonts?: Json | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          reference_links?: Json | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          account_id?: string | null
+          colors?: Json | null
+          created_at?: string
+          do_list?: string | null
+          dont_list?: string | null
+          fonts?: Json | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          reference_links?: Json | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       cadence_steps: {
         Row: {
           cadence_id: string
@@ -99,6 +147,53 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      campaign_creatives: {
+        Row: {
+          campaign_id: string | null
+          copy: string | null
+          created_at: string
+          cta: string | null
+          format: string | null
+          hook: string | null
+          id: string
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          copy?: string | null
+          created_at?: string
+          cta?: string | null
+          format?: string | null
+          hook?: string | null
+          id?: string
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          copy?: string | null
+          created_at?: string
+          cta?: string | null
+          format?: string | null
+          hook?: string | null
+          id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campaigns: {
         Row: {
@@ -247,6 +342,8 @@ export type Database = {
       }
       content_ideas: {
         Row: {
+          ai_generated: boolean | null
+          angle: string | null
           channel: string | null
           created_at: string
           created_by: string | null
@@ -255,6 +352,7 @@ export type Database = {
           id: string
           notes: string | null
           pillar: string | null
+          priority: number | null
           reference_links: Json | null
           score: number | null
           status: string | null
@@ -264,6 +362,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          ai_generated?: boolean | null
+          angle?: string | null
           channel?: string | null
           created_at?: string
           created_by?: string | null
@@ -272,6 +372,7 @@ export type Database = {
           id?: string
           notes?: string | null
           pillar?: string | null
+          priority?: number | null
           reference_links?: Json | null
           score?: number | null
           status?: string | null
@@ -281,6 +382,8 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          ai_generated?: boolean | null
+          angle?: string | null
           channel?: string | null
           created_at?: string
           created_by?: string | null
@@ -289,6 +392,7 @@ export type Database = {
           id?: string
           notes?: string | null
           pillar?: string | null
+          priority?: number | null
           reference_links?: Json | null
           score?: number | null
           status?: string | null
@@ -301,6 +405,7 @@ export type Database = {
       }
       content_items: {
         Row: {
+          ai_generated: boolean | null
           assets: Json | null
           campaign_id: string | null
           caption_long: string | null
@@ -330,6 +435,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          ai_generated?: boolean | null
           assets?: Json | null
           campaign_id?: string | null
           caption_long?: string | null
@@ -359,6 +465,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          ai_generated?: boolean | null
           assets?: Json | null
           campaign_id?: string | null
           caption_long?: string | null
@@ -397,6 +504,63 @@ export type Database = {
           },
           {
             foreignKeyName: "content_items_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "content_ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_scripts: {
+        Row: {
+          ai_generated: boolean | null
+          caption_variations: Json | null
+          content_item_id: string | null
+          created_at: string
+          cta: string | null
+          hashtags: string[] | null
+          id: string
+          idea_id: string | null
+          script: string | null
+          shotlist: Json | null
+          updated_at: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          caption_variations?: Json | null
+          content_item_id?: string | null
+          created_at?: string
+          cta?: string | null
+          hashtags?: string[] | null
+          id?: string
+          idea_id?: string | null
+          script?: string | null
+          shotlist?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          caption_variations?: Json | null
+          content_item_id?: string | null
+          created_at?: string
+          cta?: string | null
+          hashtags?: string[] | null
+          id?: string
+          idea_id?: string | null
+          script?: string | null
+          shotlist?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_scripts_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_scripts_idea_id_fkey"
             columns: ["idea_id"]
             isOneToOne: false
             referencedRelation: "content_ideas"
@@ -562,6 +726,39 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_connections: {
+        Row: {
+          access_token: string | null
+          connected_at: string
+          id: string
+          ig_user_id: string | null
+          ig_username: string
+          token_expires_at: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          connected_at?: string
+          id?: string
+          ig_user_id?: string | null
+          ig_username: string
+          token_expires_at?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          access_token?: string | null
+          connected_at?: string
+          id?: string
+          ig_user_id?: string | null
+          ig_username?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       instagram_references: {
         Row: {
           caption: string | null
@@ -627,6 +824,97 @@ export type Database = {
             columns: ["content_item_id"]
             isOneToOne: false
             referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_snapshots: {
+        Row: {
+          connection_id: string | null
+          fetched_at: string
+          id: string
+          insights: Json | null
+          latest_posts: Json | null
+          profile_data: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          connection_id?: string | null
+          fetched_at?: string
+          id?: string
+          insights?: Json | null
+          latest_posts?: Json | null
+          profile_data?: Json | null
+          workspace_id?: string
+        }
+        Update: {
+          connection_id?: string | null
+          fetched_at?: string
+          id?: string
+          insights?: Json | null
+          latest_posts?: Json | null
+          profile_data?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_snapshots_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_assets: {
+        Row: {
+          brand_kit_id: string | null
+          created_at: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          project_id: string | null
+          public_url: string | null
+          storage_path: string | null
+          tags: string[] | null
+          title: string
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          brand_kit_id?: string | null
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          project_id?: string | null
+          public_url?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          title: string
+          type: string
+          workspace_id?: string
+        }
+        Update: {
+          brand_kit_id?: string | null
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          project_id?: string | null
+          public_url?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          title?: string
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_assets_brand_kit_id_fkey"
+            columns: ["brand_kit_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kits"
             referencedColumns: ["id"]
           },
         ]

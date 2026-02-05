@@ -8,7 +8,7 @@ const mainMenuItems = [
   { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8 },
   { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
   { name: "CRM", href: "/crm", icon: "radar", badge: 3 },
-  { name: "Marketing & Conteúdo", href: "/conteudo", icon: "perm_media" },
+  { name: "Marketing", href: "/marketing", icon: "perm_media" },
   { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
   { name: "Propostas", href: "/propostas", icon: "description" },
   { name: "Contratos", href: "/contratos", icon: "contract" },
