@@ -1,204 +1,173 @@
 
-# Plano: Integrar Contratos e Pagamentos ao Financeiro por Projetos
+# Plano: Corrigir Portal do Cliente para Exibir Dados
 
-## Resumo
-Aprimorar a tela `/financeiro/projetos` para integrar contratos, permitir confirmacao de pagamentos, gerenciar parcelas (milestones), editar e finalizar contratos diretamente da interface financeira.
+## Problema Identificado
 
-## Cenario Atual
-- A pagina `ProjectsFinancePage.tsx` exibe resumo financeiro por projeto
-- Contratos sao gerenciados em `/financeiro/contratos` separadamente
-- Nao ha integracao direta entre visualizacao de projeto e gestao de contrato
-- Store financeiro ja possui metodos para CRUD de contratos e milestones
+O portal do cliente nao esta exibindo dados porque existe uma **desconexao entre as fontes de dados**:
 
-## Arquitetura da Solucao
+1. **Fluxo atual do admin**: Na aba "Arquivos" do projeto, o usuario marca arquivos como `visible_in_portal=true` na tabela `project_files`
+2. **Fluxo atual do cliente**: A pagina `ClientPortalPage` busca dados da tabela `portal_deliverables` (que esta vazia)
+
+**Resultado**: Os arquivos marcados como visiveis no admin nunca chegam ao cliente.
+
+### Evidencias encontradas:
 
 ```text
-ProjectsFinancePage
-    |
-    +-- Listagem de Projetos (existente)
-    |       |
-    |       +-- Card de Projeto + Acoes
-    |               +-- Ver Contrato
-    |               +-- Criar Contrato (se nao existir)
-    |
-    +-- Painel de Detalhes (direita)
-            |
-            +-- Secao Contrato
-            |       +-- Info do Contrato
-            |       +-- Editar Contrato (modal)
-            |       +-- Finalizar Contrato
-            |
-            +-- Secao Parcelas/Milestones
-            |       +-- Lista de parcelas
-            |       +-- Confirmar Pagamento
-            |       +-- Editar Parcela (modal)
-            |       +-- Adicionar Parcela
-            |
-            +-- Secao Receitas/Despesas (existente)
+portal_links -> OK (link existe e esta ativo)
+portal_deliverables -> VAZIO (nenhum registro)
+project_files -> TEM DADOS (1 arquivo com visible_in_portal=true)
 ```
 
-## Componentes a Criar/Modificar
+## Solucao Proposta
 
-### 1. Criar Modal de Contrato para Projeto
-**Arquivo:** `src/components/finance/ProjectContractModal.tsx`
+Modificar o hook `useClientPortal` para buscar arquivos de `project_files` atraves do `project_id` do portal, em vez de buscar de `portal_deliverables`. Isso alinha o fluxo de dados existente.
 
-Funcionalidades:
-- Criar novo contrato vinculado ao projeto
-- Editar contrato existente
-- Gerar parcelas automaticas (ex: 40/40/20)
-- Campos: valor total, condicoes, datas
+## Arquitetura da Correcao
 
-### 2. Criar Componente de Milestones Inline
-**Arquivo:** `src/components/finance/MilestonesList.tsx`
-
-Funcionalidades:
-- Listar parcelas do contrato
-- Botao "Confirmar Recebimento" por parcela
-- Editar parcela (valor, data, titulo)
-- Excluir parcela
-- Adicionar nova parcela
-
-### 3. Atualizar ProjectsFinancePage
-**Arquivo:** `src/pages/finance/ProjectsFinancePage.tsx`
-
-Alteracoes:
-- Adicionar secao de contrato no painel de detalhes
-- Integrar MilestonesList
-- Botao para criar contrato quando nao existir
-- Opcao de finalizar contrato
-- Atualizar status do projeto (has_payment_block)
-
-### 4. Expandir Financial Store
-**Arquivo:** `src/stores/financialStore.ts`
-
-Novos metodos:
-- `updateMilestone(id, data)` - Editar milestone
-- `deleteMilestone(id)` - Excluir milestone
-- `finalizeContract(id)` - Marcar contrato como completed
-- `createContractForProject(projectId, projectName, clientName, value)` - Criar contrato com projeto
-
-## Fluxo de Usuario
-
-### Criar Contrato para Projeto
-1. Selecionar projeto na lista
-2. No painel de detalhes, clicar "Criar Contrato"
-3. Modal abre com dados do projeto pre-preenchidos
-4. Definir valor e condicoes de pagamento
-5. Gerar parcelas automaticamente ou manualmente
-6. Salvar - contrato e receitas sao criados
-
-### Confirmar Pagamento de Parcela
-1. No painel de detalhes, ver lista de parcelas
-2. Clicar "Confirmar" na parcela desejada
-3. Sistema marca milestone e receita como pagos
-4. Atualiza progresso do contrato
-
-### Editar Parcela
-1. Clicar no icone de edicao da parcela
-2. Modal abre para alterar valor/data/titulo
-3. Salvar atualiza milestone e receita vinculada
-
-### Finalizar Contrato
-1. Com todas parcelas pagas (ou manualmente)
-2. Clicar "Finalizar Contrato"
-3. Status muda para "completed"
-4. Projeto pode ser finalizado
-
-## Detalhes Tecnicos
-
-### Sincronizacao Milestone-Revenue
-Quando um milestone e marcado como pago:
-```typescript
-await markMilestonePaid(milestoneId);
-// Tambem atualiza a receita vinculada se revenue_id existir
-if (milestone.revenue_id) {
-  await markRevenueReceived(milestone.revenue_id);
-}
-```
-
-### Auto-geracao de Parcelas
-```typescript
-function generateInstallments(totalValue: number, terms: string) {
-  // Ex: terms = "40/30/30"
-  const percentages = terms.split('/').map(p => parseInt(p));
-  return percentages.map((pct, index) => ({
-    title: `Parcela ${index + 1}`,
-    amount: totalValue * (pct / 100),
-    due_date: addDays(new Date(), index * 30).toISOString().split('T')[0],
-  }));
-}
-```
-
-### Status de Bloqueio do Projeto
-Quando houver parcela vencida > 7 dias:
-```typescript
-const overdueRevenues = revenues.filter(r => 
-  r.project_id === projectId && 
-  r.status === 'overdue' &&
-  daysSince(r.due_date) > 7
-);
-if (overdueRevenues.length > 0) {
-  await updateProject(projectId, { has_payment_block: true });
-}
-```
-
-## Interface Visual
-
-### Card de Projeto (Atualizado)
-- Indicador visual de contrato vinculado
-- Badge "Sem Contrato" se nao tiver
-- Acoes rapidas no menu
-
-### Painel de Detalhes (Expandido)
 ```text
-+--------------------------------+
-|  Projeto: Video ABC            |
-|  Cliente: Empresa XYZ          |
-+--------------------------------+
-|  CONTRATO                      |
-|  +--------------------------+  |
-|  | Valor: R$ 15.000        |  |
-|  | Status: Ativo           |  |
-|  | [Editar] [Finalizar]    |  |
-|  +--------------------------+  |
-+--------------------------------+
-|  PARCELAS                      |
-|  +--------------------------+  |
-|  | Entrada - R$ 6.000      |  |
-|  | 01/02/2026 [V] Pago     |  |
-|  +--------------------------+  |
-|  | 2a Parcela - R$ 4.500   |  |
-|  | 15/02/2026 [ ] Pendente |  |
-|  |            [Confirmar]  |  |
-|  +--------------------------+  |
-|  | Final - R$ 4.500        |  |
-|  | 01/03/2026 [ ] Pendente |  |
-|  |            [Confirmar]  |  |
-|  +--------------------------+  |
-|  [+ Adicionar Parcela]         |
-+--------------------------------+
+Admin marca arquivo como visivel
+            |
+            v
+    project_files (visible_in_portal=true)
+            |
+            v
+    portal_links (project_id) <-- Link de conexao
+            |
+            v
+    useClientPortal busca via project_id
+            |
+            v
+    Cliente ve os arquivos no portal
+```
+
+## Alteracoes Necessarias
+
+### 1. Migracao SQL - RLS para project_files
+
+Adicionar politica RLS para permitir leitura anonima de arquivos visiveis no portal:
+
+```sql
+-- Permite leitura anonima de arquivos visiveis no portal
+-- quando o projeto tem um portal_link ativo
+CREATE POLICY "anon_view_portal_files" ON project_files
+  FOR SELECT TO anon
+  USING (
+    visible_in_portal = true
+    AND EXISTS (
+      SELECT 1 FROM portal_links pl
+      WHERE pl.project_id = project_files.project_id
+      AND pl.is_active = true
+    )
+  );
+```
+
+### 2. Atualizar useClientPortal.tsx
+
+Modificar a query para buscar de `project_files` em vez de `portal_deliverables`:
+
+**Antes:**
+```typescript
+const { data: deliverables } = await supabase
+  .from('portal_deliverables')
+  .select('*')
+  .eq('portal_link_id', portal.id)
+  .eq('visible_in_portal', true);
+```
+
+**Depois:**
+```typescript
+const { data: files } = await supabase
+  .from('project_files')
+  .select('*')
+  .eq('project_id', portal.project_id)
+  .eq('visible_in_portal', true)
+  .order('created_at', { ascending: false });
+```
+
+### 3. Atualizar Tipos e Interface
+
+Adaptar a interface `PortalDeliverable` para ser compativel com `ProjectFile`:
+
+```typescript
+export interface PortalFile {
+  id: string;
+  project_id: string;
+  name: string;
+  folder: string;
+  file_url: string;
+  file_type: string | null;
+  visible_in_portal: boolean;
+  created_at: string;
+}
+
+export interface PortalData {
+  portal: PortalLink;
+  files: PortalFile[]; // Renomear deliverables para files
+  comments: PortalComment[];
+  approvals: PortalApproval[];
+}
+```
+
+### 4. Atualizar ClientPortalPage.tsx
+
+Adaptar o componente para usar a nova estrutura de dados:
+
+- Renomear `deliverables` para `files`
+- Ajustar referencias de `deliverable.title` para `file.name`
+- Detectar tipo de arquivo por `file_type` ou extensao
+- Exibir preview adequado baseado no tipo
+
+### 5. Ajustar Sistema de Comentarios/Aprovacoes
+
+Como comentarios e aprovacoes estao vinculados a `deliverable_id`:
+- Mudar para `file_id` referenciando `project_files.id`
+- Ou manter `portal_deliverables` apenas para comentarios (vinculo: `project_file_id`)
+
+**Opcao simplificada**: Vincular comentarios diretamente ao `project_file_id`:
+
+```sql
+-- Atualizar portal_comments para referenciar project_files
+ALTER TABLE portal_comments
+  ADD COLUMN project_file_id UUID REFERENCES project_files(id);
+
+-- Adicionar RLS para comentarios
+CREATE POLICY "anon_view_comments_portal_files" ON portal_comments
+  FOR SELECT TO anon
+  USING (
+    project_file_id IN (
+      SELECT id FROM project_files
+      WHERE visible_in_portal = true
+    )
+  );
+
+CREATE POLICY "anon_insert_comments_portal_files" ON portal_comments
+  FOR INSERT TO anon
+  WITH CHECK (
+    project_file_id IN (
+      SELECT id FROM project_files
+      WHERE visible_in_portal = true
+    )
+  );
 ```
 
 ## Arquivos a Modificar
 
-| Arquivo | Tipo | Descricao |
+| Arquivo | Acao | Descricao |
 |---------|------|-----------|
-| `src/pages/finance/ProjectsFinancePage.tsx` | Modificar | Adicionar integracao de contratos e milestones |
-| `src/stores/financialStore.ts` | Modificar | Adicionar updateMilestone, deleteMilestone, finalizeContract |
-| `src/components/finance/ProjectContractModal.tsx` | Criar | Modal de criacao/edicao de contrato |
-| `src/components/finance/MilestonesList.tsx` | Criar | Componente de lista de parcelas com acoes |
+| Migracao SQL | Criar | RLS para project_files e ajuste em portal_comments |
+| `src/hooks/useClientPortal.tsx` | Modificar | Buscar de project_files via project_id |
+| `src/pages/ClientPortalPage.tsx` | Modificar | Adaptar UI para estrutura de files |
 
-## Ordem de Implementacao
+## Sequencia de Implementacao
 
-1. Expandir `financialStore.ts` com novos metodos
-2. Criar `MilestonesList.tsx` componente
-3. Criar `ProjectContractModal.tsx` componente
-4. Atualizar `ProjectsFinancePage.tsx` com integracao completa
-5. Testar fluxo completo end-to-end
+1. Criar migracao SQL com RLS policies para `project_files` e `portal_comments`
+2. Atualizar `useClientPortal.tsx` para buscar de `project_files`
+3. Atualizar `ClientPortalPage.tsx` para exibir arquivos
+4. Testar fluxo completo end-to-end
 
-## Validacoes de Seguranca
+## Resultado Esperado
 
-- Verificar se usuario tem permissao para modificar financeiro
-- Confirmar antes de excluir parcelas
-- Nao permitir finalizar contrato com parcelas pendentes (opcional)
-- Log de auditoria para mudancas financeiras
+Apos a implementacao:
+- Arquivos marcados como "visivel no portal" na aba de arquivos aparecerao no portal do cliente
+- Cliente podera comentar e aprovar arquivos
+- Fluxo totalmente integrado sem necessidade de tabela separada
