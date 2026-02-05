@@ -1,188 +1,225 @@
 
-# Plano: Integração de Assinatura Digital via gov.br
+# Plano: Extração Hiper-Detalhada e Exibição Completa na Criação de Projeto com IA
 
-## Contexto
-O modelo atual de assinatura (click-to-accept + upload PDF) é juridicamente frágil. A solução correta é integrar com gov.br (ICP-Brasil), delegando a autenticação e assinatura digital para o sistema oficial do governo brasileiro.
+## Problema Identificado
 
-## Arquitetura da Solução
+1. **Edge function funciona** - extraiu 5717 caracteres do PDF "PORTO 153 - Narrativa de Marca"
+2. **Modal não exibe dados completos** - apenas campos básicos (título, cliente, valor)
+3. **Escopo detalhado é perdido** - campo `scope` recebe resumo, não o texto completo
+4. **Dados extras são ignorados** - deliverables, paymentMilestones, stageSchedule não são mostrados nem salvos
+
+## Solução
+
+### 1. Melhorar Extração na Edge Function
+
+Atualizar o prompt para extrair TUDO do documento de forma extremamente detalhada:
+
+```typescript
+// Novo prompt para extração hiper-detalhada
+const extractionPrompt = `Extraia ABSOLUTAMENTE TODO o conteúdo deste documento de forma EXTREMAMENTE DETALHADA.
+
+ESTRUTURE A EXTRAÇÃO ASSIM:
+
+## RESUMO EXECUTIVO
+[Resumo do projeto em 2-3 parágrafos]
+
+## ESCOPO COMPLETO
+[Transcreva TODO o escopo palavra por palavra, incluindo:
+- Objetivos do projeto
+- Necessidades identificadas
+- Abordagem proposta
+- Metodologia
+- Conceito criativo]
+
+## ENTREGAS PREVISTAS
+[Liste CADA entrega com formato, especificações técnicas, quantidade]
+
+## CRONOGRAMA DETALHADO
+[Cada etapa com datas e responsabilidades]
+
+## CONDIÇÕES FINANCEIRAS
+[Valor total, parcelas, gatilhos de pagamento, datas]
+
+## CLÁUSULAS E OBSERVAÇÕES
+[Revisões, restrições, requisitos especiais]
+
+## DADOS DO CLIENTE
+[Nome, empresa, contatos, CNPJ/CPF]
+
+IMPORTANTE: Não resuma. Transcreva TUDO.`;
+```
+
+### 2. Expandir ExtractedData Interface
+
+```typescript
+interface ExtractedData {
+  title: string;
+  clientName: string;
+  clientCompany: string;
+  clientEmail: string;
+  clientPhone: string;
+  clientDocument: string; // CNPJ/CPF
+  template: string;
+  contractValue: number;
+  startDate: string;
+  deliveryDate: string;
+  revisionLimit: number;
+  
+  // NOVOS CAMPOS DETALHADOS
+  executiveSummary: string;     // Resumo executivo
+  fullScope: string;            // Escopo completo (pode ser longo)
+  deliverables: Array<{
+    title: string;
+    type: string;
+    specifications?: string;
+  }>;
+  paymentMilestones: Array<{
+    title: string;
+    amount: number;
+    percentage?: number;
+    dueDate?: string;
+    trigger?: string;
+  }>;
+  stageSchedule: Array<{
+    stage: string;
+    plannedStart?: string;
+    plannedEnd?: string;
+    durationDays?: number;
+  }>;
+  paymentTerms: string;
+  additionalNotes: string;
+  rawExtractedContent: string;  // Conteúdo bruto para referência
+}
+```
+
+### 3. Redesenhar o Modal de Revisão
+
+Nova estrutura com abas ou acordeão para mostrar TODOS os dados:
 
 ```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                         FLUXO DE ASSINATURA                        │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. SQUAD Hub                    2. gov.br                          │
-│  ┌──────────────┐               ┌──────────────┐                   │
-│  │ Gera PDF     │──────────────▶│ Autenticação │                   │
-│  │ + Hash       │  redirect     │ ICP-Brasil   │                   │
-│  └──────────────┘               └──────┬───────┘                   │
-│         ▲                              │                            │
-│         │                              ▼                            │
-│         │                       ┌──────────────┐                   │
-│         │                       │ Assinatura   │                   │
-│         │                       │ Digital      │                   │
-│         │                       └──────┬───────┘                   │
-│         │                              │                            │
-│  3. Callback                           │ redirect + dados           │
-│  ┌──────────────┐                      │                            │
-│  │ Edge Function│◀─────────────────────┘                            │
-│  │ processa     │                                                   │
-│  │ assinatura   │                                                   │
-│  └──────┬───────┘                                                   │
-│         │                                                           │
-│         ▼                                                           │
-│  4. Atualiza DB + Libera Projeto/Financeiro                         │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  ✓ Dados Extraídos - Revise e ajuste                        │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  [Tab: Projeto] [Tab: Escopo] [Tab: Entregas] [Tab: Financeiro] │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│                                                              │
+│  ABA PROJETO:                                               │
+│  ┌────────────────────┐ ┌────────────────────┐             │
+│  │ Nome do Projeto    │ │ Template           │             │
+│  │ [Porto 153...]     │ │ [Filme Instit.]    │             │
+│  └────────────────────┘ └────────────────────┘             │
+│  ┌────────────────────┐ ┌────────────────────┐             │
+│  │ Cliente            │ │ Empresa            │             │
+│  │ [João Silva]       │ │ [Porto S.A.]       │             │
+│  └────────────────────┘ └────────────────────┘             │
+│  ┌────────────────────┐ ┌────────────────────┐             │
+│  │ Data Início        │ │ Data Entrega       │             │
+│  │ [2025-02-10]       │ │ [2025-03-15]       │             │
+│  └────────────────────┘ └────────────────────┘             │
+│                                                              │
+│  ABA ESCOPO:                                                │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ Resumo Executivo                                       │ │
+│  │ [Textarea readonly mostrando resumo]                   │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ Escopo Completo (expandível)                    [▼]   │ │
+│  │ [Todo o escopo extraído, editável]                    │ │
+│  │ ...                                                    │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ABA ENTREGAS:                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ ☑ Filme 4K (2-3 min) - video                          │ │
+│  │ ☑ Making Of - video                                    │ │
+│  │ ☑ 5 Fotos Still - imagem                               │ │
+│  │ ☑ Versão Vertical - video                              │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ABA FINANCEIRO:                                            │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ Valor Total: R$ 45.000,00                              │ │
+│  │                                                         │ │
+│  │ Parcelas:                                               │ │
+│  │ • 50% na assinatura - R$ 22.500 - 10/02/2025          │ │
+│  │ • 30% na aprovação do roteiro - R$ 13.500 - 20/02     │ │
+│  │ • 20% na entrega final - R$ 9.000 - 15/03/2025        │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ─────────────────────────────────────────────────────────  │
+│  [Voltar]                          [Cancelar] [Criar Projeto]│
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## Alterações no Banco de Dados
+### 4. Salvar Dados Completos
 
-### 1. Modificar tabela `contract_signatures`
+Ao criar o projeto:
 
-```sql
--- Adicionar campos para gov.br
-ALTER TABLE contract_signatures
-  ADD COLUMN IF NOT EXISTS signer_cpf TEXT,
-  ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'internal',
-  ADD COLUMN IF NOT EXISTS document_hash TEXT,
-  ADD COLUMN IF NOT EXISTS proof_url TEXT,
-  ADD COLUMN IF NOT EXISTS raw_payload JSONB;
-
--- Atualizar constraint de signature_type
--- De: 'accept_click' | 'upload_signed_pdf'
--- Para: 'accept_click' | 'upload_signed_pdf' | 'govbr'
-```
-
-### 2. Criar tabela `govbr_signing_sessions` (rastrear tentativas)
-
-```sql
-CREATE TABLE govbr_signing_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  contract_id UUID REFERENCES contracts(id) ON DELETE CASCADE,
-  state_token TEXT UNIQUE NOT NULL,
-  document_hash TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  expires_at TIMESTAMPTZ DEFAULT (now() + interval '15 minutes'),
-  completed_at TIMESTAMPTZ,
-  status TEXT DEFAULT 'pending' -- pending, completed, expired, failed
-);
-```
-
-## Edge Functions
-
-### 1. `govbr-initiate-signing`
-Responsável por:
-- Gerar PDF final do contrato
-- Calcular hash SHA-256 do documento
-- Criar sessão de assinatura
-- Retornar URL de redirect para gov.br
-
-### 2. `govbr-callback`
-Responsável por:
-- Validar state token
-- Processar dados retornados pelo gov.br
-- Salvar assinatura no banco
-- Atualizar status do contrato
-- Disparar eventos (liberar projeto, financeiro)
-
-## Alterações no Frontend
-
-### 1. `ContractClientPage.tsx`
-- **Remover**: Modal de "Aceitar Contrato" (click-to-accept)
-- **Remover**: Modal de "Upload PDF Assinado"
-- **Adicionar**: Botão único "Assinar via gov.br"
-- **Adicionar**: Estados de loading durante redirect
-- **Adicionar**: Tela de sucesso pós-assinatura
-
-### 2. `ContractDetailPage.tsx` (admin)
-- Atualizar aba "Assinaturas" para mostrar dados do gov.br
-- Exibir CPF, hash do documento, proof_url
-- Badge indicando provedor (gov.br vs interno)
-
-### 3. Tipos TypeScript
-- Atualizar `SignatureType` para incluir `'govbr'`
-- Atualizar interface `ContractSignature` com novos campos
-
-## Fluxo Detalhado
-
-### Passo 1: Usuário clica "Assinar via gov.br"
 ```typescript
-// ContractClientPage.tsx
-const handleGovBrSign = async () => {
-  setLoading(true);
-  
-  // Chama edge function
-  const { data, error } = await supabase.functions.invoke('govbr-initiate-signing', {
-    body: { contractId, returnUrl: window.location.href }
+const handleSubmit = async () => {
+  // 1. Criar projeto com escopo COMPLETO
+  const project = await createProject({
+    name: formData.title,
+    client_name: clientName,
+    description: buildCompleteDescription(), // Combina resumo + escopo + notas
+    template: formData.template,
+    start_date: formData.startDate,
+    due_date: formData.deliveryDate,
+    contract_value: formData.contractValue,
   });
-  
-  if (data?.redirectUrl) {
-    window.location.href = data.redirectUrl;
+
+  // 2. Criar etapas com datas do cronograma (se extraídas)
+  if (formData.stageSchedule.length > 0) {
+    await createStagesWithSchedule(project.id, formData.stageSchedule);
   }
+
+  // 3. Salvar entregas no portal_deliverables (opcional)
+  // 4. Criar evento no calendário para cada milestone
 };
+
+function buildCompleteDescription(): string {
+  return `## RESUMO
+${formData.executiveSummary}
+
+## ESCOPO DETALHADO
+${formData.fullScope}
+
+## ENTREGAS
+${formData.deliverables.map(d => `- ${d.title} (${d.type})`).join('\n')}
+
+## CONDIÇÕES
+- Limite de revisões: ${formData.revisionLimit}
+- ${formData.paymentTerms}
+
+## OBSERVAÇÕES
+${formData.additionalNotes}`;
+}
 ```
 
-### Passo 2: Edge Function prepara assinatura
-```typescript
-// govbr-initiate-signing/index.ts
-- Busca contrato + última versão
-- Gera PDF (ou usa existente)
-- Calcula SHA-256 hash
-- Cria govbr_signing_sessions com state_token
-- Retorna URL gov.br com parâmetros
-```
+## Arquivos a Modificar
 
-### Passo 3: Callback do gov.br
-```typescript
-// govbr-callback/index.ts
-- Valida state_token
-- Extrai: CPF, nome, timestamp, hash assinado
-- Insere em contract_signatures (provider: 'govbr')
-- Atualiza contracts.status = 'signed'
-- Retorna redirect para página do contrato
-```
+| Arquivo | Alteração |
+|---------|-----------|
+| `supabase/functions/extract-project-from-document/index.ts` | Prompt mais detalhado, retornar rawExtractedContent |
+| `src/components/projects/modals/AIProjectModal.tsx` | Novo layout com abas, mostrar todos os dados |
+| `src/hooks/useProjects.tsx` | Aceitar schedule e criar stages com datas |
 
-## Arquivos a Criar/Modificar
+## Fluxo Atualizado
 
-| Arquivo | Ação | Descrição |
-|---------|------|-----------|
-| `src/types/contracts.ts` | Modificar | Novos campos e tipos |
-| `src/pages/contracts/ContractClientPage.tsx` | Modificar | Remover click-accept, add gov.br |
-| `src/pages/contracts/ContractDetailPage.tsx` | Modificar | Exibir dados gov.br |
-| `supabase/functions/govbr-initiate-signing/index.ts` | Criar | Iniciar fluxo |
-| `supabase/functions/govbr-callback/index.ts` | Criar | Processar retorno |
-| Migração SQL | Criar | Novos campos e tabela |
-
-## Considerações Técnicas
-
-### Integração gov.br
-A API gov.br requer credenciais de integrador. O fluxo completo depende de:
-1. **Client ID / Client Secret**: Obtidos via Portal de Serviços gov.br
-2. **Certificado digital**: Para comunicação segura
-3. **Homologação**: Ambiente de testes antes de produção
-
-### MVP Simplificado
-Como a integração completa com gov.br requer credenciais oficiais, o plano inclui:
-1. Estrutura de banco pronta para gov.br
-2. Frontend preparado para o fluxo
-3. Edge functions com stubs para simular
-4. Documentação de como conectar quando credenciais estiverem disponíveis
-
-### Opção de Fallback (Temporário)
-Manter opção de upload de PDF assinado externamente (cliente assina via gov.br no celular, faz upload do PDF assinado), mas com indicação clara de que não é o fluxo ideal.
-
-## Ordem de Execução
-
-1. **Migração SQL**: Adicionar campos e criar tabela de sessões
-2. **Tipos TypeScript**: Atualizar interfaces
-3. **Edge Functions**: Criar estrutura base
-4. **ContractClientPage**: Reformular UI de assinatura
-5. **ContractDetailPage**: Atualizar visualização admin
+1. **Upload** - Usuário envia PDF/imagens
+2. **Extração** - IA extrai TUDO em formato estruturado + texto bruto
+3. **Preview** - Modal mostra TODOS os dados em abas organizadas
+4. **Edição** - Usuário pode ajustar qualquer campo
+5. **Criação** - Projeto salvo com description completa, stages com datas
 
 ## Resultado Esperado
 
-- Contratos com validade jurídica plena (ICP-Brasil)
-- Registro auditável com CPF, timestamp, hash
-- Fluxo integrado que não reinventa assinatura digital
-- Sistema preparado para ativar gov.br quando credenciais estiverem disponíveis
+- Todo o conteúdo do documento preservado no campo `description`
+- Resumo executivo visível rapidamente
+- Escopo completo acessível (expandível)
+- Entregas listadas e verificáveis
+- Cronograma com datas das etapas
+- Condições financeiras detalhadas
+- Nada perdido da extração original
