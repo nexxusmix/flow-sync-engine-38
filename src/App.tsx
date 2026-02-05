@@ -3,14 +3,21 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
-import Pipeline from "./pages/Pipeline";
-import Propostas from "./pages/Propostas";
-import Contratos from "./pages/Contratos";
-import Financeiro from "./pages/Financeiro";
-import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
+
+// Placeholder pages
+import CRMPage from "./pages/CRMPage";
+import InboxPage from "./pages/InboxPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import ProposalsPage from "./pages/ProposalsPage";
+import ContractsPage from "./pages/ContractsPage";
+import FinancePage from "./pages/FinancePage";
+import ContentPage from "./pages/ContentPage";
+import KnowledgePage from "./pages/KnowledgePage";
+import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
+import IntegrationsPage from "./pages/IntegrationsPage";
 
 const queryClient = new QueryClient();
 
@@ -21,17 +28,18 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Dashboard uses full-width Polo layout */}
           <Route path="/" element={<Dashboard />} />
-          
-          {/* Other pages use sidebar layout */}
-          <Route element={<AppLayout />}>
-            <Route path="/pipeline" element={<Pipeline />} />
-            <Route path="/propostas" element={<Propostas />} />
-            <Route path="/contratos" element={<Contratos />} />
-            <Route path="/financeiro" element={<Financeiro />} />
-            <Route path="/configuracoes" element={<Configuracoes />} />
-          </Route>
+          <Route path="/crm" element={<CRMPage />} />
+          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/projetos" element={<ProjectsPage />} />
+          <Route path="/propostas" element={<ProposalsPage />} />
+          <Route path="/contratos" element={<ContractsPage />} />
+          <Route path="/financeiro" element={<FinancePage />} />
+          <Route path="/conteudo" element={<ContentPage />} />
+          <Route path="/knowledge" element={<KnowledgePage />} />
+          <Route path="/relatorios" element={<ReportsPage />} />
+          <Route path="/configuracoes" element={<SettingsPage />} />
+          <Route path="/integracoes" element={<IntegrationsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
