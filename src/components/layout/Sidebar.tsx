@@ -6,7 +6,7 @@ const mainMenuItems = [
   { name: "Overview", href: "/", icon: "dashboard" },
   { name: "Cine CRM", href: "/crm", icon: "radar", badge: 3 },
   { name: "Inbox", href: "/inbox", icon: "mail" },
-  { name: "Produção", href: "/projetos", icon: "movie_edit" },
+  { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8 },
   { name: "Propostas", href: "/propostas", icon: "description" },
   { name: "Contratos", href: "/contratos", icon: "contract" },
   { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
