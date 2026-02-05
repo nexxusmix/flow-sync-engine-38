@@ -4,7 +4,10 @@ import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { AIChatSnippet } from "@/components/dashboard/AIChatSnippet";
 import { ActionsList } from "@/components/dashboard/ActionsList";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
-import { dashboardMilestones } from "@/data/timelineMockData";
+import { useTimelineMilestones } from "@/hooks/useTimelineMilestones";
+import { useProjectsStore } from "@/stores/projectsStore";
+import { useFinancialStore } from "@/stores/financialStore";
+import { CLIENTS } from "@/data/projectsMockData";
 import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap, Activity, Inbox, Eye, HardDrive } from "lucide-react";
 import { Link } from "react-router-dom";
 import squadLogo from "@/assets/squad-hub-logo.png";
@@ -57,29 +60,20 @@ const visualBoardData = {
 };
 
 export default function Dashboard() {
+  const timelineMilestones = useTimelineMilestones();
+  const { projects } = useProjectsStore();
+  
   const metrics = [
     { label: "Receita do Mês", value: "R$ 421.5k", trend: "+23%", trendUp: true, icon: DollarSign },
     { label: "Pipeline Ativo", value: "R$ 1.2M", trend: "+8%", trendUp: true, icon: TrendingUp },
     { label: "Novos Leads", value: "42", trend: "+12%", trendUp: true, icon: Users },
-    { label: "Projetos Ativos", value: "8", trend: "2 atrasados", trendUp: false, icon: Clapperboard },
+    { label: "Projetos Ativos", value: String(projects.length), trend: projects.filter(p => p.status === 'atrasado').length > 0 ? `${projects.filter(p => p.status === 'atrasado').length} atrasados` : "Ok", trendUp: projects.filter(p => p.status === 'atrasado').length === 0, icon: Clapperboard },
   ];
 
-  const projects = [
-    {
-      title: "Campanha BMW",
-      client: "BMW Brasil",
-      status: "Em Produção",
-      image: "https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&h=600&fit=crop",
-      date: "Entrega: 15 Mar",
-    },
-    {
-      title: "Vídeo Manifesto",
-      client: "Reserva",
-      status: "Pós-Produção",
-      image: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&h=600&fit=crop",
-      date: "Entrega: 22 Mar",
-    },
-  ];
+  // Get recent projects (last 4)
+  const recentProjects = [...projects]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 4);
 
   const getStatusBadge = (status: string) => {
     if (status === 'Ok') {
@@ -163,7 +157,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Timeline Forecast 30D */}
-        <TimelineForecast30D milestones={dashboardMilestones} />
+        <TimelineForecast30D milestones={timelineMilestones} />
 
         {/* Visual Board Section - PROJETOS */}
         <div className="glass-card rounded-[2rem] p-6 min-h-[400px]">
@@ -383,16 +377,17 @@ export default function Dashboard() {
                   </button>
                 </Link>
               </div>
-              {projects.length > 0 ? (
+              {recentProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {projects.map((project, idx) => (
+                  {recentProjects.map((project, idx) => (
                     <ProjectCard
-                      key={idx}
+                      key={project.id}
                       title={project.title}
-                      client={project.client}
-                      status={project.status}
-                      image={project.image}
-                      date={project.date}
+                      client={project.client?.company || project.client?.name || 'Cliente'}
+                      status={project.status === 'ok' ? 'Em Produção' : project.status === 'em_risco' ? 'Em Risco' : project.status === 'atrasado' ? 'Atrasado' : 'Bloqueado'}
+                      image="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&h=600&fit=crop"
+                      date={project.estimatedDelivery ? `Entrega: ${new Date(project.estimatedDelivery).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}` : 'Sem data'}
+                      index={idx}
                     />
                   ))}
                 </div>
