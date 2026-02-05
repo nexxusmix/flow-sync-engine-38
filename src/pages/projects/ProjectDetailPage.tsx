@@ -1,26 +1,27 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ProjectHeader } from "@/components/projects/detail/ProjectHeader";
 import { ProjectTabs } from "@/components/projects/detail/ProjectTabs";
-import { useProjectsStore } from "@/stores/projectsStore";
-import { ArrowLeft, Folder } from "lucide-react";
+import { useProject } from "@/hooks/useProjects";
+import { ArrowLeft, Folder, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { getProjectById, setSelectedProject } = useProjectsStore();
+  const { data: project, isLoading } = useProject(projectId);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const project = projectId ? getProjectById(projectId) : undefined;
-
-  useEffect(() => {
-    if (project) {
-      setSelectedProject(project);
-    }
-    return () => setSelectedProject(null);
-  }, [project, setSelectedProject]);
+  if (isLoading) {
+    return (
+      <DashboardLayout title="Carregando...">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!project) {
     return (
@@ -43,7 +44,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <DashboardLayout title={project.title}>
+    <DashboardLayout title={project.name}>
       <div className="space-y-4 md:space-y-6 animate-fade-in">
         {/* Back button */}
         <Button 

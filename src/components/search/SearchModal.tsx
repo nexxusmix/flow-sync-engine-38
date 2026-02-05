@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, X, User, FolderKanban, FileText, Wallet, Building2 } from "lucide-react";
+import { Search, X, FolderKanban, FileText, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProjectsStore } from "@/stores/projectsStore";
+import { useProjects } from "@/hooks/useProjects";
 import { useFinancialStore } from "@/stores/financialStore";
 
 interface SearchModalProps {
@@ -34,7 +34,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const { projects } = useProjectsStore();
+  const { projects } = useProjects();
   const { revenues, contracts } = useFinancialStore();
 
   useEffect(() => {
@@ -57,12 +57,12 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 
     // Search projects
     projects.forEach((proj) => {
-      if (proj.title.toLowerCase().includes(q) || proj.client?.company?.toLowerCase().includes(q)) {
+      if (proj.name?.toLowerCase().includes(q) || proj.client_name?.toLowerCase().includes(q)) {
         searchResults.push({
           id: proj.id,
           type: "project",
-          title: proj.title,
-          subtitle: proj.client?.company || 'Sem cliente',
+          title: proj.name,
+          subtitle: proj.client_name || 'Sem cliente',
         });
       }
     });

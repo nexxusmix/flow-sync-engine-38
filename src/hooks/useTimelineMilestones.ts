@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { useProjectsStore } from '@/stores/projectsStore';
+import { useProjects } from '@/hooks/useProjects';
 import { useFinancialStore } from '@/stores/financialStore';
 import { TimelineMilestone, MilestoneSeverity } from '@/types/timeline';
 import { addDays, differenceInDays, isAfter, isBefore, parseISO, startOfDay } from 'date-fns';
 
 export function useTimelineMilestones() {
-  const { projects } = useProjectsStore();
+  const { projects } = useProjects();
   const { revenues, contracts } = useFinancialStore();
 
   const milestones = useMemo(() => {
@@ -15,12 +15,12 @@ export function useTimelineMilestones() {
 
     // 1. Generate milestones from Projects
     projects.forEach((project) => {
-      const projectName = project.title;
-      const clientName = project.client?.company || project.client?.name;
+      const projectName = project.name;
+      const clientName = project.client_name;
 
       // Project delivery date
-      if (project.estimatedDelivery) {
-        const deliveryDate = parseISO(project.estimatedDelivery);
+      if (project.due_date) {
+        const deliveryDate = parseISO(project.due_date);
         if (isAfter(deliveryDate, today) && isBefore(deliveryDate, thirtyDaysLater)) {
           const daysUntil = differenceInDays(deliveryDate, today);
           let severity: MilestoneSeverity = 'normal';
@@ -30,8 +30,8 @@ export function useTimelineMilestones() {
           else if (daysUntil <= 7) severity = 'risk';
 
           // Increase severity if project has blockers or is at risk
-          if (project.blockedByPayment) severity = 'critical';
-          if (project.healthScore && project.healthScore < 70) {
+          if (project.has_payment_block) severity = 'critical';
+          if (project.health_score && project.health_score < 70) {
             severity = severity === 'normal' ? 'risk' : 'critical';
           }
 
@@ -39,9 +39,9 @@ export function useTimelineMilestones() {
             id: `proj-delivery-${project.id}`,
             projectId: project.id,
             projectName,
-            clientName,
+            clientName: clientName || undefined,
             title: `Entrega Final - ${projectName}`,
-            date: project.estimatedDelivery,
+            date: project.due_date,
             type: 'delivery',
             severity,
           });
@@ -50,8 +50,8 @@ export function useTimelineMilestones() {
 
       // Project stages with planned dates (not started yet)
       project.stages?.forEach((stage) => {
-        if (stage.status === 'nao_iniciado' && stage.plannedDate) {
-          const stageDate = parseISO(stage.plannedDate);
+        if (stage.status === 'not_started' && stage.planned_start) {
+          const stageDate = parseISO(stage.planned_start);
           if (isAfter(stageDate, today) && isBefore(stageDate, thirtyDaysLater)) {
             const daysUntil = differenceInDays(stageDate, today);
             let severity: MilestoneSeverity = 'normal';
@@ -62,9 +62,9 @@ export function useTimelineMilestones() {
               id: `proj-stage-${project.id}-${stage.id}`,
               projectId: project.id,
               projectName,
-              clientName,
-              title: `${stage.name} - ${projectName}`,
-              date: stage.plannedDate,
+              clientName: clientName || undefined,
+              title: `${stage.title} - ${projectName}`,
+              date: stage.planned_start,
               type: 'internal',
               severity,
               linkedStageId: stage.id,
@@ -72,28 +72,6 @@ export function useTimelineMilestones() {
           }
         }
       });
-
-      // Revision deadlines
-      if (project.revisionsUsed && project.revisionsUsed > 0) {
-        // Find current revision stage
-        const revisionStage = project.stages?.find(s => s.type === 'revisao' && s.status === 'em_andamento');
-        if (revisionStage?.plannedDate) {
-          const revisionDate = parseISO(revisionStage.plannedDate);
-          if (isAfter(revisionDate, today) && isBefore(revisionDate, thirtyDaysLater)) {
-            const daysUntil = differenceInDays(revisionDate, today);
-            result.push({
-              id: `proj-revision-${project.id}`,
-              projectId: project.id,
-              projectName,
-              clientName,
-              title: `Revisão ${project.revisionsUsed} - ${projectName}`,
-              date: revisionStage.plannedDate,
-              type: 'review',
-              severity: daysUntil <= 3 ? 'risk' : 'normal',
-            });
-          }
-        }
-      }
     });
 
     // 2. Generate milestones from Financial - Revenues (payments due)
@@ -111,8 +89,8 @@ export function useTimelineMilestones() {
           result.push({
             id: `fin-revenue-${revenue.id}`,
             projectId: revenue.project_id || '',
-            projectName: project?.title || revenue.description,
-            clientName: project?.client?.company,
+            projectName: project?.name || revenue.description,
+            clientName: project?.client_name || undefined,
             title: `Pagamento - ${revenue.description}`,
             date: revenue.due_date,
             type: 'payment',
@@ -139,8 +117,8 @@ export function useTimelineMilestones() {
             result.push({
               id: `fin-milestone-${milestone.id}`,
               projectId: contract.project_id || '',
-              projectName: project?.title || contract.project_name || milestone.title,
-              clientName: contract.client_name || project?.client?.company,
+              projectName: project?.name || contract.project_name || milestone.title,
+              clientName: contract.client_name || project?.client_name || undefined,
               title: milestone.title,
               date: milestone.due_date,
               type: 'payment',
@@ -160,8 +138,8 @@ export function useTimelineMilestones() {
           result.push({
             id: `fin-overdue-${revenue.id}`,
             projectId: revenue.project_id || '',
-            projectName: project?.title || revenue.description,
-            clientName: project?.client?.company,
+            projectName: project?.name || revenue.description,
+            clientName: project?.client_name || undefined,
             title: `⚠️ ATRASADO - ${revenue.description}`,
             date: today.toISOString(),
             type: 'payment',
