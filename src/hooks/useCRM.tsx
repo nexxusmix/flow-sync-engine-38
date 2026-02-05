@@ -52,7 +52,7 @@ export function useCRM() {
   const queryClient = useQueryClient();
 
   // Fetch all deals with prospects
-  const { data: deals = [], isLoading: isLoadingDeals, refetch: refetchDeals } = useQuery({
+  const { data: deals = [], isLoading: isLoadingDeals, isFetching: isFetchingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['crm-deals'],
     queryFn: async (): Promise<Deal[]> => {
       const { data, error } = await supabase
@@ -63,7 +63,10 @@ export function useCRM() {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching deals:', error);
+        return [];
+      }
       
       // Transform to normalized format
       return (data || []).map(deal => ({
@@ -86,7 +89,7 @@ export function useCRM() {
   });
 
   // Fetch all prospects/contacts
-  const { data: contacts = [], isLoading: isLoadingContacts, refetch: refetchContacts } = useQuery({
+  const { data: contacts = [], isLoading: isLoadingContacts, isFetching: isFetchingContacts, refetch: refetchContacts } = useQuery({
     queryKey: ['crm-contacts'],
     queryFn: async (): Promise<Contact[]> => {
       const { data, error } = await supabase
@@ -94,7 +97,10 @@ export function useCRM() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching contacts:', error);
+        return [];
+      }
       
       // Transform to normalized format
       return (data || []).map(prospect => ({
@@ -114,6 +120,9 @@ export function useCRM() {
     },
     enabled: !!user,
   });
+
+  // Only show loading when actually fetching, not when query is disabled
+  const isLoading = !!user && ((isLoadingDeals && isFetchingDeals) || (isLoadingContacts && isFetchingContacts));
 
   // Create deal mutation
   const createDealMutation = useMutation({
@@ -344,7 +353,7 @@ export function useCRM() {
     deals,
     contacts,
     metrics,
-    isLoading: isLoadingDeals || isLoadingContacts,
+    isLoading,
     
     // Deal actions
     createDeal: createDealMutation.mutate,
