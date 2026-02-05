@@ -9,7 +9,9 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Globe,
+  Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,23 +23,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 function HealthIndicator({ score }: { score: number }) {
   const color = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
+  const textColor = score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500';
+  
   return (
     <div className="flex items-center gap-2">
-      <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+      <div className="w-14 h-1.5 bg-muted rounded-full overflow-hidden">
         <div 
           className={`h-full ${color} rounded-full transition-all`}
           style={{ width: `${score}%` }}
         />
       </div>
-      <span className="text-xs text-muted-foreground">{score}</span>
+      <span className={`text-[10px] font-bold ${textColor}`}>{score}%</span>
     </div>
   );
 }
 
-function ProjectRow({ project }: { project: Project }) {
+function ProjectCard({ project }: { project: Project }) {
   const navigate = useNavigate();
   const { setSelectedProject, setEditProjectModalOpen, deleteProject } = useProjectsStore();
 
@@ -45,14 +50,26 @@ function ProjectRow({ project }: { project: Project }) {
   const stageInfo = PROJECT_STAGES.find(s => s.type === project.currentStage);
   const statusConfig = STATUS_CONFIG[project.status];
 
-  const handleEdit = () => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedProject(project);
     setEditProjectModalOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (confirm(`Tem certeza que deseja excluir o projeto "${project.title}"?`)) {
       deleteProject(project.id);
+      toast.success('Projeto excluído');
+    }
+  };
+
+  const handleCopyPortalLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (project.portalLink?.shareToken) {
+      const link = `${window.location.origin}/client/${project.portalLink.shareToken}`;
+      navigator.clipboard.writeText(link);
+      toast.success('Link copiado!');
     }
   };
 
@@ -72,114 +89,122 @@ function ProjectRow({ project }: { project: Project }) {
     }
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
   return (
     <div 
-      className="glass-card rounded-xl p-4 hover:bg-muted/30 transition-colors cursor-pointer group"
+      className="glass-card rounded-2xl p-4 md:p-5 hover:bg-muted/30 transition-all cursor-pointer group border border-transparent hover:border-primary/20"
       onClick={() => navigate(`/projetos/${project.id}`)}
     >
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        {/* Project Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-foreground truncate">{project.title}</h3>
-                {project.blockedByPayment && (
-                  <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground truncate">{project.client.company}</p>
+      <div className="flex flex-col gap-4">
+        {/* Top Row - Title, Client, Actions */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                {project.title}
+              </h3>
+              {project.blockedByPayment && (
+                <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
+              )}
+              {project.portalLink?.isActive && (
+                <Globe className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+              )}
+            </div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>{project.client.company}</span>
+              <span className="text-border">•</span>
+              <span className="text-primary font-medium">{formatCurrency(project.contractValue)}</span>
             </div>
           </div>
+
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projetos/${project.id}`); }}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Abrir Projeto
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+                {project.portalLink?.isActive && (
+                  <DropdownMenuItem onClick={handleCopyPortalLink}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar Link Portal
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
         </div>
 
-        {/* Template Badge */}
-        <div className="hidden md:block w-28">
-          <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+        {/* Bottom Row - Badges and Metrics */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Template */}
+          <span className="text-[10px] text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg font-medium">
             {template?.name || project.template}
           </span>
-        </div>
-
-        {/* Stage Badge */}
-        <div className="hidden md:block w-28">
-          <span className={`text-xs px-2 py-1 rounded ${STAGE_COLORS[project.currentStage]} bg-opacity-20 text-foreground`}>
+          
+          {/* Stage */}
+          <span className={`text-[10px] px-2.5 py-1 rounded-lg font-medium ${STAGE_COLORS[project.currentStage]} bg-opacity-20 text-foreground`}>
             {stageInfo?.name || project.currentStage}
           </span>
-        </div>
-
-        {/* Status Badge */}
-        <div className="w-24">
-          <span className={`text-xs px-2 py-1 rounded border ${statusConfig.color}`}>
+          
+          {/* Status */}
+          <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-medium ${statusConfig.color}`}>
             {statusConfig.label}
+          </span>
+
+          <div className="flex-1" />
+
+          {/* Health */}
+          <div className="hidden sm:block">
+            <HealthIndicator score={project.healthScore} />
+          </div>
+
+          {/* Delivery Date */}
+          <div className="hidden md:flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Entrega:</span>
+            <span className="font-medium text-foreground">{formatDate(project.estimatedDelivery)}</span>
+          </div>
+
+          {/* Owner */}
+          <div className="hidden lg:flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+              <span className="text-[10px] font-medium text-primary">{project.owner.initials}</span>
+            </div>
+            <span className="text-sm text-muted-foreground">{project.owner.name.split(' ')[0]}</span>
+          </div>
+
+          {/* Updated */}
+          <span className="hidden xl:block text-xs text-muted-foreground">
+            {getRelativeTime(project.updatedAt)}
           </span>
         </div>
 
-        {/* Health Score */}
-        <div className="hidden lg:block w-24">
+        {/* Mobile Health */}
+        <div className="sm:hidden">
           <HealthIndicator score={project.healthScore} />
         </div>
-
-        {/* Delivery Date */}
-        <div className="hidden md:block w-20 text-right">
-          <p className="text-sm text-foreground">{formatDate(project.estimatedDelivery)}</p>
-          <p className="text-xs text-muted-foreground">Entrega</p>
-        </div>
-
-        {/* Owner */}
-        <div className="hidden lg:flex items-center gap-2 w-32">
-          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-xs font-medium text-primary">{project.owner.initials}</span>
-          </div>
-          <span className="text-sm text-muted-foreground truncate">{project.owner.name.split(' ')[0]}</span>
-        </div>
-
-        {/* Updated */}
-        <div className="hidden xl:block w-24 text-right">
-          <p className="text-xs text-muted-foreground">{getRelativeTime(project.updatedAt)}</p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projetos/${project.id}`); }}>
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Abrir
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(); }}>
-                <Edit className="w-4 h-4 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        </div>
-      </div>
-
-      {/* Mobile badges */}
-      <div className="flex flex-wrap gap-2 mt-3 lg:hidden">
-        <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-          {template?.name}
-        </span>
-        <span className={`text-xs px-2 py-1 rounded ${STAGE_COLORS[project.currentStage]} bg-opacity-20`}>
-          {stageInfo?.name}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          Entrega: {formatDate(project.estimatedDelivery)}
-        </span>
       </div>
     </div>
   );
@@ -191,30 +216,22 @@ export function ProjectsTable() {
 
   if (projects.length === 0) {
     return (
-      <div className="glass-card rounded-2xl p-12 text-center">
-        <p className="text-muted-foreground">Nenhum projeto encontrado com os filtros selecionados.</p>
+      <div className="glass-card rounded-3xl p-12 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+          <ExternalLink className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum projeto encontrado</h3>
+        <p className="text-muted-foreground text-sm">
+          Tente ajustar os filtros ou criar um novo projeto.
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {/* Header (Desktop) */}
-      <div className="hidden lg:flex items-center gap-4 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wider">
-        <div className="flex-1">Projeto</div>
-        <div className="w-28">Template</div>
-        <div className="w-28">Etapa</div>
-        <div className="w-24">Status</div>
-        <div className="w-24">Saúde</div>
-        <div className="w-20 text-right">Data</div>
-        <div className="w-32">Owner</div>
-        <div className="w-24 text-right">Atualizado</div>
-        <div className="w-16"></div>
-      </div>
-
-      {/* Project Rows */}
       {projects.map(project => (
-        <ProjectRow key={project.id} project={project} />
+        <ProjectCard key={project.id} project={project} />
       ))}
     </div>
   );
