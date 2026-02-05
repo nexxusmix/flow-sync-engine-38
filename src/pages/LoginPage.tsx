@@ -16,8 +16,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Credenciais: matheus.fellip@hotmail.com / Math@.13
-    if (email === 'matheus.fellip@hotmail.com' && password === 'Math@.13') {
+    // Credenciais: matheus.filipe / Math@.13
+    if (email === 'matheus.filipe' && password === 'Math@.13') {
       setError('');
       onLogin();
       navigate('/');
@@ -55,15 +55,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           <form onSubmit={handleSubmit} className="space-y-10">
             <div className="space-y-6">
               <div className="group relative">
-                <label className="absolute -top-3 left-6 px-2 bg-card text-[8px] font-black text-primary uppercase tracking-widest z-10">Identificação (Email)</label>
+                <label className="absolute -top-3 left-6 px-2 bg-card text-[8px] font-black text-primary uppercase tracking-widest z-10">Usuário</label>
                 <input 
-                  type="email" 
+                  type="text" 
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
                     if (error) setError('');
                   }}
-                  placeholder="matheus.fellip@hotmail.com"
+                  placeholder="matheus.filipe"
                   className={`w-full bg-muted border ${error ? 'border-destructive/50' : 'border-border'} rounded-2xl px-8 py-5 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/50`}
                   required
                 />
