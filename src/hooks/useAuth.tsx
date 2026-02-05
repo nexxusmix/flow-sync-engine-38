@@ -24,30 +24,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
+    let mounted = true;
+
+    // Get initial session with error handling
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Auth session error:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      });
+
+    // Safety timeout - ensures loading never gets stuck
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        setIsLoading(false);
+      }
+    }, 5000);
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
 
-        // Log auth events
+        // Log auth events (deferred to avoid deadlock)
         if (event === 'SIGNED_IN' && session?.user) {
-          await logEvent('user_login', 'auth', session.user.id);
+          setTimeout(() => logEvent('user_login', 'auth', session.user.id), 0);
         } else if (event === 'SIGNED_OUT') {
-          await logEvent('user_logout', 'auth');
+          setTimeout(() => logEvent('user_logout', 'auth'), 0);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const logEvent = async (action: string, entityType: string, entityId?: string) => {

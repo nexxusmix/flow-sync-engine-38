@@ -84,8 +84,8 @@ export function useProjects() {
     enabled: !!user,
   });
 
-  // Simple loading check - only true during initial fetch
-  const isLoading = queryLoading;
+  // Loading only when user exists and query is actively loading
+  const isLoading = !!user && queryLoading;
 
   // Get a single project by ID
   const getProject = async (id: string): Promise<ProjectWithStages | null> => {

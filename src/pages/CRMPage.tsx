@@ -14,11 +14,11 @@ export default function CRMPage() {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [activeView, setActiveView] = useState<'kanban' | 'lista'>('kanban');
   
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const { deals, metrics, isLoading: dataLoading, moveDealToStage } = useCRM();
   
-  // Show loading only during auth check or when user exists and data is loading
-  const isLoading = authLoading || (!!user && dataLoading);
+  // Loading during auth check or data fetch (hooks handle user existence internally)
+  const isLoading = authLoading || dataLoading;
 
   const handleMouseDown = (e: MouseEvent) => {
     if (!scrollRef.current) return;
