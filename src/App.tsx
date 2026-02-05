@@ -45,8 +45,14 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
+      {/* Projetos - Multiple Views */}
       <Route path="/projetos" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
+      <Route path="/projetos/board" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
+      <Route path="/projetos/kanban" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
+      <Route path="/projetos/timeline" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
+      <Route path="/projetos/list" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
       <Route path="/projetos/:projectId" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
+      <Route path="/projetos/:projectId/portal" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
       <Route path="/propostas" element={<ProtectedRoute><ProposalsPage /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><ContractsPage /></ProtectedRoute>} />
       <Route path="/financeiro" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
