@@ -1,160 +1,131 @@
 
-# Plano: Sincronização Completa de Projetos IA com Toda a Plataforma
+# Plano: Correção do Layout Global - Sidebar Fixa + Scroll no Conteúdo
 
-## Objetivo
-Garantir que quando um projeto for criado/processado via IA (de contratos ou propostas), todas as funcionalidades da plataforma sejam atualizadas automaticamente: calendário, timeline, financeiro, e outros módulos.
+## Problema Identificado
 
-## Análise do Estado Atual
+O layout atual tem os seguintes problemas:
 
-### O que JÁ está funcionando:
-1. **Financeiro**: Criação de contratos, milestones e receitas automáticas
-2. **Timeline 30D**: Hook `useTimelineMilestones` já lê dados de projetos e financeiro
-3. **Stages do Projeto**: Datas planejadas sendo definidas na criação
+1. **Container raiz** usa `min-h-screen` permitindo que a página toda role
+2. **Área de conteúdo** não tem `overflow-y-auto` configurado corretamente
+3. **Scroll global** afeta toda a viewport ao invés de apenas o conteúdo
 
-### O que FALTA integrar:
-1. Calendário geral de projetos (além do calendário de marketing)
-2. Notificações/alertas automáticos para prazos
-3. Sincronização com Google Calendar (opcional)
-4. Dashboard de próximas entregas por período
-
----
-
-## Implementação
-
-### Fase 1: Criar Calendário Unificado de Projetos
-
-**Novo componente**: `src/components/calendar/ProjectsCalendar.tsx`
-
-Criará um calendário que exibe:
-- Entregas de projetos (delivery dates)
-- Marcos de pagamento (payment milestones)
-- Etapas do projeto (stages)
-- Reuniões/eventos (se houver)
+## Estrutura Atual vs. Desejada
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  Calendário de Projetos                    [Mês ▼]     │
-├─────────────────────────────────────────────────────────┤
-│  Dom   Seg   Ter   Qua   Qui   Sex   Sáb               │
-├─────────────────────────────────────────────────────────┤
-│  ...                                                     │
-│        ● Entrega: Institucional 2025                    │
-│        💰 Pagamento: Cliente X                          │
-│        📋 Captação: Aftermovie                          │
-│  ...                                                     │
-└─────────────────────────────────────────────────────────┘
+ATUAL (problemático):
+┌──────────────────────────────────────────┐
+│ body (min-h-screen, scroll global)       │
+│ ┌────────┐ ┌──────────────────────────┐  │
+│ │Sidebar │ │ Header                   │  │
+│ │(fixed) │ ├──────────────────────────┤  │
+│ │        │ │ Content (sem scroll)     │  │
+│ │        │ │                          │  │
+│ └────────┘ └──────────────────────────┘  │
+└──────────────────────────────────────────┘
+                    ↕ scroll afeta tudo
+
+
+DESEJADO:
+┌──────────────────────────────────────────┐
+│ body (h-screen, overflow-hidden)         │
+│ ┌────────┐ ┌──────────────────────────┐  │
+│ │Sidebar │ │ Header (sticky)          │  │
+│ │(fixed) │ ├──────────────────────────┤  │
+│ │100%    │ │ Content                  │  │
+│ │altura  │ │   ↕ scroll apenas aqui   │  │
+│ │        │ │                          │  │
+│ └────────┘ └──────────────────────────┘  │
+└──────────────────────────────────────────┘
 ```
-
-### Fase 2: Hook de Eventos Unificados
-
-**Novo hook**: `src/hooks/useCalendarEvents.ts`
-
-Agregará eventos de todas as fontes:
-- `projectsStore` - entregas e etapas
-- `financialStore` - pagamentos e milestones
-- `marketingStore` - conteúdos agendados (opcional)
-
-### Fase 3: Melhorar Fluxo de Criação de Projeto
-
-**Editar**: `src/components/projects/modals/NewProjectModal.tsx`
-
-Adicionar chamadas para:
-1. Criar eventos no calendário do banco de dados
-2. Atualizar timeline automaticamente
-3. Disparar notificações/alertas
-4. Conectar com Google Calendar (se integração ativa)
-
-### Fase 4: Página de Calendário Geral
-
-**Nova página**: `src/pages/CalendarPage.tsx`
-
-Calendário unificado acessível pelo menu lateral mostrando:
-- Todos os prazos de projetos
-- Pagamentos a receber/vencer
-- Entregas programadas
 
 ---
 
-## Alterações Técnicas Detalhadas
+## Alterações Técnicas
 
-### 1. Novo Hook: `useCalendarEvents.ts`
+### 1. Atualizar `DashboardLayout.tsx`
 
-```typescript
-interface CalendarEvent {
-  id: string;
-  title: string;
-  date: string;
-  type: 'delivery' | 'payment' | 'stage' | 'meeting' | 'content';
-  projectId?: string;
-  projectName?: string;
-  severity: 'normal' | 'risk' | 'critical';
-  color: string;
+**De:**
+```tsx
+<div className="min-h-screen bg-background relative flex flex-col">
+  ...
+  <motion.div className="relative z-10 flex flex-col flex-1" ...>
+    <Header ... />
+    <motion.main className="p-6 md:p-10 max-w-[1800px] mx-auto preserve-3d flex-1 w-full">
+```
+
+**Para:**
+```tsx
+<div className="h-screen bg-background relative flex overflow-hidden">
+  ...
+  <motion.div className="relative z-10 flex flex-col flex-1 h-screen overflow-hidden" ...>
+    <Header ... />
+    <motion.main className="flex-1 overflow-y-auto p-6 md:p-10">
+      <div className="max-w-[1800px] mx-auto preserve-3d w-full min-h-full">
+        {children}
+      </div>
+    </motion.main>
+```
+
+**Mudanças principais:**
+- Container raiz: `h-screen` + `overflow-hidden` (impede scroll global)
+- Área direita: `h-screen` + `overflow-hidden` (define altura fixa)
+- Main: `flex-1 overflow-y-auto` (habilita scroll apenas aqui)
+- Conteúdo interno: `min-h-full` (garante preenchimento mínimo)
+
+### 2. Atualizar `index.css` - Regras de body
+
+**Adicionar/modificar:**
+```css
+body {
+  @apply bg-background text-foreground antialiased;
+  font-family: 'Host Grotesk', sans-serif;
+  font-weight: 300;
+  overflow: hidden; /* Impede scroll no body */
+  height: 100vh;
+}
+
+html {
+  scroll-behavior: smooth;
+  perspective: 1500px;
+  font-size: 115%;
+  overflow: hidden; /* Impede scroll horizontal */
 }
 ```
 
-### 2. Tabela no Banco (Supabase)
+### 3. Adicionar utilitários CSS para consistência
 
-```sql
-CREATE TABLE calendar_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  description TEXT,
-  event_date DATE NOT NULL,
-  event_type TEXT NOT NULL,
-  project_id TEXT,
-  user_id UUID REFERENCES auth.users,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+```css
+/* Layout utilities */
+.layout-fixed-sidebar {
+  @apply h-screen overflow-hidden;
+}
+
+.layout-main-scroll {
+  @apply flex-1 overflow-y-auto;
+}
+
+.layout-content-fill {
+  @apply min-h-full w-full;
+}
 ```
-
-### 3. Atualizar NewProjectModal
-
-No `handleSubmit`, após criar projeto:
-1. Criar eventos de calendário para cada etapa
-2. Criar eventos para cada marco de pagamento
-3. Criar evento de entrega final
-
-### 4. Rota no App.tsx
-
-```typescript
-<Route path="/calendar" element={<CalendarPage />} />
-```
-
-### 5. Menu Lateral
-
-Adicionar link "Calendário" no sidebar
 
 ---
 
-## Resumo das Tarefas
+## Resumo das Alterações
 
-| # | Tarefa | Arquivo |
-|---|--------|---------|
-| 1 | Criar hook de eventos de calendário | `src/hooks/useCalendarEvents.ts` |
-| 2 | Criar componente calendário projetos | `src/components/calendar/ProjectsCalendar.tsx` |
-| 3 | Criar página de calendário | `src/pages/CalendarPage.tsx` |
-| 4 | Criar tabela calendar_events | Migration SQL |
-| 5 | Atualizar NewProjectModal para criar eventos | `src/components/projects/modals/NewProjectModal.tsx` |
-| 6 | Adicionar rota no App | `src/App.tsx` |
-| 7 | Adicionar link no Sidebar | `src/components/layout/Sidebar.tsx` |
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/layout/DashboardLayout.tsx` | Reestruturar container e overflow |
+| `src/index.css` | Adicionar `overflow: hidden` ao body e utilitários |
 
 ---
 
-## Fluxo Final
+## Comportamento Final
 
-```text
-Usuário importa contrato PDF
-           ↓
-    IA extrai dados
-           ↓
-    Cria Projeto
-           ↓
-  ┌────────┴────────┐
-  ↓        ↓        ↓
-Timeline  Financeiro Calendário
-(auto)    Contratos  Eventos
-          Milestones Notificações
-          Receitas
-```
-
-Após aprovação, implementarei todas as integrações para que a plataforma funcione como um sistema unificado.
+- Sidebar sempre visível e fixa (100% altura)
+- Header sticky dentro da área de conteúdo
+- Scroll vertical apenas no conteúdo principal
+- Sem scroll horizontal em nenhum lugar
+- Cards preenchem o grid corretamente
+- Nenhum espaço vazio não intencional
+- Consistência em todos os módulos (Dashboard, Projetos, CRM, etc.)
