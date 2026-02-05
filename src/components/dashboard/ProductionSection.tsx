@@ -1,6 +1,34 @@
-import { projects, deliveries, getProjectStageLabel } from "@/data/mockData";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Clapperboard, Truck, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+
+interface Project {
+  id: string;
+  title: string;
+  accountName: string;
+  stage: string;
+  status: 'ok' | 'em_risco' | 'atrasado';
+}
+
+interface Delivery {
+  id: string;
+  projectTitle: string;
+  accountName: string;
+  type: string;
+  dueDate: string;
+  status: 'pendente' | 'em_andamento' | 'pronto' | 'entregue';
+}
+
+const projectStageLabels: Record<string, string> = {
+  briefing: 'Briefing',
+  pre_producao: 'Pré-produção',
+  producao: 'Produção',
+  pos_producao: 'Pós-produção',
+  revisao: 'Revisão',
+  entrega: 'Entrega',
+  finalizado: 'Finalizado',
+};
 
 const container = {
   hidden: { opacity: 0 },
@@ -16,10 +44,13 @@ const item = {
 };
 
 export function ProductionSection() {
-  // Projetos em risco ou atrasados
+  const navigate = useNavigate();
+  
+  // Empty state - no projects or deliveries yet
+  const projects: Project[] = [];
+  const deliveries: Delivery[] = [];
+  
   const riskProjects = projects.filter((p) => p.status !== "ok").slice(0, 8);
-
-  // Próximas entregas (7 dias)
   const upcomingDeliveries = deliveries.filter((d) => d.status !== "entregue").slice(0, 5);
 
   return (
@@ -37,14 +68,11 @@ export function ProductionSection() {
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          whileHover={{ boxShadow: "0 20px 40px -20px rgba(234, 179, 8, 0.15)" }}
         >
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <motion.span 
                 className="material-symbols-outlined text-warning text-2xl"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
               >
                 priority_high
               </motion.span>
@@ -52,6 +80,7 @@ export function ProductionSection() {
             </div>
             <motion.button 
               className="btn-subtle"
+              onClick={() => navigate('/projetos')}
               whileHover={{ x: 4, color: "hsl(var(--primary))" }}
               whileTap={{ scale: 0.95 }}
             >
@@ -59,67 +88,24 @@ export function ProductionSection() {
             </motion.button>
           </div>
 
-          {riskProjects.length > 0 ? (
-            <motion.div 
-              className="space-y-4"
-              variants={container}
-              initial="hidden"
-              animate="show"
-            >
-              {riskProjects.map((proj, index) => (
-                <motion.div 
-                  key={proj.id} 
-                  variants={item}
-                  whileHover={{ 
-                    scale: 1.01, 
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    x: 8,
-                    borderColor: proj.status === "em_risco" ? "rgba(234, 179, 8, 0.3)" : "rgba(239, 68, 68, 0.3)",
-                  }}
-                  whileTap={{ scale: 0.99 }}
-                  className="glass-card p-6 rounded-[2rem] flex items-center justify-between cursor-pointer border border-transparent transition-colors"
-                >
-                  <div className="flex items-center gap-5">
-                    <motion.div 
-                      className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-muted-foreground font-normal text-[10px]"
-                      whileHover={{ scale: 1.1 }}
-                    >
-                      SF-{proj.id.slice(-3)}
-                    </motion.div>
-                    <div>
-                      <h5 className="text-base font-normal text-foreground uppercase tracking-tight">{proj.title}</h5>
-                      <p className="text-[10px] text-muted-foreground uppercase font-normal">{proj.accountName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-8">
-                    <div className="text-right">
-                      <span className="text-[9px] text-muted-foreground block uppercase font-normal">Etapa Atual</span>
-                      <span className="text-foreground font-normal">{getProjectStageLabel(proj.stage)}</span>
-                    </div>
-                    <motion.span 
-                      className={cn(
-                        "material-symbols-outlined",
-                        proj.status === "em_risco" ? "text-warning" : "text-destructive"
-                      )}
-                      animate={proj.status === "atrasado" ? { scale: [1, 1.2, 1] } : {}}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    >
-                      {proj.status === "em_risco" ? "schedule" : "priority_high"}
-                    </motion.span>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div 
-              className="py-12 text-center"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-            >
-              <p className="text-muted-foreground">Todos os projetos estão em dia 🎉</p>
-            </motion.div>
-          )}
+          <motion.div 
+            className="flex flex-col items-center justify-center py-12 text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <Clapperboard className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-sm font-normal text-foreground mb-2">Nenhum projeto em produção</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mb-4">
+              Crie seu primeiro projeto para acompanhar o fluxo de produção.
+            </p>
+            <Button onClick={() => navigate('/projetos')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Primeiro Projeto
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Entregas próximas */}
@@ -128,7 +114,6 @@ export function ProductionSection() {
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          whileHover={{ boxShadow: "0 20px 40px -20px rgba(0, 163, 211, 0.2)" }}
         >
           <div className="flex items-center gap-4 mb-8">
             <motion.span 
@@ -147,43 +132,13 @@ export function ProductionSection() {
             </div>
           </div>
 
-          <motion.div 
-            className="space-y-4"
-            variants={container}
-            initial="hidden"
-            animate="show"
-          >
-            {upcomingDeliveries.map((del, index) => (
-              <motion.div 
-                key={del.id} 
-                variants={item}
-                whileHover={{ 
-                  scale: 1.02, 
-                  borderColor: "rgba(0, 163, 211, 0.3)",
-                  x: 4,
-                }}
-                className="p-5 rounded-2xl bg-white/5 border border-white/5 cursor-pointer transition-colors"
-              >
-                <p className="text-sm font-normal text-foreground mb-1">{del.projectTitle}</p>
-                <p className="text-[10px] text-muted-foreground mb-3">{del.accountName}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">{del.type}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-foreground font-normal">{new Date(del.dueDate).toLocaleDateString('pt-BR')}</span>
-                    <motion.span 
-                      className={cn(
-                        "w-2 h-2 rounded-full",
-                        del.status === "pronto" ? "bg-success" :
-                        del.status === "em_andamento" ? "bg-warning" : "bg-muted-foreground"
-                      )}
-                      animate={del.status === "em_andamento" ? { scale: [1, 1.3, 1] } : {}}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <Truck className="w-7 h-7 text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground mb-2">Nenhuma entrega programada</p>
+            <p className="text-xs text-muted-foreground/70">Entregas aparecerão quando houver projetos ativos</p>
+          </div>
         </motion.div>
       </div>
     </motion.section>

@@ -1,6 +1,25 @@
-import { pipelineSummary, deals, getStageLabel } from "@/data/mockData";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { TrendingUp, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+
+interface PipelineStage {
+  stage: string;
+  label: string;
+  count: number;
+  value: number;
+}
+
+interface Deal {
+  id: string;
+  title: string;
+  accountName: string;
+  stage: string;
+  value: number;
+  lastActivityDays: number;
+  nextAction: string;
+  responsible: string;
+}
 
 const container = {
   hidden: { opacity: 0 },
@@ -16,8 +35,19 @@ const item = {
 };
 
 export function PipelineSection() {
-  // Deals parados (sem atividade há 3+ dias)
-  const stuckDeals = deals.filter((d) => d.lastActivityDays >= 3 && d.stage !== 'pos_venda' && d.stage !== 'fechado');
+  const navigate = useNavigate();
+  
+  // Empty state - no deals yet
+  const pipelineSummary: PipelineStage[] = [
+    { stage: 'lead', label: 'Lead', count: 0, value: 0 },
+    { stage: 'qualificacao', label: 'Qualificação', count: 0, value: 0 },
+    { stage: 'proposta', label: 'Proposta', count: 0, value: 0 },
+    { stage: 'negociacao', label: 'Negociação', count: 0, value: 0 },
+    { stage: 'fechado', label: 'Fechado', count: 0, value: 0 },
+  ];
+  
+  const deals: Deal[] = [];
+  const stuckDeals = deals.filter((d) => d.lastActivityDays >= 3);
 
   return (
     <motion.section 
@@ -30,6 +60,7 @@ export function PipelineSection() {
         <h2 className="section-label">Pipeline de Vendas</h2>
         <motion.button 
           className="btn-subtle flex items-center gap-2"
+          onClick={() => navigate('/crm')}
           whileHover={{ x: 4, color: "hsl(var(--primary))" }}
           whileTap={{ scale: 0.95 }}
         >
@@ -70,83 +101,25 @@ export function PipelineSection() {
         ))}
       </motion.div>
 
-      {/* Deals parados */}
-      {stuckDeals.length > 0 && (
+      {/* Empty state when no deals */}
+      {deals.length === 0 && (
         <motion.div 
-          className="mt-8 pt-8 border-t border-white/5"
+          className="mt-8 pt-8 border-t border-white/5 flex flex-col items-center text-center py-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <motion.div 
-            className="flex items-center gap-3 mb-6"
-            animate={{ x: [0, 2, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <span className="material-symbols-outlined text-warning">priority_high</span>
-            <span className="text-[10px] font-normal text-warning uppercase tracking-widest">Deals parados (3+ dias sem atividade)</span>
-          </motion.div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[9px] text-muted-foreground uppercase tracking-widest border-b border-white/5">
-                  <th className="pb-4 font-normal">Deal</th>
-                  <th className="pb-4 font-normal">Conta</th>
-                  <th className="pb-4 font-normal">Etapa</th>
-                  <th className="pb-4 font-normal text-right">Valor</th>
-                  <th className="pb-4 font-normal">Última</th>
-                  <th className="pb-4 font-normal">Próxima ação</th>
-                  <th className="pb-4 font-normal">Resp.</th>
-                  <th className="pb-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {stuckDeals.map((deal, index) => (
-                  <motion.tr 
-                    key={deal.id} 
-                    className="table-row-hover border-b border-white/5 last:border-0"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                    whileHover={{ backgroundColor: "rgba(255,255,255,0.05)", x: 4 }}
-                  >
-                    <td className="py-4 font-normal text-foreground">{deal.title}</td>
-                    <td className="py-4 text-muted-foreground">{deal.accountName}</td>
-                    <td className="py-4">
-                      <motion.span className="badge-subtle" whileHover={{ scale: 1.05 }}>
-                        {getStageLabel(deal.stage)}
-                      </motion.span>
-                    </td>
-                    <td className="py-4 text-right text-foreground font-normal">R$ {deal.value.toLocaleString()}</td>
-                    <td className="py-4">
-                      <motion.span 
-                        className={cn(
-                          "text-[10px] font-normal uppercase",
-                          deal.lastActivityDays >= 5 ? "text-destructive" : "text-warning"
-                        )}
-                        animate={deal.lastActivityDays >= 5 ? { opacity: [1, 0.5, 1] } : {}}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        {deal.lastActivityDays} dias
-                      </motion.span>
-                    </td>
-                    <td className="py-4 text-muted-foreground text-xs">{deal.nextAction}</td>
-                    <td className="py-4 text-muted-foreground">{deal.responsible}</td>
-                    <td className="py-4">
-                      <motion.button 
-                        className="btn-subtle text-xs"
-                        whileHover={{ scale: 1.05, color: "hsl(var(--primary))" }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Abrir
-                      </motion.button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <TrendingUp className="w-8 h-8 text-primary" />
           </div>
+          <h3 className="text-sm font-normal text-foreground mb-2">Nenhum deal no pipeline</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mb-4">
+            Comece adicionando seus primeiros leads e oportunidades de negócio.
+          </p>
+          <Button onClick={() => navigate('/crm')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Criar Primeiro Deal
+          </Button>
         </motion.div>
       )}
     </motion.section>

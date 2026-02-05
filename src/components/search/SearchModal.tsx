@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X, User, FolderKanban, FileText, Wallet, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { accounts, deals, projects, invoices, contacts } from "@/data/mockData";
+import { useProjectsStore } from "@/stores/projectsStore";
+import { useFinancialStore } from "@/stores/financialStore";
 
 interface SearchModalProps {
   open: boolean;
@@ -10,25 +11,21 @@ interface SearchModalProps {
 
 type SearchResult = {
   id: string;
-  type: "account" | "deal" | "project" | "invoice" | "contact";
+  type: "project" | "invoice" | "contract";
   title: string;
   subtitle: string;
 };
 
 const typeIcons = {
-  account: Building2,
-  deal: FileText,
   project: FolderKanban,
   invoice: Wallet,
-  contact: User,
+  contract: FileText,
 };
 
 const typeLabels = {
-  account: "Conta",
-  deal: "Deal",
   project: "Projeto",
   invoice: "Fatura",
-  contact: "Contato",
+  contract: "Contrato",
 };
 
 export function SearchModal({ open, onClose }: SearchModalProps) {
@@ -36,6 +33,9 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  const { projects } = useProjectsStore();
+  const { revenues, contracts } = useFinancialStore();
 
   useEffect(() => {
     if (open) {
@@ -55,69 +55,45 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     const q = query.toLowerCase();
     const searchResults: SearchResult[] = [];
 
-    // Search accounts
-    accounts.forEach((acc) => {
-      if (acc.name.toLowerCase().includes(q)) {
-        searchResults.push({
-          id: acc.id,
-          type: "account",
-          title: acc.name,
-          subtitle: acc.segment,
-        });
-      }
-    });
-
-    // Search contacts
-    contacts.forEach((con) => {
-      if (con.name.toLowerCase().includes(q) || con.email.toLowerCase().includes(q)) {
-        searchResults.push({
-          id: con.id,
-          type: "contact",
-          title: con.name,
-          subtitle: con.email,
-        });
-      }
-    });
-
-    // Search deals
-    deals.forEach((deal) => {
-      if (deal.title.toLowerCase().includes(q) || deal.accountName.toLowerCase().includes(q)) {
-        searchResults.push({
-          id: deal.id,
-          type: "deal",
-          title: deal.title,
-          subtitle: `${deal.accountName} • R$ ${deal.value.toLocaleString()}`,
-        });
-      }
-    });
-
     // Search projects
     projects.forEach((proj) => {
-      if (proj.title.toLowerCase().includes(q) || proj.accountName.toLowerCase().includes(q)) {
+      if (proj.title.toLowerCase().includes(q) || proj.client?.company?.toLowerCase().includes(q)) {
         searchResults.push({
           id: proj.id,
           type: "project",
           title: proj.title,
-          subtitle: proj.accountName,
+          subtitle: proj.client?.company || 'Sem cliente',
         });
       }
     });
 
-    // Search invoices
-    invoices.forEach((inv) => {
-      if (inv.accountName.toLowerCase().includes(q) || inv.projectTitle.toLowerCase().includes(q)) {
+    // Search revenues/invoices
+    revenues.forEach((rev) => {
+      if (rev.description?.toLowerCase().includes(q)) {
         searchResults.push({
-          id: inv.id,
+          id: rev.id,
           type: "invoice",
-          title: `Fatura ${inv.installment}`,
-          subtitle: `${inv.accountName} • R$ ${inv.amount.toLocaleString()}`,
+          title: rev.description,
+          subtitle: `R$ ${rev.amount?.toLocaleString() || 0}`,
+        });
+      }
+    });
+
+    // Search contracts
+    contracts.forEach((contract) => {
+      if (contract.project_name?.toLowerCase().includes(q) || contract.client_name?.toLowerCase().includes(q)) {
+        searchResults.push({
+          id: contract.id,
+          type: "contract",
+          title: contract.project_name || 'Contrato',
+          subtitle: `${contract.client_name || 'Sem cliente'} • R$ ${contract.total_value?.toLocaleString() || 0}`,
         });
       }
     });
 
     setResults(searchResults.slice(0, 10));
     setSelectedIndex(0);
-  }, [query]);
+  }, [query, projects, revenues, contracts]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -129,7 +105,6 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       e.preventDefault();
       setSelectedIndex((prev) => Math.max(prev - 1, 0));
     } else if (e.key === "Enter" && results[selectedIndex]) {
-      // Handle selection - would open drawer
       console.log("Selected:", results[selectedIndex]);
       onClose();
     }
@@ -160,7 +135,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar clientes, deals, projetos, faturas..."
+            placeholder="Buscar projetos, faturas, contratos..."
             className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-sm"
           />
           <button onClick={onClose} className="p-1 hover:bg-muted rounded">
@@ -185,7 +160,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                     {typeLabels[type as keyof typeof typeLabels]}
                   </span>
                 </div>
-                {items.map((result, idx) => {
+                {items.map((result) => {
                   const globalIndex = results.findIndex((r) => r.id === result.id);
                   return (
                     <button
@@ -216,7 +191,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           {!query && (
             <div className="px-4 py-8 text-center">
               <p className="text-sm text-muted-foreground">
-                Digite para buscar clientes, deals, projetos ou faturas
+                Digite para buscar projetos, faturas ou contratos
               </p>
             </div>
           )}

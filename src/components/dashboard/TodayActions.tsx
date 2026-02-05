@@ -1,11 +1,29 @@
 import { useState } from "react";
-import { todayActions } from "@/data/mockData";
 import { cn } from "@/lib/utils";
-import { EmptyState } from "@/components/ui/empty-state";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, ListTodo, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface TodayAction {
+  id: string;
+  task: string;
+  entityName: string;
+  deadline: string;
+  done: boolean;
+}
+
+interface TodayActions {
+  commercial: TodayAction[];
+  financial: TodayAction[];
+  operational: TodayAction[];
+}
 
 export function TodayActions() {
-  const [actions, setActions] = useState(todayActions);
+  // Empty state - no actions yet
+  const [actions, setActions] = useState<TodayActions>({
+    commercial: [],
+    financial: [],
+    operational: [],
+  });
 
   const toggleAction = (category: keyof typeof actions, actionId: string) => {
     setActions((prev) => ({
@@ -22,58 +40,74 @@ export function TodayActions() {
 
   const totalDone = [...actions.commercial, ...actions.financial, ...actions.operational].filter((a) => a.done).length;
   const totalActions = actions.commercial.length + actions.financial.length + actions.operational.length;
-  const allDone = totalDone === totalActions && totalActions > 0;
 
   return (
     <section className="glass-card p-10 rounded-[3rem] min-h-[300px]">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-normal uppercase tracking-tighter text-foreground">
-            {allDone 
-              ? <>Dia ganho, <span className="squad-logo-text font-light text-muted-foreground">missão cumprida</span></>
+            {totalActions === 0 
+              ? <>Pronto para <span className="squad-logo-text font-light text-muted-foreground">começar</span></>
               : <>Hoje eu ganho o dia <span className="squad-logo-text font-light text-muted-foreground">fazendo isso</span></>
             }
           </h2>
-          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-widest mt-1">{totalDone}/{totalActions} concluídas</p>
+          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-widest mt-1">
+            {totalActions === 0 ? 'Nenhuma ação pendente' : `${totalDone}/${totalActions} concluídas`}
+          </p>
         </div>
-        <button className="btn-subtle flex items-center gap-2">
+        <button className="btn-subtle flex items-center gap-2" disabled={totalActions === 0}>
           <span className="material-symbols-outlined text-sm">refresh</span> Repriorizar
         </button>
       </div>
 
-      <div className="space-y-6">
-        {sections.map((section) => (
-          <div key={section.key}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="material-symbols-outlined text-primary text-sm">{section.icon}</span>
-              <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-light">{section.label}</span>
-            </div>
-            <div className="space-y-2 min-h-[60px]">
-              {section.data.length > 0 ? (
-                section.data.map((action) => (
-                  <div
-                    key={action.id}
-                    className={cn("flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer group", action.done && "opacity-50")}
-                    onClick={() => toggleAction(section.key, action.id)}
-                  >
-                    <span className={cn("material-symbols-outlined", action.done ? "text-success" : "text-muted-foreground group-hover:text-foreground")}>
-                      {action.done ? "check_circle" : "radio_button_unchecked"}
-                    </span>
-                    <p className={cn("flex-1 text-sm text-foreground font-light", action.done && "line-through")}>{action.task}</p>
-                    <span className="text-[10px] text-muted-foreground">{action.entityName}</span>
-                    <span className="text-[10px] text-muted-foreground w-12 text-right font-normal">{action.deadline}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="flex items-center gap-3 py-3 px-4 text-muted-foreground/60">
-                  <CheckCircle className="w-4 h-4 text-emerald-500/50" />
-                  <span className="text-xs">Nenhuma ação pendente</span>
-                </div>
-              )}
-            </div>
+      {totalActions === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <ListTodo className="w-8 h-8 text-primary" />
           </div>
-        ))}
-      </div>
+          <h3 className="text-sm font-normal text-foreground mb-2">Nenhuma ação do dia</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mb-4">
+            As ações prioritárias serão geradas automaticamente com base nos seus projetos, deals e financeiro.
+          </p>
+          <p className="text-xs text-muted-foreground/70">
+            Comece criando seu primeiro projeto ou deal
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {sections.map((section) => (
+            <div key={section.key}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-primary text-sm">{section.icon}</span>
+                <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-light">{section.label}</span>
+              </div>
+              <div className="space-y-2 min-h-[60px]">
+                {section.data.length > 0 ? (
+                  section.data.map((action) => (
+                    <div
+                      key={action.id}
+                      className={cn("flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer group", action.done && "opacity-50")}
+                      onClick={() => toggleAction(section.key, action.id)}
+                    >
+                      <span className={cn("material-symbols-outlined", action.done ? "text-success" : "text-muted-foreground group-hover:text-foreground")}>
+                        {action.done ? "check_circle" : "radio_button_unchecked"}
+                      </span>
+                      <p className={cn("flex-1 text-sm text-foreground font-light", action.done && "line-through")}>{action.task}</p>
+                      <span className="text-[10px] text-muted-foreground">{action.entityName}</span>
+                      <span className="text-[10px] text-muted-foreground w-12 text-right font-normal">{action.deadline}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-center gap-3 py-3 px-4 text-muted-foreground/60">
+                    <CheckCircle className="w-4 h-4 text-emerald-500/50" />
+                    <span className="text-xs">Nenhuma ação pendente</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
