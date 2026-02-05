@@ -21,8 +21,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Dashboard uses full-width Polo layout */}
+          <Route path="/" element={<Dashboard />} />
+          
+          {/* Other pages use sidebar layout */}
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/propostas" element={<Propostas />} />
             <Route path="/contratos" element={<Contratos />} />
