@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Contract, ContractVersion, ContractTemplate, ContractSignature } from "@/types/contracts";
-import { FileSignature, Check, Upload, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { FileSignature, Check, Upload, AlertTriangle, CheckCircle, Loader2, Shield, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +28,10 @@ export default function ContractClientPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [acceptForm, setAcceptForm] = useState({ name: "", email: "" });
+  const [uploadForm, setUploadForm] = useState({ name: "", email: "" });
   const [uploading, setUploading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [signingViaGovBr, setSigningViaGovBr] = useState(false);
 
   useEffect(() => {
     if (contractId && token) {
@@ -128,47 +127,36 @@ export default function ContractClientPage() {
     setLoading(false);
   };
 
-  const handleAcceptClick = async () => {
-    if (!acceptForm.name || !acceptForm.email) {
-      toast.error("Nome e e-mail são obrigatórios");
-      return;
-    }
-
-    setSubmitting(true);
+  const handleGovBrSign = async () => {
+    setSigningViaGovBr(true);
 
     try {
-      const { error: sigError } = await supabase
-        .from('contract_signatures')
-        .insert([{
-          contract_id: contractId,
-          signer_name: acceptForm.name,
-          signer_email: acceptForm.email,
-          signature_type: 'accept_click',
-          ip_address: 'client-side',
-          user_agent: navigator.userAgent,
-        }]);
+      const { data, error } = await supabase.functions.invoke('govbr-initiate-signing', {
+        body: { 
+          contractId, 
+          returnUrl: window.location.href 
+        }
+      });
 
-      if (sigError) throw sigError;
+      if (error) throw error;
 
-      await supabase
-        .from('contracts')
-        .update({ status: 'signed' })
-        .eq('id', contractId);
-
-      toast.success("Contrato aceito com sucesso!");
-      setShowAcceptModal(false);
-      validateAndFetch();
+      if (data?.redirectUrl) {
+        // Redirecionar para gov.br (ou callback simulado)
+        window.location.href = data.redirectUrl;
+      } else {
+        toast.error("Erro ao iniciar assinatura");
+      }
     } catch (error) {
-      console.error("Error accepting contract:", error);
-      toast.error("Erro ao aceitar contrato");
+      console.error("Error initiating gov.br signing:", error);
+      toast.error("Erro ao conectar com gov.br");
     } finally {
-      setSubmitting(false);
+      setSigningViaGovBr(false);
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !acceptForm.name || !acceptForm.email) {
+    if (!file || !uploadForm.name || !uploadForm.email) {
       toast.error("Preencha nome e e-mail antes de enviar");
       return;
     }
@@ -191,9 +179,10 @@ export default function ContractClientPage() {
         .from('contract_signatures')
         .insert([{
           contract_id: contractId,
-          signer_name: acceptForm.name,
-          signer_email: acceptForm.email,
+          signer_name: uploadForm.name,
+          signer_email: uploadForm.email,
           signature_type: 'upload_signed_pdf',
+          provider: 'internal',
           signed_file_url: publicUrl,
           ip_address: 'client-side',
           user_agent: navigator.userAgent,
@@ -285,6 +274,12 @@ export default function ContractClientPage() {
           <span className="flex items-center justify-center gap-2">
             <CheckCircle className="w-4 h-4" />
             Este contrato foi assinado em {format(new Date(signature.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            {signature.provider === 'govbr' && (
+              <Badge className="ml-2 bg-emerald-500/20 text-emerald-500 text-xs">
+                <Shield className="w-3 h-3 mr-1" />
+                gov.br
+              </Badge>
+            )}
           </span>
         </div>
       )}
@@ -320,24 +315,89 @@ export default function ContractClientPage() {
 
         {/* Action Buttons */}
         {!isSigned && (
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="text-lg px-8 py-6"
-              onClick={() => setShowAcceptModal(true)}
-            >
-              <Check className="w-5 h-5 mr-2" />
-              Aceitar Contrato
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 py-6"
-              onClick={() => setShowUploadModal(true)}
-            >
-              <Upload className="w-5 h-5 mr-2" />
-              Enviar PDF Assinado
-            </Button>
+          <div className="space-y-6">
+            {/* Primary: gov.br */}
+            <div className="text-center">
+              <Button
+                size="lg"
+                className="text-lg px-8 py-6 bg-emerald-600 hover:bg-emerald-700"
+                onClick={handleGovBrSign}
+                disabled={signingViaGovBr}
+              >
+                {signingViaGovBr ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Conectando...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-5 h-5 mr-2" />
+                    Assinar via gov.br
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-3">
+                Assinatura digital com validade jurídica via ICP-Brasil
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 justify-center">
+              <Separator className="w-20" />
+              <span className="text-xs text-muted-foreground uppercase">ou</span>
+              <Separator className="w-20" />
+            </div>
+
+            {/* Secondary: Upload PDF */}
+            <div className="text-center">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base px-6 py-5"
+                onClick={() => setShowUploadModal(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Enviar PDF Assinado Manualmente
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                Caso já tenha assinado o documento pelo gov.br no celular
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Signature Details (if signed) */}
+        {isSigned && signature && (
+          <div className="bg-muted/30 rounded-xl p-6 mt-8">
+            <h3 className="font-medium text-foreground mb-4">Detalhes da Assinatura</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Signatário:</span>
+                <p className="text-foreground font-medium">{signature.signer_name}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">E-mail:</span>
+                <p className="text-foreground">{signature.signer_email}</p>
+              </div>
+              {signature.signer_cpf && (
+                <div>
+                  <span className="text-muted-foreground">CPF:</span>
+                  <p className="text-foreground">{signature.signer_cpf}</p>
+                </div>
+              )}
+              <div>
+                <span className="text-muted-foreground">Data/Hora:</span>
+                <p className="text-foreground">
+                  {format(new Date(signature.signed_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+                </p>
+              </div>
+              {signature.document_hash && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Hash do Documento:</span>
+                  <p className="text-foreground font-mono text-xs break-all">{signature.document_hash}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -347,57 +407,13 @@ export default function ContractClientPage() {
         </div>
       </div>
 
-      {/* Accept Modal */}
-      <Dialog open={showAcceptModal} onOpenChange={setShowAcceptModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Aceitar Contrato</DialogTitle>
-            <DialogDescription>
-              Confirme seus dados para formalizar o aceite deste contrato.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Seu Nome Completo *</Label>
-              <Input
-                placeholder="Nome completo"
-                value={acceptForm.name}
-                onChange={(e) => setAcceptForm({ ...acceptForm, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Seu E-mail *</Label>
-              <Input
-                type="email"
-                placeholder="seu@email.com"
-                value={acceptForm.email}
-                onChange={(e) => setAcceptForm({ ...acceptForm, email: e.target.value })}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Ao aceitar, você concorda com todos os termos e condições deste contrato.
-              Um registro será criado com data, hora e informações do navegador.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAcceptModal(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleAcceptClick} disabled={submitting}>
-              <Check className="w-4 h-4 mr-2" />
-              {submitting ? "Processando..." : "Confirmar Aceite"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Enviar PDF Assinado</DialogTitle>
             <DialogDescription>
-              Faça upload do contrato assinado em formato PDF.
+              Faça upload do contrato assinado digitalmente via gov.br em formato PDF.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -405,8 +421,8 @@ export default function ContractClientPage() {
               <Label>Seu Nome Completo *</Label>
               <Input
                 placeholder="Nome completo"
-                value={acceptForm.name}
-                onChange={(e) => setAcceptForm({ ...acceptForm, name: e.target.value })}
+                value={uploadForm.name}
+                onChange={(e) => setUploadForm({ ...uploadForm, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -414,8 +430,8 @@ export default function ContractClientPage() {
               <Input
                 type="email"
                 placeholder="seu@email.com"
-                value={acceptForm.email}
-                onChange={(e) => setAcceptForm({ ...acceptForm, email: e.target.value })}
+                value={uploadForm.email}
+                onChange={(e) => setUploadForm({ ...uploadForm, email: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -425,7 +441,7 @@ export default function ContractClientPage() {
                 type="file"
                 accept=".pdf"
                 onChange={handleFileUpload}
-                disabled={uploading || !acceptForm.name || !acceptForm.email}
+                disabled={uploading || !uploadForm.name || !uploadForm.email}
               />
             </div>
             {uploading && (

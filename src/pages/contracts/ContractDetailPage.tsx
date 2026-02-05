@@ -697,24 +697,64 @@ export default function ContractDetailPage() {
                   <FileSignature className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
                   <p className="text-muted-foreground">Nenhuma assinatura registrada</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Envie o link para o cliente assinar
+                    Envie o link para o cliente assinar via gov.br
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {signatures.map((sig) => (
                     <div key={sig.id} className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Check className="w-4 h-4 text-emerald-500" />
-                        <span className="font-medium text-emerald-500">Assinado</span>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-emerald-500" />
+                          <span className="font-medium text-emerald-500">Assinado</span>
+                        </div>
+                        {(sig as any).provider === 'govbr' && (
+                          <Badge className="bg-emerald-500/20 text-emerald-500 text-xs">
+                            gov.br (ICP-Brasil)
+                          </Badge>
+                        )}
+                        {(sig as any).provider === 'internal' && (
+                          <Badge variant="outline" className="text-xs">
+                            Upload Manual
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-sm text-foreground">{sig.signer_name}</p>
-                      <p className="text-xs text-muted-foreground">{sig.signer_email}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(sig.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground text-xs">Nome:</span>
+                          <p className="text-foreground">{sig.signer_name}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-xs">E-mail:</span>
+                          <p className="text-foreground">{sig.signer_email}</p>
+                        </div>
+                        {(sig as any).signer_cpf && (
+                          <div>
+                            <span className="text-muted-foreground text-xs">CPF:</span>
+                            <p className="text-foreground">{(sig as any).signer_cpf}</p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-muted-foreground text-xs">Data/Hora:</span>
+                          <p className="text-foreground">
+                            {format(new Date(sig.signed_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {(sig as any).document_hash && (
+                        <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                          <span className="text-muted-foreground text-xs">Hash SHA-256:</span>
+                          <p className="text-foreground font-mono text-xs break-all mt-1">
+                            {(sig as any).document_hash}
+                          </p>
+                        </div>
+                      )}
+
                       {sig.signature_type === 'upload_signed_pdf' && sig.signed_file_url && (
-                        <Button variant="outline" size="sm" className="mt-2" asChild>
+                        <Button variant="outline" size="sm" className="mt-3" asChild>
                           <a href={sig.signed_file_url} target="_blank" rel="noopener noreferrer">
                             Ver PDF assinado
                           </a>
