@@ -13,6 +13,21 @@ export interface PortalLink {
   created_at: string;
 }
 
+export interface ProjectInfo {
+  id: string;
+  name: string;
+  client_name: string | null;
+  description: string | null;
+  template: string | null;
+  status: string;
+  stage_current: string | null;
+  health_score: number | null;
+  contract_value: number | null;
+  has_payment_block: boolean | null;
+  due_date: string | null;
+  owner_name: string | null;
+}
+
 export interface PortalFile {
   id: string;
   project_id: string;
@@ -22,6 +37,7 @@ export interface PortalFile {
   file_type: string | null;
   visible_in_portal: boolean;
   created_at: string;
+  youtube_url?: string | null;
 }
 
 export interface PortalComment {
@@ -48,6 +64,7 @@ export interface PortalApproval {
 
 export interface PortalData {
   portal: PortalLink;
+  project: ProjectInfo | null;
   files: PortalFile[];
   comments: PortalComment[];
   approvals: PortalApproval[];
@@ -82,6 +99,13 @@ export function useClientPortal(shareToken: string | undefined) {
       if (!portal.is_active) {
         throw new Error('Portal inactive');
       }
+
+      // Get project details
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .select('id, name, client_name, description, template, status, stage_current, health_score, contract_value, has_payment_block, due_date, owner_name')
+        .eq('id', portal.project_id)
+        .single();
 
       // Get files from project_files (instead of portal_deliverables)
       const { data: files, error: filesError } = await supabase
@@ -122,6 +146,7 @@ export function useClientPortal(shareToken: string | undefined) {
 
       return {
         portal: portal as PortalLink,
+        project: (project || null) as ProjectInfo | null,
         files: (files || []) as PortalFile[],
         comments: (comments || []) as PortalComment[],
         approvals: (approvals || []) as PortalApproval[],
