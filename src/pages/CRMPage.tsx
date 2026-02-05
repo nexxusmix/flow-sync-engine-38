@@ -39,15 +39,15 @@ export default function CRMPage() {
     title: deal.title,
     company: deal.company,
     value: deal.value,
-    probability: deal.probability,
+    probability: deal.score || 50,
     stage: deal.stage,
-    initials: deal.prospectName.split(' ').map(n => n[0]).slice(0, 2),
+    initials: deal.contactName?.split(' ').map(n => n[0]).slice(0, 2) || ['?'],
     daysInStage: 0,
-    nextAction: null,
-    score: 0,
+    nextAction: deal.nextAction,
+    score: deal.score || 0,
     tags: [] as string[],
     ownerInitials: 'SQ',
-    lastActivity: new Date().toISOString(),
+    lastActivity: deal.updatedAt || new Date().toISOString(),
   }));
 
   const hasDeals = deals.length > 0;
