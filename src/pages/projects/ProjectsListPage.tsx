@@ -19,11 +19,11 @@ export default function ProjectsListPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isNewProjectModalOpen, isEditProjectModalOpen, isAIProjectModalOpen, selectedProjectId, setEditProjectModalOpen, setSelectedProjectId, setAIProjectModalOpen } = useProjectsStore();
-  const { user, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const { projects, isLoading: dataLoading } = useProjects();
   
-  // Show loading only during auth check or when user exists and data is loading
-  const isLoading = authLoading || (!!user && dataLoading);
+  // Show loading only during auth check or data fetch
+  const isLoading = authLoading || dataLoading;
   
   // Determine view from route
   const getViewFromRoute = (): ViewType => {
