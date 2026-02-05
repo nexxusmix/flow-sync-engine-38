@@ -1,163 +1,217 @@
 
 
-# SQUAD Hub - Plano MVP (30-45 dias)
+# Plano: Design Polo Fiel - SQUAD Hub
 
-## Visão do MVP
-Sistema focado em **resolver o gargalo principal**: transformar leads em dinheiro no caixa através de um fluxo rápido e padronizado de proposta → contrato → cobrança. Interface dark mode premium, editorial e pensada para uso intensivo.
-
----
-
-## Módulo 1: Dashboard Executivo
-**Objetivo**: Visão única do que importa - dinheiro entrando e oportunidades em risco.
-
-- **Cards de métricas**: Propostas pendentes | Contratos aguardando assinatura | Cobranças a receber | Receita do mês
-- **Lista de ações urgentes**: Propostas sem resposta há X dias, contratos expirando, cobranças atrasadas
-- **Timeline recente**: Últimas atividades (proposta enviada, contrato assinado, pagamento recebido)
+## Visao Geral
+Refatorar completamente o design system do SQUAD Hub para ser hiperfielmente igual ao template Polo, seguindo cada detalhe visual das referencias.
 
 ---
 
-## Módulo 2: CRM Essencial
-**Objetivo**: Não perder lead e ter contexto completo de cada oportunidade.
+## 1. Cores Exatas do Polo
 
-### Contas (Empresas/Clientes)
-- Cadastro com CNPJ, segmento, contatos vinculados
-- Histórico de interações, propostas e projetos
+### CSS Variables (valores exatos)
+```text
+Background:    #050505 (0 0% 2%)
+Surface/Card:  #121212 (0 0% 7%)
+Border:        #272727 (0 0% 15%)
+Text Primary:  #ffffff
+Text Muted:    #9ca3af (220 14% 64%)
+```
 
-### Pipeline Kanban
-- Estágios configuráveis: Lead → Qualificação → Proposta Enviada → Negociação → Fechado Ganho/Perdido
-- Arrastar e soltar para mover negócios
-- Alertas de oportunidades paradas (stagnation alerts)
-
-### Atividades e Follow-up
-- Tarefas com prazo e lembretes
-- Registro de calls, reuniões e interações
-- **Sistema nunca deixa esquecer**: notificações de follow-ups pendentes
-
----
-
-## Módulo 3: Propostas Inteligentes
-**Objetivo**: Gerar proposta profissional em minutos, não horas.
-
-### Catálogo de Serviços
-- Produtos pré-configurados: Filme Institucional, Aftermovie, Reels Pacote, Foto, Drone, Motion, etc.
-- Cada serviço com: descrição, preço base, prazo estimado, entregáveis padrão
-
-### Gerador de Propostas
-- Seleciona cliente → escolhe serviços do catálogo → customiza valores → gera PDF/link
-- Templates visuais alinhados com a identidade SQUAD
-- Controle de validade da proposta
-
-### Acompanhamento
-- Status: Rascunho → Enviada → Visualizada → Aprovada → Recusada
-- Histórico de versões
-- Botão para gerar contrato automaticamente quando aprovada
+### Mudancas em src/index.css
+- Ajustar --background para 0 0% 2%
+- Ajustar --card para 0 0% 7%
+- Ajustar --border para 0 0% 15%
+- Ajustar --muted-foreground para 220 14% 64%
 
 ---
 
-## Módulo 4: Contratos com Assinatura Digital
-**Objetivo**: Do "fechou" ao contrato assinado em cliques, não dias.
+## 2. Cards Estilo Polo
 
-### Gerador de Contrato
-- Template inteligente que puxa dados da proposta aprovada
-- Campos automáticos: cliente, escopo detalhado, valores, parcelas, prazos, cláusulas padrão
-- Cláusulas de: direitos autorais, uso de imagem, limites de revisão, multas
+### Caracteristicas visuais
+- Border radius: rounded-2xl (1rem) padrao, rounded-3xl (1.5rem) para cards maiores
+- Borda sutil de 1px com cor #272727
+- Padding interno generoso (p-6 a p-8)
+- Sem sombras - apenas bordas
+- Hover state: borda fica levemente mais clara
 
-### Fluxo de Assinatura
-- Integração com **Clicksign ou DocuSign** para assinatura digital
-- Status: Gerado → Enviado → Assinado → Arquivado
-- Notificação quando assinado
-
-### Repositório
-- Todos os contratos organizados por cliente/projeto
-- Busca e filtros
-- Alertas de contratos próximos do vencimento
-
----
-
-## Módulo 5: Cobrança Automática
-**Objetivo**: Dinheiro no caixa sem precisar lembrar de cobrar.
-
-### Gatilho Automático
-- Contrato assinado → gera automaticamente as parcelas definidas
-- Primeira cobrança (entrada) disparada imediatamente
-
-### Parcelas e Pagamentos
-- Visualização clara: valor, vencimento, status (pendente/pago/atrasado)
-- Integração com **Asaas** para gerar boleto/pix automaticamente
-- Registro manual de pagamentos quando necessário
-
-### Régua de Cobrança Automática
-- **D-3**: Lembrete educado ("sua parcela vence em 3 dias")
-- **D0**: Aviso no dia do vencimento
-- **D+3**: Escalonamento ("identificamos que o pagamento está pendente")
-- **D+7**: Alerta de trava operacional e contato para renegociação
-
-### Indicadores Financeiros
-- Receita prevista x realizada
-- Inadimplência
-- Forecast simples de 30/60/90 dias
+### Nova classe .polo-card
+```css
+.polo-card {
+  @apply rounded-2xl border border-[#272727] bg-[#121212] p-6;
+  transition: border-color 0.2s ease;
+}
+.polo-card:hover {
+  border-color: #3a3a3a;
+}
+```
 
 ---
 
-## Design & Experiência
+## 3. Labels Uppercase Polo
 
-### Visual
-- **Dark mode premium** como padrão
-- Tipografia clara e hierárquica para legibilidade
-- Cards com bordas suaves e sombras sutis
-- Acentos de cor para status e ações importantes
-- Inspiração nos templates "Polo" compartilhados
+### Estilo dos labels de secao
+- Texto uppercase
+- Tamanho text-xs
+- Tracking wider (letter-spacing: 0.1em)
+- Cor muted (#9ca3af)
+- Margem inferior mb-4
 
-### Navegação
-- Sidebar fixa com acesso rápido aos módulos
-- Breadcrumbs para contexto
-- Busca global
-- Atalhos de teclado para ações frequentes
-
-### Responsivo
-- Funcional em mobile para consultas rápidas
-- Otimizado para desktop (uso intensivo)
+### Exemplo
+```html
+<span class="text-xs uppercase tracking-wider text-muted-foreground mb-4">
+  SERVICES
+</span>
+```
 
 ---
 
-## Integrações MVP
+## 4. Pills/Badges Estilo Polo
 
-| Serviço | Função |
-|---------|--------|
-| **Supabase** | Banco de dados, autenticação, storage |
-| **Asaas** | Geração de boletos/pix, cobrança automática |
-| **Clicksign** | Assinatura digital de contratos |
-| **WhatsApp** | Links diretos para conversa (sem API complexa no MVP) |
+### Caracteristicas
+- Borda rounded-full
+- Border 1px solid #272727
+- Background transparente ou #121212
+- Padding px-4 py-1.5
+- Texto text-sm
 
----
-
-## O que fica para V2
-- Inbox WhatsApp com chatbot e IA
-- Prospecção ativa com IA e cadências
-- Gestão completa de projetos e produção
-- Sistema de revisão com timecode
-- Agentes de IA especializados
-- Multi-usuários e RBAC completo
-- Gov.br para assinaturas
+### Nova classe .polo-pill
+```css
+.polo-pill {
+  @apply inline-flex items-center px-4 py-1.5 rounded-full 
+         border border-[#272727] bg-transparent text-sm 
+         text-foreground transition-colors hover:border-[#404040];
+}
+```
 
 ---
 
-## Stack Técnica
-- **Frontend**: React + TypeScript + Tailwind CSS + shadcn/ui
-- **Backend**: Supabase (Database, Auth, Edge Functions, Storage)
-- **IA**: Lovable AI para automações inteligentes futuras
-- **Pagamentos**: Asaas
-- **Assinatura**: Clicksign
+## 5. Sidebar Refinada
+
+### Mudancas
+- Background igual ao fundo principal (#050505)
+- Bordas mais sutis (#272727)
+- Logo com icone em rounded-lg
+- Nav items com rounded-xl
+- Hover states mais sutis
+
+---
+
+## 6. Layout Bento Grid Polo
+
+### Estrutura
+- Grid responsivo com gaps consistentes (gap-4)
+- Cards de tamanhos variados (col-span-1, col-span-2)
+- Rows com altura auto
+
+### Dashboard Layout
+```text
++------------------+--------+--------+
+|   Welcome Card   | Metric | Metric |
+|    (col-span-2)  |   1    |   2    |
++------------------+--------+--------+
+| Metric | Metric |   Quick Stats    |
+|   3    |   4    |   (col-span-2)   |
++--------+--------+------------------+
+|   Urgent List    |    Timeline      |
+|   (col-span-2)   |   (col-span-2)   |
++------------------+------------------+
+```
+
+---
+
+## 7. Componentes a Atualizar
+
+### src/index.css
+- Atualizar variaveis CSS dark mode
+- Adicionar classes .polo-card, .polo-pill, .polo-label
+- Refinar scrollbar styling
+
+### src/components/layout/AppSidebar.tsx
+- Aplicar cores Polo
+- Refinar nav items styling
+
+### src/components/dashboard/MetricCard.tsx
+- Usar polo-card
+- Adicionar label uppercase
+- Icone em bg mais sutil
+
+### src/components/dashboard/WelcomeCard.tsx
+- Remover gradiente
+- Usar polo-card puro
+- Tipografia refinada
+
+### src/components/dashboard/QuickStats.tsx
+- Usar polo-card
+- Label uppercase "RESUMO"
+- Dividers mais sutis
+
+### src/components/dashboard/UrgentActionsList.tsx
+- Usar polo-card
+- Label uppercase "ACOES URGENTES"
+
+### src/components/dashboard/RecentActivityTimeline.tsx
+- Usar polo-card
+- Label uppercase "ATIVIDADE RECENTE"
+
+### src/pages/Pipeline.tsx
+- Header refinado com pills para filtros
+- Cards com estilo Polo
+- Placeholder mais elaborado
+
+---
+
+## 8. Detalhes de Tipografia
+
+### Hierarquia
+- H1: text-2xl font-semibold tracking-tight
+- H2: text-lg font-medium
+- Body: text-sm
+- Label: text-xs uppercase tracking-wider text-muted-foreground
+- Muted: text-sm text-muted-foreground
+
+---
+
+## 9. Icones e Interacoes
+
+### Icones
+- Tamanho padrao: h-5 w-5
+- Cor: text-muted-foreground
+- Container: rounded-xl bg-secondary p-2.5
+
+### Hover States
+- Cards: border fica mais clara
+- Buttons: opacity ou background shift
+- Links: arrow-up-right aparece
+
+---
+
+## 10. Arquivos a Modificar
+
+| Arquivo | Mudanca |
+|---------|---------|
+| src/index.css | Variaveis CSS + classes utilitarias |
+| src/components/layout/AppSidebar.tsx | Estilo Polo |
+| src/components/dashboard/MetricCard.tsx | polo-card + label |
+| src/components/dashboard/WelcomeCard.tsx | Remover gradiente |
+| src/components/dashboard/QuickStats.tsx | polo-card + label |
+| src/components/dashboard/UrgentActionsList.tsx | polo-card + label |
+| src/components/dashboard/RecentActivityTimeline.tsx | polo-card + label |
+| src/pages/Dashboard.tsx | Grid ajustado |
+| src/pages/Pipeline.tsx | Pills + estilo Polo |
+| src/pages/Propostas.tsx | Estilo Polo |
+| src/pages/Contratos.tsx | Estilo Polo |
+| src/pages/Financeiro.tsx | Estilo Polo |
 
 ---
 
 ## Resultado Esperado
-Ao final do MVP, você terá um sistema onde:
-1. Leads nunca são esquecidos (pipeline + alertas)
-2. Propostas são geradas em minutos com visual profissional
-3. Contratos são criados automaticamente e assinados digitalmente
-4. Cobranças acontecem sozinhas com régua automática
-5. Tudo auditável: quem fez, quando fez, qual decisão
 
-**Meta**: Da oportunidade ao dinheiro no caixa em dias, não semanas.
+Visual identico ao template Polo:
+- Fundo ultra escuro #050505
+- Cards elevados #121212 com bordas sutis #272727
+- Labels uppercase para secoes
+- Pills para tags/categorias
+- Tipografia Inter limpa e hierarquica
+- Interacoes sutis e refinadas
 
