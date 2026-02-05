@@ -57,6 +57,7 @@ export default function ProjectsListPage() {
     ? projects.find(p => p.id === selectedProjectId) 
     : null;
 
+  // Show loading only when actually fetching data
   if (isLoading) {
     return (
       <DashboardLayout title="Projetos">

@@ -54,7 +54,7 @@ export interface TimelineEvent {
 export function useDashboardMetrics() {
   const { user } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async (): Promise<{
       metrics: DashboardMetrics;
@@ -73,27 +73,33 @@ export function useDashboardMetrics() {
       const now = new Date();
       const thirtyDaysFromNow = addDays(now, 30);
 
-      // Fetch projects
+      // Fetch projects - don't throw on error, use empty array
       const { data: projects, error: projectsError } = await supabase
         .from('projects')
         .select('*')
         .neq('status', 'archived');
 
-      if (projectsError) throw projectsError;
+      if (projectsError) {
+        console.error('Error fetching projects:', projectsError);
+      }
 
       // Fetch project stages to calculate at-risk
       const { data: stages, error: stagesError } = await supabase
         .from('project_stages')
         .select('*');
 
-      if (stagesError) throw stagesError;
+      if (stagesError) {
+        console.error('Error fetching stages:', stagesError);
+      }
 
       // Fetch deals
       const { data: deals, error: dealsError } = await supabase
         .from('prospect_opportunities')
         .select('*');
 
-      if (dealsError) throw dealsError;
+      if (dealsError) {
+        console.error('Error fetching deals:', dealsError);
+      }
 
       // Fetch calendar events for next 30 days
       const { data: events, error: eventsError } = await supabase
@@ -103,7 +109,9 @@ export function useDashboardMetrics() {
         .lte('start_at', thirtyDaysFromNow.toISOString())
         .order('start_at', { ascending: true });
 
-      if (eventsError) throw eventsError;
+      if (eventsError) {
+        console.error('Error fetching events:', eventsError);
+      }
 
       // Fetch revenues for current month
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -115,7 +123,11 @@ export function useDashboardMetrics() {
         .gte('due_date', format(startOfMonth, 'yyyy-MM-dd'))
         .lte('due_date', format(endOfMonth, 'yyyy-MM-dd'));
 
-      // Calculate metrics
+      if (revenuesError) {
+        console.error('Error fetching revenues:', revenuesError);
+      }
+
+      // Calculate metrics - use empty arrays as fallback
       const activeProjects = (projects || []).filter(p => p.status === 'active');
       const completedProjects = (projects || []).filter(p => p.status === 'completed');
       const blockedProjects = (projects || []).filter(p => p.has_payment_block);
@@ -256,4 +268,10 @@ export function useDashboardMetrics() {
     enabled: !!user,
     refetchInterval: 60000, // Refetch every minute
   });
+
+  // Only show loading when actually fetching, not when query is disabled
+  return {
+    ...query,
+    isLoading: !!user && query.isLoading && query.isFetching,
+  };
 }
