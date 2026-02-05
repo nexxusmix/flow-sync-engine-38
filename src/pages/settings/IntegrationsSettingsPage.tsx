@@ -32,10 +32,17 @@ export default function IntegrationsSettingsPage() {
         .from('integration_settings')
         .select('*');
 
-      if (error) throw error;
-      setIntegrations((data || []) as unknown as IntegrationSettings[]);
+      if (error) {
+        console.error("Error loading integrations:", error);
+        toast.error("Erro ao carregar integrações");
+        setIntegrations([]);
+      } else {
+        setIntegrations((data || []) as unknown as IntegrationSettings[]);
+      }
     } catch (error) {
       console.error("Error loading integrations:", error);
+      toast.error("Erro inesperado");
+      setIntegrations([]);
     } finally {
       setLoading(false);
     }
