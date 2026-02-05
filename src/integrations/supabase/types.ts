@@ -148,6 +148,36 @@ export type Database = {
         }
         Relationships: []
       }
+      cashflow_snapshots: {
+        Row: {
+          balance: number | null
+          generated_at: string
+          id: string
+          month: string
+          total_expense: number | null
+          total_revenue: number | null
+          workspace_id: string
+        }
+        Insert: {
+          balance?: number | null
+          generated_at?: string
+          id?: string
+          month: string
+          total_expense?: number | null
+          total_revenue?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          balance?: number | null
+          generated_at?: string
+          id?: string
+          month?: string
+          total_expense?: number | null
+          total_revenue?: number | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       content_checklist: {
         Row: {
           content_item_id: string
@@ -374,6 +404,54 @@ export type Database = {
           },
         ]
       }
+      contracts: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          payment_terms: string | null
+          project_id: string
+          project_name: string | null
+          start_date: string | null
+          status: string
+          total_value: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          payment_terms?: string | null
+          project_id: string
+          project_name?: string | null
+          start_date?: string | null
+          status?: string
+          total_value: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          payment_terms?: string | null
+          project_id?: string
+          project_name?: string | null
+          start_date?: string | null
+          status?: string
+          total_value?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       do_not_contact: {
         Row: {
           blocked_by: string | null
@@ -408,6 +486,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          notes: string | null
+          paid_date: string | null
+          project_id: string | null
+          status: string
+          supplier: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          paid_date?: string | null
+          project_id?: string | null
+          status?: string
+          supplier?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          paid_date?: string | null
+          project_id?: string | null
+          status?: string
+          supplier?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      financial_accounts: {
+        Row: {
+          balance: number | null
+          created_at: string
+          id: string
+          name: string
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          id?: string
+          name: string
+          type?: string
+          workspace_id?: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       instagram_references: {
         Row: {
@@ -474,6 +627,50 @@ export type Database = {
             columns: ["content_item_id"]
             isOneToOne: false
             referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_milestones: {
+        Row: {
+          amount: number
+          contract_id: string
+          created_at: string
+          due_date: string
+          id: string
+          paid_date: string | null
+          revenue_id: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          amount: number
+          contract_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          paid_date?: string | null
+          revenue_id?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          amount?: number
+          contract_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          paid_date?: string | null
+          revenue_id?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_milestones_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
         ]
@@ -730,6 +927,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      revenues: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          installment_group_id: string | null
+          notes: string | null
+          payment_method: string | null
+          project_id: string | null
+          received_date: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          installment_group_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          project_id?: string | null
+          received_date?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          installment_group_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          project_id?: string | null
+          received_date?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

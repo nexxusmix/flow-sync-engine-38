@@ -16,7 +16,6 @@ import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
 import ClientPortalPage from "./pages/ClientPortalPage";
 import ProposalsPage from "./pages/ProposalsPage";
 import ContractsPage from "./pages/ContractsPage";
-import FinancePage from "./pages/FinancePage";
 import ContentPage from "./pages/ContentPage";
 import KnowledgePage from "./pages/KnowledgePage";
 import ReportsPage from "./pages/ReportsPage";
@@ -29,6 +28,14 @@ import TargetsPage from "./pages/prospecting/TargetsPage";
 import OpportunitiesPage from "./pages/prospecting/OpportunitiesPage";
 import ActivitiesPage from "./pages/prospecting/ActivitiesPage";
 import CadencesPage from "./pages/prospecting/CadencesPage";
+
+// Finance Pages
+import FinanceDashboard from "./pages/finance/FinanceDashboard";
+import RevenuesPage from "./pages/finance/RevenuesPage";
+import ExpensesPage from "./pages/finance/ExpensesPage";
+import CashflowPage from "./pages/finance/CashflowPage";
+import FinanceContractsPage from "./pages/finance/ContractsPage";
+import ProjectsFinancePage from "./pages/finance/ProjectsFinancePage";
 
 const queryClient = new QueryClient();
 
@@ -68,7 +75,13 @@ function AppRoutes() {
       <Route path="/prospeccao/cadencias" element={<ProtectedRoute><CadencesPage /></ProtectedRoute>} />
       <Route path="/propostas" element={<ProtectedRoute><ProposalsPage /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><ContractsPage /></ProtectedRoute>} />
-      <Route path="/financeiro" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
+      {/* Financeiro */}
+      <Route path="/financeiro" element={<ProtectedRoute><FinanceDashboard /></ProtectedRoute>} />
+      <Route path="/financeiro/caixa" element={<ProtectedRoute><CashflowPage /></ProtectedRoute>} />
+      <Route path="/financeiro/receitas" element={<ProtectedRoute><RevenuesPage /></ProtectedRoute>} />
+      <Route path="/financeiro/despesas" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
+      <Route path="/financeiro/contratos" element={<ProtectedRoute><FinanceContractsPage /></ProtectedRoute>} />
+      <Route path="/financeiro/projetos" element={<ProtectedRoute><ProjectsFinancePage /></ProtectedRoute>} />
       <Route path="/conteudo" element={<ProtectedRoute><ContentPage /></ProtectedRoute>} />
       <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
       <Route path="/relatorios" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
