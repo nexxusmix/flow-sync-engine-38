@@ -13,6 +13,7 @@ import {
   ProjectTemplate,
   ProjectStageType
 } from '@/types/projects';
+import { ProjectUpdate } from '@/types/projectUpdates';
 import { MOCK_PROJECTS, TEAM_MEMBERS, CLIENTS } from '@/data/projectsMockData';
 import { getTemplateById, PROJECT_STAGES } from '@/data/projectTemplates';
 
@@ -23,6 +24,7 @@ interface ProjectsState {
   viewMode: ViewMode;
   isNewProjectModalOpen: boolean;
   isEditProjectModalOpen: boolean;
+  projectUpdates: Record<string, ProjectUpdate[]>;
   
   // Actions
   setFilters: (filters: Partial<ProjectFilters>) => void;
@@ -63,6 +65,10 @@ interface ProjectsState {
   // Audit
   addAuditLog: (projectId: string, log: Partial<AuditLog>) => void;
   
+  // Updates
+  addProjectUpdate: (projectId: string, update: ProjectUpdate) => void;
+  getProjectUpdates: (projectId: string) => ProjectUpdate[];
+  
   // Getters
   getFilteredProjects: () => Project[];
   getProjectById: (id: string) => Project | undefined;
@@ -87,6 +93,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   viewMode: 'list',
   isNewProjectModalOpen: false,
   isEditProjectModalOpen: false,
+  projectUpdates: {},
 
   setFilters: (filters) => set((state) => ({ 
     filters: { ...state.filters, ...filters } 
@@ -522,6 +529,35 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
         : p
     ),
   })),
+
+  addProjectUpdate: (projectId, update) => set((state) => ({
+    projectUpdates: {
+      ...state.projectUpdates,
+      [projectId]: [...(state.projectUpdates[projectId] || []), update].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ),
+    },
+    projects: state.projects.map(p => 
+      p.id === projectId 
+        ? {
+            ...p,
+            auditLogs: [...p.auditLogs, {
+              id: `${projectId}-log-${Date.now()}`,
+              projectId,
+              timestamp: new Date().toISOString(),
+              actor: update.author,
+              actorType: update.authorType,
+              action: 'update_added',
+              entityType: 'project',
+              entityId: update.id,
+              description: `Atualização adicionada: ${update.summary?.substring(0, 50) || update.content.substring(0, 50)}...`,
+            }],
+          }
+        : p
+    ),
+  })),
+
+  getProjectUpdates: (projectId) => get().projectUpdates[projectId] || [],
 
   getFilteredProjects: () => {
     const { projects, filters } = get();
