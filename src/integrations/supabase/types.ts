@@ -62,6 +62,48 @@ export type Database = {
         }
         Relationships: []
       }
+      branding_settings: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          favicon_url: string | null
+          footer_text: string | null
+          id: string
+          logo_alt_url: string | null
+          logo_url: string | null
+          pdf_signature: string | null
+          primary_color: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          favicon_url?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_alt_url?: string | null
+          logo_url?: string | null
+          pdf_signature?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          favicon_url?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_alt_url?: string | null
+          logo_url?: string | null
+          pdf_signature?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       cadence_steps: {
         Row: {
           cadence_id: string
@@ -688,6 +730,42 @@ export type Database = {
           },
         ]
       }
+      contract_settings: {
+        Row: {
+          breach_text: string | null
+          created_at: string
+          default_renewal_notice_days: number | null
+          default_renewal_type: string | null
+          default_revisions: number | null
+          id: string
+          mandatory_clauses: Json | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          breach_text?: string | null
+          created_at?: string
+          default_renewal_notice_days?: number | null
+          default_renewal_type?: string | null
+          default_revisions?: number | null
+          id?: string
+          mandatory_clauses?: Json | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          breach_text?: string | null
+          created_at?: string
+          default_renewal_notice_days?: number | null
+          default_renewal_type?: string | null
+          default_revisions?: number | null
+          id?: string
+          mandatory_clauses?: Json | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       contract_signatures: {
         Row: {
           contract_id: string
@@ -1021,6 +1099,48 @@ export type Database = {
           },
         ]
       }
+      event_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          payload: Json | null
+          user_agent: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          user_agent?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          user_agent?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -1064,6 +1184,39 @@ export type Database = {
           project_id?: string | null
           status?: string
           supplier?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      finance_settings: {
+        Row: {
+          block_after_days: number | null
+          block_message: string | null
+          created_at: string
+          expense_categories: Json | null
+          id: string
+          payment_methods: Json | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          block_after_days?: number | null
+          block_message?: string | null
+          created_at?: string
+          expense_categories?: Json | null
+          id?: string
+          payment_methods?: Json | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          block_after_days?: number | null
+          block_message?: string | null
+          created_at?: string
+          expense_categories?: Json | null
+          id?: string
+          payment_methods?: Json | null
           updated_at?: string
           workspace_id?: string
         }
@@ -1299,6 +1452,42 @@ export type Database = {
           },
         ]
       }
+      integration_settings: {
+        Row: {
+          config: Json | null
+          connected_at: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          provider: string
+          status: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          config?: Json | null
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          provider: string
+          status?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          config?: Json | null
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          provider?: string
+          status?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       marketing_assets: {
         Row: {
           brand_kit_id: string | null
@@ -1352,6 +1541,81 @@ export type Database = {
           },
         ]
       }
+      marketing_settings: {
+        Row: {
+          active_channels: Json | null
+          active_formats: Json | null
+          active_pillars: Json | null
+          created_at: string
+          default_tone: string | null
+          id: string
+          recommended_frequency: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active_channels?: Json | null
+          active_formats?: Json | null
+          active_pillars?: Json | null
+          created_at?: string
+          default_tone?: string | null
+          id?: string
+          recommended_frequency?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          active_channels?: Json | null
+          active_formats?: Json | null
+          active_pillars?: Json | null
+          created_at?: string
+          default_tone?: string | null
+          id?: string
+          recommended_frequency?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      notification_settings: {
+        Row: {
+          blocks_enabled: boolean | null
+          contracts_enabled: boolean | null
+          created_at: string
+          delays_enabled: boolean | null
+          email_enabled: boolean | null
+          id: string
+          inapp_enabled: boolean | null
+          proposals_enabled: boolean | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          blocks_enabled?: boolean | null
+          contracts_enabled?: boolean | null
+          created_at?: string
+          delays_enabled?: boolean | null
+          email_enabled?: boolean | null
+          id?: string
+          inapp_enabled?: boolean | null
+          proposals_enabled?: boolean | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          blocks_enabled?: boolean | null
+          contracts_enabled?: boolean | null
+          created_at?: string
+          delays_enabled?: boolean | null
+          email_enabled?: boolean | null
+          id?: string
+          inapp_enabled?: boolean | null
+          proposals_enabled?: boolean | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       payment_milestones: {
         Row: {
           amount: number
@@ -1395,6 +1659,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_stage_settings: {
+        Row: {
+          blocks_delivery: boolean | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          sla_days: number | null
+          stage_key: string
+          stage_label: string
+          stage_order: number
+          workspace_id: string
+        }
+        Insert: {
+          blocks_delivery?: boolean | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          sla_days?: number | null
+          stage_key: string
+          stage_label: string
+          stage_order: number
+          workspace_id?: string
+        }
+        Update: {
+          blocks_delivery?: boolean | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          sla_days?: number | null
+          stage_key?: string
+          stage_label?: string
+          stage_order?: number
+          workspace_id?: string
+        }
+        Relationships: []
       }
       proposal_acceptance: {
         Row: {
@@ -1556,6 +1856,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      proposal_settings: {
+        Row: {
+          created_at: string
+          id: string
+          intro_text: string | null
+          prefix: string | null
+          required_sections: Json | null
+          terms_text: string | null
+          updated_at: string
+          validity_days: number | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intro_text?: string | null
+          prefix?: string | null
+          required_sections?: Json | null
+          terms_text?: string | null
+          updated_at?: string
+          validity_days?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intro_text?: string | null
+          prefix?: string | null
+          required_sections?: Json | null
+          terms_text?: string | null
+          updated_at?: string
+          validity_days?: number | null
+          workspace_id?: string
+        }
+        Relationships: []
       }
       proposal_timeline: {
         Row: {
@@ -1833,6 +2169,42 @@ export type Database = {
           },
         ]
       }
+      prospecting_settings: {
+        Row: {
+          allowed_channels: Json | null
+          blacklist_rules: Json | null
+          created_at: string
+          daily_activity_limit: number | null
+          id: string
+          min_followup_delay_hours: number | null
+          optout_text: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          allowed_channels?: Json | null
+          blacklist_rules?: Json | null
+          created_at?: string
+          daily_activity_limit?: number | null
+          id?: string
+          min_followup_delay_hours?: number | null
+          optout_text?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          allowed_channels?: Json | null
+          blacklist_rules?: Json | null
+          created_at?: string
+          daily_activity_limit?: number | null
+          id?: string
+          min_followup_delay_hours?: number | null
+          optout_text?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       prospects: {
         Row: {
           city: string | null
@@ -2089,6 +2461,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_flags: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+          workspace_id: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+          workspace_id?: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+          permissions: Json
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          permissions?: Json
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          permissions?: Json
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      workspace_settings: {
+        Row: {
+          company_document: string | null
+          company_name: string
+          created_at: string
+          default_currency: string
+          default_timezone: string
+          id: string
+          updated_at: string
+          working_days: Json
+          working_hours: Json
+          workspace_id: string
+        }
+        Insert: {
+          company_document?: string | null
+          company_name?: string
+          created_at?: string
+          default_currency?: string
+          default_timezone?: string
+          id?: string
+          updated_at?: string
+          working_days?: Json
+          working_hours?: Json
+          workspace_id?: string
+        }
+        Update: {
+          company_document?: string | null
+          company_name?: string
+          created_at?: string
+          default_currency?: string
+          default_timezone?: string
+          id?: string
+          updated_at?: string
+          working_days?: Json
+          working_hours?: Json
+          workspace_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

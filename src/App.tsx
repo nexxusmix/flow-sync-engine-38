@@ -34,8 +34,20 @@ import FinancialReport from "./pages/reports/FinancialReport";
 import MarketingReport from "./pages/reports/MarketingReport";
 import ProjectsReport from "./pages/reports/ProjectsReport";
 import ClientsReport from "./pages/reports/ClientsReport";
-import SettingsPage from "./pages/SettingsPage";
-import IntegrationsPage from "./pages/IntegrationsPage";
+// Settings Pages
+import SettingsDashboard from "./pages/settings/SettingsDashboard";
+import WorkspaceSettingsPage from "./pages/settings/WorkspaceSettingsPage";
+import RolesSettingsPage from "./pages/settings/RolesSettingsPage";
+import ProjectStagesSettingsPage from "./pages/settings/ProjectStagesSettingsPage";
+import FinanceSettingsPage from "./pages/settings/FinanceSettingsPage";
+import ProposalSettingsPage from "./pages/settings/ProposalSettingsPage";
+import ContractSettingsPage from "./pages/settings/ContractSettingsPage";
+import MarketingSettingsPage from "./pages/settings/MarketingSettingsPage";
+import ProspectingSettingsPage from "./pages/settings/ProspectingSettingsPage";
+import IntegrationsSettingsPage from "./pages/settings/IntegrationsSettingsPage";
+import NotificationSettingsPage from "./pages/settings/NotificationSettingsPage";
+import BrandingSettingsPage from "./pages/settings/BrandingSettingsPage";
+import AuditSettingsPage from "./pages/settings/AuditSettingsPage";
 
 // Prospecção Pages
 import ProspectingPage from "./pages/prospecting/ProspectingPage";
@@ -136,8 +148,20 @@ function AppRoutes() {
       <Route path="/relatorios/marketing" element={<ProtectedRoute><MarketingReport /></ProtectedRoute>} />
       <Route path="/relatorios/projetos" element={<ProtectedRoute><ProjectsReport /></ProtectedRoute>} />
       <Route path="/relatorios/clientes" element={<ProtectedRoute><ClientsReport /></ProtectedRoute>} />
-      <Route path="/configuracoes" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-      <Route path="/integracoes" element={<ProtectedRoute><IntegrationsPage /></ProtectedRoute>} />
+      {/* Configurações */}
+      <Route path="/configuracoes" element={<ProtectedRoute><SettingsDashboard /></ProtectedRoute>} />
+      <Route path="/configuracoes/workspace" element={<ProtectedRoute><WorkspaceSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/papeis" element={<ProtectedRoute><RolesSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/projetos" element={<ProtectedRoute><ProjectStagesSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/financeiro" element={<ProtectedRoute><FinanceSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/propostas" element={<ProtectedRoute><ProposalSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/contratos" element={<ProtectedRoute><ContractSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/marketing" element={<ProtectedRoute><MarketingSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/prospeccao" element={<ProtectedRoute><ProspectingSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/integracoes" element={<ProtectedRoute><IntegrationsSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/branding" element={<ProtectedRoute><BrandingSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/auditoria" element={<ProtectedRoute><AuditSettingsPage /></ProtectedRoute>} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
