@@ -23,11 +23,26 @@ import { Button } from "@/components/ui/button";
 import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink } from "lucide-react";
 
 interface ProjectActionsMenuProps {
-  project: ProjectWithStages;
+  project?: ProjectWithStages;
+  projectId?: string;
+  projectName?: string;
+  projectStatus?: string;
   variant?: 'icon' | 'dots';
+  showOpenOption?: boolean;
 }
 
-export function ProjectActionsMenu({ project, variant = 'dots' }: ProjectActionsMenuProps) {
+export function ProjectActionsMenu({ 
+  project, 
+  projectId: propProjectId,
+  projectName: propProjectName,
+  projectStatus: propProjectStatus,
+  variant = 'dots',
+  showOpenOption = true,
+}: ProjectActionsMenuProps) {
+  // Support both full project object and individual props
+  const projectId = project?.id ?? propProjectId ?? '';
+  const projectName = project?.name ?? propProjectName ?? '';
+  const projectStatus = project?.status ?? propProjectStatus ?? 'active';
   const navigate = useNavigate();
   const { completeProject, archiveProject, deleteProject } = useProjects();
   const { setEditProjectModalOpen, setSelectedProjectId } = useProjectsStore();
@@ -38,13 +53,13 @@ export function ProjectActionsMenu({ project, variant = 'dots' }: ProjectActions
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedProjectId(project.id);
+    setSelectedProjectId(projectId);
     setEditProjectModalOpen(true);
   };
 
   const handleOpenProject = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/projetos/${project.id}`);
+    navigate(`/projetos/${projectId}`);
   };
 
   const handleComplete = (e: React.MouseEvent) => {
@@ -63,22 +78,22 @@ export function ProjectActionsMenu({ project, variant = 'dots' }: ProjectActions
   };
 
   const confirmComplete = () => {
-    completeProject(project.id);
+    completeProject(projectId);
     setShowCompleteDialog(false);
   };
 
   const confirmArchive = () => {
-    archiveProject(project.id);
+    archiveProject(projectId);
     setShowArchiveDialog(false);
   };
 
   const confirmDelete = () => {
-    deleteProject(project.id);
+    deleteProject(projectId);
     setShowDeleteDialog(false);
   };
 
-  const isCompleted = project.status === 'completed';
-  const isArchived = project.status === 'archived';
+  const isCompleted = projectStatus === 'completed';
+  const isArchived = projectStatus === 'archived';
 
   return (
     <>
@@ -93,10 +108,12 @@ export function ProjectActionsMenu({ project, variant = 'dots' }: ProjectActions
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={handleOpenProject}>
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Abrir projeto
-          </DropdownMenuItem>
+          {showOpenOption && (
+            <DropdownMenuItem onClick={handleOpenProject}>
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Abrir projeto
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={handleEdit}>
             <Pencil className="w-4 h-4 mr-2" />
             Editar
@@ -128,7 +145,7 @@ export function ProjectActionsMenu({ project, variant = 'dots' }: ProjectActions
           <AlertDialogHeader>
             <AlertDialogTitle>Finalizar projeto?</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto <strong>{project.name}</strong> será marcado como concluído. 
+              O projeto <strong>{projectName}</strong> será marcado como concluído.
               Esta ação pode ser revertida editando o projeto.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -147,7 +164,7 @@ export function ProjectActionsMenu({ project, variant = 'dots' }: ProjectActions
           <AlertDialogHeader>
             <AlertDialogTitle>Arquivar projeto?</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto <strong>{project.name}</strong> será arquivado e não aparecerá 
+              O projeto <strong>{projectName}</strong> será arquivado e não aparecerá 
               na lista principal. Você poderá restaurá-lo posteriormente.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -166,7 +183,7 @@ export function ProjectActionsMenu({ project, variant = 'dots' }: ProjectActions
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir projeto?</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto <strong>{project.name}</strong> será permanentemente excluído. 
+              O projeto <strong>{projectName}</strong> será permanentemente excluído. 
               Esta ação não pode ser desfeita e todos os dados associados serão perdidos.
             </AlertDialogDescription>
           </AlertDialogHeader>

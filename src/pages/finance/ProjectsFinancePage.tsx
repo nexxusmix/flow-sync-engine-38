@@ -3,19 +3,17 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useFinancialStore } from "@/stores/financialStore";
 import { useRealtimeTable } from "@/hooks/useRealtimeSync";
 import { FINANCIAL_STATUS_CONFIG } from "@/types/financial";
-import { useNavigate } from "react-router-dom";
+import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { 
   Search, AlertTriangle, CheckCircle, AlertCircle,
-  TrendingUp, TrendingDown, ChevronRight
+  TrendingUp, TrendingDown
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 export default function ProjectsFinancePage() {
-  const navigate = useNavigate();
   const { 
     fetchRevenues, 
     fetchExpenses,
@@ -139,7 +137,11 @@ export default function ProjectsFinancePage() {
                       <Badge className={`${statusConfig.color} text-white`}>
                         {statusConfig.label}
                       </Badge>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      <ProjectActionsMenu
+                        projectId={project.project_id}
+                        projectName={project.project_name}
+                        projectStatus={project.has_overdue ? 'blocked' : 'active'}
+                      />
                     </div>
                   </div>
 

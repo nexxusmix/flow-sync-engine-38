@@ -1,4 +1,4 @@
-import { ProjectWithStages } from "@/hooks/useProjects";
+import { ProjectWithStages, useProjects } from "@/hooks/useProjects";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { 
   Calendar, 
@@ -8,19 +8,11 @@ import {
   Ban,
   AlertTriangle,
   Activity,
-  Edit,
   Copy,
-  Globe,
-  MoreVertical
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -100,46 +92,18 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
           {/* Right - Quick Actions */}
           <div className="flex items-center gap-2">
-            {/* Desktop actions */}
-            <div className="hidden sm:flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleEdit} className="h-9">
-                <Edit className="w-4 h-4 mr-2" />
-                Editar
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleCopyPortalLink} className="h-9">
-                <Copy className="w-4 h-4 mr-2" />
-                Copiar Link
-              </Button>
-              <Button size="sm" onClick={handleOpenPortal} className="h-9">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Portal do Cliente
-              </Button>
-            </div>
-
-            {/* Mobile dropdown */}
-            <div className="sm:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar Projeto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleCopyPortalLink}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar Link Portal
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleOpenPortal}>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Abrir Portal
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <Button variant="outline" size="sm" onClick={handleCopyPortalLink} className="h-9 hidden sm:flex">
+              <Copy className="w-4 h-4 mr-2" />
+              Copiar Link
+            </Button>
+            <Button size="sm" onClick={handleOpenPortal} className="h-9 hidden sm:flex">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Portal do Cliente
+            </Button>
+            <ProjectActionsMenu
+              project={project}
+              showOpenOption={false}
+            />
           </div>
         </div>
 
