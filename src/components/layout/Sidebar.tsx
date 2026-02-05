@@ -1,20 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  Inbox,
-  FolderKanban,
-  FileText,
-  FileSignature,
-  Wallet,
-  Film,
-  BookOpen,
-  BarChart3,
-  Settings,
-  Plug,
-  Sparkles,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
+import squadHubLogo from "@/assets/squad-hub-logo.png";
 
 const mainMenuItems = [
   { name: "Overview", href: "/", icon: "dashboard" },
@@ -40,9 +26,12 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-20 md:w-64 bg-[#050505] border-r border-white/5 flex flex-col transition-all duration-500">
       {/* Logo */}
-      <div className="flex h-20 items-center gap-3 px-6 border-b border-white/5">
-        <span className="material-symbols-outlined text-primary text-3xl">stars</span>
-        <span className="hidden md:block squad-logo-text text-xl text-foreground">SQUAD Hub</span>
+      <div className="flex h-20 items-center justify-center md:justify-start px-4 md:px-6 border-b border-white/5">
+        <img 
+          src={squadHubLogo} 
+          alt="SQUAD Hub" 
+          className="h-8 md:h-10 w-auto object-contain"
+        />
       </div>
 
       {/* Main Navigation */}
