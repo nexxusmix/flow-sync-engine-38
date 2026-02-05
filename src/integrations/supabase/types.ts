@@ -1477,6 +1477,94 @@ export type Database = {
           },
         ]
       }
+      inbox_messages: {
+        Row: {
+          direction: Database["public"]["Enums"]["inbox_direction"]
+          id: string
+          media_url: string | null
+          meta: Json | null
+          sent_at: string
+          text: string
+          thread_id: string
+        }
+        Insert: {
+          direction: Database["public"]["Enums"]["inbox_direction"]
+          id?: string
+          media_url?: string | null
+          meta?: Json | null
+          sent_at?: string
+          text: string
+          thread_id: string
+        }
+        Update: {
+          direction?: Database["public"]["Enums"]["inbox_direction"]
+          id?: string
+          media_url?: string | null
+          meta?: Json | null
+          sent_at?: string
+          text?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "inbox_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inbox_threads: {
+        Row: {
+          assigned_to: string | null
+          channel: Database["public"]["Enums"]["inbox_channel"]
+          contact_avatar_url: string | null
+          contact_handle: string | null
+          contact_name: string
+          created_at: string
+          external_thread_id: string | null
+          id: string
+          last_message_at: string | null
+          status: Database["public"]["Enums"]["inbox_status"]
+          workspace_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          channel: Database["public"]["Enums"]["inbox_channel"]
+          contact_avatar_url?: string | null
+          contact_handle?: string | null
+          contact_name: string
+          created_at?: string
+          external_thread_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          status?: Database["public"]["Enums"]["inbox_status"]
+          workspace_id?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          channel?: Database["public"]["Enums"]["inbox_channel"]
+          contact_avatar_url?: string | null
+          contact_handle?: string | null
+          contact_name?: string
+          created_at?: string
+          external_thread_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          status?: Database["public"]["Enums"]["inbox_status"]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_threads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instagram_connections: {
         Row: {
           access_token: string | null
@@ -1652,6 +1740,85 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      knowledge_articles: {
+        Row: {
+          category: string | null
+          content_md: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          category?: string | null
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          category?: string | null
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_articles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_files: {
+        Row: {
+          article_id: string
+          created_at: string
+          file_name: string | null
+          file_url: string
+          id: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          file_name?: string | null
+          file_url: string
+          id?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          file_name?: string | null
+          file_url?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_files_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketing_assets: {
         Row: {
@@ -1919,6 +2086,198 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      portal_approvals: {
+        Row: {
+          approved_at: string
+          approved_by_email: string | null
+          approved_by_name: string
+          deliverable_id: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          approved_at?: string
+          approved_by_email?: string | null
+          approved_by_name: string
+          deliverable_id: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          approved_at?: string
+          approved_by_email?: string | null
+          approved_by_name?: string
+          deliverable_id?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_approvals_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "portal_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_comments: {
+        Row: {
+          author_email: string | null
+          author_name: string
+          content: string
+          created_at: string
+          deliverable_id: string
+          id: string
+          status: string | null
+          timecode: string | null
+        }
+        Insert: {
+          author_email?: string | null
+          author_name: string
+          content: string
+          created_at?: string
+          deliverable_id: string
+          id?: string
+          status?: string | null
+          timecode?: string | null
+        }
+        Update: {
+          author_email?: string | null
+          author_name?: string
+          content?: string
+          created_at?: string
+          deliverable_id?: string
+          id?: string
+          status?: string | null
+          timecode?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_comments_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "portal_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_deliverables: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_url: string | null
+          id: string
+          portal_link_id: string
+          sort_order: number | null
+          status: Database["public"]["Enums"]["deliverable_status"]
+          thumbnail_url: string | null
+          title: string
+          type: string | null
+          updated_at: string
+          visible_in_portal: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          portal_link_id: string
+          sort_order?: number | null
+          status?: Database["public"]["Enums"]["deliverable_status"]
+          thumbnail_url?: string | null
+          title: string
+          type?: string | null
+          updated_at?: string
+          visible_in_portal?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          portal_link_id?: string
+          sort_order?: number | null
+          status?: Database["public"]["Enums"]["deliverable_status"]
+          thumbnail_url?: string | null
+          title?: string
+          type?: string | null
+          updated_at?: string
+          visible_in_portal?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_deliverables_portal_link_id_fkey"
+            columns: ["portal_link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_links: {
+        Row: {
+          blocked_by_payment: boolean | null
+          client_name: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          project_id: string
+          project_name: string | null
+          share_token: string
+        }
+        Insert: {
+          blocked_by_payment?: boolean | null
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          project_id: string
+          project_name?: string | null
+          share_token: string
+        }
+        Update: {
+          blocked_by_payment?: boolean | null
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          project_id?: string
+          project_name?: string | null
+          share_token?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       project_stage_settings: {
         Row: {
@@ -2788,6 +3147,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_role_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2862,10 +3242,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_app_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "comercial" | "operacao" | "financeiro"
+      deliverable_status:
+        | "pending"
+        | "in_review"
+        | "approved"
+        | "rejected"
+        | "delivered"
+      inbox_channel: "instagram" | "whatsapp" | "email"
+      inbox_direction: "in" | "out"
+      inbox_status: "open" | "pending" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2992,6 +3387,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "comercial", "operacao", "financeiro"],
+      deliverable_status: [
+        "pending",
+        "in_review",
+        "approved",
+        "rejected",
+        "delivered",
+      ],
+      inbox_channel: ["instagram", "whatsapp", "email"],
+      inbox_direction: ["in", "out"],
+      inbox_status: ["open", "pending", "closed"],
+    },
   },
 } as const

@@ -97,7 +97,7 @@ function AppRoutes() {
       <Route path="/landing" element={<LandingPage />} />
       <Route 
         path="/login" 
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage onLogin={login} />} 
+        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
       />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
