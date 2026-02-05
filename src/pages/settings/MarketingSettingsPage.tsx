@@ -32,20 +32,34 @@ export default function MarketingSettingsPage() {
         .from('marketing_settings')
         .select('*')
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code === 'PGRST116') {
-        const { data: newData } = await supabase
+      if (error) {
+        console.error("Error loading settings:", error);
+        toast.error("Erro ao carregar configurações");
+        setLoading(false);
+        return;
+      }
+
+      if (!data) {
+        const { data: newData, error: insertError } = await supabase
           .from('marketing_settings')
           .insert([{}])
           .select()
           .single();
-        setSettings(newData as unknown as MarketingSettings);
-      } else if (data) {
+        
+        if (insertError) {
+          console.error("Error creating settings:", insertError);
+          toast.error("Erro ao criar configurações");
+        } else {
+          setSettings(newData as unknown as MarketingSettings);
+        }
+      } else {
         setSettings(data as unknown as MarketingSettings);
       }
     } catch (error) {
       console.error("Error loading settings:", error);
+      toast.error("Erro inesperado");
     } finally {
       setLoading(false);
     }
