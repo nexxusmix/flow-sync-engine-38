@@ -2,13 +2,13 @@ import { Sparkles, Play, Check } from "lucide-react";
 
 export function AIChatSnippet() {
   return (
-    <div className="glass-card rounded-[2rem] p-6 space-y-5">
+    <div className="glass-card rounded-[2rem] p-6 space-y-5 min-h-[280px]">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="icon-box bg-primary/20">
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
-        <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">SQUAD Agent Scout</span>
+        <span className="text-[10px] font-normal text-primary uppercase tracking-[0.3em]">SQUAD Agent Scout</span>
       </div>
 
       {/* Chat Messages */}
@@ -18,14 +18,14 @@ export function AIChatSnippet() {
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-4 h-4 text-primary" />
           </div>
-          <div className="glass-card rounded-2xl rounded-tl-sm p-4 text-sm text-muted-foreground leading-relaxed">
-            Analisei 42 empresas de arquitetura hoje. A <span className="text-foreground font-semibold">Haus Arquitetura</span> acabou de postar um projeto novo sem vídeo. O CEO é o Ricardo.
+          <div className="glass-card rounded-2xl rounded-tl-sm p-4 text-sm text-muted-foreground leading-relaxed font-light">
+            Analisei 42 empresas de arquitetura hoje. A <span className="text-foreground font-normal">Haus Arquitetura</span> acabou de postar um projeto novo sem vídeo. O CEO é o Ricardo.
           </div>
         </div>
 
         {/* User Message */}
         <div className="flex gap-3 justify-end">
-          <div className="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-sm p-4 text-sm text-foreground">
+          <div className="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-sm p-4 text-sm text-foreground font-light">
             Gere uma abordagem de áudio para o Ricardo.
           </div>
         </div>
@@ -55,7 +55,7 @@ export function AIChatSnippet() {
               </div>
               <span className="text-xs text-muted-foreground font-mono">0:24</span>
             </div>
-            <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-2">
+            <p className="text-[10px] text-muted-foreground font-light flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">record_voice_over</span>
               ElevenLabs: Voz Consultor Senior
             </p>
