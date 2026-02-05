@@ -112,7 +112,6 @@
   }
 
   html {
-    @apply dark;
     scroll-behavior: smooth;
     perspective: 1500px;
   }
