@@ -100,6 +100,280 @@ export type Database = {
         }
         Relationships: []
       }
+      campaigns: {
+        Row: {
+          audience: string | null
+          budget: number | null
+          created_at: string
+          end_date: string | null
+          id: string
+          kpis: Json | null
+          name: string
+          objective: string | null
+          offer: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          audience?: string | null
+          budget?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          kpis?: Json | null
+          name: string
+          objective?: string | null
+          offer?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          audience?: string | null
+          budget?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          kpis?: Json | null
+          name?: string
+          objective?: string | null
+          offer?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      content_checklist: {
+        Row: {
+          content_item_id: string
+          created_at: string
+          id: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          content_item_id: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_checklist_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_comments: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          content_item_id: string
+          created_at: string
+          id: string
+          text: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          content_item_id: string
+          created_at?: string
+          id?: string
+          text: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_comments_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_ideas: {
+        Row: {
+          channel: string | null
+          created_at: string
+          created_by: string | null
+          format: string | null
+          hook: string | null
+          id: string
+          notes: string | null
+          pillar: string | null
+          reference_links: Json | null
+          score: number | null
+          status: string | null
+          target: string | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          created_by?: string | null
+          format?: string | null
+          hook?: string | null
+          id?: string
+          notes?: string | null
+          pillar?: string | null
+          reference_links?: Json | null
+          score?: number | null
+          status?: string | null
+          target?: string | null
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          created_by?: string | null
+          format?: string | null
+          hook?: string | null
+          id?: string
+          notes?: string | null
+          pillar?: string | null
+          reference_links?: Json | null
+          score?: number | null
+          status?: string | null
+          target?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      content_items: {
+        Row: {
+          assets: Json | null
+          campaign_id: string | null
+          caption_long: string | null
+          caption_short: string | null
+          channel: string | null
+          created_at: string
+          cta: string | null
+          due_at: string | null
+          format: string | null
+          hashtags: string | null
+          hook: string | null
+          id: string
+          idea_id: string | null
+          notes: string | null
+          owner_id: string | null
+          owner_initials: string | null
+          owner_name: string | null
+          pillar: string | null
+          post_url: string | null
+          project_id: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          script: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          assets?: Json | null
+          campaign_id?: string | null
+          caption_long?: string | null
+          caption_short?: string | null
+          channel?: string | null
+          created_at?: string
+          cta?: string | null
+          due_at?: string | null
+          format?: string | null
+          hashtags?: string | null
+          hook?: string | null
+          id?: string
+          idea_id?: string | null
+          notes?: string | null
+          owner_id?: string | null
+          owner_initials?: string | null
+          owner_name?: string | null
+          pillar?: string | null
+          post_url?: string | null
+          project_id?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          script?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          assets?: Json | null
+          campaign_id?: string | null
+          caption_long?: string | null
+          caption_short?: string | null
+          channel?: string | null
+          created_at?: string
+          cta?: string | null
+          due_at?: string | null
+          format?: string | null
+          hashtags?: string | null
+          hook?: string | null
+          id?: string
+          idea_id?: string | null
+          notes?: string | null
+          owner_id?: string | null
+          owner_initials?: string | null
+          owner_name?: string | null
+          pillar?: string | null
+          post_url?: string | null
+          project_id?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          script?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "content_ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       do_not_contact: {
         Row: {
           blocked_by: string | null
@@ -131,6 +405,75 @@ export type Database = {
             columns: ["prospect_id"]
             isOneToOne: true
             referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_references: {
+        Row: {
+          caption: string | null
+          content_idea_id: string | null
+          content_item_id: string | null
+          created_at: string
+          id: string
+          media_id: string | null
+          media_type: string | null
+          media_url: string | null
+          note: string | null
+          permalink: string | null
+          project_id: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          timestamp: string | null
+          workspace_id: string
+        }
+        Insert: {
+          caption?: string | null
+          content_idea_id?: string | null
+          content_item_id?: string | null
+          created_at?: string
+          id?: string
+          media_id?: string | null
+          media_type?: string | null
+          media_url?: string | null
+          note?: string | null
+          permalink?: string | null
+          project_id?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          timestamp?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          caption?: string | null
+          content_idea_id?: string | null
+          content_item_id?: string | null
+          created_at?: string
+          id?: string
+          media_id?: string | null
+          media_type?: string | null
+          media_url?: string | null
+          note?: string | null
+          permalink?: string | null
+          project_id?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          timestamp?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_references_content_idea_id_fkey"
+            columns: ["content_idea_id"]
+            isOneToOne: false
+            referencedRelation: "content_ideas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_references_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
         ]
