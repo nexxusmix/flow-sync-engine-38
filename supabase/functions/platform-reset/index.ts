@@ -37,6 +37,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Verificar se usuário tem role admin
+    const { data: roleData, error: roleError } = await supabaseAdmin
+      .from('user_role_assignments')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    if (roleError || !roleData) {
+      console.log(`[platform-reset] Acesso negado para: ${user.email} - não é admin`);
+      return new Response(JSON.stringify({ error: "Apenas administradores podem executar esta ação" }), { 
+        status: 403, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
+    }
+
     const { confirmation } = await req.json();
     if (confirmation !== "ZERAR") {
       return new Response(JSON.stringify({ error: "Confirmação inválida" }), { 
@@ -45,17 +61,69 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[platform-reset] Iniciando reset por: ${user.email}`);
+    console.log(`[platform-reset] Iniciando reset por ADMIN: ${user.email}`);
 
+    // Lista completa de tabelas operacionais para limpeza
+    // Ordem importante: tabelas filhas antes das tabelas pai
     const tables = [
-      "content_checklist", "content_comments", "content_scripts", "instagram_references",
-      "content_items", "content_ideas", "campaign_creatives", "campaigns",
-      "instagram_snapshots", "creative_outputs", "creative_briefs", "generated_images",
-      "marketing_assets", "cadence_steps", "cadences", "do_not_contact", "prospects",
-      "revenues", "expenses", "cashflow_snapshots", "contract_signatures",
-      "contract_addendums", "contract_alerts", "contract_links", "contract_versions",
-      "contracts", "proposals", "meeting_notes", "calendar_events", "deadlines",
-      "storyboard_scenes", "storyboards"
+      // Projetos (filhas primeiro)
+      "project_stages",
+      "projects",
+      
+      // Prospecção (filhas primeiro)
+      "prospect_activities",
+      "prospect_opportunities",
+      "prospect_lists",
+      
+      // Marketing (filhas primeiro)
+      "content_checklist",
+      "content_comments", 
+      "content_scripts",
+      "instagram_references",
+      "content_items",
+      "content_ideas",
+      "campaign_creatives",
+      "campaigns",
+      "instagram_snapshots",
+      "creative_outputs",
+      "creative_briefs",
+      "generated_images",
+      "marketing_assets",
+      
+      // Prospecção (base)
+      "cadence_steps",
+      "cadences",
+      "do_not_contact",
+      "prospects",
+      
+      // Financeiro
+      "revenues",
+      "expenses",
+      "cashflow_snapshots",
+      
+      // Contratos (filhas primeiro)
+      "contract_signatures",
+      "contract_addendums",
+      "contract_alerts",
+      "contract_links",
+      "contract_versions",
+      "contracts",
+      
+      // Propostas
+      "proposals",
+      
+      // Calendário e Deadlines
+      "meeting_notes",
+      "calendar_events",
+      "deadlines",
+      
+      // Storyboards
+      "storyboard_scenes",
+      "storyboards",
+      
+      // Inbox
+      "inbox_messages",
+      "inbox_threads",
     ];
 
     const results: Record<string, string> = {};
@@ -77,7 +145,7 @@ Deno.serve(async (req) => {
       payload: { tables_cleared: results },
     });
 
-    console.log(`[platform-reset] Concluído`);
+    console.log(`[platform-reset] Concluído com sucesso`);
 
     return new Response(JSON.stringify({ success: true, message: "Plataforma zerada", results }), { 
       status: 200, 

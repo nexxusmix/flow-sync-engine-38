@@ -8,9 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, LayoutList, LayoutGrid, Filter, X, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Plus, Search, LayoutList, LayoutGrid, X, SlidersHorizontal, Sparkles } from "lucide-react";
 import { PROJECT_TEMPLATES } from "@/data/projectTemplates";
-import { CLIENTS, TEAM_MEMBERS } from "@/data/projectsMockData";
 import { useState } from "react";
 import {
   DropdownMenu,
@@ -32,7 +31,6 @@ export function ProjectsHeader() {
   const [showFilters, setShowFilters] = useState(false);
 
   const hasActiveFilters = filters.status !== 'all' || filters.template !== 'all' || 
-    filters.client !== 'all' || filters.owner !== 'all' || 
     filters.deadline !== 'all' || filters.search;
 
   return (
@@ -151,38 +149,6 @@ export function ProjectsHeader() {
                 <SelectItem value="all">Todos Templates</SelectItem>
                 {PROJECT_TEMPLATES.map(t => (
                   <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Client */}
-            <Select
-              value={filters.client}
-              onValueChange={(value) => setFilters({ client: value })}
-            >
-              <SelectTrigger className="w-[150px] h-10 bg-muted/30 border-border/50 rounded-xl">
-                <SelectValue placeholder="Cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Clientes</SelectItem>
-                {CLIENTS.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.company}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Owner */}
-            <Select
-              value={filters.owner}
-              onValueChange={(value) => setFilters({ owner: value })}
-            >
-              <SelectTrigger className="w-[150px] h-10 bg-muted/30 border-border/50 rounded-xl">
-                <SelectValue placeholder="Responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {TEAM_MEMBERS.map(m => (
-                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

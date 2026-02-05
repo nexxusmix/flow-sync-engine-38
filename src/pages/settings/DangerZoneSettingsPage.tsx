@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, Trash2, ArrowLeft, Loader2 } from "lucide-react";
+import { AlertTriangle, Trash2, ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +21,18 @@ import {
 
 export default function DangerZoneSettingsPage() {
   const navigate = useNavigate();
+  const { isAdmin, isLoading: roleLoading } = useUserRole();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+
+  // Redirecionar se não for admin
+  useEffect(() => {
+    if (!roleLoading && !isAdmin) {
+      toast.error("Acesso restrito a administradores");
+      navigate("/configuracoes");
+    }
+  }, [roleLoading, isAdmin, navigate]);
 
   const handleReset = async () => {
     if (confirmText !== "ZERAR") {
@@ -49,6 +59,29 @@ export default function DangerZoneSettingsPage() {
       setIsResetting(false);
     }
   };
+
+  // Loading state
+  if (roleLoading) {
+    return (
+      <DashboardLayout title="Danger Zone">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Não autorizado (já vai redirecionar, mas mostra mensagem)
+  if (!isAdmin) {
+    return (
+      <DashboardLayout title="Danger Zone">
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <ShieldAlert className="w-16 h-16 text-destructive" />
+          <p className="text-muted-foreground">Acesso restrito a administradores</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Danger Zone">
@@ -98,14 +131,16 @@ export default function DangerZoneSettingsPage() {
                 Remove <strong>todos os dados operacionais</strong> da plataforma:
               </p>
               <ul className="text-sm text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                <li>Projetos, propostas e contratos</li>
+                <li>Projetos e etapas</li>
+                <li>Propostas e contratos</li>
                 <li>Receitas, despesas e transações financeiras</li>
                 <li>Ideias, conteúdos e campanhas de marketing</li>
-                <li>Prospects, cadências e atividades</li>
+                <li>Prospects, cadências e atividades de prospecção</li>
                 <li>Eventos de calendário e deadlines</li>
+                <li>Mensagens e threads do inbox</li>
               </ul>
               <p className="text-sm text-muted-foreground mt-3">
-                <strong>Mantém:</strong> Usuários, configurações e estrutura do workspace.
+                <strong>Mantém:</strong> Usuários, permissões, configurações e estrutura do workspace.
               </p>
             </div>
             <Button
