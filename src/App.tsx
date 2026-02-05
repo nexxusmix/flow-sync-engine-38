@@ -23,6 +23,13 @@ import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 
+// Prospecção Pages
+import ProspectingPage from "./pages/prospecting/ProspectingPage";
+import TargetsPage from "./pages/prospecting/TargetsPage";
+import OpportunitiesPage from "./pages/prospecting/OpportunitiesPage";
+import ActivitiesPage from "./pages/prospecting/ActivitiesPage";
+import CadencesPage from "./pages/prospecting/CadencesPage";
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -53,6 +60,12 @@ function AppRoutes() {
       <Route path="/projetos/list" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
       <Route path="/projetos/:projectId" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
       <Route path="/projetos/:projectId/portal" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
+      {/* Prospecção */}
+      <Route path="/prospeccao" element={<ProtectedRoute><ProspectingPage /></ProtectedRoute>} />
+      <Route path="/prospeccao/targets" element={<ProtectedRoute><TargetsPage /></ProtectedRoute>} />
+      <Route path="/prospeccao/oportunidades" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
+      <Route path="/prospeccao/atividades" element={<ProtectedRoute><ActivitiesPage /></ProtectedRoute>} />
+      <Route path="/prospeccao/cadencias" element={<ProtectedRoute><CadencesPage /></ProtectedRoute>} />
       <Route path="/propostas" element={<ProtectedRoute><ProposalsPage /></ProtectedRoute>} />
       <Route path="/contratos" element={<ProtectedRoute><ContractsPage /></ProtectedRoute>} />
       <Route path="/financeiro" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
