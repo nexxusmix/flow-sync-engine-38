@@ -176,7 +176,10 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
 
         {/* Logout Button */}
         <motion.button
-          onClick={logout}
+          onClick={async () => {
+            await logout();
+            window.location.href = '/';
+          }}
           className="w-10 h-10 rounded-2xl border border-border bg-muted/50 flex items-center justify-center"
           title="Sair"
           whileHover={{ 

@@ -116,7 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Legacy compatibility methods
   const login = () => {};
-  const logout = () => signOut();
+  const logout = async () => {
+    await signOut();
+  };
 
   return (
     <AuthContext.Provider
