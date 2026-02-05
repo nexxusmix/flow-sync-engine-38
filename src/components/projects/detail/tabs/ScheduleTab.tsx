@@ -14,7 +14,9 @@ export function ScheduleTab({ project }: ScheduleTabProps) {
       id: stage.id,
       projectId: project.id,
       name: stage.name,
-      status: stage.status === 'concluido' ? 'done' : stage.status === 'em_andamento' ? 'in_progress' : 'not_started',
+      status: (stage.status === 'concluido' ? 'done' : 
+               stage.status === 'em_andamento' ? 'in_progress' : 
+               'not_started') as 'done' | 'in_progress' | 'not_started' | 'blocked',
       plannedStart: stage.plannedDate || new Date().toISOString(),
       plannedEnd: stage.plannedDate || new Date().toISOString(),
       progress: stage.status === 'concluido' ? 100 : stage.status === 'em_andamento' ? 50 : 0,
