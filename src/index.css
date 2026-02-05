@@ -274,6 +274,23 @@
 }
 
 @layer utilities {
+  /* Minimum heights for consistent spacing */
+  .min-h-card {
+    min-height: 120px;
+  }
+
+  .min-h-card-lg {
+    min-height: 180px;
+  }
+
+  .min-h-section {
+    min-height: 200px;
+  }
+
+  .min-h-table {
+    min-height: 150px;
+  }
+
   /* Custom scrollbar for kanban */
   .custom-scrollbar::-webkit-scrollbar {
     width: 5px;

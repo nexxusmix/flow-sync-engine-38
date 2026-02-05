@@ -14,13 +14,13 @@ export function KPICards() {
     <section>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="glass-card p-8 rounded-[2rem] hover:border-primary/20 transition-all duration-700 group cursor-default">
+          <div key={kpi.label} className="glass-card p-8 rounded-[2rem] hover:border-primary/20 transition-all duration-700 group cursor-default min-h-[160px]">
             <div className="flex justify-between items-start mb-8">
               <span className="material-symbols-outlined text-primary text-3xl">{kpi.icon}</span>
-              <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">{kpi.detail}</span>
+              <span className="text-[9px] text-muted-foreground font-light uppercase tracking-widest">{kpi.detail}</span>
             </div>
-            <h4 className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.4em] mb-2">{kpi.label}</h4>
-            <span className="text-4xl font-bold text-foreground tracking-tighter">{kpi.value}</span>
+            <h4 className="text-[10px] text-muted-foreground font-light uppercase tracking-[0.4em] mb-2">{kpi.label}</h4>
+            <span className="text-4xl font-normal text-foreground tracking-tighter">{kpi.value}</span>
           </div>
         ))}
       </div>

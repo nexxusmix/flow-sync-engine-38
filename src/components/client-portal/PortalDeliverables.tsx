@@ -103,62 +103,76 @@ export function PortalDeliverables({ project, deliverables }: PortalDeliverables
 
   const toReview = deliverables.filter(d => d.status === 'revisao');
   const approved = deliverables.filter(d => d.status === 'aprovado' || d.status === 'entregue');
+  const hasAnyDeliverables = deliverables.length > 0;
 
   return (
-    <section className="space-y-6">
-      <h2 className="text-lg font-semibold text-foreground">Entregas</h2>
+    <section className="space-y-6 min-h-[300px]">
+      <h2 className="text-lg font-normal text-foreground">Entregas</h2>
 
-      <Tabs defaultValue="review" className="space-y-4">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="review" className="gap-2">
-            <Clock className="w-4 h-4" />
-            Para Revisar
-            {toReview.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{toReview.length}</Badge>
+      {!hasAnyDeliverables ? (
+        <div className="glass-card rounded-xl p-12 text-center min-h-[200px] flex flex-col items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <FileText className="w-7 h-7 text-primary" />
+          </div>
+          <p className="text-sm text-muted-foreground font-light">Materiais ainda não liberados para revisão</p>
+          <p className="text-xs text-muted-foreground/60 mt-2">Você será notificado quando houver entregas disponíveis</p>
+        </div>
+      ) : (
+        <Tabs defaultValue="review" className="space-y-4">
+          <TabsList className="bg-muted/50">
+            <TabsTrigger value="review" className="gap-2">
+              <Clock className="w-4 h-4" />
+              Para Revisar
+              {toReview.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{toReview.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Aprovados
+              {approved.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{approved.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="review" className="space-y-4 min-h-[150px]">
+            {toReview.length > 0 ? (
+              toReview.map((deliverable) => (
+                <DeliverableCard 
+                  key={deliverable.id} 
+                  deliverable={deliverable}
+                  onSelect={() => setSelectedDeliverable(deliverable)}
+                />
+              ))
+            ) : (
+              <div className="glass-card rounded-xl p-8 text-center min-h-[120px] flex flex-col items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-emerald-500 mb-3" />
+                <p className="text-sm text-muted-foreground font-light">Nenhum item pendente de revisão</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Todas as entregas foram revisadas</p>
+              </div>
             )}
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="gap-2">
-            <CheckCircle className="w-4 h-4" />
-            Aprovados
-            {approved.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{approved.length}</Badge>
+          </TabsContent>
+
+          <TabsContent value="approved" className="space-y-4 min-h-[150px]">
+            {approved.length > 0 ? (
+              approved.map((deliverable) => (
+                <DeliverableCard 
+                  key={deliverable.id} 
+                  deliverable={deliverable}
+                  onSelect={() => setSelectedDeliverable(deliverable)}
+                />
+              ))
+            ) : (
+              <div className="glass-card rounded-xl p-8 text-center min-h-[120px] flex flex-col items-center justify-center">
+                <Clock className="w-10 h-10 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground font-light">Nenhum item aprovado ainda</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Itens aprovados aparecerão aqui</p>
+              </div>
             )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="review" className="space-y-4">
-          {toReview.length > 0 ? (
-            toReview.map((deliverable) => (
-              <DeliverableCard 
-                key={deliverable.id} 
-                deliverable={deliverable}
-                onSelect={() => setSelectedDeliverable(deliverable)}
-              />
-            ))
-          ) : (
-            <div className="glass-card rounded-xl p-8 text-center">
-              <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-              <p className="text-muted-foreground">Nenhum item pendente de revisão</p>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="approved" className="space-y-4">
-          {approved.length > 0 ? (
-            approved.map((deliverable) => (
-              <DeliverableCard 
-                key={deliverable.id} 
-                deliverable={deliverable}
-                onSelect={() => setSelectedDeliverable(deliverable)}
-              />
-            ))
-          ) : (
-            <div className="glass-card rounded-xl p-8 text-center">
-              <p className="text-muted-foreground">Nenhum item aprovado ainda</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      )}
 
       {/* Preview Modal would go here */}
     </section>

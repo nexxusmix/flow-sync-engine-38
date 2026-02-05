@@ -122,7 +122,7 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
     <motion.div
       ref={containerRef}
       className={cn(
-        "relative rounded-[1.5rem] border border-white/[0.06] bg-black/40 backdrop-blur-sm overflow-hidden",
+        "relative rounded-[1.5rem] border border-white/[0.06] bg-black/40 backdrop-blur-sm overflow-hidden min-h-[180px]",
         className
       )}
       style={{
@@ -301,7 +301,7 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
             );
           })}
 
-          {/* Empty state */}
+          {/* Empty state - always show line, elegant message */}
           {filteredMilestones.length === 0 && (
             <motion.div
               className="absolute inset-0 flex items-center justify-center"
@@ -309,7 +309,10 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
               animate={isInView ? { opacity: 1 } : { opacity: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <p className="text-xs text-muted-foreground/60">Nenhum marco nos próximos 30 dias</p>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/5 border border-emerald-500/10">
+                <div className="w-2 h-2 rounded-full bg-emerald-500/60" />
+                <p className="text-xs text-muted-foreground font-light">Nenhum evento crítico nos próximos 30 dias</p>
+              </div>
             </motion.div>
           )}
         </div>

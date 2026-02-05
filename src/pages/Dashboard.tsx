@@ -98,16 +98,16 @@ export default function Dashboard() {
         {/* Header Title */}
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl md:text-6xl font-extrabold uppercase tracking-tighter text-foreground">
-              Visão <span className="squad-logo-text font-normal text-muted-foreground">Geral</span>
+            <h1 className="text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground">
+              Visão <span className="squad-logo-text font-light text-muted-foreground">Geral</span>
             </h1>
           </div>
           
           <div className="glass-card px-6 py-4 rounded-2xl flex items-center gap-4">
             <span className="material-symbols-outlined text-primary">calendar_today</span>
             <div>
-              <p className="text-[9px] text-muted-foreground font-black uppercase">Data Atual</p>
-              <p className="text-xs text-foreground font-bold">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</p>
+              <p className="text-[9px] text-muted-foreground font-light uppercase">Data Atual</p>
+              <p className="text-xs text-foreground font-normal">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</p>
             </div>
           </div>
         </div>
@@ -130,11 +130,11 @@ export default function Dashboard() {
         <TimelineForecast30D milestones={dashboardMilestones} />
 
         {/* Visual Board Section - PROJETOS */}
-        <div className="glass-card rounded-[2rem] p-6">
+        <div className="glass-card rounded-[2rem] p-6 min-h-[400px]">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-foreground">Visual Board</h2>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Controle de Fluxo Operacional</p>
+              <h2 className="text-xl font-normal text-foreground">Visual Board</h2>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-light">Controle de Fluxo Operacional</p>
             </div>
             <Link to="/projetos">
               <Button variant="ghost" size="sm" className="text-xs text-primary">
@@ -147,22 +147,22 @@ export default function Dashboard() {
           {/* Mini Kanban */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {visualBoardData.columns.map((column) => (
-              <div key={column.name} className="bg-muted/30 rounded-xl p-3">
+              <div key={column.name} className="bg-muted/30 rounded-xl p-3 min-h-[140px]">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{column.name}</span>
-                  <span className="text-[10px] font-bold text-foreground bg-background/50 px-2 py-0.5 rounded-full">{column.count}</span>
+                  <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wide">{column.name}</span>
+                  <span className="text-[10px] font-normal text-foreground bg-background/50 px-2 py-0.5 rounded-full">{column.count}</span>
                 </div>
                 <div className="space-y-2">
                   {column.projects.length > 0 ? (
                     column.projects.map((proj) => (
                       <Link key={proj.id} to={`/projetos/${proj.id}`} className="block">
                         <div className="bg-background/50 rounded-lg p-2.5 border border-border/50 hover:border-primary/30 transition-colors">
-                          <p className="text-[10px] font-bold text-foreground truncate">{proj.title}</p>
+                          <p className="text-[10px] font-normal text-foreground truncate">{proj.title}</p>
                           <p className="text-[8px] text-muted-foreground truncate">{proj.client}</p>
                           <div className="flex items-center justify-between mt-2">
                             <div className="flex -space-x-1">
                               {proj.initials.map((initial, idx) => (
-                                <div key={idx} className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary border border-background">
+                                <div key={idx} className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-normal text-primary border border-background">
                                   {initial}
                                 </div>
                               ))}
@@ -173,8 +173,9 @@ export default function Dashboard() {
                       </Link>
                     ))
                   ) : (
-                    <div className="flex items-center justify-center py-4 text-muted-foreground">
-                      <Inbox className="w-4 h-4" />
+                    <div className="flex flex-col items-center justify-center py-6 text-muted-foreground/50">
+                      <Inbox className="w-5 h-5 mb-2" />
+                      <span className="text-[9px] font-light">Sem projetos</span>
                     </div>
                   )}
                 </div>
@@ -185,40 +186,47 @@ export default function Dashboard() {
           {/* Timeline 30D & Capacity Monitor */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Timeline 30D */}
-            <div className="bg-muted/20 rounded-xl p-4">
+            <div className="bg-muted/20 rounded-xl p-4 min-h-[180px]">
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="w-4 h-4 text-primary" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Timeline Janela 30D</span>
+                <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wide">Timeline Janela 30D</span>
               </div>
-              <p className="text-[8px] text-primary font-bold uppercase tracking-widest mb-3">SQUAD ENGINE</p>
+              <p className="text-[8px] text-primary font-normal uppercase tracking-widest mb-3">SQUAD ENGINE</p>
               <div className="space-y-2">
-                {visualBoardData.timeline.map((item) => (
-                  <div key={item.name} className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9px] text-foreground font-medium truncate pr-2">{item.name}</span>
+                {visualBoardData.timeline.length > 0 ? (
+                  visualBoardData.timeline.map((item) => (
+                    <div key={item.name} className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] text-foreground font-light truncate pr-2">{item.name}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${item.progress}%` }} />
+                      </div>
                     </div>
-                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${item.progress}%` }} />
-                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-muted-foreground/50">
+                    <Calendar className="w-5 h-5 mb-2" />
+                    <span className="text-[9px] font-light">Sem projetos ativos</span>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
             {/* Capacity Monitor */}
-            <div className="bg-muted/20 rounded-xl p-4">
+            <div className="bg-muted/20 rounded-xl p-4 min-h-[180px]">
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="w-4 h-4 text-primary" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Capacity Monitor</span>
+                <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-wide">Capacity Monitor</span>
               </div>
               <div className="space-y-4">
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <Users className="w-3 h-3 text-primary" />
-                      <span className="text-[10px] text-foreground font-medium">Workload Editores</span>
+                      <span className="text-[10px] text-foreground font-light">Workload Editores</span>
                     </div>
-                    <span className="text-[10px] font-bold text-primary">92%</span>
+                    <span className="text-[10px] font-normal text-primary">92%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full" style={{ width: '92%' }} />
@@ -228,9 +236,9 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <HardDrive className="w-3 h-3 text-violet-500" />
-                      <span className="text-[10px] text-foreground font-medium">Cloud Storage 10Gbps</span>
+                      <span className="text-[10px] text-foreground font-light">Cloud Storage 10Gbps</span>
                     </div>
-                    <span className="text-[10px] font-bold text-violet-500">78%</span>
+                    <span className="text-[10px] font-normal text-violet-500">78%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-violet-500 rounded-full" style={{ width: '78%' }} />
@@ -243,106 +251,122 @@ export default function Dashboard() {
 
         {/* Key Metrics Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <div className="glass-card rounded-xl p-4 border-l-2 border-emerald-500">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-emerald-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-[8px] font-bold text-emerald-500 uppercase">+24.5%</span>
+              <span className="text-[8px] font-normal text-emerald-500 uppercase">+24.5%</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-1">Pipeline Ativo</p>
-            <p className="text-lg font-bold text-foreground">R$ 1.2M</p>
+            <p className="text-[10px] text-muted-foreground mb-1 font-light">Pipeline Ativo</p>
+            <p className="text-lg font-normal text-foreground">R$ 1.2M</p>
           </div>
 
-          <div className="glass-card rounded-xl p-4 border-l-2 border-primary">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-primary min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4 text-primary" />
-              <span className="text-[8px] font-bold text-primary uppercase">92% On-time</span>
+              <span className="text-[8px] font-normal text-primary uppercase">92% On-time</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-1">Projetos em Workflow</p>
-            <p className="text-lg font-bold text-foreground">18</p>
+            <p className="text-[10px] text-muted-foreground mb-1 font-light">Projetos em Workflow</p>
+            <p className="text-lg font-normal text-foreground">18</p>
           </div>
 
-          <div className="glass-card rounded-xl p-4 border-l-2 border-amber-500">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-amber-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <Zap className="w-4 h-4 text-amber-500" />
-              <span className="text-[8px] font-bold text-amber-500 uppercase">High Perf</span>
+              <span className="text-[8px] font-normal text-amber-500 uppercase">High Perf</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-1">Eficiência Squad</p>
-            <p className="text-lg font-bold text-foreground">98%</p>
+            <p className="text-[10px] text-muted-foreground mb-1 font-light">Eficiência Squad</p>
+            <p className="text-lg font-normal text-foreground">98%</p>
           </div>
 
-          <div className="glass-card rounded-xl p-4 border-l-2 border-violet-500">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-violet-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-violet-500" />
-              <span className="text-[8px] font-bold text-violet-500 uppercase">Financial OK</span>
+              <span className="text-[8px] font-normal text-violet-500 uppercase">Financial OK</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-1">Margem Líquida</p>
-            <p className="text-lg font-bold text-foreground">34.2%</p>
+            <p className="text-[10px] text-muted-foreground mb-1 font-light">Margem Líquida</p>
+            <p className="text-lg font-normal text-foreground">34.2%</p>
           </div>
         </div>
 
         {/* Visão de Contas - Financeiro */}
-        <div className="glass-card rounded-[2rem] p-6">
+        <div className="glass-card rounded-[2rem] p-6 min-h-[250px]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Visão de Contas</h3>
-              <p className="text-[10px] text-muted-foreground">Financeiro</p>
+              <h3 className="text-sm font-normal text-foreground">Visão de Contas</h3>
+              <p className="text-[10px] text-muted-foreground font-light">Financeiro</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {visualBoardData.accounts.map((account) => (
-              <Link key={account.id} to={`/projetos/${account.id}`}>
-                <div className="bg-muted/20 rounded-xl p-4 hover:bg-muted/30 transition-colors cursor-pointer">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-bold text-primary">{account.client}</span>
-                    <span className="text-[8px] text-muted-foreground">{account.id}</span>
+          {visualBoardData.accounts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {visualBoardData.accounts.map((account) => (
+                <Link key={account.id} to={`/projetos/${account.id}`}>
+                  <div className="bg-muted/20 rounded-xl p-4 hover:bg-muted/30 transition-colors cursor-pointer min-h-[120px]">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[9px] font-normal text-primary">{account.client}</span>
+                      <span className="text-[8px] text-muted-foreground">{account.id}</span>
+                    </div>
+                    <p className="text-xs font-normal text-foreground mb-3 truncate">{account.title}</p>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <p className="text-[8px] text-muted-foreground uppercase font-light">Valor</p>
+                        <p className="text-[10px] font-normal text-foreground">R$ {account.value}k</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-muted-foreground uppercase font-light">Fase</p>
+                        <p className="text-[10px] font-normal text-foreground">{account.phase}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-muted-foreground uppercase font-light">Saúde</p>
+                        <p className={`text-[10px] font-normal ${getHealthColor(account.health)}`}>{account.health}%</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs font-bold text-foreground mb-3 truncate">{account.title}</p>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div>
-                      <p className="text-[8px] text-muted-foreground uppercase">Valor</p>
-                      <p className="text-[10px] font-bold text-foreground">R$ {account.value}k</p>
-                    </div>
-                    <div>
-                      <p className="text-[8px] text-muted-foreground uppercase">Fase</p>
-                      <p className="text-[10px] font-bold text-foreground">{account.phase}</p>
-                    </div>
-                    <div>
-                      <p className="text-[8px] text-muted-foreground uppercase">Saúde</p>
-                      <p className={`text-[10px] font-bold ${getHealthColor(account.health)}`}>{account.health}%</p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">
+              <DollarSign className="w-8 h-8 mb-3" />
+              <p className="text-sm font-light">Nenhuma conta ativa</p>
+              <p className="text-xs text-muted-foreground/40 mt-1">Contas aparecerão quando houver projetos</p>
+            </div>
+          )}
         </div>
 
         {/* Section: Main Layout Split */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           {/* Left Column: Projects (8 cols) */}
           <div className="xl:col-span-8">
-            <div className="glass-card rounded-[2rem] p-6">
+            <div className="glass-card rounded-[2rem] p-6 min-h-[350px]">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-foreground">Projetos Recentes</h2>
+                <h2 className="text-xl font-normal text-foreground">Projetos Recentes</h2>
                 <Link to="/projetos">
                   <button className="btn-subtle flex items-center gap-2">
                     Ver todos <ArrowRight className="w-4 h-4" />
                   </button>
                 </Link>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {projects.map((project, idx) => (
-                  <ProjectCard
-                    key={idx}
-                    title={project.title}
-                    client={project.client}
-                    status={project.status}
-                    image={project.image}
-                    date={project.date}
-                  />
-                ))}
-              </div>
+              {projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {projects.map((project, idx) => (
+                    <ProjectCard
+                      key={idx}
+                      title={project.title}
+                      client={project.client}
+                      status={project.status}
+                      image={project.image}
+                      date={project.date}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">
+                  <Clapperboard className="w-10 h-10 mb-3" />
+                  <p className="text-sm font-light">Nenhum projeto recente</p>
+                  <p className="text-xs text-muted-foreground/40 mt-1">Projetos aparecerão aqui</p>
+                </div>
+              )}
             </div>
           </div>
 

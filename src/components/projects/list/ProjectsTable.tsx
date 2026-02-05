@@ -216,20 +216,20 @@ export function ProjectsTable() {
 
   if (projects.length === 0) {
     return (
-      <div className="glass-card rounded-3xl p-12 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-          <ExternalLink className="w-8 h-8 text-muted-foreground" />
+      <div className="glass-card rounded-3xl p-12 text-center min-h-[300px] flex flex-col items-center justify-center">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <ExternalLink className="w-8 h-8 text-primary/60" />
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum projeto encontrado</h3>
-        <p className="text-muted-foreground text-sm">
-          Tente ajustar os filtros ou criar um novo projeto.
+        <h3 className="text-lg font-normal text-foreground mb-2">Nenhum projeto encontrado</h3>
+        <p className="text-muted-foreground text-sm font-light max-w-[280px]">
+          Tente ajustar os filtros ou criar um novo projeto para começar.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 min-h-[200px]">
       {projects.map(project => (
         <ProjectCard key={project.id} project={project} />
       ))}
