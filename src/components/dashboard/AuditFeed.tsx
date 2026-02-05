@@ -16,8 +16,8 @@ export function AuditFeed() {
   return (
     <section className="glass-card p-10 rounded-[3rem]">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-black uppercase tracking-tighter text-foreground">Feed <span className="squad-logo-text font-normal text-muted-foreground">Auditável</span></h2>
-        <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{events.length} eventos</span>
+        <h2 className="text-xl font-normal uppercase tracking-tighter text-foreground">Feed <span className="squad-logo-text font-light text-muted-foreground">Auditável</span></h2>
+        <span className="text-[10px] text-muted-foreground font-light uppercase tracking-widest">{events.length} eventos</span>
       </div>
 
       <div className="space-y-0 max-h-[400px] overflow-y-auto pr-2">
@@ -33,12 +33,12 @@ export function AuditFeed() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-bold text-foreground">{event.action}</span>
+                  <span className="text-sm font-normal text-foreground">{event.action}</span>
                   <span className="text-[10px] text-muted-foreground">• {event.actor}</span>
                 </div>
                 <p className="text-xs text-muted-foreground truncate">{event.description}</p>
               </div>
-              <span className="text-[10px] text-muted-foreground font-bold">{timeStr}</span>
+              <span className="text-[10px] text-muted-foreground font-normal">{timeStr}</span>
             </div>
           );
         })}

@@ -82,9 +82,9 @@ export default function Dashboard() {
 
   const getStatusBadge = (status: string) => {
     if (status === 'Ok') {
-      return <span className="text-[8px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">Ok</span>;
+      return <span className="text-[8px] font-normal text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Ok</span>;
     }
-    return <span className="text-[8px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Em Risco</span>;
+    return <span className="text-[8px] font-normal text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Em Risco</span>;
   };
 
   const getHealthColor = (health: number) => {

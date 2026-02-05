@@ -16,7 +16,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon }: MetricC
           <Icon className="w-5 h-5 text-primary" />
         </div>
         {trend && (
-          <span className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${trendUp ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`text-[10px] font-normal uppercase tracking-wider flex items-center gap-1 ${trendUp ? 'text-emerald-400' : 'text-red-400'}`}>
             {trend}
             <ArrowUpRight className={`w-3 h-3 ${!trendUp && 'rotate-90'}`} />
           </span>
