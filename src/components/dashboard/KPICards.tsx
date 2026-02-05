@@ -1,14 +1,4 @@
-import { todayKPIs } from "@/data/mockData";
 import { motion } from "framer-motion";
-
-const kpis = [
-  { label: "Leads Novos", value: todayKPIs.newLeads, icon: "person_add", detail: "HOT LEADS" },
-  { label: "Respostas", value: todayKPIs.responsesReceived, icon: "mark_email_read", detail: "HOJE" },
-  { label: "Calls", value: todayKPIs.callsScheduled, icon: "call", detail: "AGENDADAS" },
-  { label: "Propostas", value: todayKPIs.proposalsSent, icon: "send", detail: "ENVIADAS" },
-  { label: "Pagamentos", value: `R$ ${(todayKPIs.expectedPayments / 1000).toFixed(1)}k`, icon: "payments", detail: "PREVISTOS" },
-  { label: "Entregas", value: todayKPIs.deliveriesIn7Days, icon: "local_shipping", detail: "7 DIAS" },
-];
 
 const container = {
   hidden: { opacity: 0 },
@@ -33,6 +23,16 @@ const item = {
     }
   },
 };
+
+// KPIs zerados para estado inicial
+const kpis = [
+  { label: "Leads Novos", value: 0, icon: "person_add", detail: "HOT LEADS" },
+  { label: "Respostas", value: 0, icon: "mark_email_read", detail: "HOJE" },
+  { label: "Calls", value: 0, icon: "call", detail: "AGENDADAS" },
+  { label: "Propostas", value: 0, icon: "send", detail: "ENVIADAS" },
+  { label: "Pagamentos", value: "R$ 0", icon: "payments", detail: "PREVISTOS" },
+  { label: "Entregas", value: 0, icon: "local_shipping", detail: "7 DIAS" },
+];
 
 export function KPICards() {
   return (

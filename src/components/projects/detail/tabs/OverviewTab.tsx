@@ -2,7 +2,7 @@ import { Project } from "@/types/projects";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { ProjectUpdatesSection } from "../ProjectUpdatesSection";
-import { getProjectMilestones } from "@/data/timelineMockData";
+import { useTimelineMilestones } from "@/hooks/useTimelineMilestones";
 import { 
   AlertTriangle, 
   ArrowRight, 
@@ -225,7 +225,7 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
       {/* Timeline Forecast 30D */}
       <TimelineForecast30D 
-        milestones={getProjectMilestones(project.id)} 
+        milestones={[]} 
         projectId={project.id}
       />
 

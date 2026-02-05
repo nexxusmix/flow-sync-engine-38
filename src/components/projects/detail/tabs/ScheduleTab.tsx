@@ -1,7 +1,6 @@
 import { Project } from "@/types/projects";
 import { PROJECT_STAGES } from "@/data/projectTemplates";
 import { ProjectTimelineDetailed } from "@/components/timeline/ProjectTimelineDetailed";
-import { getProjectTimelineData } from "@/data/timelineMockData";
 import { useMemo } from "react";
 
 interface ScheduleTabProps {
@@ -9,14 +8,28 @@ interface ScheduleTabProps {
 }
 
 export function ScheduleTab({ project }: ScheduleTabProps) {
-  const timelineData = useMemo(() => getProjectTimelineData(project.id), [project.id]);
+  // Generate timeline data from project stages
+  const timelineData = useMemo(() => ({
+    segments: project.stages?.map(stage => ({
+      id: stage.id,
+      projectId: project.id,
+      name: stage.name,
+      status: stage.status === 'concluido' ? 'done' : stage.status === 'em_andamento' ? 'in_progress' : 'not_started',
+      plannedStart: stage.plannedDate || new Date().toISOString(),
+      plannedEnd: stage.plannedDate || new Date().toISOString(),
+      progress: stage.status === 'concluido' ? 100 : stage.status === 'em_andamento' ? 50 : 0,
+    })) || [],
+    milestones: [],
+    hasPaymentBlock: project.blockedByPayment,
+    currentStage: project.currentStage,
+    lastUpdated: project.updatedAt,
+  }), [project]);
 
-  // Get current stage name
   const currentStageName = PROJECT_STAGES.find(s => s.type === project.currentStage)?.name || project.currentStage;
 
   return (
     <ProjectTimelineDetailed
-      segments={timelineData.segments || []}
+      segments={timelineData.segments}
       milestones={timelineData.milestones}
       hasPaymentBlock={project.blockedByPayment}
       currentStage={currentStageName}
