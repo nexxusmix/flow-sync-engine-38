@@ -907,33 +907,48 @@ export type Database = {
       contract_signatures: {
         Row: {
           contract_id: string
+          document_hash: string | null
           id: string
           ip_address: string | null
+          proof_url: string | null
+          provider: string | null
+          raw_payload: Json | null
           signature_type: string
           signed_at: string
           signed_file_url: string | null
+          signer_cpf: string | null
           signer_email: string
           signer_name: string
           user_agent: string | null
         }
         Insert: {
           contract_id: string
+          document_hash?: string | null
           id?: string
           ip_address?: string | null
+          proof_url?: string | null
+          provider?: string | null
+          raw_payload?: Json | null
           signature_type: string
           signed_at?: string
           signed_file_url?: string | null
+          signer_cpf?: string | null
           signer_email: string
           signer_name: string
           user_agent?: string | null
         }
         Update: {
           contract_id?: string
+          document_hash?: string | null
           id?: string
           ip_address?: string | null
+          proof_url?: string | null
+          provider?: string | null
+          raw_payload?: Json | null
           signature_type?: string
           signed_at?: string
           signed_file_url?: string | null
+          signer_cpf?: string | null
           signer_email?: string
           signer_name?: string
           user_agent?: string | null
@@ -1666,6 +1681,50 @@ export type Database = {
             columns: ["scene_id"]
             isOneToOne: false
             referencedRelation: "storyboard_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      govbr_signing_sessions: {
+        Row: {
+          completed_at: string | null
+          contract_id: string
+          created_at: string | null
+          document_hash: string
+          expires_at: string | null
+          id: string
+          return_url: string | null
+          state_token: string
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          contract_id: string
+          created_at?: string | null
+          document_hash: string
+          expires_at?: string | null
+          id?: string
+          return_url?: string | null
+          state_token: string
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          contract_id?: string
+          created_at?: string | null
+          document_hash?: string
+          expires_at?: string | null
+          id?: string
+          return_url?: string | null
+          state_token?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "govbr_signing_sessions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
         ]

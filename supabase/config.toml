@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.polo-ai-chat]
 verify_jwt = false
+
+[functions.govbr-initiate-signing]
+verify_jwt = false
+
+[functions.govbr-callback]
+verify_jwt = false

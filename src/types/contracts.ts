@@ -3,9 +3,11 @@
 export type ContractStatus = 'draft' | 'active' | 'sent' | 'viewed' | 'signed' | 'completed' | 'cancelled' | 'expired';
 export type ServiceType = 'filme' | 'reels' | 'foto' | 'drone' | 'tour360' | 'motion' | 'landing' | 'trafego' | 'pacote' | 'outro';
 export type RenewalType = 'none' | 'monthly' | 'quarterly' | 'yearly';
-export type SignatureType = 'accept_click' | 'upload_signed_pdf';
+export type SignatureType = 'accept_click' | 'upload_signed_pdf' | 'govbr';
+export type SignatureProvider = 'internal' | 'govbr';
 export type AlertType = 'renewal_30' | 'renewal_15' | 'renewal_7' | 'expired' | 'breach';
 export type AddendumStatus = 'draft' | 'sent' | 'signed';
+export type GovBrSessionStatus = 'pending' | 'completed' | 'expired' | 'failed';
 
 export interface ContractTemplate {
   id: string;
@@ -78,6 +80,24 @@ export interface ContractSignature {
   user_agent?: string;
   signature_type: SignatureType;
   signed_file_url?: string;
+  // Campos gov.br
+  signer_cpf?: string;
+  provider?: SignatureProvider;
+  document_hash?: string;
+  proof_url?: string;
+  raw_payload?: Record<string, unknown>;
+}
+
+export interface GovBrSigningSession {
+  id: string;
+  contract_id: string;
+  state_token: string;
+  document_hash: string;
+  return_url?: string;
+  created_at: string;
+  expires_at: string;
+  completed_at?: string;
+  status: GovBrSessionStatus;
 }
 
 export interface ContractLink {
