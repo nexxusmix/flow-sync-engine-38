@@ -232,12 +232,22 @@ const generateClientChecklist = (projectId: string): ClientChecklistItem[] => {
   ];
 };
 
-// Portal link
+// Portal link - fixed tokens for demo purposes
 const generatePortalLink = (projectId: string, deliverableIds: string[]): PortalLink => {
+  // Use fixed tokens so they persist across reloads
+  const fixedTokens: Record<string, string> = {
+    'proj-1': 'sqd_demo_institucional',
+    'proj-2': 'sqd_demo_manifesto',
+    'proj-3': 'sqd_demo_aftermovie',
+    'proj-4': 'sqd_demo_reels',
+    'proj-5': 'sqd_demo_lancamento',
+    'proj-6': 'sqd_demo_tour360',
+  };
+  
   return {
     id: `${projectId}-portal`,
     projectId,
-    shareToken: `sqd_${projectId}_${Math.random().toString(36).substring(2, 15)}`,
+    shareToken: fixedTokens[projectId] || `sqd_${projectId.replace('proj-', '')}`,
     isActive: true,
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     visibleDeliverables: deliverableIds.slice(0, 2),
