@@ -6,6 +6,7 @@ import squadHubLogo from "@/assets/squad-hub-logo.png";
 const mainMenuItems = [
   { name: "Overview", href: "/", icon: "dashboard" },
   { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8 },
+  { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
   { name: "CRM", href: "/crm", icon: "radar", badge: 3 },
   { name: "Marketing & Conteúdo", href: "/conteudo", icon: "perm_media" },
   { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
