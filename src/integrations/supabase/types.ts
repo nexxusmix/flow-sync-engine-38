@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_actions: {
+        Row: {
+          action_type: string
+          after_json: Json | null
+          before_json: Json | null
+          created_at: string
+          duration_ms: number | null
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          input_json: Json | null
+          run_id: string
+          status: string
+          step_index: number
+        }
+        Insert: {
+          action_type: string
+          after_json?: Json | null
+          before_json?: Json | null
+          created_at?: string
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          input_json?: Json | null
+          run_id: string
+          status?: string
+          step_index?: number
+        }
+        Update: {
+          action_type?: string
+          after_json?: Json | null
+          before_json?: Json | null
+          created_at?: string
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          input_json?: Json | null
+          run_id?: string
+          status?: string
+          step_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_actions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_runs: {
+        Row: {
+          attachments: Json | null
+          completed_at: string | null
+          confirmed_at: string | null
+          context_json: Json | null
+          created_at: string
+          error_message: string | null
+          id: string
+          input_text: string
+          plan_json: Json | null
+          result_json: Json | null
+          risk_level: string | null
+          status: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          context_json?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_text: string
+          plan_json?: Json | null
+          result_json?: Json | null
+          risk_level?: string | null
+          status?: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          attachments?: Json | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          context_json?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_text?: string
+          plan_json?: Json | null
+          result_json?: Json | null
+          risk_level?: string | null
+          status?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       ai_runs: {
         Row: {
           action_key: string
