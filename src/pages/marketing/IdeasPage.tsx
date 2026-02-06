@@ -5,8 +5,11 @@ import { ContentIdea, CONTENT_PILLARS, CONTENT_CHANNELS, CONTENT_FORMATS } from 
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Search, Lightbulb, Sparkles, ArrowRight,
-  Star, MoreHorizontal, Trash2, Loader2
+  Star, MoreHorizontal, Trash2, Loader2, Instagram
 } from "lucide-react";
+import { ReferencePicker } from "@/components/marketing/ReferencePicker";
+import { InstagramReference } from "@/types/marketing";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,10 +43,12 @@ function IdeaCard({
   idea, 
   onPromote,
   onDelete,
+  onLinkReference,
 }: { 
   idea: ContentIdea;
   onPromote: () => void;
   onDelete: () => void;
+  onLinkReference: () => void;
 }) {
   const pillar = CONTENT_PILLARS.find(p => p.type === idea.pillar);
   const channel = CONTENT_CHANNELS.find(c => c.type === idea.channel);
@@ -77,6 +82,10 @@ function IdeaCard({
             <DropdownMenuItem onClick={onPromote}>
               <ArrowRight className="w-4 h-4 mr-2" />
               Promover para Produção
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onLinkReference}>
+              <Instagram className="w-4 h-4 mr-2" />
+              Vincular Referência
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onDelete} className="text-red-500">
               <Trash2 className="w-4 h-4 mr-2" />
@@ -142,6 +151,8 @@ export default function IdeasPage() {
 
   const [isNewIdeaOpen, setIsNewIdeaOpen] = useState(false);
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
+  const [isRefPickerOpen, setIsRefPickerOpen] = useState(false);
+  const [selectedIdeaForRef, setSelectedIdeaForRef] = useState<string | null>(null);
   const [newIdea, setNewIdea] = useState({
     title: '',
     hook: '',
@@ -245,6 +256,27 @@ export default function IdeasPage() {
     toast.success('Ideia removida');
   };
 
+  const handleOpenRefPicker = (ideaId: string) => {
+    setSelectedIdeaForRef(ideaId);
+    setIsRefPickerOpen(true);
+  };
+
+  const handleLinkReference = async (ref: InstagramReference) => {
+    if (!selectedIdeaForRef) return;
+    
+    const { error } = await supabase
+      .from('instagram_references')
+      .update({ content_idea_id: selectedIdeaForRef })
+      .eq('id', ref.id);
+
+    if (error) {
+      throw error;
+    }
+    
+    toast.success('Referência vinculada à ideia!');
+    setSelectedIdeaForRef(null);
+  };
+
   return (
     <DashboardLayout title="Banco de Ideias">
       <div className="space-y-6">
@@ -342,6 +374,7 @@ export default function IdeasPage() {
               idea={idea}
               onPromote={() => handlePromote(idea.id)}
               onDelete={() => handleDelete(idea.id)}
+              onLinkReference={() => handleOpenRefPicker(idea.id)}
             />
           ))}
         </div>
@@ -445,6 +478,13 @@ export default function IdeasPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Reference Picker */}
+        <ReferencePicker
+          open={isRefPickerOpen}
+          onOpenChange={setIsRefPickerOpen}
+          onSelect={handleLinkReference}
+        />
       </div>
     </DashboardLayout>
   );
