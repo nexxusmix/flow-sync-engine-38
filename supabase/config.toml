@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.export-creative-pdf]
 verify_jwt = false
+
+[functions.studio-generate-block]
+verify_jwt = false
