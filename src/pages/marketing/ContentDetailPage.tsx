@@ -9,6 +9,7 @@ import {
   Trash2, Square, CheckSquare, Loader2
 } from "lucide-react";
 import { ContentAssetsTab } from "@/components/marketing/ContentAssetsTab";
+import { LinkedReferences } from "@/components/marketing/LinkedReferences";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -381,6 +382,11 @@ export default function ContentDetailPage() {
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
+              </div>
+
+              {/* References Section */}
+              <div className="glass-card rounded-xl p-6">
+                <LinkedReferences entityType="content" entityId={item.id} />
               </div>
             </div>
           </TabsContent>

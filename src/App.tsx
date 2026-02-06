@@ -78,6 +78,7 @@ import InstagramPage from "./pages/marketing/InstagramPage";
 import StudioCreativoPage from "./pages/marketing/StudioCreativoPage";
 import LibraryPage from "./pages/marketing/LibraryPage";
 import ContentDetailPage from "./pages/marketing/ContentDetailPage";
+import ReferencesPage from "./pages/marketing/ReferencesPage";
 import UnifiedCalendarPage from "./pages/CalendarPage";
 
 const queryClient = new QueryClient();
@@ -148,6 +149,7 @@ function AppRoutes() {
       <Route path="/marketing/assets" element={<ProtectedRoute><AssetsPage /></ProtectedRoute>} />
       <Route path="/marketing/library" element={<ProtectedRoute><LibraryPage /></ProtectedRoute>} />
       <Route path="/marketing/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
+      <Route path="/marketing/references" element={<ProtectedRoute><ReferencesPage /></ProtectedRoute>} />
       <Route path="/marketing/studio" element={<ProtectedRoute><StudioCreativoPage /></ProtectedRoute>} />
       <Route path="/conteudo" element={<Navigate to="/marketing" replace />} />
       <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
