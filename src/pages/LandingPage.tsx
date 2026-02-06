@@ -1,82 +1,185 @@
 import { useNavigate } from "react-router-dom";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Zap, Users, BarChart3, Shield } from "lucide-react";
 import squadLogo from "@/assets/squad-hub-logo.png";
+import {
+  ParticlesBackground,
+  AnimatedGradientOrbs,
+  CyberpunkGrid,
+  NeonTitle,
+  AnimatedCounter,
+  FloatingCard,
+} from "@/components/landing";
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { scrollYProgress } = useScroll();
+  
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
+
+  const features = [
+    { icon: Users, title: "CRM Integrado", description: "Gerencie leads e clientes com pipeline visual" },
+    { icon: BarChart3, title: "Projetos & Entregas", description: "Kanban, timeline e portal do cliente" },
+    { icon: Shield, title: "Propostas & Contratos", description: "Crie, envie e assine digitalmente" },
+    { icon: Zap, title: "IA Integrada", description: "Gere roteiros, legendas e ideias com IA" },
+  ];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-x-hidden overflow-y-auto">
+      {/* Background Effects */}
+      <ParticlesBackground />
+      <AnimatedGradientOrbs />
+      <CyberpunkGrid />
+      
       {/* Grain Overlay */}
       <div className="grain" />
-      
-      {/* Background Blobs */}
-      <div className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]" />
-      <div className="blob w-[800px] h-[800px] bg-white bottom-[-20%] right-[-10%] opacity-5" />
 
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
-        <div className="flex items-center gap-3">
-          <img src={squadLogo} alt="SQUAD Hub" className="h-10 max-h-10 object-contain" />
+      <motion.nav 
+        className="fixed top-0 left-0 right-0 z-50 glass-nav"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+      >
+        <div className="flex items-center justify-between px-6 md:px-12 py-4">
+          <motion.div 
+            className="flex items-center gap-3"
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400 }}
+          >
+            <img src={squadLogo} alt="SQUAD Hub" className="h-10 max-h-10 object-contain" />
+          </motion.div>
+          
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button 
+              onClick={() => navigate('/login')} 
+              variant="outline" 
+              className="gap-2 neon-button border-primary/30 hover:border-primary/60 hover:bg-primary/10"
+            >
+              Entrar
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </motion.div>
         </div>
-        <Button onClick={() => navigate('/login')} variant="outline" className="gap-2">
-          Entrar
-          <ArrowRight className="w-4 h-4" />
-        </Button>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 px-6 md:px-12 py-12 md:py-24">
-        <div className="max-w-7xl mx-auto">
+      <motion.section 
+        className="relative z-10 px-6 md:px-12 pt-32 pb-12 md:pt-40 md:pb-24 min-h-screen flex items-center"
+        style={{ y: heroY, opacity: heroOpacity }}
+      >
+        <div className="max-w-7xl mx-auto w-full">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Text Content */}
             <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+              {/* Animated Badge */}
+              <motion.div 
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 neon-badge"
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
                 <Zap className="w-4 h-4 text-primary" />
                 <span className="text-sm text-primary font-medium">Sistema completo para produtoras</span>
-              </div>
+              </motion.div>
               
-              <h1 className="text-4xl md:text-6xl font-light text-foreground tracking-tight leading-tight">
-                Gerencie sua <span className="text-primary font-normal">produtora</span> com inteligência
-              </h1>
+              {/* Neon Title */}
+              <NeonTitle 
+                text="Gerencie sua produtora com inteligência"
+                highlightWord="produtora"
+              />
               
-              <p className="text-lg text-muted-foreground max-w-lg">
+              {/* Description */}
+              <motion.p 
+                className="text-lg text-muted-foreground max-w-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+              >
                 CRM, projetos, propostas, contratos, financeiro, marketing e muito mais. 
                 Tudo integrado em uma única plataforma com IA.
-              </p>
+              </motion.p>
 
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" onClick={() => navigate('/login')} className="gap-2">
-                  Começar Agora
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-                <Button size="lg" variant="outline" className="gap-2">
-                  <Play className="w-4 h-4" />
-                  Ver Demo
-                </Button>
-              </div>
+              {/* CTA Buttons */}
+              <motion.div 
+                className="flex flex-wrap gap-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1 }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button 
+                    size="lg" 
+                    onClick={() => navigate('/login')} 
+                    className="gap-2 neon-button bg-primary hover:bg-primary/90"
+                  >
+                    Começar Agora
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="gap-2 border-border/50 hover:border-primary/30 hover:bg-primary/5"
+                  >
+                    <Play className="w-4 h-4" />
+                    Ver Demo
+                  </Button>
+                </motion.div>
+              </motion.div>
 
-              {/* Stats */}
-              <div className="flex gap-8 pt-8 border-t border-border/50">
+              {/* Animated Stats */}
+              <motion.div 
+                className="flex gap-8 pt-8 border-t border-border/30"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.2 }}
+              >
                 <div>
-                  <p className="text-3xl font-light text-foreground">+500</p>
+                  <p className="text-3xl font-light text-foreground">
+                    +<AnimatedCounter value={500} />
+                  </p>
                   <p className="text-sm text-muted-foreground">Projetos gerenciados</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-light text-foreground">R$ 2M+</p>
+                  <p className="text-3xl font-light text-foreground">
+                    R$ <AnimatedCounter value={2000000} suffix="+" />
+                  </p>
                   <p className="text-sm text-muted-foreground">Em propostas</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-light text-foreground">98%</p>
+                  <p className="text-3xl font-light text-foreground">
+                    <AnimatedCounter value={98} suffix="%" />
+                  </p>
                   <p className="text-sm text-muted-foreground">Satisfação</p>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
-            {/* Video */}
-            <div className="relative">
-              <div className="aspect-video rounded-2xl overflow-hidden border border-border/50 shadow-2xl bg-black">
+            {/* Floating Video */}
+            <motion.div 
+              className="relative floating-video"
+              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+              transition={{ duration: 1, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+              style={{ perspective: '1000px' }}
+            >
+              <div className="video-aura" />
+              
+              <div className="aspect-video rounded-2xl overflow-hidden border border-border/30 shadow-2xl bg-black relative">
                 <video
                   src="/videos/hero-demo.mp4"
                   autoPlay
@@ -85,40 +188,70 @@ export default function LandingPage() {
                   playsInline
                   className="w-full h-full object-cover"
                 />
+                
+                {/* Video Overlay Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent pointer-events-none" />
               </div>
-              {/* Glow effect */}
-              <div className="absolute -inset-4 bg-primary/20 blur-3xl -z-10 rounded-full opacity-50" />
-            </div>
+              
+              {/* Floating Elements Around Video */}
+              <motion.div
+                className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-primary/20 blur-2xl"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.5, 0.8, 0.5],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+              
+              <motion.div
+                className="absolute -bottom-6 -left-6 w-16 h-16 rounded-full bg-primary/15 blur-2xl"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.4, 0.7, 0.4],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1,
+                }}
+              />
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Features Section */}
-      <section className="relative z-10 px-6 md:px-12 py-24 bg-muted/30">
+      <section className="relative z-10 px-6 md:px-12 py-24">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="text-3xl md:text-4xl font-light text-foreground mb-4">
-              Tudo que você precisa em um só lugar
+              Tudo que você precisa em <span className="text-primary neon-text">um só lugar</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Do primeiro contato até a entrega final, o SQUAD Hub acompanha toda a jornada.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: Users, title: "CRM Integrado", description: "Gerencie leads e clientes com pipeline visual" },
-              { icon: BarChart3, title: "Projetos & Entregas", description: "Kanban, timeline e portal do cliente" },
-              { icon: Shield, title: "Propostas & Contratos", description: "Crie, envie e assine digitalmente" },
-              { icon: Zap, title: "IA Integrada", description: "Gere roteiros, legendas e ideias com IA" },
-            ].map((feature, i) => (
-              <div key={i} className="glass-card p-6 rounded-xl">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-medium text-foreground mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
+            {features.map((feature, i) => (
+              <FloatingCard
+                key={i}
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+                index={i}
+              />
             ))}
           </div>
         </div>
@@ -126,26 +259,47 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="relative z-10 px-6 md:px-12 py-24">
-        <div className="max-w-4xl mx-auto text-center">
+        <motion.div 
+          className="max-w-4xl mx-auto text-center"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+        >
           <h2 className="text-3xl md:text-4xl font-light text-foreground mb-6">
-            Pronto para transformar sua operação?
+            Pronto para <span className="text-primary neon-text">transformar</span> sua operação?
           </h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Junte-se a outras produtoras que já usam o SQUAD Hub para escalar seus negócios.
           </p>
-          <Button size="lg" onClick={() => navigate('/login')} className="gap-2">
-            Começar Gratuitamente
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </div>
+          
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button 
+              size="lg" 
+              onClick={() => navigate('/login')} 
+              className="gap-2 neon-button bg-primary hover:bg-primary/90"
+            >
+              Começar Gratuitamente
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 px-6 md:px-12 py-8 border-t border-border/50">
+      <footer className="relative z-10 px-6 md:px-12 py-8 border-t border-border/30">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <motion.div 
+            className="flex items-center gap-3"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
             <img src={squadLogo} alt="SQUAD Hub" className="h-8 max-h-8 object-contain opacity-50" />
-          </div>
+          </motion.div>
           <p className="text-sm text-muted-foreground">
             © 2025 SQUAD Hub. Todos os direitos reservados.
           </p>
