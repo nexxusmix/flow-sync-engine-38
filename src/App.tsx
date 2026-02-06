@@ -80,6 +80,7 @@ import LibraryPage from "./pages/marketing/LibraryPage";
 import ContentDetailPage from "./pages/marketing/ContentDetailPage";
 import ReferencesPage from "./pages/marketing/ReferencesPage";
 import UnifiedCalendarPage from "./pages/CalendarPage";
+import TasksPage from "./pages/TasksPage";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +106,7 @@ function AppRoutes() {
       />
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <LandingPage />} />
       <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
+      <Route path="/tarefas" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
       {/* Projetos */}
