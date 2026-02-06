@@ -13,6 +13,7 @@ export interface DashboardMetrics {
   // CRM metrics
   totalDeals: number;
   totalPipelineValue: number;
+  activePipelineValue: number;
   forecast: number;
   dealsByStage: Record<string, { count: number; value: number }>;
   
@@ -127,6 +128,16 @@ export function useDashboardMetrics() {
         console.error('Error fetching revenues:', revenuesError);
       }
 
+      // Fetch contracts for pipeline value
+      const { data: contracts, error: contractsError } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('status', 'active');
+
+      if (contractsError) {
+        console.error('Error fetching contracts:', contractsError);
+      }
+
       // Calculate metrics - use empty arrays as fallback
       const activeProjects = (projects || []).filter(p => p.status === 'active');
       const completedProjects = (projects || []).filter(p => p.status === 'completed');
@@ -178,6 +189,19 @@ export function useDashboardMetrics() {
       const pendingPayments = (revenues || [])
         .filter(r => r.status === 'pending')
         .reduce((acc, r) => acc + (r.amount || 0), 0);
+
+      // Active contracts pipeline value
+      const contractsPipelineValue = (contracts || [])
+        .reduce((acc, c) => acc + (c.total_value || 0), 0);
+
+      // Active projects pipeline value (for projects without contracts)
+      const projectsWithContracts = new Set((contracts || []).map(c => c.project_id));
+      const projectsPipelineValue = activeProjects
+        .filter(p => !projectsWithContracts.has(p.id))
+        .reduce((acc, p) => acc + (p.contract_value || 0), 0);
+
+      // Total pipeline = contracts + projects without contracts
+      const activePipelineValue = contractsPipelineValue + projectsPipelineValue;
 
       // Projects by stage
       const stageNames: Record<string, string> = {
@@ -252,6 +276,7 @@ export function useDashboardMetrics() {
           projectsCompleted: completedProjects.length,
           totalDeals: (deals || []).length,
           totalPipelineValue,
+          activePipelineValue,
           forecast,
           dealsByStage,
           upcomingDeadlines: (events || []).filter(e => e.event_type === 'deadline' || e.event_type === 'delivery').length,

@@ -168,11 +168,53 @@ export function useProjects() {
         });
       }
 
+      // AUTO-CREATE CONTRACT AND REVENUES if contract_value > 0
+      if ((input.contract_value || 0) > 0) {
+        // Create contract
+        const { error: contractError } = await supabase
+          .from('contracts')
+          .insert({
+            project_id: project.id,
+            project_name: input.name,
+            client_name: input.client_name,
+            total_value: input.contract_value,
+            payment_terms: '50/50',
+            status: 'active',
+            start_date: input.start_date || new Date().toISOString().split('T')[0],
+          });
+
+        if (contractError) {
+          console.error('Error creating contract:', contractError);
+        } else {
+          // Create revenue for entry payment (50% - today)
+          const entryAmount = (input.contract_value || 0) * 0.5;
+          await supabase.from('revenues').insert({
+            project_id: project.id,
+            description: `${input.name} - Entrada (50%)`,
+            amount: entryAmount,
+            due_date: new Date().toISOString().split('T')[0],
+            status: 'pending',
+          });
+
+          // Create revenue for delivery payment (50% - due date)
+          const deliveryAmount = (input.contract_value || 0) * 0.5;
+          const deliveryDate = input.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          await supabase.from('revenues').insert({
+            project_id: project.id,
+            description: `${input.name} - Entrega (50%)`,
+            amount: deliveryAmount,
+            due_date: deliveryDate,
+            status: 'pending',
+          });
+        }
+      }
+
       return project;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
       toast.success('Projeto criado com sucesso!');
     },
     onError: (error) => {
@@ -192,10 +234,60 @@ export function useProjects() {
         .single();
 
       if (error) throw error;
+
+      // If contract_value was updated and > 0, ensure contract and revenues exist
+      if (data.contract_value && data.contract_value > 0) {
+        // Check if contract exists
+        const { data: existingContract } = await supabase
+          .from('contracts')
+          .select('id')
+          .eq('project_id', id)
+          .single();
+
+        if (!existingContract) {
+          // Create contract
+          await supabase.from('contracts').insert({
+            project_id: id,
+            project_name: project.name,
+            client_name: project.client_name,
+            total_value: data.contract_value,
+            payment_terms: '50/50',
+            status: 'active',
+            start_date: project.start_date || new Date().toISOString().split('T')[0],
+          });
+
+          // Create revenues (50/50 split)
+          const entryAmount = data.contract_value * 0.5;
+          const deliveryAmount = data.contract_value * 0.5;
+          const deliveryDate = project.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+          await supabase.from('revenues').insert([
+            {
+              project_id: id,
+              description: `${project.name} - Entrada (50%)`,
+              amount: entryAmount,
+              due_date: new Date().toISOString().split('T')[0],
+              status: 'pending',
+            },
+            {
+              project_id: id,
+              description: `${project.name} - Entrega (50%)`,
+              amount: deliveryAmount,
+              due_date: deliveryDate,
+              status: 'pending',
+            },
+          ]);
+        } else {
+          // Update existing contract value
+          await supabase.from('contracts').update({ total_value: data.contract_value }).eq('id', existingContract.id);
+        }
+      }
+
       return project;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
       toast.success('Projeto atualizado!');
     },
     onError: (error) => {
