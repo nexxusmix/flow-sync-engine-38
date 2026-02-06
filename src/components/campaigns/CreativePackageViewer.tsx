@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Save, FileVideo, Sparkles, Lightbulb, FileText, 
-  Film, Camera, Palette, MessageSquare, Hash 
+  Film, Camera, Palette, MessageSquare, Hash,
+  Download, Loader2, ExternalLink, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CreativePackage, CreativePackageContent } from "@/types/creative-packages";
 import { CreateContentDialog } from "@/components/studio/CreateContentDialog";
 import { Campaign } from "@/types/marketing";
+import { useExportPdf } from "@/hooks/useExportPdf";
 
 interface CreativePackageViewerProps {
   pkg: CreativePackage | null;
@@ -41,6 +43,9 @@ export function CreativePackageViewer({
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateContent, setShowCreateContent] = useState(false);
   const [editedContent, setEditedContent] = useState<CreativePackageContent | null>(null);
+  
+  // Export PDF
+  const { isExporting, exportedUrl, exportCreativePackage, openPdf, copyLink, resetExport } = useExportPdf();
 
   // Initialize edited content when package changes
   const content = editedContent || pkg?.package_json;
@@ -98,7 +103,7 @@ export function CreativePackageViewer({
 
           <div className="mt-6 space-y-4">
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -106,8 +111,46 @@ export function CreativePackageViewer({
                 className="gap-2"
               >
                 <FileVideo className="w-4 h-4" />
-                Criar Conteúdo no Pipeline
+                Criar Conteúdo
               </Button>
+              
+              {exportedUrl ? (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={openPdf}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Abrir PDF
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={copyLink}
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copiar Link
+                  </Button>
+                </>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => pkg && exportCreativePackage(pkg.id)}
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  {isExporting ? "Exportando..." : "Exportar PDF"}
+                </Button>
+              )}
               
               {hasChanges && (
                 <Button 
@@ -117,7 +160,7 @@ export function CreativePackageViewer({
                   className="gap-2"
                 >
                   <Save className="w-4 h-4" />
-                  {isSaving ? "Salvando..." : "Salvar Alterações"}
+                  {isSaving ? "Salvando..." : "Salvar"}
                 </Button>
               )}
             </div>

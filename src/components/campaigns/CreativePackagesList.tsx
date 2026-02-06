@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Package, MoreHorizontal, Eye, Copy, Trash2, Sparkles, Calendar } from "lucide-react";
+import { Package, MoreHorizontal, Eye, Copy, Trash2, Sparkles, Calendar, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -23,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { CreativePackage } from "@/types/creative-packages";
 import { cn } from "@/lib/utils";
+import { useExportPdf } from "@/hooks/useExportPdf";
 
 interface CreativePackagesListProps {
   packages: CreativePackage[];
@@ -37,6 +39,22 @@ export function CreativePackagesList({
 }: CreativePackagesListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  
+  const { exportCreativePackage } = useExportPdf();
+
+  const handleExport = async (pkg: CreativePackage, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExportingId(pkg.id);
+    
+    const result = await exportCreativePackage(pkg.id);
+    
+    if (result?.public_url) {
+      window.open(result.public_url, '_blank');
+    }
+    
+    setExportingId(null);
+  };
 
   const handleDuplicate = async (pkg: CreativePackage) => {
     // Find next version number
@@ -171,6 +189,18 @@ export function CreativePackagesList({
                       <Eye className="w-4 h-4 mr-2" />
                       Abrir
                     </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => handleExport(pkg, e)}
+                      disabled={exportingId === pkg.id}
+                    >
+                      {exportingId === pkg.id ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4 mr-2" />
+                      )}
+                      {exportingId === pkg.id ? "Exportando..." : "Exportar PDF"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(pkg); }}>
                       <Copy className="w-4 h-4 mr-2" />
                       Duplicar

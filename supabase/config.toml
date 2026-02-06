@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.ai-run]
 verify_jwt = false
+
+[functions.export-creative-pdf]
+verify_jwt = false
