@@ -49,20 +49,20 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       <motion.div 
         className={cn(
           "relative z-10 flex flex-col h-screen overflow-hidden",
-          sidebarCollapsed ? "ml-16" : "ml-64"
+          sidebarCollapsed ? "ml-14" : "ml-56"
         )}
         style={{ flex: 1 }}
         initial={false}
-        animate={{ marginLeft: sidebarCollapsed ? 64 : 256 }}
-        transition={{ type: "spring" as const, stiffness: 300, damping: 30 }}
+        animate={{ marginLeft: sidebarCollapsed ? 56 : 224 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         <Header title={title} onOpenSearch={() => setSearchOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-6 md:p-10">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <motion.div 
             className="max-w-[1800px] mx-auto preserve-3d w-full min-h-full"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.3 }}
           >
             {children}
           </motion.div>

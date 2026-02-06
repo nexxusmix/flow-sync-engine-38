@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Search, LogOut, ChevronDown, CreditCard } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { QuickActionsMenu } from "./QuickActionsMenu";
 
 interface HeaderProps {
   title: string;
@@ -129,116 +131,82 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
   return (
     <>
       <motion.header 
-        className="sticky top-0 z-30 h-20 bg-background/80 backdrop-blur-2xl border-b border-white/5 flex items-center justify-between px-6 md:px-12"
-        initial={{ y: -80, opacity: 0 }}
+        className="sticky top-0 z-30 h-14 bg-background/60 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-4 md:px-6"
+        initial={{ y: -56, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring" as const, stiffness: 100, damping: 20 }}
+        transition={{ type: "spring", stiffness: 200, damping: 25 }}
       >
-        {/* Left: Title with version badge */}
+        {/* Left: Version badge (subtle) */}
         <motion.div 
-          className="flex items-center gap-4"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="flex items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <motion.div 
-            className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/5 border border-primary/20"
-            whileHover={{ scale: 1.02, borderColor: "rgba(0, 163, 211, 0.4)" }}
-          >
-            <motion.span 
-              className="w-2 h-2 rounded-full bg-primary"
-              animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <span className="text-[9px] font-normal text-primary uppercase tracking-widest">Single Source of Truth // Alpha v2.4</span>
-          </motion.div>
+          <div className="hidden md:flex items-center gap-2 text-[9px] text-muted-foreground/60 uppercase tracking-[0.2em]">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-pulse" />
+            <span>Alpha v2.4</span>
+          </div>
         </motion.div>
 
-        {/* Center: Search */}
+        {/* Center: Search (constrained width) */}
         <motion.button
           onClick={onOpenSearch}
-          className="glass-card flex items-center gap-4 px-6 py-3 rounded-2xl min-w-[280px]"
-          initial={{ opacity: 0, y: -20 }}
+          className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all max-w-xs w-full md:w-72"
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          whileHover={{ 
-            scale: 1.02, 
-            borderColor: "rgba(255,255,255,0.2)",
-            boxShadow: "0 10px 30px -10px rgba(0, 163, 211, 0.2)"
-          }}
-          whileTap={{ scale: 0.98 }}
         >
-          <motion.span 
-            className="material-symbols-outlined text-muted-foreground text-xl"
-            whileHover={{ rotate: [0, -10, 10, 0] }}
-          >
-            search
-          </motion.span>
-          <span className="text-sm text-muted-foreground flex-1 text-left">Buscar...</span>
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-white/5 px-2 py-1 rounded font-normal">
+          <Search className="h-4 w-4 text-muted-foreground/70" />
+          <span className="text-xs text-muted-foreground/70 flex-1 text-left">Buscar...</span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/50 bg-white/[0.04] px-1.5 py-0.5 rounded">
             <span>⌘</span>
             <span>K</span>
-          </div>
+          </kbd>
         </motion.button>
 
-        {/* Right: Quick actions + Role switcher */}
+        {/* Right: Actions + Role + Logout */}
         <motion.div 
-          className="flex items-center gap-3"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="flex items-center gap-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          {/* Quick Action Buttons */}
-          <motion.button 
-            className="btn-action hidden lg:flex"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowLeadModal(true)}
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
-            <span>Novo Lead</span>
-          </motion.button>
-          <motion.button 
-            className="btn-action hidden xl:flex"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowProposalModal(true)}
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
-            <span>Nova Proposta</span>
-          </motion.button>
-          <motion.button 
-            className="btn-primary hidden xl:flex"
-            whileHover={{ scale: 1.05, y: -2, boxShadow: "0 25px 60px -15px rgba(0, 163, 211, 0.6)" }}
-            whileTap={{ scale: 0.95 }}
+          {/* Quick Actions Menu (+ Novo) */}
+          <QuickActionsMenu 
+            onNewLead={() => setShowLeadModal(true)}
+            onNewProposal={() => setShowProposalModal(true)}
+          />
+
+          {/* Primary CTA: Pagamento */}
+          <Button
+            size="sm"
+            className="h-9 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
             onClick={handlePayment}
           >
-            <span className="material-symbols-outlined text-sm">payments</span>
-            <span>Pagamento</span>
-          </motion.button>
+            <CreditCard className="h-4 w-4" />
+            <span className="hidden sm:inline text-xs uppercase tracking-wider font-light">Pagamento</span>
+          </Button>
 
           {/* Separator */}
-          <div className="h-8 w-px bg-white/5 mx-2 hidden lg:block" />
+          <div className="h-6 w-px bg-white/[0.06] mx-1 hidden md:block" />
 
-          {/* Role Switcher */}
+          {/* Role Switcher (compact) */}
           <div className="relative">
-            <motion.button
+            <button
               onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-white/5 bg-white/5"
-              whileHover={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
             >
-              <span className="text-[10px] font-normal text-foreground uppercase tracking-widest">
+              <span className="text-[10px] font-light text-foreground/90 uppercase tracking-wider">
                 {roles.find((r) => r.id === selectedRole)?.label}
               </span>
-              <motion.span 
-                className="material-symbols-outlined text-muted-foreground text-sm"
-                animate={{ rotate: roleDropdownOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                expand_more
-              </motion.span>
-            </motion.button>
+              <ChevronDown 
+                className={cn(
+                  "h-3 w-3 text-muted-foreground/60 transition-transform",
+                  roleDropdownOpen && "rotate-180"
+                )} 
+              />
+            </button>
 
             <AnimatePresence>
               {roleDropdownOpen && (
@@ -251,14 +219,14 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
                     exit={{ opacity: 0 }}
                   />
                   <motion.div 
-                    className="absolute right-0 top-full mt-2 w-40 glass-card rounded-2xl shadow-2xl z-50 py-2 border border-white/10 overflow-hidden"
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="absolute right-0 top-full mt-1.5 w-36 bg-background/95 backdrop-blur-xl rounded-lg border border-white/10 shadow-2xl z-50 py-1 overflow-hidden"
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
                   >
-                    {roles.map((role, index) => (
-                      <motion.button
+                    {roles.map((role) => (
+                      <button
                         key={role.id}
                         onClick={() => {
                           setSelectedRole(role.id);
@@ -266,18 +234,14 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
                           toast.success(`Modo: ${role.label}`);
                         }}
                         className={cn(
-                          "w-full px-4 py-3 text-left text-[10px] font-normal uppercase tracking-widest transition-colors",
+                          "w-full px-3 py-2 text-left text-[10px] font-light uppercase tracking-wider transition-colors",
                           selectedRole === role.id
-                            ? "text-primary bg-primary/5"
-                            : "text-muted-foreground hover:bg-white/5"
+                            ? "text-primary bg-primary/10"
+                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                         )}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ x: 4 }}
                       >
                         {role.label}
-                      </motion.button>
+                      </button>
                     ))}
                   </motion.div>
                 </>
@@ -285,23 +249,17 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
             </AnimatePresence>
           </div>
 
-          {/* Logout Button */}
-          <motion.button
+          {/* Logout Button (icon only) */}
+          <button
             onClick={async () => {
               await logout();
               window.location.href = '/';
             }}
-            className="w-10 h-10 rounded-2xl border border-border bg-muted/50 flex items-center justify-center"
+            className="w-9 h-9 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-destructive/20 hover:border-destructive/30 hover:text-destructive flex items-center justify-center transition-colors"
             title="Sair"
-            whileHover={{ 
-              scale: 1.1, 
-              backgroundColor: "rgba(239, 68, 68, 0.2)",
-              borderColor: "rgba(239, 68, 68, 0.3)"
-            }}
-            whileTap={{ scale: 0.9 }}
           >
-            <span className="material-symbols-outlined text-xl">logout</span>
-          </motion.button>
+            <LogOut className="h-4 w-4" />
+          </button>
         </motion.div>
       </motion.header>
 
