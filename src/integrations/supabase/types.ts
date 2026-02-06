@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_runs: {
+        Row: {
+          action_key: string
+          created_at: string
+          duration_ms: number | null
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          input_json: Json
+          output_json: Json | null
+          status: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          action_key: string
+          created_at?: string
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          input_json?: Json
+          output_json?: Json | null
+          status?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          action_key?: string
+          created_at?: string
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          input_json?: Json
+          output_json?: Json | null
+          status?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       brand_kits: {
         Row: {
           account_id: string | null
