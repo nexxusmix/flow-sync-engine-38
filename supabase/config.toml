@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.studio-generate-block]
 verify_jwt = false
+
+[functions.polo-ai-execute]
+verify_jwt = false

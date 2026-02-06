@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { useAgentExecution } from "@/hooks/useAgentExecution";
+import { ExecutionPlanView } from "./ExecutionPlanView";
+import type { ExecutionPlan, ActionResult, AttachmentInfo } from "@/types/agent";
 
 interface UploadedFile {
   name: string;
@@ -15,6 +18,10 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   files?: UploadedFile[];
+  plan?: ExecutionPlan;
+  results?: ActionResult[];
+  runId?: string;
+  needsConfirmation?: boolean;
 }
 
 interface AIAssistantProps {
@@ -25,8 +32,10 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/polo-ai-chat
 
 export function AIAssistant({ onClose }: AIAssistantProps) {
   const location = useLocation();
+  const { createRun, updateRunPlan, executePlan, isExecuting } = useAgentExecution();
+  
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "**Polo AI ativo.** Sou seu agente executor autônomo. Diga o que precisa e eu executo. Você pode anexar arquivos para análise." }
+    { role: 'assistant', content: "**Polo AI ativo.** Sou seu agente executor autônomo. Diga o que precisa e eu executo.\n\n📎 Anexe arquivos (PDF/DOCX/CSV) para análise\n🔧 Posso criar/atualizar: contratos, projetos, conteúdos, financeiro\n⚡ Executo automaticamente ações de baixo risco" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -243,6 +252,88 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
     }
   };
 
+  // Parse execution plan from AI response
+  const parseExecutionPlan = useCallback((content: string): { text: string; plan: ExecutionPlan | null } => {
+    const planMatch = content.match(/```json\s*\n?\s*(\{[\s\S]*?"execution_plan"[\s\S]*?\})\s*\n?\s*```/);
+    
+    if (planMatch) {
+      try {
+        const parsed = JSON.parse(planMatch[1]);
+        const plan = parsed.execution_plan as ExecutionPlan;
+        const textWithoutPlan = content.replace(planMatch[0], '').trim();
+        return { text: textWithoutPlan, plan };
+      } catch {
+        return { text: content, plan: null };
+      }
+    }
+    
+    return { text: content, plan: null };
+  }, []);
+
+  // Handle execution of a plan
+  const handleExecutePlan = useCallback(async (messageIndex: number) => {
+    const message = messages[messageIndex];
+    if (!message.plan) return;
+
+    const runId = await createRun(
+      messages[messageIndex - 1]?.content || 'Execução via chat',
+      message.files?.map(f => ({ name: f.name, type: f.type, size: f.size, content: f.content })) || [],
+      {}
+    );
+
+    if (!runId) return;
+
+    await updateRunPlan(runId, message.plan);
+    
+    // Update message with runId
+    setMessages(prev => {
+      const newMessages = [...prev];
+      newMessages[messageIndex] = { ...newMessages[messageIndex], runId };
+      return newMessages;
+    });
+
+    // Execute the plan
+    const result = await executePlan(runId, message.plan);
+    
+    if (result) {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[messageIndex] = { 
+          ...newMessages[messageIndex], 
+          results: result.actions,
+          needsConfirmation: false
+        };
+        return newMessages;
+      });
+      
+      if (result.errors.length === 0) {
+        toast.success('Execução concluída com sucesso!');
+      } else {
+        toast.warning(`Execução concluída com ${result.errors.length} erro(s)`);
+      }
+    }
+  }, [messages, createRun, updateRunPlan, executePlan]);
+
+  // Post-process assistant message to extract plan
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === 'assistant' && lastMessage.content && !lastMessage.plan) {
+      const { text, plan } = parseExecutionPlan(lastMessage.content);
+      if (plan) {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            ...newMessages[newMessages.length - 1],
+            content: text,
+            plan,
+            needsConfirmation: plan.needs_confirmation
+          };
+          return newMessages;
+        });
+      }
+    }
+  }, [messages, parseExecutionPlan]);
+
   const handleSend = async () => {
     if ((!input.trim() && uploadedFiles.length === 0) || isLoading) return;
 
@@ -316,7 +407,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
             <div className={`max-w-[90%] px-4 py-3 rounded-2xl text-sm ${
               msg.role === 'user' 
                 ? 'bg-foreground text-background font-medium' 
@@ -342,6 +433,36 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                 </div>
               )}
             </div>
+            
+            {/* Execution Plan */}
+            {msg.plan && (
+              <div className="max-w-[90%] mt-2">
+                <ExecutionPlanView
+                  plan={msg.plan}
+                  results={msg.results}
+                  isExecuting={isExecuting && msg.runId !== undefined && !msg.results}
+                  needsConfirmation={msg.needsConfirmation}
+                  onConfirm={() => handleExecutePlan(i)}
+                  onCancel={() => {
+                    setMessages(prev => {
+                      const newMessages = [...prev];
+                      newMessages[i] = { ...newMessages[i], needsConfirmation: false, plan: undefined };
+                      return newMessages;
+                    });
+                  }}
+                />
+                {/* Auto-execute low risk plans */}
+                {msg.plan && !msg.needsConfirmation && !msg.results && !isExecuting && msg.plan.risk_level === 'low' && (
+                  <button
+                    onClick={() => handleExecutePlan(i)}
+                    className="mt-2 w-full text-xs text-primary hover:underline flex items-center justify-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-sm">bolt</span>
+                    Executar plano automaticamente
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
         {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
