@@ -585,8 +585,6 @@ ${formData.inputText}
                     concept={concept}
                     script={script}
                     campaigns={campaigns}
-                    onCreateContent={handleCreateContent}
-                    onLinkToCampaign={handleLinkToCampaign}
                     onSaveAsReference={handleSaveAsReference}
                   />
                 </div>
