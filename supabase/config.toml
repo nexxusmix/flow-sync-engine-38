@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.generate-tasks-from-text]
 verify_jwt = false
+
+[functions.ai-run]
+verify_jwt = false
