@@ -1,173 +1,232 @@
 
-# Plano: Corrigir Portal do Cliente para Exibir Dados
+# Plano: Transformar Landing Page com Efeitos Visuais Imersivos
 
-## Problema Identificado
+## Visao Geral
 
-O portal do cliente nao esta exibindo dados porque existe uma **desconexao entre as fontes de dados**:
+Transformar a pagina inicial em uma experiencia visual cinematografica com animacoes fluidas, efeitos neon, gradientes dinamicos, particulas interativas e profundidade 3D.
 
-1. **Fluxo atual do admin**: Na aba "Arquivos" do projeto, o usuario marca arquivos como `visible_in_portal=true` na tabela `project_files`
-2. **Fluxo atual do cliente**: A pagina `ClientPortalPage` busca dados da tabela `portal_deliverables` (que esta vazia)
+## Melhorias Planejadas
 
-**Resultado**: Os arquivos marcados como visiveis no admin nunca chegam ao cliente.
+### 1. Sistema de Particulas Interativo
 
-### Evidencias encontradas:
-
-```text
-portal_links -> OK (link existe e esta ativo)
-portal_deliverables -> VAZIO (nenhum registro)
-project_files -> TEM DADOS (1 arquivo com visible_in_portal=true)
-```
-
-## Solucao Proposta
-
-Modificar o hook `useClientPortal` para buscar arquivos de `project_files` atraves do `project_id` do portal, em vez de buscar de `portal_deliverables`. Isso alinha o fluxo de dados existente.
-
-## Arquitetura da Correcao
+Criar um componente canvas que renderiza particulas flutuantes que:
+- Respondem ao movimento do mouse
+- Tem brilho neon (cor primaria ciano)
+- Conectam-se com linhas quando proximas
+- Flutuam com animacao suave
 
 ```text
-Admin marca arquivo como visivel
-            |
-            v
-    project_files (visible_in_portal=true)
-            |
-            v
-    portal_links (project_id) <-- Link de conexao
-            |
-            v
-    useClientPortal busca via project_id
-            |
-            v
-    Cliente ve os arquivos no portal
+Particula ────── conexao ────── Particula
+    │                               │
+    │      movimento organico       │
+    ▼                               ▼
+  glow                            glow
 ```
 
-## Alteracoes Necessarias
+### 2. Gradientes Animados no Fundo
 
-### 1. Migracao SQL - RLS para project_files
+Substituir os blobs estaticos por orbs com:
+- Gradientes radiais animados
+- Pulso de luz (breathing effect)
+- Movimento orbital lento
+- Cores: ciano primario, roxo, azul profundo
 
-Adicionar politica RLS para permitir leitura anonima de arquivos visiveis no portal:
+### 3. Efeitos Neon nos Elementos
 
-```sql
--- Permite leitura anonima de arquivos visiveis no portal
--- quando o projeto tem um portal_link ativo
-CREATE POLICY "anon_view_portal_files" ON project_files
-  FOR SELECT TO anon
-  USING (
-    visible_in_portal = true
-    AND EXISTS (
-      SELECT 1 FROM portal_links pl
-      WHERE pl.project_id = project_files.project_id
-      AND pl.is_active = true
-    )
-  );
+- Titulo hero com text-shadow neon pulsante
+- Botoes com border glow animado
+- Cards com hover neon intenso
+- Badge com efeito scanner/pulse
+
+### 4. Animacoes de Entrada Avancadas
+
+Usando Framer Motion:
+- Texto hero com reveal letra por letra
+- Stats com contagem animada (counter)
+- Cards com entrada 3D (rotateX)
+- Elementos com parallax no scroll
+
+### 5. Efeito de Profundidade 3D
+
+- Perspectiva no container principal
+- Layers de fundo em diferentes Z-indexes
+- Movimento parallax no mouse hover
+- Video hero com efeito flutuante 3D
+
+### 6. Elementos Visuais Adicionais
+
+- Grid de linhas cyberpunk no fundo
+- Barra de "scan line" animada
+- Reflexo espelhado sutil no hero
+- Aura de luz atras do video
+
+## Estrutura dos Componentes
+
+```text
+LandingPage
+├── ParticlesBackground (canvas)
+├── AnimatedGradientOrbs
+├── CyberpunkGrid
+├── ScanLine
+│
+├── NavBar (glassmorphism + neon)
+│
+├── HeroSection
+│   ├── AnimatedBadge (pulse scanner)
+│   ├── NeonTitle (text reveal + glow)
+│   ├── AnimatedStats (counter)
+│   └── FloatingVideo (3D transform)
+│
+├── FeaturesSection
+│   └── FeatureCard[] (3D hover + neon)
+│
+├── CTASection (parallax + glow)
+│
+└── Footer (fade gradient)
 ```
 
-### 2. Atualizar useClientPortal.tsx
+## Detalhes Tecnicos
 
-Modificar a query para buscar de `project_files` em vez de `portal_deliverables`:
+### Particulas (Canvas)
 
-**Antes:**
 ```typescript
-const { data: deliverables } = await supabase
-  .from('portal_deliverables')
-  .select('*')
-  .eq('portal_link_id', portal.id)
-  .eq('visible_in_portal', true);
-```
-
-**Depois:**
-```typescript
-const { data: files } = await supabase
-  .from('project_files')
-  .select('*')
-  .eq('project_id', portal.project_id)
-  .eq('visible_in_portal', true)
-  .order('created_at', { ascending: false });
-```
-
-### 3. Atualizar Tipos e Interface
-
-Adaptar a interface `PortalDeliverable` para ser compativel com `ProjectFile`:
-
-```typescript
-export interface PortalFile {
-  id: string;
-  project_id: string;
-  name: string;
-  folder: string;
-  file_url: string;
-  file_type: string | null;
-  visible_in_portal: boolean;
-  created_at: string;
+// Estrutura basica
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  opacity: number;
 }
 
-export interface PortalData {
-  portal: PortalLink;
-  files: PortalFile[]; // Renomear deliverables para files
-  comments: PortalComment[];
-  approvals: PortalApproval[];
+// Renderizacao com glow
+ctx.shadowBlur = 15;
+ctx.shadowColor = '#00A3D3';
+ctx.fillStyle = 'rgba(0, 163, 211, opacity)';
+ctx.arc(x, y, size, 0, Math.PI * 2);
+```
+
+### Gradientes Animados CSS
+
+```css
+.gradient-orb {
+  background: radial-gradient(
+    circle,
+    rgba(0, 163, 211, 0.4) 0%,
+    rgba(139, 92, 246, 0.2) 50%,
+    transparent 70%
+  );
+  animation: pulse 4s ease-in-out infinite,
+             orbit 20s linear infinite;
 }
 ```
 
-### 4. Atualizar ClientPortalPage.tsx
+### Titulo Neon
 
-Adaptar o componente para usar a nova estrutura de dados:
-
-- Renomear `deliverables` para `files`
-- Ajustar referencias de `deliverable.title` para `file.name`
-- Detectar tipo de arquivo por `file_type` ou extensao
-- Exibir preview adequado baseado no tipo
-
-### 5. Ajustar Sistema de Comentarios/Aprovacoes
-
-Como comentarios e aprovacoes estao vinculados a `deliverable_id`:
-- Mudar para `file_id` referenciando `project_files.id`
-- Ou manter `portal_deliverables` apenas para comentarios (vinculo: `project_file_id`)
-
-**Opcao simplificada**: Vincular comentarios diretamente ao `project_file_id`:
-
-```sql
--- Atualizar portal_comments para referenciar project_files
-ALTER TABLE portal_comments
-  ADD COLUMN project_file_id UUID REFERENCES project_files(id);
-
--- Adicionar RLS para comentarios
-CREATE POLICY "anon_view_comments_portal_files" ON portal_comments
-  FOR SELECT TO anon
-  USING (
-    project_file_id IN (
-      SELECT id FROM project_files
-      WHERE visible_in_portal = true
-    )
-  );
-
-CREATE POLICY "anon_insert_comments_portal_files" ON portal_comments
-  FOR INSERT TO anon
-  WITH CHECK (
-    project_file_id IN (
-      SELECT id FROM project_files
-      WHERE visible_in_portal = true
-    )
-  );
+```css
+.neon-title {
+  text-shadow:
+    0 0 10px rgba(0, 163, 211, 0.5),
+    0 0 20px rgba(0, 163, 211, 0.3),
+    0 0 40px rgba(0, 163, 211, 0.2);
+  animation: neonPulse 2s ease-in-out infinite;
+}
 ```
 
-## Arquivos a Modificar
+### Grid Cyberpunk
+
+```css
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(0, 163, 211, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 163, 211, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+}
+```
+
+## Animacoes Framer Motion
+
+### Hero Title Reveal
+
+```typescript
+const titleVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.03 }
+  }
+};
+
+const letterVariants = {
+  hidden: { opacity: 0, y: 50, rotateX: -90 },
+  visible: { opacity: 1, y: 0, rotateX: 0 }
+};
+```
+
+### Parallax no Mouse
+
+```typescript
+const { scrollYProgress } = useScroll();
+const y = useTransform(scrollYProgress, [0, 1], [0, -100]);
+
+// Mouse parallax
+const mouseX = useMotionValue(0);
+const mouseY = useMotionValue(0);
+const rotateX = useTransform(mouseY, [-300, 300], [5, -5]);
+const rotateY = useTransform(mouseX, [-300, 300], [-5, 5]);
+```
+
+### Counter Animado
+
+```typescript
+function AnimatedCounter({ value }: { value: number }) {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, Math.round);
+
+  useEffect(() => {
+    const controls = animate(count, value, { duration: 2 });
+    return controls.stop;
+  }, []);
+
+  return <motion.span>{rounded}</motion.span>;
+}
+```
+
+## Arquivos a Criar/Modificar
 
 | Arquivo | Acao | Descricao |
 |---------|------|-----------|
-| Migracao SQL | Criar | RLS para project_files e ajuste em portal_comments |
-| `src/hooks/useClientPortal.tsx` | Modificar | Buscar de project_files via project_id |
-| `src/pages/ClientPortalPage.tsx` | Modificar | Adaptar UI para estrutura de files |
+| `src/components/landing/ParticlesBackground.tsx` | Criar | Sistema de particulas canvas |
+| `src/components/landing/AnimatedGradientOrbs.tsx` | Criar | Orbs de gradiente animados |
+| `src/components/landing/CyberpunkGrid.tsx` | Criar | Grid de fundo estilo cyber |
+| `src/components/landing/NeonTitle.tsx` | Criar | Titulo com efeito neon |
+| `src/components/landing/AnimatedCounter.tsx` | Criar | Contador animado |
+| `src/components/landing/FloatingCard.tsx` | Criar | Card com hover 3D |
+| `src/pages/LandingPage.tsx` | Modificar | Integrar todos os efeitos |
+| `src/index.css` | Modificar | Adicionar keyframes neon |
 
 ## Sequencia de Implementacao
 
-1. Criar migracao SQL com RLS policies para `project_files` e `portal_comments`
-2. Atualizar `useClientPortal.tsx` para buscar de `project_files`
-3. Atualizar `ClientPortalPage.tsx` para exibir arquivos
-4. Testar fluxo completo end-to-end
+1. Adicionar CSS keyframes para neon e gradientes
+2. Criar componente ParticlesBackground
+3. Criar componente AnimatedGradientOrbs
+4. Criar componente CyberpunkGrid
+5. Criar componentes de texto animado (NeonTitle, Counter)
+6. Criar FloatingCard com efeitos 3D
+7. Reescrever LandingPage integrando tudo
+8. Testar performance e ajustar
 
-## Resultado Esperado
+## Preview do Resultado
 
-Apos a implementacao:
-- Arquivos marcados como "visivel no portal" na aba de arquivos aparecerao no portal do cliente
-- Cliente podera comentar e aprovar arquivos
-- Fluxo totalmente integrado sem necessidade de tabela separada
+A landing page tera:
+- Particulas ciano flutuando e conectando-se
+- Orbs de gradiente pulsando suavemente no fundo
+- Grid cyberpunk sutil atravessando a tela
+- Titulo aparecendo letra por letra com glow neon
+- Numeros das stats contando de 0 ate o valor
+- Video flutuando com perspectiva 3D
+- Cards subindo e girando ao aparecer
+- Hover com brilho neon intenso em tudo
+- Linha de scan passando periodicamente
