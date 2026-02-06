@@ -16,6 +16,8 @@ export interface CreativeBrief {
   input_files?: { path: string; type: string; name: string }[];
   extracted_context?: ExtractedContext;
   package_type: PackageType;
+  objective?: string;
+  delivery_type?: string;
   status: BriefStatus;
   created_at: string;
   updated_at: string;
