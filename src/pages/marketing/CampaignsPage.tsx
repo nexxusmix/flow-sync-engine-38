@@ -5,7 +5,7 @@ import { Campaign } from "@/types/marketing";
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Megaphone, Sparkles, Calendar, DollarSign,
-  MoreHorizontal, Play, Pause, Archive, Trash2, Loader2, X
+  MoreHorizontal, Play, Pause, Archive, Trash2, Loader2, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,21 +41,26 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { generateCampaignPackage, isAIError, GenerateCampaignPackageResult } from "@/lib/ai";
+import { CampaignPackagesSection } from "@/components/campaigns";
 
 function CampaignCard({ 
   campaign, 
+  campaigns,
   onStatusChange,
   onDelete,
 }: { 
   campaign: Campaign;
+  campaigns: Campaign[];
   onStatusChange: (status: Campaign['status']) => void;
   onDelete: () => void;
 }) {
+  const [showPackages, setShowPackages] = useState(false);
+  
   const statusColors = {
     draft: 'bg-slate-500',
     active: 'bg-emerald-500',
     paused: 'bg-amber-500',
-    ended: 'bg-red-500',
+    ended: 'bg-destructive',
   };
 
   const statusLabels = {
@@ -156,9 +161,33 @@ function CampaignCard({
         </div>
       </div>
 
-      <Button variant="outline" className="w-full mt-4" size="sm">
-        Ver Conteúdos
-      </Button>
+      <div className="flex gap-2 mt-4">
+        <Button variant="outline" className="flex-1" size="sm">
+          Ver Conteúdos
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowPackages(true)}
+          className="gap-1"
+        >
+          <Package className="w-3 h-3" />
+          Pacotes
+        </Button>
+      </div>
+
+      {/* Packages Sheet */}
+      <Sheet open={showPackages} onOpenChange={setShowPackages}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5" />
+              {campaign.name}
+            </SheetTitle>
+          </SheetHeader>
+          <CampaignPackagesSection campaign={campaign} campaigns={campaigns} />
+        </SheetContent>
+      </Sheet>
     </motion.div>
   );
 }
@@ -319,6 +348,7 @@ export default function CampaignsPage() {
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign}
+                  campaigns={campaigns}
                   onStatusChange={(status) => handleStatusChange(campaign.id, status)}
                   onDelete={() => handleDelete(campaign.id)}
                 />
@@ -339,6 +369,7 @@ export default function CampaignsPage() {
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign}
+                  campaigns={campaigns}
                   onStatusChange={(status) => handleStatusChange(campaign.id, status)}
                   onDelete={() => handleDelete(campaign.id)}
                 />
@@ -359,6 +390,7 @@ export default function CampaignsPage() {
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign}
+                  campaigns={campaigns}
                   onStatusChange={(status) => handleStatusChange(campaign.id, status)}
                   onDelete={() => handleDelete(campaign.id)}
                 />

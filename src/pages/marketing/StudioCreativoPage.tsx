@@ -584,8 +584,12 @@ ${formData.inputText}
                     brief={selectedBrief}
                     concept={concept}
                     script={script}
+                    storyboard={scenes}
+                    shotlist={shotlist}
+                    moodboard={moodboard}
                     campaigns={campaigns}
                     onSaveAsReference={handleSaveAsReference}
+                    onCampaignCreated={(campaign) => setCampaigns(prev => [...prev, campaign])}
                   />
                 </div>
               </div>
