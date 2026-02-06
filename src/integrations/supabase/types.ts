@@ -1264,10 +1264,12 @@ export type Database = {
           account_id: string | null
           brand_kit_id: string | null
           created_at: string
+          delivery_type: string | null
           extracted_context: Json | null
           id: string
           input_files: Json | null
           input_text: string | null
+          objective: string | null
           package_type: string | null
           project_id: string | null
           status: string | null
@@ -1279,10 +1281,12 @@ export type Database = {
           account_id?: string | null
           brand_kit_id?: string | null
           created_at?: string
+          delivery_type?: string | null
           extracted_context?: Json | null
           id?: string
           input_files?: Json | null
           input_text?: string | null
+          objective?: string | null
           package_type?: string | null
           project_id?: string | null
           status?: string | null
@@ -1294,10 +1298,12 @@ export type Database = {
           account_id?: string | null
           brand_kit_id?: string | null
           created_at?: string
+          delivery_type?: string | null
           extracted_context?: Json | null
           id?: string
           input_files?: Json | null
           input_text?: string | null
+          objective?: string | null
           package_type?: string | null
           project_id?: string | null
           status?: string | null

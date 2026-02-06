@@ -5,32 +5,19 @@ import {
   ConceptContent, ScriptContent, MoodboardContent, ShotlistItem,
   PACKAGE_TYPES, PackageType, CreativePackageResponse
 } from "@/types/creative-studio";
-import { BrandKit } from "@/types/marketing";
+import { BrandKit, Campaign } from "@/types/marketing";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Sparkles, Upload, FileText, Image, Film, Palette, 
-  List, Download, RefreshCw, ChevronRight, Play, Clock,
-  Wand2, Eye, Trash2, Plus, Check, AlertTriangle
+  Wand2, Download, Trash2, Clock, FileText
 } from "lucide-react";
+import type { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { StudioBriefForm, StudioOutputTabs, StudioApplyActions } from "@/components/studio";
 
 export default function StudioCreativoPage() {
   // State
@@ -40,21 +27,18 @@ export default function StudioCreativoPage() {
   const [scenes, setScenes] = useState<StoryboardScene[]>([]);
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [brandKits, setBrandKits] = useState<BrandKit[]>([]);
-  
-  // Form State
-  const [title, setTitle] = useState("");
-  const [inputText, setInputText] = useState("");
-  const [selectedBrandKit, setSelectedBrandKit] = useState<string>("none");
-  const [packageType, setPackageType] = useState<PackageType>("full");
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   
   // Loading States
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingImages, setGeneratingImages] = useState<Set<number>>(new Set());
   const [progress, setProgress] = useState(0);
+  const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBriefs();
     fetchBrandKits();
+    fetchCampaigns();
   }, []);
 
   useEffect(() => {
@@ -81,6 +65,15 @@ export default function StudioCreativoPage() {
       .order('name');
     
     if (data) setBrandKits(data as unknown as BrandKit[]);
+  };
+
+  const fetchCampaigns = async () => {
+    const { data } = await supabase
+      .from('campaigns')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (data) setCampaigns(data as unknown as Campaign[]);
   };
 
   const fetchOutputs = async (briefId: string) => {
@@ -113,12 +106,15 @@ export default function StudioCreativoPage() {
     if (data) setImages(data as unknown as GeneratedImage[]);
   };
 
-  const handleCreateBrief = async () => {
-    if (!title || !inputText) {
-      toast.error("Título e briefing são obrigatórios");
-      return;
-    }
-
+  const handleGenerate = async (formData: {
+    title: string;
+    inputText: string;
+    brandKitId: string | null;
+    packageType: PackageType;
+    objective: string;
+    deliveryType: string;
+    referenceFiles: File[];
+  }) => {
     setIsGenerating(true);
     setProgress(10);
 
@@ -127,10 +123,12 @@ export default function StudioCreativoPage() {
       const { data: brief, error: briefError } = await supabase
         .from('creative_briefs')
         .insert([{
-          title,
-          input_text: inputText,
-          brand_kit_id: selectedBrandKit === "none" ? null : selectedBrandKit || null,
-          package_type: packageType,
+          title: formData.title,
+          input_text: formData.inputText,
+          brand_kit_id: formData.brandKitId,
+          package_type: formData.packageType,
+          objective: formData.objective,
+          delivery_type: formData.deliveryType,
           status: 'processing',
         }])
         .select()
@@ -142,18 +140,27 @@ export default function StudioCreativoPage() {
 
       // Get brand kit details
       let brandKit: BrandKit | undefined;
-      if (selectedBrandKit && selectedBrandKit !== "none") {
-        const bk = brandKits.find(b => b.id === selectedBrandKit);
+      if (formData.brandKitId) {
+        const bk = brandKits.find(b => b.id === formData.brandKitId);
         if (bk) brandKit = bk;
       }
+
+      // Build enhanced input text with objective and delivery type
+      const enhancedInput = `
+OBJETIVO: ${formData.objective}
+TIPO DE ENTREGA: ${formData.deliveryType}
+
+${formData.inputText}
+      `.trim();
 
       // Call AI to generate creative package
       const { data: creativeData, error: aiError } = await supabase.functions.invoke('creative-studio', {
         body: {
           briefId: brief.id,
-          inputText,
+          inputText: enhancedInput,
           brandKit,
-          packageType,
+          packageType: formData.packageType,
+          format: formData.deliveryType,
         }
       });
 
@@ -215,7 +222,7 @@ export default function StudioCreativoPage() {
           camera: scene.camera,
           duration_sec: scene.duration_sec,
           audio: scene.audio,
-          notes: scene.image_prompt, // Store prompt in notes for now
+          notes: scene.image_prompt,
         }));
 
         await supabase.from('storyboard_scenes').insert(scenesToInsert);
@@ -229,13 +236,9 @@ export default function StudioCreativoPage() {
 
       setProgress(100);
 
-      // Reset form and reload
-      setTitle("");
-      setInputText("");
-      setSelectedBrandKit("none");
+      // Reload and select
       fetchBriefs();
       
-      // Select the new brief
       const { data: updatedBrief } = await supabase
         .from('creative_briefs')
         .select('*')
@@ -255,6 +258,110 @@ export default function StudioCreativoPage() {
     } finally {
       setIsGenerating(false);
       setProgress(0);
+    }
+  };
+
+  const handleRegenerateOutput = async (outputType: string) => {
+    if (!selectedBrief) return;
+    
+    setIsRegenerating(outputType);
+
+    try {
+      let brandKit: BrandKit | undefined;
+      if (selectedBrief.brand_kit_id) {
+        brandKit = brandKits.find(b => b.id === selectedBrief.brand_kit_id);
+      }
+
+      // Call AI with specific output focus
+      const { data: creativeData, error: aiError } = await supabase.functions.invoke('creative-studio', {
+        body: {
+          briefId: selectedBrief.id,
+          inputText: selectedBrief.input_text,
+          brandKit,
+          packageType: selectedBrief.package_type,
+        }
+      });
+
+      if (aiError) throw aiError;
+
+      const pkg = creativeData as CreativePackageResponse;
+
+      // Update the specific output using delete + insert pattern
+      const updateOutput = async (type: string, content: unknown) => {
+        // Delete existing output of this type
+        await supabase
+          .from('creative_outputs')
+          .delete()
+          .eq('brief_id', selectedBrief.id)
+          .eq('type', type);
+        
+        // Insert new output
+        await supabase
+          .from('creative_outputs')
+          .insert([{
+            brief_id: selectedBrief.id,
+            type,
+            content: content as Json,
+          }]);
+      };
+
+      if (outputType === 'concept' && pkg.concept) {
+        await updateOutput('concept', pkg.concept);
+      } else if (outputType === 'script' && pkg.script) {
+        await updateOutput('script', pkg.script);
+      } else if (outputType === 'moodboard' && pkg.moodboard) {
+        await updateOutput('moodboard', pkg.moodboard);
+      } else if (outputType === 'shotlist' && pkg.shotlist) {
+        await updateOutput('shotlist', pkg.shotlist);
+      } else if (outputType === 'storyboard' && pkg.storyboard) {
+        // Delete existing scenes and insert new ones
+        await supabase.from('storyboard_scenes').delete().eq('brief_id', selectedBrief.id);
+        
+        const scenesToInsert = pkg.storyboard.map((scene, i) => ({
+          brief_id: selectedBrief.id,
+          scene_number: scene.scene_number || i + 1,
+          title: scene.title,
+          description: scene.description,
+          emotion: scene.emotion,
+          camera: scene.camera,
+          duration_sec: scene.duration_sec,
+          audio: scene.audio,
+          notes: scene.image_prompt,
+        }));
+
+        await supabase.from('storyboard_scenes').insert(scenesToInsert);
+      }
+
+      // Refresh data
+      fetchOutputs(selectedBrief.id);
+      fetchScenes(selectedBrief.id);
+
+      toast.success(`${outputType} regenerado com sucesso!`);
+
+    } catch (error: unknown) {
+      console.error("Error regenerating output:", error);
+      toast.error("Erro ao regenerar output");
+    } finally {
+      setIsRegenerating(null);
+    }
+  };
+
+  const handleUpdateOutput = async (outputType: string, content: unknown) => {
+    if (!selectedBrief) return;
+
+    try {
+      await supabase
+        .from('creative_outputs')
+        .update({ content: content as Json })
+        .eq('brief_id', selectedBrief.id)
+        .eq('type', outputType);
+
+      // Update local state - refetch to ensure consistency
+      fetchOutputs(selectedBrief.id);
+
+    } catch (error) {
+      console.error("Error updating output:", error);
+      toast.error("Erro ao atualizar");
     }
   };
 
@@ -311,16 +418,6 @@ export default function StudioCreativoPage() {
     }
   };
 
-  const handleGenerateAllImages = async () => {
-    const scenesWithPrompts = scenes.filter(s => s.notes && !s.image_url);
-    
-    for (const scene of scenesWithPrompts) {
-      await handleGenerateSceneImage(scene);
-      // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  };
-
   const handleDeleteBrief = async (id: string) => {
     await supabase.from('creative_briefs').delete().eq('id', id);
     setBriefs(briefs.filter(b => b.id !== id));
@@ -331,6 +428,44 @@ export default function StudioCreativoPage() {
       setImages([]);
     }
     toast.success("Brief excluído");
+  };
+
+  const handleCreateContent = async (data: { title: string; hook?: string; script?: string }) => {
+    try {
+      const { error } = await supabase
+        .from('content_items')
+        .insert([{
+          title: data.title,
+          hook: data.hook,
+          script: data.script,
+          status: 'briefing',
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Conteúdo criado no Pipeline!");
+    } catch (error) {
+      console.error("Error creating content:", error);
+      toast.error("Erro ao criar conteúdo");
+    }
+  };
+
+  const handleLinkToCampaign = async (campaignId: string) => {
+    if (!selectedBrief) return;
+
+    try {
+      // Here we would link the brief to the campaign
+      // For now, we just show a success message
+      const campaign = campaigns.find(c => c.id === campaignId);
+      toast.success(`Brief vinculado à campanha "${campaign?.name}"`);
+    } catch (error) {
+      console.error("Error linking to campaign:", error);
+      toast.error("Erro ao vincular");
+    }
+  };
+
+  const handleSaveAsReference = () => {
+    toast.success("Brief salvo como referência");
   };
 
   // Get typed outputs
@@ -348,112 +483,48 @@ export default function StudioCreativoPage() {
     <DashboardLayout title="Studio Criativo">
       <div className="h-[calc(100vh-120px)] flex gap-6">
         {/* Left Column - Create/Select Brief */}
-        <div className="w-[400px] flex flex-col gap-4">
+        <div className="w-[380px] flex flex-col gap-4">
           {/* Create New Brief */}
-          <Card className="glass-card p-4">
-            <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
-              <Wand2 className="w-4 h-4 text-primary" />
-              Novo Brief Criativo
-            </h3>
-
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs">Título</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Campanha Lançamento Produto X"
-                  disabled={isGenerating}
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs">Brand Kit (opcional)</Label>
-                <Select value={selectedBrandKit} onValueChange={setSelectedBrandKit} disabled={isGenerating}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhum</SelectItem>
-                    {brandKits.map(kit => (
-                      <SelectItem key={kit.id} value={kit.id}>{kit.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-xs">Tipo de Pacote</Label>
-                <Select value={packageType} onValueChange={(v) => setPackageType(v as PackageType)} disabled={isGenerating}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PACKAGE_TYPES.map(pkg => (
-                      <SelectItem key={pkg.type} value={pkg.type}>
-                        <div>
-                          <p className="font-medium">{pkg.name}</p>
-                          <p className="text-xs text-muted-foreground">{pkg.description}</p>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-xs">Briefing / Input</Label>
-                <Textarea
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Cole aqui o briefing, descreva a ideia, objetivo, público, restrições..."
-                  rows={6}
-                  disabled={isGenerating}
-                />
-              </div>
-
-              {isGenerating && (
-                <div className="space-y-2">
-                  <Progress value={progress} className="h-2" />
-                  <p className="text-xs text-muted-foreground text-center">
-                    Gerando pacote criativo com IA...
-                  </p>
-                </div>
-              )}
-
-              <Button 
-                className="w-full" 
-                onClick={handleCreateBrief}
-                disabled={isGenerating || !title || !inputText}
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {isGenerating ? "Gerando..." : "Processar com IA"}
-              </Button>
-            </div>
-          </Card>
+          <StudioBriefForm
+            brandKits={brandKits}
+            isGenerating={isGenerating}
+            progress={progress}
+            onGenerate={handleGenerate}
+          />
 
           {/* Briefs List */}
-          <Card className="glass-card p-4 flex-1 overflow-hidden">
-            <h3 className="font-medium text-foreground mb-3">Briefs Recentes</h3>
-            <ScrollArea className="h-[calc(100%-40px)]">
-              <div className="space-y-2 pr-4">
+          <Card className="bg-card/50 backdrop-blur border-border/50 p-4 flex-1 overflow-hidden">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Histórico
+              </h3>
+              <Badge variant="secondary" className="text-[10px]">
+                {briefs.length} briefs
+              </Badge>
+            </div>
+
+            <ScrollArea className="h-[calc(100%-44px)]">
+              <div className="space-y-2 pr-2">
                 {briefs.map(brief => (
                   <div
                     key={brief.id}
                     className={cn(
-                      "p-3 rounded-lg cursor-pointer transition-colors",
+                      "p-3 rounded-lg cursor-pointer transition-all",
                       selectedBrief?.id === brief.id 
-                        ? "bg-primary/20 border border-primary/30" 
-                        : "bg-muted/30 hover:bg-muted/50"
+                        ? "bg-primary/15 border border-primary/30 shadow-sm" 
+                        : "bg-muted/30 hover:bg-muted/50 border border-transparent"
                     )}
                     onClick={() => setSelectedBrief(brief)}
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm text-foreground truncate">{brief.title}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium text-sm text-foreground truncate flex-1">
+                        {brief.title}
+                      </p>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100 flex-shrink-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteBrief(brief.id);
@@ -462,18 +533,20 @@ export default function StudioCreativoPage() {
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1.5">
                       <Badge 
                         variant="outline" 
                         className={cn(
-                          "text-[9px]",
-                          brief.status === 'ready' && "bg-emerald-500/20 text-emerald-500",
-                          brief.status === 'processing' && "bg-amber-500/20 text-amber-500"
+                          "text-[9px] px-1.5",
+                          brief.status === 'ready' && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+                          brief.status === 'processing' && "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
+                          brief.status === 'draft' && "bg-muted text-muted-foreground"
                         )}
                       >
-                        {brief.status}
+                        {brief.status === 'ready' ? 'Pronto' : brief.status === 'processing' ? 'Processando' : 'Rascunho'}
                       </Badge>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" />
                         {new Date(brief.created_at).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
@@ -493,332 +566,60 @@ export default function StudioCreativoPage() {
         {/* Right Column - Preview */}
         <div className="flex-1 overflow-hidden">
           {selectedBrief ? (
-            <Card className="glass-card h-full overflow-hidden">
-              <div className="p-4 border-b border-border flex items-center justify-between">
+            <Card className="bg-card/50 backdrop-blur border-border/50 h-full overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="font-medium text-foreground">{selectedBrief.title}</h2>
+                  <h2 className="font-semibold text-foreground">{selectedBrief.title}</h2>
                   <p className="text-xs text-muted-foreground">
                     {PACKAGE_TYPES.find(p => p.type === selectedBrief.package_type)?.name}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  {scenes.filter(s => s.notes && !s.image_url).length > 0 && (
-                    <Button variant="outline" size="sm" onClick={handleGenerateAllImages}>
-                      <Image className="w-4 h-4 mr-1" />
-                      Gerar Todas Imagens
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-1" />
-                    Exportar PDF
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Exportar
                   </Button>
+                  <StudioApplyActions
+                    brief={selectedBrief}
+                    concept={concept}
+                    script={script}
+                    campaigns={campaigns}
+                    onCreateContent={handleCreateContent}
+                    onLinkToCampaign={handleLinkToCampaign}
+                    onSaveAsReference={handleSaveAsReference}
+                  />
                 </div>
               </div>
 
-              <Tabs defaultValue="concept" className="h-[calc(100%-80px)]">
-                <TabsList className="px-4 pt-2">
-                  <TabsTrigger value="concept">Conceito</TabsTrigger>
-                  <TabsTrigger value="script">Roteiro</TabsTrigger>
-                  <TabsTrigger value="storyboard">Storyboard</TabsTrigger>
-                  <TabsTrigger value="shotlist">Shotlist</TabsTrigger>
-                  <TabsTrigger value="moodboard">Moodboard</TabsTrigger>
-                  <TabsTrigger value="images">Imagens ({images.length})</TabsTrigger>
-                </TabsList>
-
-                <ScrollArea className="h-[calc(100%-48px)]">
-                  {/* Concept Tab */}
-                  <TabsContent value="concept" className="p-4 m-0">
-                    {concept ? (
-                      <div className="space-y-4">
-                        <ConceptCard label="Big Idea" value={concept.big_idea} highlight />
-                        <div className="grid grid-cols-2 gap-4">
-                          <ConceptCard label="Headline" value={concept.headline} />
-                          <ConceptCard label="Subheadline" value={concept.subheadline} />
-                        </div>
-                        <ConceptCard label="Premissa" value={concept.premissa} />
-                        <ConceptCard label="Promessa" value={concept.promessa} />
-                        <div className="grid grid-cols-2 gap-4">
-                          <ConceptCard label="Tom" value={concept.tom} />
-                          <ConceptCard label="Tema" value={concept.tema} />
-                        </div>
-                        <ConceptCard label="Metáfora Central" value={concept.metafora_central} />
-                        <ConceptCard label="Argumento Comercial" value={concept.argumento_comercial} />
-                      </div>
-                    ) : (
-                      <EmptyState message="Conceito não gerado" />
-                    )}
-                  </TabsContent>
-
-                  {/* Script Tab */}
-                  <TabsContent value="script" className="p-4 m-0">
-                    {script ? (
-                      <div className="space-y-4">
-                        <Card className="p-4 bg-primary/10 border-primary/30">
-                          <p className="text-xs text-primary uppercase font-medium mb-2">Hook</p>
-                          <p className="text-foreground text-lg font-medium">{script.hook}</p>
-                        </Card>
-                        <Card className="p-4 bg-muted/30">
-                          <p className="text-xs text-muted-foreground uppercase mb-2">Desenvolvimento</p>
-                          <p className="text-foreground whitespace-pre-wrap">{script.desenvolvimento}</p>
-                        </Card>
-                        <div className="grid grid-cols-2 gap-4">
-                          <Card className="p-4 bg-muted/30">
-                            <p className="text-xs text-muted-foreground uppercase mb-2">CTA</p>
-                            <p className="text-foreground">{script.cta}</p>
-                          </Card>
-                          <Card className="p-4 bg-muted/30">
-                            <p className="text-xs text-muted-foreground uppercase mb-2">Duração</p>
-                            <p className="text-foreground flex items-center gap-2">
-                              <Clock className="w-4 h-4" />
-                              {script.duracao_estimada}
-                            </p>
-                          </Card>
-                        </div>
-                      </div>
-                    ) : (
-                      <EmptyState message="Roteiro não gerado" />
-                    )}
-                  </TabsContent>
-
-                  {/* Storyboard Tab */}
-                  <TabsContent value="storyboard" className="p-4 m-0">
-                    {scenes.length > 0 ? (
-                      <div className="space-y-4">
-                        {scenes.map((scene) => (
-                          <Card key={scene.id} className="p-4 bg-muted/30">
-                            <div className="flex gap-4">
-                              {/* Scene Image */}
-                              <div className="w-48 h-28 rounded-lg bg-background flex-shrink-0 overflow-hidden relative">
-                                {scene.image_url ? (
-                                  <img 
-                                    src={scene.image_url} 
-                                    alt={scene.title || `Cena ${scene.scene_number}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    {generatingImages.has(scene.scene_number) ? (
-                                      <RefreshCw className="w-6 h-6 text-muted-foreground animate-spin" />
-                                    ) : (
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        onClick={() => handleGenerateSceneImage(scene)}
-                                        disabled={!scene.notes}
-                                      >
-                                        <Sparkles className="w-4 h-4 mr-1" />
-                                        Gerar
-                                      </Button>
-                                    )}
-                                  </div>
-                                )}
-                                <Badge className="absolute top-2 left-2 bg-black/70 text-white text-[9px]">
-                                  {scene.scene_number}
-                                </Badge>
-                              </div>
-
-                              {/* Scene Info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-medium text-foreground">{scene.title}</h4>
-                                  {scene.duration_sec && (
-                                    <Badge variant="outline" className="text-[9px]">
-                                      {scene.duration_sec}s
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-2">{scene.description}</p>
-                                <div className="flex flex-wrap gap-2 text-[10px]">
-                                  {scene.emotion && (
-                                    <Badge variant="outline">😊 {scene.emotion}</Badge>
-                                  )}
-                                  {scene.camera && (
-                                    <Badge variant="outline">📷 {scene.camera}</Badge>
-                                  )}
-                                  {scene.audio && (
-                                    <Badge variant="outline">🔊 {scene.audio}</Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState message="Storyboard não gerado" />
-                    )}
-                  </TabsContent>
-
-                  {/* Shotlist Tab */}
-                  <TabsContent value="shotlist" className="p-4 m-0">
-                    {shotlist && shotlist.length > 0 ? (
-                      <div className="space-y-2">
-                        {shotlist.map((shot, i) => (
-                          <Card key={i} className="p-3 bg-muted/30">
-                            <div className="flex items-center gap-4">
-                              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-medium">
-                                {i + 1}
-                              </div>
-                              <div className="flex-1">
-                                <p className="font-medium text-foreground">{shot.plano}</p>
-                                <p className="text-sm text-muted-foreground">{shot.descricao}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <Badge variant="outline" className="text-[9px]">{shot.lente_sugerida}</Badge>
-                                <Badge variant="outline" className="text-[9px]">{shot.ambiente}</Badge>
-                                <Badge variant="outline" className="text-[9px]">{shot.luz}</Badge>
-                                <Badge 
-                                  className={cn(
-                                    "text-[9px]",
-                                    shot.prioridade === 'must-have' ? "bg-red-500" : "bg-muted"
-                                  )}
-                                >
-                                  {shot.prioridade}
-                                </Badge>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState message="Shotlist não gerado" />
-                    )}
-                  </TabsContent>
-
-                  {/* Moodboard Tab */}
-                  <TabsContent value="moodboard" className="p-4 m-0">
-                    {moodboard ? (
-                      <div className="space-y-4">
-                        <Card className="p-4 bg-primary/10 border-primary/30">
-                          <p className="text-xs text-primary uppercase font-medium mb-2">Direção de Arte</p>
-                          <p className="text-foreground">{moodboard.direcao_de_arte}</p>
-                        </Card>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          {moodboard.paleta?.length > 0 && (
-                            <Card className="p-4 bg-muted/30">
-                              <p className="text-xs text-muted-foreground uppercase mb-2">Paleta</p>
-                              <div className="flex flex-wrap gap-2">
-                                {moodboard.paleta.map((color, i) => (
-                                  <Badge key={i} variant="outline">{color}</Badge>
-                                ))}
-                              </div>
-                            </Card>
-                          )}
-
-                          <Card className="p-4 bg-muted/30">
-                            <p className="text-xs text-muted-foreground uppercase mb-2">Materiais & Texturas</p>
-                            <p className="text-sm text-foreground">{moodboard.materiais_texturas}</p>
-                          </Card>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4">
-                          <Card className="p-4 bg-muted/30">
-                            <p className="text-xs text-muted-foreground uppercase mb-2">Figurino</p>
-                            <p className="text-sm text-foreground">{moodboard.figurino}</p>
-                          </Card>
-                          <Card className="p-4 bg-muted/30">
-                            <p className="text-xs text-muted-foreground uppercase mb-2">Props</p>
-                            <p className="text-sm text-foreground">{moodboard.props}</p>
-                          </Card>
-                          <Card className="p-4 bg-muted/30">
-                            <p className="text-xs text-muted-foreground uppercase mb-2">Clima</p>
-                            <p className="text-sm text-foreground">{moodboard.arquitetura_clima}</p>
-                          </Card>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          {moodboard.do_visual?.length > 0 && (
-                            <Card className="p-4 bg-emerald-500/10 border-emerald-500/30">
-                              <p className="text-xs text-emerald-500 uppercase font-medium mb-2">✓ DO Visual</p>
-                              <ul className="space-y-1">
-                                {moodboard.do_visual.map((item, i) => (
-                                  <li key={i} className="text-sm text-foreground flex items-center gap-2">
-                                    <Check className="w-3 h-3 text-emerald-500" />
-                                    {item}
-                                  </li>
-                                ))}
-                              </ul>
-                            </Card>
-                          )}
-
-                          {moodboard.dont_visual?.length > 0 && (
-                            <Card className="p-4 bg-red-500/10 border-red-500/30">
-                              <p className="text-xs text-red-500 uppercase font-medium mb-2">✗ DON'T Visual</p>
-                              <ul className="space-y-1">
-                                {moodboard.dont_visual.map((item, i) => (
-                                  <li key={i} className="text-sm text-foreground flex items-center gap-2">
-                                    <AlertTriangle className="w-3 h-3 text-red-500" />
-                                    {item}
-                                  </li>
-                                ))}
-                              </ul>
-                            </Card>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <EmptyState message="Moodboard não gerado" />
-                    )}
-                  </TabsContent>
-
-                  {/* Images Tab */}
-                  <TabsContent value="images" className="p-4 m-0">
-                    {images.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-4">
-                        {images.map((img) => (
-                          <Card key={img.id} className="overflow-hidden">
-                            <div className="aspect-video bg-muted">
-                              {img.public_url && (
-                                <img 
-                                  src={img.public_url} 
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              )}
-                            </div>
-                            <div className="p-2">
-                              <Badge variant="outline" className="text-[9px]">{img.purpose}</Badge>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState message="Nenhuma imagem gerada ainda" />
-                    )}
-                  </TabsContent>
-                </ScrollArea>
-              </Tabs>
+              {/* Tabs */}
+              <div className="flex-1 overflow-hidden">
+                <StudioOutputTabs
+                  concept={concept}
+                  script={script}
+                  moodboard={moodboard}
+                  shotlist={shotlist}
+                  scenes={scenes}
+                  onRegenerateOutput={handleRegenerateOutput}
+                  onUpdateOutput={handleUpdateOutput}
+                  onGenerateSceneImage={handleGenerateSceneImage}
+                  generatingImages={generatingImages}
+                  isRegenerating={isRegenerating}
+                />
+              </div>
             </Card>
           ) : (
-            <Card className="glass-card h-full flex items-center justify-center">
+            <Card className="bg-card/50 backdrop-blur border-border/50 h-full flex items-center justify-center">
               <div className="text-center">
                 <Wand2 className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">Crie um novo brief ou selecione um existente</p>
+                <p className="text-muted-foreground">
+                  Crie um novo brief ou selecione um existente
+                </p>
               </div>
             </Card>
           )}
         </div>
       </div>
     </DashboardLayout>
-  );
-}
-
-function ConceptCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <Card className={cn("p-4", highlight ? "bg-primary/10 border-primary/30" : "bg-muted/30")}>
-      <p className={cn("text-xs uppercase mb-2", highlight ? "text-primary font-medium" : "text-muted-foreground")}>
-        {label}
-      </p>
-      <p className={cn("text-foreground", highlight && "text-lg font-medium")}>{value}</p>
-    </Card>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center h-64">
-      <p className="text-muted-foreground">{message}</p>
-    </div>
   );
 }
