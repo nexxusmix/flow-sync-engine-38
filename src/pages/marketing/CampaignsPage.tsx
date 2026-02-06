@@ -5,7 +5,7 @@ import { Campaign } from "@/types/marketing";
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Megaphone, Sparkles, Calendar, DollarSign,
-  MoreHorizontal, Play, Pause, Archive, Trash2
+  MoreHorizontal, Play, Pause, Archive, Trash2, Loader2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,9 +31,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { generateCampaignPackage, isAIError, GenerateCampaignPackageResult } from "@/lib/ai";
 
 function CampaignCard({ 
   campaign, 
@@ -167,6 +174,10 @@ export default function CampaignsPage() {
   } = useMarketingStore();
 
   const [isNewCampaignOpen, setIsNewCampaignOpen] = useState(false);
+  const [isGeneratingPackage, setIsGeneratingPackage] = useState(false);
+  const [packageResultOpen, setPackageResultOpen] = useState(false);
+  const [generatedPackage, setGeneratedPackage] = useState<GenerateCampaignPackageResult | null>(null);
+  const [selectedCampaignForPackage, setSelectedCampaignForPackage] = useState<Campaign | null>(null);
   const [newCampaign, setNewCampaign] = useState({
     name: '',
     objective: '',
@@ -176,6 +187,54 @@ export default function CampaignsPage() {
     end_date: '',
     budget: '',
   });
+
+  const handleGeneratePackage = async (campaign?: Campaign) => {
+    // If no campaign passed, use first active campaign or first draft
+    const targetCampaign = campaign || activeCampaigns[0] || draftCampaigns[0];
+    
+    if (!targetCampaign) {
+      toast.error('Crie uma campanha primeiro para gerar o pacote criativo.');
+      return;
+    }
+
+    setSelectedCampaignForPackage(targetCampaign);
+    setIsGeneratingPackage(true);
+    
+    try {
+      const result = await generateCampaignPackage({
+        campaign: {
+          id: targetCampaign.id,
+          name: targetCampaign.name,
+          objective: targetCampaign.objective || undefined,
+          offer: targetCampaign.offer || undefined,
+          audience: targetCampaign.audience || undefined,
+          start_date: targetCampaign.start_date || undefined,
+          end_date: targetCampaign.end_date || undefined,
+          budget: targetCampaign.budget || undefined,
+        }
+      });
+
+      if (isAIError(result)) {
+        if (result.status === 429) {
+          toast.error('Limite de requisições excedido. Tente novamente em alguns segundos.');
+        } else if (result.status === 402) {
+          toast.error('Créditos insuficientes. Adicione créditos para continuar.');
+        } else {
+          toast.error(result.error || 'Erro ao gerar pacote criativo');
+        }
+        return;
+      }
+
+      setGeneratedPackage(result);
+      setPackageResultOpen(true);
+      toast.success('Pacote criativo gerado com sucesso!');
+    } catch (err) {
+      console.error('handleGeneratePackage error:', err);
+      toast.error('Erro ao gerar pacote. Tente novamente.');
+    } finally {
+      setIsGeneratingPackage(false);
+    }
+  };
 
   useEffect(() => {
     fetchCampaigns();
@@ -229,9 +288,17 @@ export default function CampaignsPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Gerar Pacote com IA
+            <Button 
+              variant="outline"
+              onClick={() => handleGeneratePackage()}
+              disabled={isGeneratingPackage}
+            >
+              {isGeneratingPackage ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {isGeneratingPackage ? 'Gerando...' : 'Gerar Pacote com IA'}
             </Button>
             <Button onClick={() => setIsNewCampaignOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
@@ -385,6 +452,133 @@ export default function CampaignsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Package Result Sheet */}
+        <Sheet open={packageResultOpen} onOpenChange={setPackageResultOpen}>
+          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Pacote Criativo
+                {selectedCampaignForPackage && (
+                  <span className="text-xs text-muted-foreground font-normal">
+                    — {selectedCampaignForPackage.name}
+                  </span>
+                )}
+              </SheetTitle>
+            </SheetHeader>
+            
+            {generatedPackage && (
+              <div className="space-y-6 mt-6">
+                {/* Concept Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    Conceito Narrativo
+                  </h4>
+                  <div className="space-y-2 pl-3 border-l-2 border-muted">
+                    {generatedPackage.concept.headline && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Headline</span>
+                        <p className="text-sm font-medium text-foreground">{generatedPackage.concept.headline}</p>
+                      </div>
+                    )}
+                    {generatedPackage.concept.subheadline && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Subheadline</span>
+                        <p className="text-sm text-foreground">{generatedPackage.concept.subheadline}</p>
+                      </div>
+                    )}
+                    {generatedPackage.concept.big_idea && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Big Idea</span>
+                        <p className="text-sm text-foreground">{generatedPackage.concept.big_idea}</p>
+                      </div>
+                    )}
+                    {generatedPackage.concept.premissa && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Premissa</span>
+                        <p className="text-sm text-foreground">{generatedPackage.concept.premissa}</p>
+                      </div>
+                    )}
+                    {generatedPackage.concept.tom && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Tom</span>
+                        <p className="text-sm text-foreground">{generatedPackage.concept.tom}</p>
+                      </div>
+                    )}
+                    {generatedPackage.concept.argumento_comercial && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Argumento Comercial</span>
+                        <p className="text-sm text-foreground">{generatedPackage.concept.argumento_comercial}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Script Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Roteiro Base
+                  </h4>
+                  <div className="space-y-2 pl-3 border-l-2 border-muted">
+                    {generatedPackage.script.hook && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Hook</span>
+                        <p className="text-sm text-foreground">{generatedPackage.script.hook}</p>
+                      </div>
+                    )}
+                    {generatedPackage.script.desenvolvimento && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">Desenvolvimento</span>
+                        <p className="text-sm text-foreground whitespace-pre-line">{generatedPackage.script.desenvolvimento}</p>
+                      </div>
+                    )}
+                    {generatedPackage.script.cta && (
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase">CTA</span>
+                        <p className="text-sm text-foreground">{generatedPackage.script.cta}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content Suggestions */}
+                {generatedPackage.content_suggestions && generatedPackage.content_suggestions.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Sugestões de Conteúdo
+                    </h4>
+                    <div className="space-y-2">
+                      {generatedPackage.content_suggestions.map((suggestion, idx) => (
+                        <div key={idx} className="p-3 rounded-lg bg-muted/30">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-foreground">{suggestion.title}</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {suggestion.format}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">{suggestion.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => setPackageResultOpen(false)}
+                  >
+                    Fechar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </DashboardLayout>
   );

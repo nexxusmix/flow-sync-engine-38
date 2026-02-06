@@ -6,7 +6,7 @@ import { ContentItem, CONTENT_ITEM_STAGES, CONTENT_PILLARS, CONTENT_CHANNELS, CO
 import { 
   ArrowLeft, Save, Sparkles, CheckCircle, MessageSquare,
   ExternalLink, Calendar, Link as LinkIcon, User, Plus,
-  Trash2, Square, CheckSquare
+  Trash2, Square, CheckSquare, Loader2
 } from "lucide-react";
 import { ContentAssetsTab } from "@/components/marketing/ContentAssetsTab";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { generateCaptions, isAIError, GenerateCaptionsResult } from "@/lib/ai";
 
 export default function ContentDetailPage() {
   const { contentItemId } = useParams();
@@ -43,6 +52,103 @@ export default function ContentDetailPage() {
   const [formData, setFormData] = useState<Partial<ContentItem>>({});
   const [newComment, setNewComment] = useState('');
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
+  const [isGeneratingCopy, setIsGeneratingCopy] = useState(false);
+  const [showCopyConfirmDialog, setShowCopyConfirmDialog] = useState(false);
+  const [pendingCopyData, setPendingCopyData] = useState<GenerateCaptionsResult | null>(null);
+
+  // Check if there's existing copy content
+  const hasExistingCopy = !!(
+    formData.hook || 
+    formData.caption_short || 
+    formData.caption_long || 
+    formData.cta || 
+    formData.hashtags || 
+    formData.script
+  );
+
+  const handleGenerateCopy = async () => {
+    if (!item) return;
+    
+    setIsGeneratingCopy(true);
+    
+    try {
+      const result = await generateCaptions({
+        contentItem: {
+          id: item.id,
+          title: item.title,
+          channel: item.channel,
+          format: item.format,
+          pillar: item.pillar,
+          hook: formData.hook,
+          notes: formData.notes,
+        }
+      });
+
+      if (isAIError(result)) {
+        if (result.status === 429) {
+          toast.error('Limite de requisições excedido. Tente novamente em alguns segundos.');
+        } else if (result.status === 402) {
+          toast.error('Créditos insuficientes. Adicione créditos para continuar.');
+        } else {
+          toast.error(result.error || 'Erro ao gerar copy');
+        }
+        return;
+      }
+
+      // If there's existing content, show confirmation dialog
+      if (hasExistingCopy) {
+        setPendingCopyData(result);
+        setShowCopyConfirmDialog(true);
+      } else {
+        // Apply directly
+        applyCopyData(result, 'replace');
+      }
+    } catch (err) {
+      console.error('handleGenerateCopy error:', err);
+      toast.error('Erro ao gerar copy. Tente novamente.');
+    } finally {
+      setIsGeneratingCopy(false);
+    }
+  };
+
+  const applyCopyData = async (data: GenerateCaptionsResult, mode: 'replace' | 'append') => {
+    const newFormData = { ...formData };
+    
+    if (mode === 'replace') {
+      newFormData.hook = data.hook;
+      newFormData.caption_short = data.caption_short;
+      newFormData.caption_long = data.caption_long;
+      newFormData.cta = data.cta;
+      newFormData.hashtags = data.hashtags;
+      if (data.script) newFormData.script = data.script;
+    } else {
+      // Append mode
+      newFormData.hook = formData.hook ? `${formData.hook}\n\n---\n\n${data.hook}` : data.hook;
+      newFormData.caption_short = formData.caption_short ? `${formData.caption_short}\n\n---\n\n${data.caption_short}` : data.caption_short;
+      newFormData.caption_long = formData.caption_long ? `${formData.caption_long}\n\n---\n\n${data.caption_long}` : data.caption_long;
+      newFormData.cta = formData.cta ? `${formData.cta} | ${data.cta}` : data.cta;
+      newFormData.hashtags = formData.hashtags ? `${formData.hashtags} ${data.hashtags}` : data.hashtags;
+      if (data.script) newFormData.script = formData.script ? `${formData.script}\n\n---\n\n${data.script}` : data.script;
+    }
+
+    setFormData(newFormData);
+    
+    // Persist to database
+    if (item) {
+      await updateContentItem(item.id, {
+        hook: newFormData.hook,
+        caption_short: newFormData.caption_short,
+        caption_long: newFormData.caption_long,
+        cta: newFormData.cta,
+        hashtags: newFormData.hashtags,
+        script: newFormData.script,
+      });
+    }
+    
+    setShowCopyConfirmDialog(false);
+    setPendingCopyData(null);
+    toast.success('Copy gerada com sucesso!');
+  };
 
   useEffect(() => {
     if (contentItems.length === 0) {
@@ -284,9 +390,18 @@ export default function ContentDetailPage() {
             <div className="glass-card rounded-xl p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-foreground">Copy & Roteiro</h3>
-                <Button variant="outline" size="sm">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Gerar com IA
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleGenerateCopy}
+                  disabled={isGeneratingCopy}
+                >
+                  {isGeneratingCopy ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-2" />
+                  )}
+                  {isGeneratingCopy ? 'Gerando...' : 'Gerar com IA'}
                 </Button>
               </div>
 
@@ -478,6 +593,43 @@ export default function ContentDetailPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Copy Confirmation Dialog */}
+        <Dialog open={showCopyConfirmDialog} onOpenChange={setShowCopyConfirmDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Conteúdo existente detectado</DialogTitle>
+              <DialogDescription>
+                Já existe copy preenchida neste conteúdo. O que deseja fazer com o novo conteúdo gerado pela IA?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 py-4">
+              <Button 
+                onClick={() => pendingCopyData && applyCopyData(pendingCopyData, 'replace')}
+                className="w-full"
+              >
+                Substituir tudo
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => pendingCopyData && applyCopyData(pendingCopyData, 'append')}
+                className="w-full"
+              >
+                Adicionar no final
+              </Button>
+              <Button 
+                variant="ghost"
+                onClick={() => {
+                  setShowCopyConfirmDialog(false);
+                  setPendingCopyData(null);
+                }}
+                className="w-full"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

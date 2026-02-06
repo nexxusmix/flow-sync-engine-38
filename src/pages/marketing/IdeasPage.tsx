@@ -5,7 +5,7 @@ import { ContentIdea, CONTENT_PILLARS, CONTENT_CHANNELS, CONTENT_FORMATS } from 
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Search, Lightbulb, Sparkles, ArrowRight,
-  Star, MoreHorizontal, Trash2
+  Star, MoreHorizontal, Trash2, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { generateIdeas, isAIError } from "@/lib/ai";
 
 function IdeaCard({ 
   idea, 
@@ -140,6 +141,7 @@ export default function IdeasPage() {
   } = useMarketingStore();
 
   const [isNewIdeaOpen, setIsNewIdeaOpen] = useState(false);
+  const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [newIdea, setNewIdea] = useState({
     title: '',
     hook: '',
@@ -149,6 +151,58 @@ export default function IdeasPage() {
     target: '',
     notes: '',
   });
+
+  const handleGenerateIdeas = async () => {
+    setIsGeneratingIdeas(true);
+    
+    try {
+      const result = await generateIdeas({
+        pillar: ideaFilters.pillar,
+        channel: ideaFilters.channel,
+        format: ideaFilters.format,
+      });
+
+      if (isAIError(result)) {
+        if (result.status === 429) {
+          toast.error('Limite de requisições excedido. Tente novamente em alguns segundos.');
+        } else if (result.status === 402) {
+          toast.error('Créditos insuficientes. Adicione créditos para continuar.');
+        } else {
+          toast.error(result.error || 'Erro ao gerar ideias');
+        }
+        return;
+      }
+
+      // Save each generated idea to the database
+      const ideas = result.ideas || [];
+      let savedCount = 0;
+      
+      for (const idea of ideas) {
+        await createIdea({
+          title: idea.title,
+          hook: idea.hook,
+          pillar: idea.pillar as any,
+          channel: idea.channel as any,
+          format: idea.format as any,
+          target: idea.target,
+          score: idea.score,
+          status: 'backlog',
+          ai_generated: true,
+        });
+        savedCount++;
+      }
+
+      // Refetch to update the list
+      await fetchIdeas();
+      
+      toast.success(`${savedCount} ideias geradas e salvas com sucesso!`);
+    } catch (err) {
+      console.error('handleGenerateIdeas error:', err);
+      toast.error('Erro ao gerar ideias. Tente novamente.');
+    } finally {
+      setIsGeneratingIdeas(false);
+    }
+  };
 
   useEffect(() => {
     fetchIdeas();
@@ -203,9 +257,17 @@ export default function IdeasPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Gerar 10 Ideias com IA
+            <Button 
+              variant="outline" 
+              onClick={handleGenerateIdeas}
+              disabled={isGeneratingIdeas}
+            >
+              {isGeneratingIdeas ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {isGeneratingIdeas ? 'Gerando...' : 'Gerar 10 Ideias com IA'}
             </Button>
             <Button onClick={() => setIsNewIdeaOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
