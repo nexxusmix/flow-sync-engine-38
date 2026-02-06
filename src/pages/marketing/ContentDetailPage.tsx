@@ -8,6 +8,7 @@ import {
   ExternalLink, Calendar, Link as LinkIcon, User, Plus,
   Trash2, Square, CheckSquare
 } from "lucide-react";
+import { ContentAssetsTab } from "@/components/marketing/ContentAssetsTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -352,16 +353,7 @@ export default function ContentDetailPage() {
 
           {/* Assets Tab */}
           <TabsContent value="assets" className="space-y-6">
-            <div className="glass-card rounded-xl p-6">
-              <h3 className="text-sm font-medium text-foreground mb-4">Assets</h3>
-              <div className="text-center py-12 text-muted-foreground">
-                <p className="text-sm">Upload de assets em breve</p>
-                <p className="text-[10px] mt-1">Por enquanto, use a Biblioteca</p>
-                <Button variant="outline" className="mt-4" onClick={() => navigate('/marketing/library')}>
-                  Ir para Biblioteca
-                </Button>
-              </div>
-            </div>
+            <ContentAssetsTab contentItemId={item.id} />
           </TabsContent>
 
           {/* Review Tab */}
