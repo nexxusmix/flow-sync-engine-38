@@ -1,232 +1,180 @@
 
-# Plano: Transformar Landing Page com Efeitos Visuais Imersivos
+# Plano: Sincronizar Financeiro com Valor do Contrato do Projeto
 
-## Visao Geral
+## Problema Identificado
 
-Transformar a pagina inicial em uma experiencia visual cinematografica com animacoes fluidas, efeitos neon, gradientes dinamicos, particulas interativas e profundidade 3D.
-
-## Melhorias Planejadas
-
-### 1. Sistema de Particulas Interativo
-
-Criar um componente canvas que renderiza particulas flutuantes que:
-- Respondem ao movimento do mouse
-- Tem brilho neon (cor primaria ciano)
-- Conectam-se com linhas quando proximas
-- Flutuam com animacao suave
+O sistema atual tem uma desconexao entre os dados:
 
 ```text
-Particula ────── conexao ────── Particula
-    │                               │
-    │      movimento organico       │
-    ▼                               ▼
-  glow                            glow
+projects (contract_value: R$ 15.590)
+         |
+         v
+contracts (VAZIO - nenhum registro)
+         |
+         v
+revenues (VAZIO - nenhum registro)
+         |
+         v
+Dashboard Financeiro (R$ 0)
 ```
 
-### 2. Gradientes Animados no Fundo
+O projeto "PORTO 153" tem `contract_value = 15590` salvo na tabela `projects`, porem:
+1. Nao existe contrato na tabela `contracts`
+2. Nao existem receitas na tabela `revenues`
+3. Os dashboards financeiros buscam dessas tabelas, nao de `projects.contract_value`
 
-Substituir os blobs estaticos por orbs com:
-- Gradientes radiais animados
-- Pulso de luz (breathing effect)
-- Movimento orbital lento
-- Cores: ciano primario, roxo, azul profundo
+## Solucao
 
-### 3. Efeitos Neon nos Elementos
+Implementar sincronizacao automatica entre projetos e financeiro:
 
-- Titulo hero com text-shadow neon pulsante
-- Botoes com border glow animado
-- Cards com hover neon intenso
-- Badge com efeito scanner/pulse
+### 1. Criar Contrato Automaticamente ao Criar/Atualizar Projeto
 
-### 4. Animacoes de Entrada Avancadas
+Quando um projeto for criado ou atualizado com `contract_value > 0`:
+- Verificar se ja existe contrato para o projeto
+- Se nao existir, criar contrato na tabela `contracts`
+- Criar milestones de pagamento padrao (50% entrada + 50% entrega)
+- Os milestones criam automaticamente as revenues correspondentes
 
-Usando Framer Motion:
-- Texto hero com reveal letra por letra
-- Stats com contagem animada (counter)
-- Cards com entrada 3D (rotateX)
-- Elementos com parallax no scroll
+### 2. Atualizar Hook useProjects
 
-### 5. Efeito de Profundidade 3D
+Modificar `createProjectMutation` para criar contrato automaticamente.
+Modificar `updateProjectMutation` para sincronizar contrato quando contract_value mudar.
 
-- Perspectiva no container principal
-- Layers de fundo em diferentes Z-indexes
-- Movimento parallax no mouse hover
-- Video hero com efeito flutuante 3D
+### 3. Invalidar Cache do React Query
 
-### 6. Elementos Visuais Adicionais
+Garantir que ao criar/atualizar projeto, os caches financeiros sejam invalidados:
+- `dashboard-metrics`
+- Stores do Zustand (revenues, contracts)
 
-- Grid de linhas cyberpunk no fundo
-- Barra de "scan line" animada
-- Reflexo espelhado sutil no hero
-- Aura de luz atras do video
+## Arquivos a Modificar
 
-## Estrutura dos Componentes
-
-```text
-LandingPage
-├── ParticlesBackground (canvas)
-├── AnimatedGradientOrbs
-├── CyberpunkGrid
-├── ScanLine
-│
-├── NavBar (glassmorphism + neon)
-│
-├── HeroSection
-│   ├── AnimatedBadge (pulse scanner)
-│   ├── NeonTitle (text reveal + glow)
-│   ├── AnimatedStats (counter)
-│   └── FloatingVideo (3D transform)
-│
-├── FeaturesSection
-│   └── FeatureCard[] (3D hover + neon)
-│
-├── CTASection (parallax + glow)
-│
-└── Footer (fade gradient)
-```
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/hooks/useProjects.tsx` | Adicionar criacao automatica de contrato |
+| `src/stores/financialStore.ts` | Adicionar funcao para criar contrato com milestones padrao |
+| `src/hooks/useDashboardMetrics.tsx` | Incluir contract_value dos projetos nas metricas |
 
 ## Detalhes Tecnicos
 
-### Particulas (Canvas)
+### useProjects.tsx - createProjectMutation
 
 ```typescript
-// Estrutura basica
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  opacity: number;
-}
-
-// Renderizacao com glow
-ctx.shadowBlur = 15;
-ctx.shadowColor = '#00A3D3';
-ctx.fillStyle = 'rgba(0, 163, 211, opacity)';
-ctx.arc(x, y, size, 0, Math.PI * 2);
-```
-
-### Gradientes Animados CSS
-
-```css
-.gradient-orb {
-  background: radial-gradient(
-    circle,
-    rgba(0, 163, 211, 0.4) 0%,
-    rgba(139, 92, 246, 0.2) 50%,
-    transparent 70%
-  );
-  animation: pulse 4s ease-in-out infinite,
-             orbit 20s linear infinite;
-}
-```
-
-### Titulo Neon
-
-```css
-.neon-title {
-  text-shadow:
-    0 0 10px rgba(0, 163, 211, 0.5),
-    0 0 20px rgba(0, 163, 211, 0.3),
-    0 0 40px rgba(0, 163, 211, 0.2);
-  animation: neonPulse 2s ease-in-out infinite;
+// Apos criar projeto, criar contrato se contract_value > 0
+if (project && (input.contract_value || 0) > 0) {
+  // Criar contrato na tabela contracts
+  await supabase.from('contracts').insert({
+    project_id: project.id,
+    project_name: input.name,
+    client_name: input.client_name,
+    total_value: input.contract_value,
+    payment_terms: '50/50',
+    status: 'active',
+    start_date: input.start_date || new Date().toISOString().split('T')[0],
+  });
+  
+  // Criar milestones de pagamento (50% entrada + 50% entrega)
+  const entryAmount = (input.contract_value || 0) * 0.5;
+  const deliveryAmount = (input.contract_value || 0) * 0.5;
+  
+  // Criar revenue para entrada (hoje)
+  await supabase.from('revenues').insert({
+    project_id: project.id,
+    description: `${input.name} - Entrada (50%)`,
+    amount: entryAmount,
+    due_date: new Date().toISOString().split('T')[0],
+    status: 'pending',
+  });
+  
+  // Criar revenue para entrega (data de entrega)
+  await supabase.from('revenues').insert({
+    project_id: project.id,
+    description: `${input.name} - Entrega (50%)`,
+    amount: deliveryAmount,
+    due_date: input.due_date || new Date().toISOString().split('T')[0],
+    status: 'pending',
+  });
 }
 ```
 
-### Grid Cyberpunk
-
-```css
-.cyber-grid {
-  background-image:
-    linear-gradient(rgba(0, 163, 211, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 163, 211, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: gridMove 20s linear infinite;
-}
-```
-
-## Animacoes Framer Motion
-
-### Hero Title Reveal
+### useDashboardMetrics.tsx - Incluir Pipeline de Projetos
 
 ```typescript
-const titleVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.03 }
-  }
-};
+// Adicionar ao calculo de metricas
+const projectsPipelineValue = (projects || [])
+  .filter(p => p.status === 'active')
+  .reduce((sum, p) => sum + (p.contract_value || 0), 0);
 
-const letterVariants = {
-  hidden: { opacity: 0, y: 50, rotateX: -90 },
-  visible: { opacity: 1, y: 0, rotateX: 0 }
-};
+// Usar no totalPipelineValue ou criar metrica separada
 ```
 
-### Parallax no Mouse
+### financialStore.ts - getProjectFinancials Melhorado
 
 ```typescript
-const { scrollYProgress } = useScroll();
-const y = useTransform(scrollYProgress, [0, 1], [0, -100]);
-
-// Mouse parallax
-const mouseX = useMotionValue(0);
-const mouseY = useMotionValue(0);
-const rotateX = useTransform(mouseY, [-300, 300], [5, -5]);
-const rotateY = useTransform(mouseX, [-300, 300], [-5, 5]);
+// Buscar projetos que tem contract_value mas nao tem contrato
+// Para exibir no dashboard financeiro mesmo sem contrato formal
 ```
 
-### Counter Animado
+## Fluxo Corrigido
 
-```typescript
-function AnimatedCounter({ value }: { value: number }) {
-  const count = useMotionValue(0);
-  const rounded = useTransform(count, Math.round);
-
-  useEffect(() => {
-    const controls = animate(count, value, { duration: 2 });
-    return controls.stop;
-  }, []);
-
-  return <motion.span>{rounded}</motion.span>;
-}
+```text
+Criar Projeto (contract_value: R$ 15.590)
+         |
+         v
+Criar Contrato Automatico (total_value: R$ 15.590)
+         |
+         v
+Criar Milestones (50% + 50%)
+         |
+         v
+Criar Revenues Pendentes
+         |
+         v
+Dashboard Financeiro Atualizado
 ```
 
-## Arquivos a Criar/Modificar
+## Projeto Existente - Sincronizacao
 
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `src/components/landing/ParticlesBackground.tsx` | Criar | Sistema de particulas canvas |
-| `src/components/landing/AnimatedGradientOrbs.tsx` | Criar | Orbs de gradiente animados |
-| `src/components/landing/CyberpunkGrid.tsx` | Criar | Grid de fundo estilo cyber |
-| `src/components/landing/NeonTitle.tsx` | Criar | Titulo com efeito neon |
-| `src/components/landing/AnimatedCounter.tsx` | Criar | Contador animado |
-| `src/components/landing/FloatingCard.tsx` | Criar | Card com hover 3D |
-| `src/pages/LandingPage.tsx` | Modificar | Integrar todos os efeitos |
-| `src/index.css` | Modificar | Adicionar keyframes neon |
+Para o projeto "PORTO 153" que ja existe sem contrato, a solucao pode:
+
+1. Criar contrato manualmente via SQL (mais simples)
+2. Adicionar botao "Sincronizar Financeiro" na UI do projeto
+3. Rodar migracao que cria contratos para projetos existentes
+
+### SQL para Sincronizar Projeto Existente
+
+```sql
+-- Criar contrato para projeto existente
+INSERT INTO contracts (project_id, project_name, client_name, total_value, status, start_date)
+SELECT id, name, client_name, contract_value, 'active', COALESCE(start_date, CURRENT_DATE)
+FROM projects
+WHERE id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534'
+  AND contract_value > 0;
+
+-- Criar revenue para entrada (50%)
+INSERT INTO revenues (project_id, description, amount, due_date, status)
+SELECT id, name || ' - Entrada (50%)', contract_value * 0.5, CURRENT_DATE, 'pending'
+FROM projects
+WHERE id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534';
+
+-- Criar revenue para entrega (50%)
+INSERT INTO revenues (project_id, description, amount, due_date, status)
+SELECT id, name || ' - Entrega (50%)', contract_value * 0.5, COALESCE(due_date, CURRENT_DATE), 'pending'
+FROM projects
+WHERE id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534';
+```
 
 ## Sequencia de Implementacao
 
-1. Adicionar CSS keyframes para neon e gradientes
-2. Criar componente ParticlesBackground
-3. Criar componente AnimatedGradientOrbs
-4. Criar componente CyberpunkGrid
-5. Criar componentes de texto animado (NeonTitle, Counter)
-6. Criar FloatingCard com efeitos 3D
-7. Reescrever LandingPage integrando tudo
-8. Testar performance e ajustar
+1. Criar SQL para sincronizar projeto existente
+2. Modificar `useProjects.tsx` para criar contrato automaticamente
+3. Invalidar caches do React Query apos criacao
+4. Testar fluxo completo de criacao de projeto
+5. Verificar dashboards atualizados
 
-## Preview do Resultado
+## Resultado Esperado
 
-A landing page tera:
-- Particulas ciano flutuando e conectando-se
-- Orbs de gradiente pulsando suavemente no fundo
-- Grid cyberpunk sutil atravessando a tela
-- Titulo aparecendo letra por letra com glow neon
-- Numeros das stats contando de 0 ate o valor
-- Video flutuando com perspectiva 3D
-- Cards subindo e girando ao aparecer
-- Hover com brilho neon intenso em tudo
-- Linha de scan passando periodicamente
+Apos implementacao:
+- Receita do Mes: valores de revenues recebidas
+- Pipeline Ativo: soma de contracts ativos
+- Dashboard Financeiro: exibira projetos com valores corretos
+- Overview: metricas refletindo dados reais
