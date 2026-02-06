@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.govbr-callback]
 verify_jwt = false
+
+[functions.generate-tasks-from-text]
+verify_jwt = false

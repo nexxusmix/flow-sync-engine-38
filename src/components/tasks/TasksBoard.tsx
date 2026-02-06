@@ -1,0 +1,253 @@
+import { useState } from "react";
+import { Task, TASK_COLUMNS, TASK_CATEGORIES, useTasksStore } from "@/stores/tasksStore";
+import { 
+  CheckSquare, Square, MoreHorizontal, Trash2, 
+  Edit, Calendar, GripVertical, Tag
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface TaskCardProps {
+  task: Task;
+  onEdit: (task: Task) => void;
+  isDragging?: boolean;
+}
+
+function TaskCard({ task, onEdit, isDragging }: TaskCardProps) {
+  const { toggleComplete, deleteTask } = useTasksStore();
+  const isCompleted = task.status === 'done';
+  
+  const categoryInfo = TASK_CATEGORIES.find(c => c.key === task.category);
+
+  return (
+    <motion.div
+      className={cn(
+        "glass-card rounded-lg p-3 cursor-grab active:cursor-grabbing",
+        "border border-transparent hover:border-primary/20 transition-all group",
+        isDragging && "opacity-50 ring-2 ring-primary",
+        isCompleted && "opacity-60"
+      )}
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      whileHover={{ scale: 1.01 }}
+      draggable
+      onDragStart={(e: any) => {
+        e.dataTransfer.setData('taskId', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+    >
+      <div className="flex items-start gap-2">
+        {/* Drag Handle */}
+        <div className="opacity-0 group-hover:opacity-50 transition-opacity cursor-grab mt-0.5">
+          <GripVertical className="w-3 h-3 text-muted-foreground" />
+        </div>
+
+        {/* Checkbox */}
+        <button
+          onClick={() => toggleComplete(task.id)}
+          className="flex-shrink-0 mt-0.5"
+        >
+          {isCompleted ? (
+            <CheckSquare className="w-4 h-4 text-green-500" />
+          ) : (
+            <Square className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+          )}
+        </button>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className={cn(
+            "text-sm font-medium text-foreground leading-tight",
+            isCompleted && "line-through text-muted-foreground"
+          )}>
+            {task.title}
+          </p>
+
+          {task.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {task.description}
+            </p>
+          )}
+
+          {/* Meta row */}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {/* Category Badge */}
+            {categoryInfo && (
+              <Badge 
+                variant="secondary" 
+                className={cn("text-[9px] px-1.5 py-0 text-primary-foreground", categoryInfo.color)}
+              >
+                {categoryInfo.label}
+              </Badge>
+            )}
+
+            {/* Tags */}
+            {task.tags && task.tags.length > 0 && (
+              <>
+                {task.tags.slice(0, 2).map((tag, i) => (
+                  <Badge key={i} variant="outline" className="text-[9px] px-1.5 py-0">
+                    {tag}
+                  </Badge>
+                ))}
+                {task.tags.length > 2 && (
+                  <span className="text-[9px] text-muted-foreground">+{task.tags.length - 2}</span>
+                )}
+              </>
+            )}
+
+            {/* Due date */}
+            {task.due_date && (
+              <span className={cn(
+                "text-[10px] flex items-center gap-1",
+                new Date(task.due_date) < new Date() && task.status !== 'done'
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+              )}>
+                <Calendar className="w-3 h-3" />
+                {format(new Date(task.due_date), 'dd MMM', { locale: ptBR })}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit(task)}>
+              <Edit className="w-4 h-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => deleteTask(task.id)}
+              className="text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </motion.div>
+  );
+}
+
+interface TaskColumnComponentProps {
+  column: typeof TASK_COLUMNS[number];
+  tasks: Task[];
+  onEditTask: (task: Task) => void;
+  onDrop: (taskId: string, newStatus: Task['status']) => void;
+}
+
+function TaskColumnComponent({ column, tasks, onEditTask, onDrop }: TaskColumnComponentProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const taskId = e.dataTransfer.getData('taskId');
+    if (taskId) {
+      onDrop(taskId, column.key);
+    }
+  };
+
+  return (
+    <div 
+      className={cn(
+        "flex flex-col min-w-[280px] max-w-[320px] rounded-xl p-3 transition-colors",
+        column.color,
+        isDragOver && "ring-2 ring-primary/50"
+      )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Column Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-medium text-foreground">{column.title}</h3>
+          <span className="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded">
+            {tasks.length}
+          </span>
+        </div>
+      </div>
+
+      {/* Tasks */}
+      <div className="flex flex-col gap-2 flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
+        {tasks.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-xs">Nenhuma tarefa</p>
+          </div>
+        ) : (
+          tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onEdit={onEditTask}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface TasksBoardProps {
+  tasks: Task[];
+  onEditTask: (task: Task) => void;
+}
+
+export function TasksBoard({ tasks, onEditTask }: TasksBoardProps) {
+  const { moveTask } = useTasksStore();
+
+  const handleDrop = async (taskId: string, newStatus: Task['status']) => {
+    await moveTask(taskId, newStatus);
+  };
+
+  const getTasksByStatus = (status: Task['status']) => {
+    return tasks.filter(t => t.status === status);
+  };
+
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-4">
+      {TASK_COLUMNS.map((column) => (
+        <TaskColumnComponent
+          key={column.key}
+          column={column}
+          tasks={getTasksByStatus(column.key)}
+          onEditTask={onEditTask}
+          onDrop={handleDrop}
+        />
+      ))}
+    </div>
+  );
+}
