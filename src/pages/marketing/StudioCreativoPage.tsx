@@ -8,7 +8,7 @@ import {
 import { BrandKit, Campaign } from "@/types/marketing";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Wand2, Download, Trash2, Clock, FileText
+  Wand2, Download, Trash2, Clock, FileText, Loader2, ExternalLink, Copy, Check
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { StudioBriefForm, StudioOutputTabs, StudioApplyActions } from "@/components/studio";
+import { useExportPdf } from "@/hooks/useExportPdf";
 
 export default function StudioCreativoPage() {
   // State
@@ -35,6 +36,9 @@ export default function StudioCreativoPage() {
   const [progress, setProgress] = useState(0);
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
 
+  // Export PDF
+  const { isExporting, exportedUrl, exportStudioRun, openPdf, copyLink, resetExport } = useExportPdf();
+
   useEffect(() => {
     fetchBriefs();
     fetchBrandKits();
@@ -46,6 +50,7 @@ export default function StudioCreativoPage() {
       fetchOutputs(selectedBrief.id);
       fetchScenes(selectedBrief.id);
       fetchImages(selectedBrief.id);
+      resetExport(); // Reset export URL when switching briefs
     }
   }, [selectedBrief]);
 
@@ -576,10 +581,43 @@ ${formData.inputText}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Exportar
-                  </Button>
+                  {exportedUrl ? (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2"
+                        onClick={openPdf}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Abrir PDF
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2"
+                        onClick={copyLink}
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copiar Link
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => exportStudioRun(selectedBrief.id)}
+                      disabled={isExporting}
+                    >
+                      {isExporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      {isExporting ? "Exportando..." : "Exportar PDF"}
+                    </Button>
+                  )}
                   <StudioApplyActions
                     brief={selectedBrief}
                     concept={concept}
