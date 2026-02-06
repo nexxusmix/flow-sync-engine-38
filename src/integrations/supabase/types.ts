@@ -1300,6 +1300,114 @@ export type Database = {
           },
         ]
       }
+      creative_block_versions: {
+        Row: {
+          ai_run_id: string | null
+          block_id: string
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          source: Database["public"]["Enums"]["creative_source"]
+          version: number
+        }
+        Insert: {
+          ai_run_id?: string | null
+          block_id: string
+          content: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          source: Database["public"]["Enums"]["creative_source"]
+          version: number
+        }
+        Update: {
+          ai_run_id?: string | null
+          block_id?: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          source?: Database["public"]["Enums"]["creative_source"]
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_block_versions_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_block_versions_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "creative_blocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_blocks: {
+        Row: {
+          ai_run_id: string | null
+          content: Json
+          created_at: string
+          id: string
+          order_index: number
+          source: Database["public"]["Enums"]["creative_source"]
+          status: Database["public"]["Enums"]["creative_block_status"]
+          title: string | null
+          type: Database["public"]["Enums"]["creative_block_type"]
+          updated_at: string
+          version: number
+          work_id: string
+        }
+        Insert: {
+          ai_run_id?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          order_index?: number
+          source?: Database["public"]["Enums"]["creative_source"]
+          status?: Database["public"]["Enums"]["creative_block_status"]
+          title?: string | null
+          type: Database["public"]["Enums"]["creative_block_type"]
+          updated_at?: string
+          version?: number
+          work_id: string
+        }
+        Update: {
+          ai_run_id?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          order_index?: number
+          source?: Database["public"]["Enums"]["creative_source"]
+          status?: Database["public"]["Enums"]["creative_block_status"]
+          title?: string | null
+          type?: Database["public"]["Enums"]["creative_block_type"]
+          updated_at?: string
+          version?: number
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_blocks_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_blocks_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "creative_works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creative_briefs: {
         Row: {
           account_id: string | null
@@ -1396,6 +1504,109 @@ export type Database = {
             columns: ["brief_id"]
             isOneToOne: false
             referencedRelation: "creative_briefs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_works: {
+        Row: {
+          brand_kit_id: string | null
+          campaign_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json | null
+          parent_work_id: string | null
+          project_id: string | null
+          proposal_id: string | null
+          source: Database["public"]["Enums"]["creative_source"]
+          status: Database["public"]["Enums"]["creative_work_status"]
+          tags: string[] | null
+          title: string
+          type: Database["public"]["Enums"]["creative_work_type"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          brand_kit_id?: string | null
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_work_id?: string | null
+          project_id?: string | null
+          proposal_id?: string | null
+          source?: Database["public"]["Enums"]["creative_source"]
+          status?: Database["public"]["Enums"]["creative_work_status"]
+          tags?: string[] | null
+          title: string
+          type?: Database["public"]["Enums"]["creative_work_type"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          brand_kit_id?: string | null
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_work_id?: string | null
+          project_id?: string | null
+          proposal_id?: string | null
+          source?: Database["public"]["Enums"]["creative_source"]
+          status?: Database["public"]["Enums"]["creative_work_status"]
+          tags?: string[] | null
+          title?: string
+          type?: Database["public"]["Enums"]["creative_work_type"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_works_brand_kit_id_fkey"
+            columns: ["brand_kit_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_works_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_works_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_works_parent_work_id_fkey"
+            columns: ["parent_work_id"]
+            isOneToOne: false
+            referencedRelation: "creative_works"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_works_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_works_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -3728,6 +3939,63 @@ export type Database = {
         }
         Relationships: []
       }
+      storyboard_frames: {
+        Row: {
+          block_id: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          metadata: Json | null
+          prompt: string | null
+          scene_index: number
+          status: string
+          storage_path: string | null
+          updated_at: string
+          work_id: string
+        }
+        Insert: {
+          block_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          prompt?: string | null
+          scene_index: number
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          work_id: string
+        }
+        Update: {
+          block_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          prompt?: string | null
+          scene_index?: number
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storyboard_frames_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "creative_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storyboard_frames_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "creative_works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storyboard_scenes: {
         Row: {
           audio: string | null
@@ -3968,6 +4236,32 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "comercial" | "operacao" | "financeiro"
+      creative_block_status: "empty" | "draft" | "ready" | "approved"
+      creative_block_type:
+        | "brief"
+        | "narrative_script"
+        | "storyboard"
+        | "storyboard_images"
+        | "shotlist"
+        | "moodboard"
+        | "visual_identity"
+        | "motion_direction"
+        | "lettering"
+        | "copy_variations"
+      creative_source: "manual" | "ai" | "hybrid"
+      creative_work_status:
+        | "draft"
+        | "in_production"
+        | "review"
+        | "approved"
+        | "archived"
+      creative_work_type:
+        | "script"
+        | "storyboard"
+        | "identity"
+        | "motion"
+        | "campaign_pack"
+        | "full_package"
       deliverable_status:
         | "pending"
         | "in_review"
@@ -4105,6 +4399,35 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "comercial", "operacao", "financeiro"],
+      creative_block_status: ["empty", "draft", "ready", "approved"],
+      creative_block_type: [
+        "brief",
+        "narrative_script",
+        "storyboard",
+        "storyboard_images",
+        "shotlist",
+        "moodboard",
+        "visual_identity",
+        "motion_direction",
+        "lettering",
+        "copy_variations",
+      ],
+      creative_source: ["manual", "ai", "hybrid"],
+      creative_work_status: [
+        "draft",
+        "in_production",
+        "review",
+        "approved",
+        "archived",
+      ],
+      creative_work_type: [
+        "script",
+        "storyboard",
+        "identity",
+        "motion",
+        "campaign_pack",
+        "full_package",
+      ],
       deliverable_status: [
         "pending",
         "in_review",
