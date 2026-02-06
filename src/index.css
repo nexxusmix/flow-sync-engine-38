@@ -727,4 +727,156 @@
   .interactive:active {
     @apply scale-[0.98];
   }
+
+  /* ========================================
+     NEON & LANDING PAGE EFFECTS
+     ======================================== */
+
+  /* Neon Text Glow */
+  .neon-text {
+    text-shadow:
+      0 0 10px rgba(0, 163, 211, 0.5),
+      0 0 20px rgba(0, 163, 211, 0.3),
+      0 0 40px rgba(0, 163, 211, 0.2),
+      0 0 80px rgba(0, 163, 211, 0.1);
+    animation: neonPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes neonPulse {
+    0%, 100% {
+      text-shadow:
+        0 0 10px rgba(0, 163, 211, 0.5),
+        0 0 20px rgba(0, 163, 211, 0.3),
+        0 0 40px rgba(0, 163, 211, 0.2),
+        0 0 80px rgba(0, 163, 211, 0.1);
+    }
+    50% {
+      text-shadow:
+        0 0 15px rgba(0, 163, 211, 0.7),
+        0 0 30px rgba(0, 163, 211, 0.5),
+        0 0 60px rgba(0, 163, 211, 0.3),
+        0 0 100px rgba(0, 163, 211, 0.2);
+    }
+  }
+
+  /* Neon Button Glow */
+  .neon-button {
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .neon-button::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(45deg, rgba(0, 163, 211, 0.5), rgba(139, 92, 246, 0.5), rgba(0, 163, 211, 0.5));
+    background-size: 200% 200%;
+    animation: neonBorderRotate 3s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+    filter: blur(8px);
+  }
+
+  .neon-button:hover::before {
+    opacity: 1;
+  }
+
+  @keyframes neonBorderRotate {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Neon Badge Scanner Effect */
+  .neon-badge {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .neon-badge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 163, 211, 0.4),
+      transparent
+    );
+    animation: scannerEffect 2s ease-in-out infinite;
+  }
+
+  @keyframes scannerEffect {
+    0% { left: -100%; }
+    50%, 100% { left: 100%; }
+  }
+
+  /* Floating Video Container */
+  .floating-video {
+    animation: videoFloat 6s ease-in-out infinite;
+    transform-style: preserve-3d;
+  }
+
+  @keyframes videoFloat {
+    0%, 100% {
+      transform: translateY(0) rotateX(2deg) rotateY(-2deg);
+    }
+    50% {
+      transform: translateY(-10px) rotateX(-2deg) rotateY(2deg);
+    }
+  }
+
+  /* Video Glow Aura */
+  .video-aura {
+    position: absolute;
+    inset: -20px;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 163, 211, 0.3) 0%,
+      rgba(0, 163, 211, 0.1) 40%,
+      transparent 70%
+    );
+    filter: blur(40px);
+    animation: auraBreath 4s ease-in-out infinite;
+    z-index: -1;
+  }
+
+  @keyframes auraBreath {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+
+  /* Glassmorphism Nav */
+  .glass-nav {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Landing Section Fade */
+  .section-fade-bottom {
+    position: relative;
+  }
+
+  .section-fade-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, hsl(var(--background)), transparent);
+    pointer-events: none;
+  }
 }
