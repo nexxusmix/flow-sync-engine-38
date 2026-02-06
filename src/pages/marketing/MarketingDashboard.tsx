@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
+import { useAggregatedMetrics } from "@/hooks/useContentMetrics";
 import { CONTENT_ITEM_STAGES, CONTENT_PILLARS } from "@/types/marketing";
 import { useNavigate } from "react-router-dom";
 import { 
   Calendar, Sparkles, AlertTriangle, CheckCircle, Clock,
   TrendingUp, Lightbulb, Megaphone, ArrowRight, Plus,
-  Instagram, BarChart3, Target, Wand2
+  Instagram, BarChart3, Target, Wand2, Users, Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,6 +32,7 @@ export default function MarketingDashboard() {
   } = useMarketingStore();
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const { aggregated: metricsAggregated } = useAggregatedMetrics();
 
   useEffect(() => {
     fetchContentItems();
@@ -124,13 +126,45 @@ export default function MarketingDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           <StatCard
             title="Em Produção"
             value={stats.inProduction}
             icon={Clock}
             color="bg-blue-500"
           />
+          <StatCard
+            title="Publicados"
+            value={stats.publishedThisMonth}
+            subtitle="este mês"
+            icon={TrendingUp}
+            color="bg-primary"
+          />
+          <StatCard
+            title="Alcance Total"
+            value={metricsAggregated.totalReach.toLocaleString('pt-BR')}
+            subtitle="com métricas"
+            icon={Users}
+            color="bg-purple-500"
+          />
+          <StatCard
+            title="Engajamento Médio"
+            value={metricsAggregated.averageEngagement.toLocaleString('pt-BR')}
+            subtitle="likes + comentários"
+            icon={Heart}
+            color="bg-red-500"
+          />
+          <StatCard
+            title="Atrasados"
+            value={stats.overdue}
+            icon={AlertTriangle}
+            color="bg-red-500"
+            alert={stats.overdue > 0}
+          />
+        </div>
+
+        {/* Secondary Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             title="Em Revisão"
             value={contentItems.filter(i => i.status === 'review').length}
@@ -151,25 +185,11 @@ export default function MarketingDashboard() {
             color="bg-cyan-500"
           />
           <StatCard
-            title="Publicados"
-            value={stats.publishedThisMonth}
-            subtitle="este mês"
-            icon={TrendingUp}
-            color="bg-primary"
-          />
-          <StatCard
             title="Ideias"
             value={stats.totalIdeas}
             subtitle="no banco"
             icon={Lightbulb}
             color="bg-purple-500"
-          />
-          <StatCard
-            title="Atrasados"
-            value={stats.overdue}
-            icon={AlertTriangle}
-            color="bg-red-500"
-            alert={stats.overdue > 0}
           />
         </div>
 

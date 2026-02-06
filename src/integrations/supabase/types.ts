@@ -735,6 +735,53 @@ export type Database = {
           },
         ]
       }
+      content_metrics: {
+        Row: {
+          collected_at: string
+          comments: number | null
+          content_item_id: string
+          created_at: string
+          id: string
+          likes: number | null
+          reach: number | null
+          shares: number | null
+          views: number | null
+          workspace_id: string
+        }
+        Insert: {
+          collected_at?: string
+          comments?: number | null
+          content_item_id: string
+          created_at?: string
+          id?: string
+          likes?: number | null
+          reach?: number | null
+          shares?: number | null
+          views?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          collected_at?: string
+          comments?: number | null
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          likes?: number | null
+          reach?: number | null
+          shares?: number | null
+          views?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_metrics_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_scripts: {
         Row: {
           ai_generated: boolean | null

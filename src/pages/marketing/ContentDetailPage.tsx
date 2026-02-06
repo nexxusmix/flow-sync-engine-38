@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { ContentAssetsTab } from "@/components/marketing/ContentAssetsTab";
 import { LinkedReferences } from "@/components/marketing/LinkedReferences";
+import { ContentMetricsSection } from "@/components/marketing/ContentMetricsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -597,6 +598,12 @@ export default function ContentDetailPage() {
                 )}
               </div>
             </div>
+
+            {/* Metrics Section - Only for published content */}
+            <ContentMetricsSection 
+              contentItemId={item.id} 
+              isPublished={item.status === 'published'} 
+            />
           </TabsContent>
         </Tabs>
 
