@@ -15,7 +15,7 @@ const mainMenuItems = [
   { name: "Propostas", href: "/propostas", icon: "description" },
   { name: "Contratos", href: "/contratos", icon: "contract" },
   { name: "Relatórios", href: "/relatorios", icon: "monitoring" },
-  { name: "Knowledge", href: "/knowledge", icon: "menu_book" },
+  { name: "Tarefas", href: "/tarefas", icon: "task_alt" },
 ];
 
 const settingsItems = [
