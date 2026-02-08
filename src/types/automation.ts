@@ -19,7 +19,7 @@ export interface AutomationSuggestion {
   id: string;
   rule_key: string;
   entity_type: string;
-  entity_id: string | null;
+  entity_id: string | null;  // TEXT to support composite IDs like "instagram-2026-02-22"
   title: string;
   message: string | null;
   suggestion_json: {
