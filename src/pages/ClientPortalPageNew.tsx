@@ -43,6 +43,8 @@ import { PortalMaterialsSection, PortalMaterial } from "@/components/client-port
 import { PortalFeedbackPanel } from "@/components/client-portal/PortalFeedbackPanel";
 import { PortalChangeRequests, ChangeRequest } from "@/components/client-portal/PortalChangeRequests";
 import { PortalVersionsTimeline, DeliverableVersion } from "@/components/client-portal/PortalVersionsTimeline";
+import { PortalOverviewSection } from "@/components/client-portal/PortalOverviewSection";
+import { PortalProjectStages } from "@/components/client-portal/PortalProjectStages";
 
 // Stage name mapping
 const STAGE_NAMES: Record<string, string> = {
@@ -88,6 +90,7 @@ export default function ClientPortalPage() {
   // Extract data safely with fallbacks
   const portal = data?.portal;
   const project = data?.project;
+  const stages = data?.stages || [];
   const deliverables = data?.deliverables || [];
   const files = data?.files || [];
   const comments = data?.comments || [];
@@ -313,7 +316,7 @@ export default function ClientPortalPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-        {/* Project Info Cards */}
+        {/* Project Info Cards - Main Metrics */}
         {project && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="glass-card rounded-xl p-4">
@@ -388,6 +391,27 @@ export default function ClientPortalPage() {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Overview Section - Extended Metrics, Briefing */}
+        {project && (
+          <div className="mb-6">
+            <PortalOverviewSection
+              project={project}
+              stages={stages}
+              hasPaymentBlock={hasPaymentBlock}
+            />
+          </div>
+        )}
+
+        {/* Project Stages Pipeline */}
+        {(stages.length > 0 || project?.stage_current) && (
+          <div className="mb-6">
+            <PortalProjectStages
+              stages={stages}
+              currentStageKey={project?.stage_current}
+            />
           </div>
         )}
 

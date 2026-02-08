@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { 
   Link, 
   Copy, 
@@ -23,11 +22,16 @@ import {
   Loader2,
   CheckCircle2,
   AlertTriangle,
+  Plus,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { AddMaterialDialog } from "@/components/client-portal/AddMaterialDialog";
+import { ProjectLogoUpload } from "@/components/projects/ProjectLogoUpload";
 
 interface PortalTabProps {
   project: ProjectWithStages;
@@ -50,6 +54,18 @@ export function PortalTab({ project }: PortalTabProps) {
   const portalFiles = files.filter(f => f.visible_in_portal);
   
   const [expirationDate, setExpirationDate] = useState<string>('');
+  const [addMaterialOpen, setAddMaterialOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(project.logo_url || null);
+
+  const handleLogoUpload = async (url: string | null) => {
+    setLogoUrl(url);
+    // Update project logo_url in database
+    await supabase
+      .from('projects')
+      .update({ logo_url: url })
+      .eq('id', project.id);
+    toast.success(url ? 'Logo atualizado!' : 'Logo removido!');
+  };
 
   const handleCopyLink = () => {
     if (portalUrl) {
@@ -168,7 +184,11 @@ export function PortalTab({ project }: PortalTabProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button onClick={() => setAddMaterialOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Material
+          </Button>
           <Button variant="outline" size="sm" onClick={handleRegenerateLink} disabled={regenerateLink.isPending}>
             {regenerateLink.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -177,6 +197,27 @@ export function PortalTab({ project }: PortalTabProps) {
             )}
             Regenerar Link
           </Button>
+        </div>
+      </div>
+
+      {/* Project Logo Section */}
+      <div className="glass-card rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="font-medium text-foreground">Logo do Projeto</p>
+              <p className="text-xs text-muted-foreground">
+                Aparece no header do portal do cliente
+              </p>
+            </div>
+          </div>
+          <ProjectLogoUpload
+            projectId={project.id}
+            currentLogoUrl={logoUrl}
+            onUpload={handleLogoUpload}
+            compact
+          />
         </div>
       </div>
 
@@ -326,6 +367,15 @@ export function PortalTab({ project }: PortalTabProps) {
           </div>
         )}
       </div>
+
+      {/* Add Material Dialog */}
+      {portalLink && (
+        <AddMaterialDialog
+          portalLinkId={portalLink.id}
+          open={addMaterialOpen}
+          onOpenChange={setAddMaterialOpen}
+        />
+      )}
     </div>
   );
 }
