@@ -63,7 +63,7 @@ export default function ProjectDetailPage() {
 
   return (
     <DashboardLayout title={project.name}>
-      <div className="space-y-4 md:space-y-6 animate-fade-in">
+      <div className="space-y-4 md:space-y-6 animate-fade-in max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Back button */}
         <Button 
           variant="ghost" 

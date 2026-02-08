@@ -107,7 +107,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Dashboard">
-      <div className="space-y-10">
+      <div className="space-y-10 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
         <motion.div 
           className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6"

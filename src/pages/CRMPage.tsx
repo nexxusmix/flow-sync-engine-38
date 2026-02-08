@@ -69,7 +69,7 @@ export default function CRMPage() {
 
   return (
     <DashboardLayout title="Cine CRM">
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
         <div className="flex flex-col gap-2">
           <h1 className="text-4xl md:text-5xl font-extrabold uppercase tracking-tighter text-foreground">

@@ -79,7 +79,7 @@ export default function ProjectsListPage() {
 
   return (
     <DashboardLayout title="Projetos">
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* View Toggle - Multiple Views */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-xl w-full sm:w-fit border border-border/50 overflow-x-auto">
@@ -238,7 +238,7 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
       {filteredProjects.map((project) => (
         <div 
           key={project.id}

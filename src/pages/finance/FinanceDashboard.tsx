@@ -203,7 +203,7 @@ export default function FinancePage() {
 
   return (
     <DashboardLayout title="Financeiro">
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

@@ -58,9 +58,9 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         <Header title={title} onOpenSearch={() => setSearchOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col">
+        <main className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 flex flex-col">
           <motion.div 
-            className="max-w-[1800px] mx-auto preserve-3d w-full flex-1"
+            className="w-full flex-1"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
