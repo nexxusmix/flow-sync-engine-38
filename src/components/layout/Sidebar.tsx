@@ -77,7 +77,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             collapsed && "mx-auto"
           )}
         >
-          {collapsed ? <Menu className="w-4 h-4" /> : <X className="w-3.5 h-3.5" />}
+          {collapsed ? <Menu className="w-4 h-4" strokeWidth={1.5} /> : <X className="w-3.5 h-3.5" strokeWidth={1.5} />}
         </button>
       </div>
 
