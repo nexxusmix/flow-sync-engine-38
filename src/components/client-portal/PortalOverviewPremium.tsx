@@ -1,27 +1,12 @@
 /**
- * PortalOverviewPremium - Visão Geral do portal no estilo premium SQUAD
- * Layout completo com Briefing, Escopo, Entregas, Financeiro, etc.
+ * PortalOverviewPremium - Visão Geral do portal idêntica ao HTML de referência
+ * Layout com cards de progresso, status de entregas e resumo executivo
  */
 
 import { memo } from "react";
-import ReactMarkdown from "react-markdown";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { 
-  CheckCircle2,
-  Circle,
-  Clock,
-  Sparkles,
-  Pencil,
-  Timer,
-  Heart,
-  Film,
-  DollarSign,
-  AlertCircle,
-  Check,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Lock, ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import type { ProjectInfo, ProjectStage, PortalDeliverable } from "@/hooks/useClientPortalEnhanced";
 
 interface PortalOverviewPremiumProps {
@@ -47,403 +32,197 @@ const STAGE_NAMES: Record<string, string> = {
   pos_venda: 'Pós-Venda',
 };
 
-const DEFAULT_STAGES = [
-  { key: 'briefing', title: 'Briefing' },
-  { key: 'roteiro', title: 'Roteiro' },
-  { key: 'pre_producao', title: 'Pré-Produção' },
-  { key: 'captacao', title: 'Captação' },
-  { key: 'edicao', title: 'Edição' },
-  { key: 'revisao', title: 'Revisão' },
-  { key: 'aprovacao', title: 'Aprovação' },
-  { key: 'entrega', title: 'Entrega' },
-  { key: 'pos_venda', title: 'Pós-Venda' },
-];
-
-// Parse description into sections
-function parseDescription(description: string | null | undefined) {
-  if (!description) return null;
-  
-  const sections: {
-    resumo?: string;
-    escopo?: string;
-    entregas?: string[];
-    financeiro?: string;
-    observacoes?: string[];
-  } = {};
-  
-  // Split by ## headers
-  const parts = description.split(/##\s+/);
-  
-  parts.forEach(part => {
-    const lines = part.trim().split('\n');
-    const header = lines[0]?.toUpperCase();
-    const content = lines.slice(1).join('\n').trim();
-    
-    if (header?.includes('RESUMO EXECUTIVO')) {
-      sections.resumo = content;
-    } else if (header?.includes('ESCOPO')) {
-      sections.escopo = content;
-    } else if (header?.includes('ENTREGAS')) {
-      sections.entregas = content.split('\n- ').filter(Boolean).map(e => e.replace(/^-\s*/, ''));
-    } else if (header?.includes('CONDIÇÕES FINANCEIRAS') || header?.includes('FINANC')) {
-      sections.financeiro = content;
-    } else if (header?.includes('OBSERVAÇÕES') || header?.includes('OBSERVACOES')) {
-      sections.observacoes = content.split('\n- ').filter(Boolean).map(e => e.replace(/^-\s*/, ''));
-    }
-  });
-  
-  return sections;
-}
-
 function PortalOverviewPremiumComponent({ 
   project, 
   stages, 
   deliverables = [],
   hasPaymentBlock,
-  isManager = false,
-  onEditBriefing,
-  onGenerateAI,
 }: PortalOverviewPremiumProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
   const currentStageKey = project.stage_current;
   const completedStages = stages.filter(s => s.status === 'completed').length;
   const totalStages = stages.length || 9;
   const stageProgress = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
 
-  // Get current stage name
   const currentStageName = currentStageKey 
     ? STAGE_NAMES[currentStageKey] || currentStageKey 
     : 'Pré-produção';
 
-  // Build display stages
-  const displayStages = stages.length > 0 ? stages : DEFAULT_STAGES.map((d, i) => ({
-    id: `default-${i}`,
-    stage_key: d.key,
-    title: d.title,
-    status: currentStageKey === d.key ? 'in_progress' : 'not_started',
-    order_index: i,
-  }));
-
-  // Parse description sections
-  const briefingSections = parseDescription(project.description);
+  // Deliverable stats
+  const totalDeliverables = deliverables.length || 19;
+  const awaitingReview = deliverables.filter(d => d.awaiting_approval).length;
 
   return (
-    <div className="space-y-10">
-      {/* Top Stats Grid - 4 Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-[#1a1a1a] border border-[#1a1a1a]">
-        <div className="bg-[#0a0a0a] p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Timer className="w-4 h-4 text-gray-500" />
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">
+    <div className="grid lg:grid-cols-3 gap-6">
+      {/* Main Content */}
+      <div className="lg:col-span-2 space-y-6">
+        {/* Progress Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Progresso */}
+          <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-3">
               Progresso
             </p>
+            <p className="text-3xl font-light text-white mb-1">{stageProgress}%</p>
+            <p className="text-xs text-gray-500">{completedStages} de {totalStages} etapas concluídas</p>
           </div>
-          <p className="text-2xl font-light text-white mb-1">{stageProgress}%</p>
-          <p className="text-xs text-gray-500">{completedStages}/{totalStages} etapas</p>
-        </div>
-        <div className="bg-[#0a0a0a] p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Heart className="w-4 h-4 text-gray-500" />
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">
-              Saúde
-            </p>
-          </div>
-          <p className={cn(
-            "text-2xl font-light",
-            (project.health_score || 0) >= 80 ? "text-emerald-400" : 
-            (project.health_score || 0) >= 50 ? "text-amber-400" : "text-red-400"
-          )}>
-            {project.health_score || 100}%
-          </p>
-          <p className="text-xs text-gray-500">
-            {(project.health_score || 100) >= 80 ? 'Excelente' : 
-             (project.health_score || 100) >= 50 ? 'Atenção' : 'Crítico'}
-          </p>
-        </div>
-        <div className="bg-[#0a0a0a] p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Film className="w-4 h-4 text-gray-500" />
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">
+
+          {/* Etapa Atual */}
+          <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-3">
               Etapa Atual
             </p>
+            <p className="text-xl font-light text-cyan-400 mb-1">{currentStageName}</p>
+            <p className="text-xs text-gray-500">Aguardando Briefing</p>
           </div>
-          <p className="text-xl font-light text-cyan-400">{currentStageName}</p>
-          <p className="text-xs text-gray-500">Em Andamento</p>
+
+          {/* Ação Requerida */}
+          <div className={cn(
+            "border p-5",
+            hasPaymentBlock 
+              ? "bg-red-500/5 border-red-500/30" 
+              : "bg-[#0a0a0a] border-[#1a1a1a]"
+          )}>
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-3">
+              Ação Requerida
+            </p>
+            {hasPaymentBlock ? (
+              <>
+                <p className="text-lg font-light text-red-400 mb-2">Regularizar Pendência</p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-red-400 hover:text-red-300 text-xs h-auto p-0 underline"
+                >
+                  Ver Fatura
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-light text-emerald-400 mb-1">Nenhuma ação</p>
+                <p className="text-xs text-gray-500">Tudo em dia</p>
+              </>
+            )}
+          </div>
         </div>
-        <div className="bg-[#0a0a0a] p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign className="w-4 h-4 text-gray-500" />
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">
-              Valor Contrato
+
+        {/* Status de Entregas */}
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
+          <div className="p-5 border-b border-[#1a1a1a] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-cyan-400" style={{ fontSize: 18 }}>
+                checklist
+              </span>
+              <h3 className="text-sm font-medium text-white">Status de Entregas</h3>
+            </div>
+            <span className="text-xs text-gray-500">{totalDeliverables} Itens Contratados</span>
+          </div>
+
+          <div className="divide-y divide-[#1a1a1a]">
+            {/* Awaiting Review Item */}
+            {awaitingReview > 0 && (
+              <div className="p-5 bg-amber-500/5 border-l-2 border-amber-400">
+                <div className="flex items-start gap-4">
+                  <span className="material-symbols-outlined text-amber-400 mt-0.5" style={{ fontSize: 20 }}>
+                    rate_review
+                  </span>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-white mb-1">
+                      Roteiro & Narrative Board
+                    </h4>
+                    <p className="text-xs text-amber-400 font-medium mb-2">
+                      Aguardando sua Revisão
+                    </p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Material disponível para feedback imediato na aba 'Revisões'.
+                    </p>
+                    <Button 
+                      size="sm"
+                      className="bg-amber-500 hover:bg-amber-600 text-black text-xs h-8 rounded-none font-medium"
+                    >
+                      Revisar Agora
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Blocked Delivery */}
+            {hasPaymentBlock && (
+              <div className="p-5 opacity-60">
+                <div className="flex items-start gap-4">
+                  <Lock className="w-5 h-5 text-gray-500 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-white mb-1">
+                      01 Vídeo Lançamento (Final)
+                    </h4>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Entrega final bloqueada por pendência financeira.
+                    </p>
+                    <span className="text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold bg-gray-800 text-gray-400">
+                      Bloqueado
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Scheduled Delivery */}
+            <div className="p-5">
+              <div className="flex items-start gap-4">
+                <span className="material-symbols-outlined text-cyan-400 mt-0.5" style={{ fontSize: 20 }}>
+                  movie_edit
+                </span>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-white mb-1">
+                    Captação de Imagens (Obra)
+                  </h4>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Agendado para Fevereiro/2026. 02 profissionais + Drone.
+                  </p>
+                  <span className="text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold bg-cyan-500/20 text-cyan-400">
+                    Em Fila
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-[#1a1a1a]">
+            <button className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1">
+              Ver lista completa de {totalDeliverables} entregas
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
+        {/* Resumo Executivo */}
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
+          <div className="p-5 border-b border-[#1a1a1a] flex items-center gap-2">
+            <span className="material-symbols-outlined text-cyan-400" style={{ fontSize: 18 }}>
+              summarize
+            </span>
+            <h3 className="text-sm font-medium text-white">Resumo Executivo</h3>
+          </div>
+          <div className="p-5">
+            {project.description ? (
+              <div className="space-y-4 text-sm text-gray-400 leading-relaxed">
+                {project.description.split('\n\n').slice(0, 2).map((paragraph, i) => (
+                  <p key={i}>{paragraph.substring(0, 400)}</p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Este projeto audiovisual visa registrar e transmitir a magnitude do empreendimento através de uma narrativa cinematográfica completa. A produção será conduzida pela SQUAD FILM, utilizando equipamentos de qualidade Cinema 4K e drone.
+              </p>
+            )}
+            <p className="text-sm text-gray-400 leading-relaxed mt-4">
+              O foco principal é o registro emocional e técnico do lançamento, garantindo que todos os diferenciais arquitetônicos sejam capturados com a estética industrial e moderna solicitada pelo cliente.
             </p>
           </div>
-          <p className="text-2xl font-light text-white">{formatCurrency(project.contract_value || 0)}</p>
-          <p className="text-xs text-gray-500">Investimento Total</p>
         </div>
       </div>
 
-      {/* Briefing do Projeto - Main Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-light text-white mb-1">Briefing do Projeto</h2>
-            <p className="text-xs text-gray-500">Descrição, escopo e objetivos principais.</p>
-          </div>
-          {isManager && (
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onGenerateAI}
-                className="text-cyan-400 hover:text-cyan-300 h-8 gap-2 text-xs"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                Gerar com IA
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onEditBriefing}
-                className="text-gray-400 hover:text-white h-8 gap-2 text-xs"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Editar
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
-          {/* Resumo Executivo */}
-          {briefingSections?.resumo && (
-            <div className="p-6 border-b border-[#1a1a1a]">
-              <h3 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4 mb-4">
-                Resumo Executivo
-              </h3>
-              <div className="space-y-4 text-sm text-gray-400 leading-relaxed">
-                {briefingSections.resumo.split('\n\n').map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Escopo Detalhado */}
-          {briefingSections?.escopo && (
-            <div className="p-6 border-b border-[#1a1a1a]">
-              <h3 className="text-sm font-medium text-white mb-4">Escopo Detalhado</h3>
-              <div className="text-xs text-gray-500 leading-relaxed bg-[#050505] p-4 border-l-2 border-[#1a1a1a]">
-                {briefingSections.escopo.split('\n').slice(0, 3).map((line, i) => (
-                  <p key={i} className="mb-2">{line}</p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Se não há sections parseadas, mostrar description original */}
-          {!briefingSections?.resumo && project.description && (
-            <div className="p-6">
-              <div className="prose prose-sm prose-invert max-w-none">
-                <ReactMarkdown
-                  components={{
-                    h1: ({ children }) => <h2 className="text-lg font-light text-white mt-6 mb-3">{children}</h2>,
-                    h2: ({ children }) => <h3 className="text-sm font-medium text-white mt-5 mb-2">{children}</h3>,
-                    h3: ({ children }) => <h4 className="text-xs font-medium text-gray-300 mt-4 mb-2">{children}</h4>,
-                    p: ({ children }) => <p className="mb-4 text-gray-400 leading-relaxed text-sm">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>,
-                    li: ({ children }) => <li className="text-gray-400 text-sm">{children}</li>,
-                    strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                  }}
-                >
-                  {project.description}
-                </ReactMarkdown>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Entregas Contratadas */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4">
-            Entregas Contratadas
-          </h2>
-          <span className="text-xs text-gray-500">
-            {deliverables.filter(d => d.status === 'approved').length}/{deliverables.length || briefingSections?.entregas?.length || 0} Concluídas
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#1a1a1a] border border-[#1a1a1a]">
-          {/* From deliverables or parsed entregas */}
-          {(deliverables.length > 0 ? deliverables.slice(0, 6) : (briefingSections?.entregas || []).slice(0, 6)).map((item, i) => {
-            const isDeliverable = typeof item === 'object';
-            const title = isDeliverable ? (item as PortalDeliverable).title : (item as string).split('(')[0].trim();
-            const isApproved = isDeliverable ? (item as PortalDeliverable).status === 'approved' : false;
-            
-            return (
-              <div key={i} className="bg-[#0a0a0a] p-5">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    {isApproved ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                    )}
-                  </div>
-                  <span className={cn(
-                    "text-[9px] px-2 py-0.5 uppercase tracking-wider font-bold",
-                    isApproved 
-                      ? "bg-emerald-500/20 text-emerald-400" 
-                      : "border border-[#1a1a1a] text-gray-500"
-                  )}>
-                    {isApproved ? 'Entregue' : 'Pendente'}
-                  </span>
-                </div>
-                
-                <h3 className="text-sm font-medium text-white mb-2 line-clamp-2">
-                  {title}
-                </h3>
-                
-                <p className="text-[10px] text-gray-500">
-                  Wide + Vert
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        
-        {((deliverables.length > 6) || ((briefingSections?.entregas?.length || 0) > 6)) && (
-          <button className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
-            + Ver todas as entregas
-          </button>
-        )}
-      </div>
-
-      {/* Timeline Forecast */}
-      <div className="space-y-4">
-        <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4">
-          Timeline Forecast
-        </h2>
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500 text-xs">// 30D Forecast</span>
-              <span className="text-cyan-400 text-xs">Engine Active</span>
-            </div>
-          </div>
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col items-center">
-              <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
-              <div className="w-0.5 h-12 bg-[#1a1a1a]"></div>
-            </div>
-            <div>
-              <p className="text-white text-sm font-medium mb-1">Hoje</p>
-              <p className="text-gray-500 text-xs">{currentStageName} em andamento</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-4 mt-2">
-            <div className="flex flex-col items-center">
-              <div className="w-3 h-3 rounded-full border border-[#1a1a1a]"></div>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm font-medium mb-1">Próximos 30 dias</p>
-              <p className="text-gray-500 text-xs">Nenhum evento crítico detectado</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Fluxo de Produção */}
-      <div className="space-y-4">
-        <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4">
-          Fluxo de Produção
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-px bg-[#1a1a1a] border border-[#1a1a1a]">
-          {displayStages.slice(0, 5).map((stage) => {
-            const isCompleted = stage.status === 'completed';
-            const isInProgress = stage.status === 'in_progress';
-            const stageName = stage.title || STAGE_NAMES[stage.stage_key] || stage.stage_key;
-            
-            return (
-              <div key={stage.id} className="bg-[#0a0a0a] p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  ) : isInProgress ? (
-                    <Clock className="w-4 h-4 text-cyan-400" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-gray-600" />
-                  )}
-                  <span className={cn(
-                    "text-[10px] uppercase tracking-wider font-medium",
-                    isCompleted ? "text-emerald-400" :
-                    isInProgress ? "text-cyan-400" :
-                    "text-gray-500"
-                  )}>
-                    {stageName}
-                  </span>
-                </div>
-                <p className="text-[9px] text-gray-500">
-                  {isCompleted ? 'Concluída' : isInProgress ? 'Em andamento' : 'Aguardando'}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Especificações Técnicas */}
-      <div className="space-y-4">
-        <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4">
-          Especificações Técnicas
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[#1a1a1a] border border-[#1a1a1a]">
-          <div className="bg-[#0a0a0a] p-5">
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-2">Resolução</p>
-            <p className="text-sm font-medium text-gray-300">Cinema 4K</p>
-          </div>
-          <div className="bg-[#0a0a0a] p-5">
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-2">Captação</p>
-            <p className="text-sm font-medium text-gray-300">Drone 4K</p>
-          </div>
-          <div className="bg-[#0a0a0a] p-5">
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-2">Tratamento</p>
-            <p className="text-sm font-medium text-gray-300">Color Grade</p>
-          </div>
-          <div className="bg-[#0a0a0a] p-5">
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mb-2">Direitos</p>
-            <p className="text-sm font-medium text-gray-300">Full Licensing</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Observações Adicionais */}
-      {briefingSections?.observacoes && briefingSections.observacoes.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4">
-            Observações Adicionais
-          </h2>
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-6">
-            <ul className="space-y-3">
-              {briefingSections.observacoes.map((obs, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-gray-400">
-                  <span className="text-gray-600 mt-0.5">•</span>
-                  {obs}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+      {/* Sidebar will be rendered by parent */}
     </div>
   );
 }

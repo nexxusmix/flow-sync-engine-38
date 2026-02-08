@@ -1,11 +1,6 @@
 /**
  * ClientPortalPage - Portal do Cliente Premium
- * 
- * Design premium SQUAD com:
- * - Header minimalista com badges
- * - Grid de métricas
- * - Sistema de abas
- * - Estilo dark editorial
+ * Layout idêntico ao HTML de referência com sidebar
  */
 
 import { useParams } from "react-router-dom";
@@ -14,18 +9,25 @@ import { Loader2, Lock, AlertTriangle } from "lucide-react";
 import { TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
+import { PortalBlockBanner } from "@/components/client-portal/PortalBlockBanner";
 import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPremium";
+import { PortalMetricsGrid } from "@/components/client-portal/PortalMetricsGrid";
 import { PortalTabsPremium } from "@/components/client-portal/PortalTabsPremium";
 import { PortalOverviewPremium } from "@/components/client-portal/PortalOverviewPremium";
 import { PortalDeliverablesPremium } from "@/components/client-portal/PortalDeliverablesPremium";
 import { PortalFooterPremium } from "@/components/client-portal/PortalFooterPremium";
+import { PortalMaterialsAside } from "@/components/client-portal/PortalMaterialsAside";
+import { PortalPaymentsAside } from "@/components/client-portal/PortalPaymentsAside";
+import { PortalAuditBadge } from "@/components/client-portal/PortalAuditBadge";
 import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
 import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/PortalRevisionsTab";
 import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/PortalScheduleTab";
 import { PortalAuditTab } from "@/components/client-portal/portal-tabs/PortalAuditTab";
+import { PortalFilesTab } from "@/components/client-portal/portal-tabs/PortalFilesTab";
 import { PortalFeedbackPanel } from "@/components/client-portal/PortalFeedbackPanel";
 import { PortalVersionsTimeline, DeliverableVersion } from "@/components/client-portal/PortalVersionsTimeline";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ClientPortalPage() {
   const { shareToken } = useParams();
@@ -64,12 +66,28 @@ export default function ClientPortalPage() {
   const selectedVersions = versions.filter(v => v.deliverable_id === selectedMaterialId);
 
   const handleExportPdf = async () => {
+    if (!project) return;
+    
     setIsExporting(true);
     toast.info("Gerando PDF do portal...");
-    setTimeout(() => {
+    
+    try {
+      const { data: result, error } = await supabase.functions.invoke('export-universal-pdf', {
+        body: { type: 'project', id: project.id }
+      });
+      
+      if (error) throw error;
+      
+      if (result?.public_url) {
+        window.open(result.public_url, '_blank');
+        toast.success("PDF gerado com sucesso!");
+      }
+    } catch (err) {
+      console.error('PDF export error:', err);
+      toast.error("Erro ao gerar PDF");
+    } finally {
       setIsExporting(false);
-      toast.success("PDF gerado com sucesso!");
-    }, 2000);
+    }
   };
 
   const handleAddComment = ({ authorName, authorEmail, content }: { authorName: string; authorEmail?: string; content: string }) => {
@@ -150,8 +168,11 @@ export default function ClientPortalPage() {
 
   return (
     <div className="min-h-screen bg-[#050505]">
+      {/* Block Banner */}
+      <PortalBlockBanner isVisible={!!hasPaymentBlock} />
+      
       <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* Header */}
+        {/* Header with badges and title */}
         <PortalHeaderPremium
           project={project}
           shareToken={shareToken || ''}
@@ -160,23 +181,43 @@ export default function ClientPortalPage() {
           isExporting={isExporting}
         />
 
+        {/* Metrics Grid */}
+        <div className="mt-6">
+          <PortalMetricsGrid project={project} />
+        </div>
+
         {/* Tabs */}
         <div className="mt-10">
           <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab}>
+            {/* Overview Tab */}
             <TabsContent value="overview" className="mt-8">
-              <PortalOverviewPremium 
-                project={project} 
-                stages={stages}
-                deliverables={deliverables}
-                hasPaymentBlock={hasPaymentBlock}
-                isManager={false}
-              />
+              <div className="grid lg:grid-cols-3 gap-6">
+                {/* Main Content */}
+                <div className="lg:col-span-2">
+                  <PortalOverviewPremium 
+                    project={project} 
+                    stages={stages}
+                    deliverables={deliverables}
+                    hasPaymentBlock={hasPaymentBlock}
+                    isManager={false}
+                  />
+                </div>
+                
+                {/* Sidebar */}
+                <div className="space-y-6">
+                  <PortalMaterialsAside deliverables={deliverables} files={files} />
+                  <PortalPaymentsAside hasPaymentBlock={hasPaymentBlock} />
+                  <PortalAuditBadge />
+                </div>
+              </div>
             </TabsContent>
 
+            {/* Tasks Tab */}
             <TabsContent value="tasks" className="mt-8">
               <PortalTasksTab />
             </TabsContent>
 
+            {/* Deliverables Tab */}
             <TabsContent value="deliverables" className="mt-8">
               <div className="grid lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
@@ -221,14 +262,22 @@ export default function ClientPortalPage() {
               </div>
             </TabsContent>
 
+            {/* Revisions Tab */}
             <TabsContent value="revisions" className="mt-8">
               <PortalRevisionsTab changeRequests={changeRequests} comments={comments} />
             </TabsContent>
 
+            {/* Files Tab */}
+            <TabsContent value="files" className="mt-8">
+              <PortalFilesTab files={files} hasPaymentBlock={hasPaymentBlock} />
+            </TabsContent>
+
+            {/* Schedule Tab */}
             <TabsContent value="schedule" className="mt-8">
               <PortalScheduleTab stages={stages} dueDate={project.due_date} />
             </TabsContent>
 
+            {/* Audit Tab */}
             <TabsContent value="audit" className="mt-8">
               <PortalAuditTab comments={comments} approvals={approvals} versions={versions} />
             </TabsContent>

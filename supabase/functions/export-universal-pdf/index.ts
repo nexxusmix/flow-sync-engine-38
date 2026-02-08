@@ -6,30 +6,33 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Design System Colors (SQUAD Film)
+// Design System Colors (SQUAD Film - Dark Theme)
 const COLORS = {
-  background: "#000000",
-  primary: "#00A3D3",
-  text: "#FFFFFF",
-  textMuted: "#737373",
+  background: "#050505",
+  surface: "#0a0a0a",
   border: "#1a1a1a",
-  success: "#22c55e",
-  warning: "#eab308",
-  error: "#ef4444",
+  primary: "#06b6d4", // cyan-500
+  text: "#FFFFFF",
+  textMuted: "#6b7280", // gray-500
+  textDim: "#9ca3af", // gray-400
+  success: "#10b981", // emerald-500
+  warning: "#f59e0b", // amber-500
+  error: "#ef4444", // red-500
 };
 
 // PDF dimensions (A4)
 const PAGE = {
   width: 595.28,
   height: 841.89,
-  margin: 50,
-  contentWidth: 495.28,
+  margin: 40,
+  contentWidth: 515.28,
 };
 
 interface ExportInput {
-  type: "report_360" | "tasks" | "project" | "project_overview";
+  type: "report_360" | "tasks" | "project" | "project_overview" | "portal";
   id?: string;
   period?: string;
+  token?: string;
   filters?: Record<string, unknown>;
 }
 
@@ -42,11 +45,15 @@ function formatCurrency(value: number): string {
 }
 
 function formatDate(date: string | null): string {
-  if (!date) return "-";
+  if (!date) return "—";
   try {
-    return new Date(date).toLocaleDateString("pt-BR");
+    return new Date(date).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   } catch {
-    return "-";
+    return "—";
   }
 }
 
@@ -65,125 +72,322 @@ function getPeriodDates(period: string): { start: Date; end: Date } {
   return { start, end };
 }
 
-// Simple SVG-based PDF generator
-class SimplePDFGenerator {
+// Improved PDF Generator matching portal design
+class PortalPDFGenerator {
   private content: string[] = [];
   private currentY = PAGE.margin;
   private pageNumber = 1;
 
-  addCover(title: string, subtitle: string) {
+  constructor() {
+    // Start with background
+    this.content.push(`<rect fill="${COLORS.background}" x="0" y="0" width="${PAGE.width}" height="${PAGE.height}"/>`);
+  }
+
+  private escapeXml(str: string): string {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  addPortalHeader(projectName: string, clientName: string, status: string, template: string, stage: string, isBlocked: boolean) {
+    // Badges row
+    let badgeX = PAGE.margin;
+    
+    // Status badge
     this.content.push(`
-      <rect fill="${COLORS.background}" x="0" y="0" width="${PAGE.width}" height="${PAGE.height}"/>
-      <text fill="${COLORS.primary}" x="${PAGE.width/2}" y="${PAGE.height/2 - 40}" 
-        font-family="Helvetica, sans-serif" font-size="32" font-weight="bold" text-anchor="middle">
-        ${this.escapeXml(title)}
+      <rect fill="${COLORS.primary}33" x="${badgeX}" y="${this.currentY}" width="60" height="18" rx="0"/>
+      <rect fill="none" stroke="${COLORS.primary}55" x="${badgeX}" y="${this.currentY}" width="60" height="18" rx="0"/>
+      <text fill="${COLORS.primary}" x="${badgeX + 30}" y="${this.currentY + 12}" 
+        font-family="Inter, sans-serif" font-size="7" text-anchor="middle" font-weight="bold" letter-spacing="0.5">
+        ${this.escapeXml(status.toUpperCase())}
       </text>
-      <text fill="${COLORS.text}" x="${PAGE.width/2}" y="${PAGE.height/2 + 10}" 
-        font-family="Helvetica, sans-serif" font-size="16" text-anchor="middle">
-        ${this.escapeXml(subtitle)}
-      </text>
-      <text fill="${COLORS.textMuted}" x="${PAGE.width/2}" y="${PAGE.height/2 + 50}" 
-        font-family="Helvetica, sans-serif" font-size="12" text-anchor="middle">
-        Gerado em ${formatDate(new Date().toISOString())}
-      </text>
-      <line x1="${PAGE.width/2 - 100}" y1="${PAGE.height/2 - 80}" x2="${PAGE.width/2 + 100}" y2="${PAGE.height/2 - 80}" 
-        stroke="${COLORS.primary}" stroke-width="2"/>
     `);
-    this.currentY = PAGE.margin;
+    badgeX += 70;
+
+    // Template badge
+    this.content.push(`
+      <rect fill="none" stroke="${COLORS.border}" x="${badgeX}" y="${this.currentY}" width="90" height="18" rx="0"/>
+      <text fill="${COLORS.textMuted}" x="${badgeX + 45}" y="${this.currentY + 12}" 
+        font-family="Inter, sans-serif" font-size="7" text-anchor="middle" letter-spacing="0.5">
+        ${this.escapeXml(template.toUpperCase().replace(/_/g, ' '))}
+      </text>
+    `);
+    badgeX += 100;
+
+    // Stage badge
+    this.content.push(`
+      <rect fill="none" stroke="${COLORS.border}" x="${badgeX}" y="${this.currentY}" width="80" height="18" rx="0"/>
+      <text fill="${COLORS.textMuted}" x="${badgeX + 40}" y="${this.currentY + 12}" 
+        font-family="Inter, sans-serif" font-size="7" text-anchor="middle" letter-spacing="0.5">
+        ${this.escapeXml(stage.toUpperCase())}
+      </text>
+    `);
+
+    // Blocked badge
+    if (isBlocked) {
+      badgeX += 90;
+      this.content.push(`
+        <rect fill="${COLORS.error}33" x="${badgeX}" y="${this.currentY}" width="70" height="18" rx="0"/>
+        <rect fill="none" stroke="${COLORS.error}55" x="${badgeX}" y="${this.currentY}" width="70" height="18" rx="0"/>
+        <text fill="${COLORS.error}" x="${badgeX + 35}" y="${this.currentY + 12}" 
+          font-family="Inter, sans-serif" font-size="7" text-anchor="middle" font-weight="bold" letter-spacing="0.5">
+          BLOQUEADO
+        </text>
+      `);
+    }
+
+    this.currentY += 35;
+
+    // Project title
+    this.content.push(`
+      <text fill="${COLORS.text}" x="${PAGE.margin}" y="${this.currentY}" 
+        font-family="Playfair Display, serif" font-size="28" font-weight="400">
+        ${this.escapeXml(projectName)}
+      </text>
+    `);
+    this.currentY += 25;
+
+    // Client info
+    this.content.push(`
+      <text fill="${COLORS.textMuted}" x="${PAGE.margin}" y="${this.currentY}" 
+        font-family="Inter, sans-serif" font-size="10">
+        Cliente: <tspan fill="${COLORS.textDim}">${this.escapeXml(clientName.toUpperCase())}</tspan>
+      </text>
+    `);
+    this.currentY += 25;
+  }
+
+  addMetricsGrid(metrics: { label: string; value: string; sublabel?: string; color?: string }[]) {
+    const metricWidth = PAGE.contentWidth / metrics.length;
+    const metricHeight = 55;
+
+    // Grid container with border
+    this.content.push(`
+      <rect fill="${COLORS.border}" x="${PAGE.margin}" y="${this.currentY}" 
+        width="${PAGE.contentWidth}" height="${metricHeight}" rx="0"/>
+    `);
+
+    metrics.forEach((metric, i) => {
+      const x = PAGE.margin + (i * metricWidth);
+      const innerWidth = metricWidth - 1;
+      
+      // Cell background
+      this.content.push(`
+        <rect fill="${COLORS.surface}" x="${x + (i > 0 ? 0.5 : 0)}" y="${this.currentY + 0.5}" 
+          width="${innerWidth}" height="${metricHeight - 1}" rx="0"/>
+      `);
+
+      // Label
+      this.content.push(`
+        <text fill="${COLORS.textMuted}" x="${x + 12}" y="${this.currentY + 18}" 
+          font-family="Inter, sans-serif" font-size="7" letter-spacing="0.5">
+          ${this.escapeXml(metric.label.toUpperCase())}
+        </text>
+      `);
+
+      // Value
+      this.content.push(`
+        <text fill="${metric.color || COLORS.text}" x="${x + 12}" y="${this.currentY + 38}" 
+          font-family="Inter, sans-serif" font-size="14" font-weight="600">
+          ${this.escapeXml(metric.value)}
+        </text>
+      `);
+
+      // Sublabel
+      if (metric.sublabel) {
+        this.content.push(`
+          <text fill="${COLORS.textMuted}" x="${x + 12}" y="${this.currentY + 50}" 
+            font-family="Inter, sans-serif" font-size="8">
+            ${this.escapeXml(metric.sublabel)}
+          </text>
+        `);
+      }
+    });
+
+    this.currentY += metricHeight + 20;
   }
 
   addSection(title: string) {
     if (this.currentY > PAGE.height - 100) this.newPage();
     
+    // Cyan left border accent
     this.content.push(`
-      <text fill="${COLORS.primary}" x="${PAGE.margin}" y="${this.currentY}" 
-        font-family="Helvetica, sans-serif" font-size="14" font-weight="bold">
+      <rect fill="${COLORS.primary}" x="${PAGE.margin}" y="${this.currentY}" width="2" height="14"/>
+      <text fill="${COLORS.primary}" x="${PAGE.margin + 10}" y="${this.currentY + 11}" 
+        font-family="Inter, sans-serif" font-size="8" font-weight="bold" letter-spacing="1.5">
         ${this.escapeXml(title.toUpperCase())}
       </text>
-      <line x1="${PAGE.margin}" y1="${this.currentY + 10}" x2="${PAGE.width - PAGE.margin}" y2="${this.currentY + 10}" 
-        stroke="${COLORS.border}" stroke-width="1"/>
     `);
-    this.currentY += 35;
+    this.currentY += 25;
   }
 
-  addKPIRow(kpis: Array<{ label: string; value: string | number; color?: string }>) {
-    if (this.currentY > PAGE.height - 100) this.newPage();
+  addCard(title: string, items: { label: string; value: string; status?: string }[]) {
+    if (this.currentY > PAGE.height - 150) this.newPage();
     
-    const kpiWidth = PAGE.contentWidth / kpis.length;
+    const cardHeight = 25 + (items.length * 22);
     
-    kpis.forEach((kpi, i) => {
-      const x = PAGE.margin + (i * kpiWidth) + kpiWidth / 2;
+    // Card background
+    this.content.push(`
+      <rect fill="${COLORS.surface}" x="${PAGE.margin}" y="${this.currentY}" 
+        width="${PAGE.contentWidth}" height="${cardHeight}" rx="0"/>
+      <rect fill="none" stroke="${COLORS.border}" x="${PAGE.margin}" y="${this.currentY}" 
+        width="${PAGE.contentWidth}" height="${cardHeight}" rx="0"/>
+    `);
+
+    // Card title
+    this.content.push(`
+      <text fill="${COLORS.text}" x="${PAGE.margin + 15}" y="${this.currentY + 18}" 
+        font-family="Inter, sans-serif" font-size="10" font-weight="500">
+        ${this.escapeXml(title)}
+      </text>
+    `);
+
+    // Items
+    let itemY = this.currentY + 35;
+    items.forEach(item => {
       this.content.push(`
-        <rect fill="${COLORS.border}" x="${PAGE.margin + (i * kpiWidth) + 5}" y="${this.currentY - 20}" 
-          width="${kpiWidth - 10}" height="60" rx="8"/>
-        <text fill="${kpi.color || COLORS.text}" x="${x}" y="${this.currentY + 5}" 
-          font-family="Helvetica, sans-serif" font-size="20" font-weight="bold" text-anchor="middle">
-          ${this.escapeXml(String(kpi.value))}
+        <text fill="${COLORS.textMuted}" x="${PAGE.margin + 15}" y="${itemY}" 
+          font-family="Inter, sans-serif" font-size="9">
+          ${this.escapeXml(item.label)}
         </text>
-        <text fill="${COLORS.textMuted}" x="${x}" y="${this.currentY + 25}" 
-          font-family="Helvetica, sans-serif" font-size="10" text-anchor="middle">
-          ${this.escapeXml(kpi.label)}
+        <text fill="${COLORS.text}" x="${PAGE.margin + 150}" y="${itemY}" 
+          font-family="Inter, sans-serif" font-size="9">
+          ${this.escapeXml(item.value)}
         </text>
       `);
+      if (item.status) {
+        const statusColor = item.status === 'completed' ? COLORS.success : 
+                          item.status === 'in_progress' ? COLORS.primary : COLORS.textMuted;
+        this.content.push(`
+          <rect fill="${statusColor}33" x="${PAGE.margin + PAGE.contentWidth - 80}" y="${itemY - 10}" 
+            width="65" height="14" rx="0"/>
+          <text fill="${statusColor}" x="${PAGE.margin + PAGE.contentWidth - 47}" y="${itemY - 1}" 
+            font-family="Inter, sans-serif" font-size="7" text-anchor="middle" font-weight="bold">
+            ${this.escapeXml(item.status === 'completed' ? 'CONCLUÍDO' : item.status === 'in_progress' ? 'EM ANDAMENTO' : 'PENDENTE')}
+          </text>
+        `);
+      }
+      itemY += 22;
+    });
+
+    this.currentY += cardHeight + 15;
+  }
+
+  addProgressBar(label: string, progress: number, completed: number, total: number) {
+    if (this.currentY > PAGE.height - 60) this.newPage();
+
+    const barWidth = 200;
+    const barHeight = 6;
+    const filledWidth = (progress / 100) * barWidth;
+
+    // Card
+    this.content.push(`
+      <rect fill="${COLORS.surface}" x="${PAGE.margin}" y="${this.currentY}" 
+        width="${PAGE.contentWidth / 3 - 5}" height="50" rx="0"/>
+      <rect fill="none" stroke="${COLORS.border}" x="${PAGE.margin}" y="${this.currentY}" 
+        width="${PAGE.contentWidth / 3 - 5}" height="50" rx="0"/>
+    `);
+
+    // Label
+    this.content.push(`
+      <text fill="${COLORS.textMuted}" x="${PAGE.margin + 12}" y="${this.currentY + 15}" 
+        font-family="Inter, sans-serif" font-size="7" letter-spacing="0.5">
+        ${this.escapeXml(label.toUpperCase())}
+      </text>
+    `);
+
+    // Value
+    this.content.push(`
+      <text fill="${COLORS.text}" x="${PAGE.margin + 12}" y="${this.currentY + 32}" 
+        font-family="Inter, sans-serif" font-size="16" font-weight="300">
+        ${progress}%
+      </text>
+      <text fill="${COLORS.textMuted}" x="${PAGE.margin + 50}" y="${this.currentY + 32}" 
+        font-family="Inter, sans-serif" font-size="8">
+        ${completed}/${total} etapas
+      </text>
+    `);
+  }
+
+  addText(text: string, size = 10, color = COLORS.text) {
+    if (this.currentY > PAGE.height - 50) this.newPage();
+    
+    // Word wrap for long text
+    const maxWidth = PAGE.contentWidth - 20;
+    const words = text.split(' ');
+    let line = '';
+    
+    words.forEach(word => {
+      const testLine = line + word + ' ';
+      if (testLine.length * (size * 0.5) > maxWidth) {
+        this.content.push(`
+          <text fill="${color}" x="${PAGE.margin}" y="${this.currentY}" 
+            font-family="Inter, sans-serif" font-size="${size}">
+            ${this.escapeXml(line.trim())}
+          </text>
+        `);
+        this.currentY += size + 4;
+        line = word + ' ';
+      } else {
+        line = testLine;
+      }
     });
     
-    this.currentY += 70;
-  }
-
-  addText(text: string, size = 11, color = COLORS.text) {
-    if (this.currentY > PAGE.height - 50) this.newPage();
-    
-    this.content.push(`
-      <text fill="${color}" x="${PAGE.margin}" y="${this.currentY}" 
-        font-family="Helvetica, sans-serif" font-size="${size}">
-        ${this.escapeXml(text)}
-      </text>
-    `);
-    this.currentY += size + 8;
-  }
-
-  addListItem(text: string, bullet = "•") {
-    if (this.currentY > PAGE.height - 50) this.newPage();
-    
-    this.content.push(`
-      <text fill="${COLORS.primary}" x="${PAGE.margin}" y="${this.currentY}" 
-        font-family="Helvetica, sans-serif" font-size="10">
-        ${bullet}
-      </text>
-      <text fill="${COLORS.text}" x="${PAGE.margin + 15}" y="${this.currentY}" 
-        font-family="Helvetica, sans-serif" font-size="10">
-        ${this.escapeXml(text)}
-      </text>
-    `);
-    this.currentY += 18;
-  }
-
-  addTableRow(cols: string[], isHeader = false) {
-    if (this.currentY > PAGE.height - 50) this.newPage();
-    
-    const colWidth = PAGE.contentWidth / cols.length;
-    
-    if (isHeader) {
+    if (line.trim()) {
       this.content.push(`
-        <rect fill="${COLORS.border}" x="${PAGE.margin}" y="${this.currentY - 12}" 
-          width="${PAGE.contentWidth}" height="20" rx="4"/>
+        <text fill="${color}" x="${PAGE.margin}" y="${this.currentY}" 
+          font-family="Inter, sans-serif" font-size="${size}">
+          ${this.escapeXml(line.trim())}
+        </text>
       `);
+      this.currentY += size + 6;
     }
+  }
+
+  addSpace(height = 15) {
+    this.currentY += height;
+  }
+
+  addStagesFlow(stages: { title: string; status: string }[]) {
+    if (this.currentY > PAGE.height - 80) this.newPage();
+
+    const stageWidth = PAGE.contentWidth / Math.min(stages.length, 5);
     
-    cols.forEach((col, i) => {
+    stages.slice(0, 5).forEach((stage, i) => {
+      const x = PAGE.margin + (i * stageWidth);
+      const statusColor = stage.status === 'completed' ? COLORS.success : 
+                         stage.status === 'in_progress' ? COLORS.primary : COLORS.textMuted;
+
+      // Stage box
       this.content.push(`
-        <text fill="${isHeader ? COLORS.primary : COLORS.text}" x="${PAGE.margin + (i * colWidth) + 5}" y="${this.currentY}" 
-          font-family="Helvetica, sans-serif" font-size="${isHeader ? 9 : 10}" font-weight="${isHeader ? 'bold' : 'normal'}">
-          ${this.escapeXml(col.substring(0, 30))}
+        <rect fill="${COLORS.surface}" x="${x}" y="${this.currentY}" 
+          width="${stageWidth - 2}" height="35" rx="0"/>
+        <rect fill="none" stroke="${COLORS.border}" x="${x}" y="${this.currentY}" 
+          width="${stageWidth - 2}" height="35" rx="0"/>
+      `);
+
+      // Status indicator
+      this.content.push(`
+        <circle fill="${statusColor}" cx="${x + 12}" cy="${this.currentY + 12}" r="4"/>
+      `);
+
+      // Stage name
+      this.content.push(`
+        <text fill="${statusColor}" x="${x + 22}" y="${this.currentY + 15}" 
+          font-family="Inter, sans-serif" font-size="7" font-weight="500" letter-spacing="0.3">
+          ${this.escapeXml(stage.title.toUpperCase().substring(0, 12))}
+        </text>
+        <text fill="${COLORS.textMuted}" x="${x + 10}" y="${this.currentY + 28}" 
+          font-family="Inter, sans-serif" font-size="6">
+          ${stage.status === 'completed' ? 'Concluída' : stage.status === 'in_progress' ? 'Em andamento' : 'Aguardando'}
         </text>
       `);
     });
-    
-    this.currentY += isHeader ? 25 : 20;
-  }
 
-  addSpace(height = 20) {
-    this.currentY += height;
+    this.currentY += 50;
   }
 
   private newPage() {
@@ -196,26 +400,17 @@ class SimplePDFGenerator {
 
   private addFooter() {
     this.content.push(`
-      <line x1="${PAGE.margin}" y1="${PAGE.height - 40}" x2="${PAGE.width - PAGE.margin}" y2="${PAGE.height - 40}" 
+      <line x1="${PAGE.margin}" y1="${PAGE.height - 35}" x2="${PAGE.width - PAGE.margin}" y2="${PAGE.height - 35}" 
         stroke="${COLORS.border}" stroke-width="0.5"/>
-      <text fill="${COLORS.textMuted}" x="${PAGE.margin}" y="${PAGE.height - 25}" 
-        font-family="Helvetica, sans-serif" font-size="8">
-        Gerado por SQUAD Hub
+      <text fill="${COLORS.textMuted}" x="${PAGE.margin}" y="${PAGE.height - 20}" 
+        font-family="Inter, sans-serif" font-size="7">
+        SQUAD /// FILM
       </text>
-      <text fill="${COLORS.textMuted}" x="${PAGE.width - PAGE.margin}" y="${PAGE.height - 25}" 
-        font-family="Helvetica, sans-serif" font-size="8" text-anchor="end">
+      <text fill="${COLORS.textMuted}" x="${PAGE.width - PAGE.margin}" y="${PAGE.height - 20}" 
+        font-family="Inter, sans-serif" font-size="7" text-anchor="end">
         Página ${this.pageNumber}
       </text>
     `);
-  }
-
-  private escapeXml(str: string): string {
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
   }
 
   generate(): string {
@@ -226,6 +421,19 @@ class SimplePDFGenerator {
       </svg>`;
   }
 }
+
+// Stage name mapping
+const STAGE_NAMES: Record<string, string> = {
+  briefing: 'Briefing',
+  roteiro: 'Roteiro',
+  pre_producao: 'Pré-Produção',
+  captacao: 'Captação',
+  edicao: 'Edição',
+  revisao: 'Revisão',
+  aprovacao: 'Aprovação',
+  entrega: 'Entrega',
+  pos_venda: 'Pós-Venda',
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -242,93 +450,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const pdf = new SimplePDFGenerator();
+    const pdf = new PortalPDFGenerator();
 
-    if (type === "report_360") {
-      const { start, end } = getPeriodDates(period);
-      
-      const { data: projects } = await supabase
-        .from("projects")
-        .select("*")
-        .gte("created_at", start.toISOString())
-        .order("created_at", { ascending: false });
-
-      const allProjects = projects || [];
-      const delivered = allProjects.filter(p => p.status === "completed").length;
-      const open = allProjects.filter(p => p.status === "active").length;
-      const delayed = allProjects.filter(p => p.due_date && new Date(p.due_date) < new Date() && p.status !== "completed").length;
-      const totalValue = allProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
-      const avgHealth = allProjects.length > 0 
-        ? Math.round(allProjects.reduce((sum, p) => sum + (p.health_score || 0), 0) / allProjects.length)
-        : 0;
-
-      pdf.addCover("RELATÓRIO 360°", `${start.toLocaleDateString("pt-BR")} — ${end.toLocaleDateString("pt-BR")}`);
-      
-      pdf.addSection("MÉTRICAS GERAIS");
-      pdf.addKPIRow([
-        { label: "Entregues", value: delivered, color: COLORS.success },
-        { label: "Em Andamento", value: open, color: COLORS.primary },
-        { label: "Atrasados", value: delayed, color: COLORS.error },
-      ]);
-      pdf.addKPIRow([
-        { label: "Total de Projetos", value: allProjects.length },
-        { label: "Valor Total", value: formatCurrency(totalValue) },
-        { label: "Saúde Média", value: `${avgHealth}%` },
-      ]);
-
-      pdf.addSpace(20);
-      pdf.addSection("PROJETOS NO PERÍODO");
-      pdf.addTableRow(["Projeto", "Cliente", "Status", "Entrega"], true);
-      
-      allProjects.slice(0, 15).forEach(p => {
-        const statusLabel = p.status === "completed" ? "Concluído" : p.status === "active" ? "Ativo" : p.status;
-        pdf.addTableRow([p.name, p.client_name || "-", statusLabel, formatDate(p.due_date)]);
-      });
-
-    } else if (type === "tasks") {
-      const { data: tasks } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      const allTasks = tasks || [];
-      const pending = allTasks.filter(t => t.status !== "done").length;
-      const done = allTasks.filter(t => t.status === "done").length;
-      const overdue = allTasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length;
-
-      pdf.addCover("MINHAS TAREFAS", formatDate(new Date().toISOString()));
-
-      pdf.addSection("RESUMO");
-      pdf.addKPIRow([
-        { label: "Total", value: allTasks.length },
-        { label: "Pendentes", value: pending, color: COLORS.warning },
-        { label: "Concluídas", value: done, color: COLORS.success },
-        { label: "Vencidas", value: overdue, color: COLORS.error },
-      ]);
-
-      const groupedByStatus = {
-        today: allTasks.filter(t => t.status === "today"),
-        week: allTasks.filter(t => t.status === "week"),
-        backlog: allTasks.filter(t => t.status === "backlog"),
-        done: allTasks.filter(t => t.status === "done").slice(0, 10),
-      };
-
-      if (groupedByStatus.today.length > 0) {
-        pdf.addSection("HOJE");
-        groupedByStatus.today.forEach(t => pdf.addListItem(t.title));
-      }
-
-      if (groupedByStatus.week.length > 0) {
-        pdf.addSection("ESTA SEMANA");
-        groupedByStatus.week.forEach(t => pdf.addListItem(t.title));
-      }
-
-      if (groupedByStatus.backlog.length > 0) {
-        pdf.addSection("BACKLOG");
-        groupedByStatus.backlog.slice(0, 15).forEach(t => pdf.addListItem(t.title));
-      }
-
-    } else if (type === "project" && id) {
+    if (type === "project" && id) {
       const { data: project } = await supabase
         .from("projects")
         .select("*")
@@ -348,32 +472,146 @@ serve(async (req) => {
         .eq("project_id", id)
         .order("order_index", { ascending: true });
 
-      pdf.addCover(project.name, project.client_name || "Projeto");
+      const { data: deliverables } = await supabase
+        .from("portal_deliverables")
+        .select("*")
+        .eq("portal_link_id", id);
 
-      pdf.addSection("INFORMAÇÕES GERAIS");
-      pdf.addText(`Cliente: ${project.client_name || "-"}`);
-      pdf.addText(`Template: ${project.template || "-"}`);
-      pdf.addText(`Status: ${project.status}`);
-      pdf.addText(`Etapa Atual: ${project.stage_current || "-"}`);
-      pdf.addText(`Data de Entrega: ${formatDate(project.due_date)}`);
-      pdf.addText(`Valor do Contrato: ${formatCurrency(project.contract_value || 0)}`);
-      pdf.addText(`Health Score: ${project.health_score || 0}%`);
+      const allStages = stages || [];
+      const completedStages = allStages.filter(s => s.status === 'completed').length;
+      const totalStages = allStages.length || 9;
+      const progress = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
+      const currentStageName = project.stage_current 
+        ? STAGE_NAMES[project.stage_current] || project.stage_current 
+        : 'Pré-produção';
 
+      // Header with badges
+      pdf.addPortalHeader(
+        project.name,
+        project.client_name || 'Cliente',
+        project.status,
+        project.template || 'custom',
+        currentStageName,
+        project.has_payment_block || false
+      );
+
+      // Metrics Grid
+      pdf.addMetricsGrid([
+        { 
+          label: "Valor do Contrato", 
+          value: formatCurrency(project.contract_value || 0),
+          sublabel: "Investimento Total"
+        },
+        { 
+          label: "Saúde do Projeto", 
+          value: `${project.health_score || 100}%`,
+          color: (project.health_score || 100) >= 80 ? COLORS.success : COLORS.warning,
+          sublabel: (project.health_score || 100) >= 80 ? "Excelente" : "Atenção"
+        },
+        { 
+          label: "Previsão Entrega", 
+          value: formatDate(project.due_date),
+          sublabel: project.due_date ? "Previsão inicial" : "Em definição"
+        },
+        { 
+          label: "Responsável", 
+          value: project.owner_name || "—",
+          color: COLORS.primary,
+          sublabel: "Squad Film"
+        },
+      ]);
+
+      // Progress section
+      pdf.addSection("VISÃO GERAL");
+      pdf.addProgressBar("Progresso", progress, completedStages, totalStages);
+      pdf.addSpace(60);
+
+      // Stages flow
+      if (allStages.length > 0) {
+        pdf.addSection("FLUXO DE PRODUÇÃO");
+        pdf.addStagesFlow(allStages.map(s => ({
+          title: s.title || STAGE_NAMES[s.stage_key] || s.stage_key,
+          status: s.status
+        })));
+      }
+
+      // Briefing
       if (project.description) {
-        pdf.addSpace(10);
-        pdf.addSection("BRIEFING");
-        pdf.addText(project.description.substring(0, 500) + (project.description.length > 500 ? "..." : ""));
+        pdf.addSection("RESUMO EXECUTIVO");
+        pdf.addText(project.description.substring(0, 800), 9, COLORS.textDim);
       }
 
-      if (stages && stages.length > 0) {
-        pdf.addSpace(10);
-        pdf.addSection("ETAPAS");
-        pdf.addTableRow(["Etapa", "Status"], true);
-        stages.forEach(s => {
-          const statusLabel = s.status === "completed" ? "Concluída" : s.status === "in_progress" ? "Em andamento" : "Não iniciada";
-          pdf.addTableRow([s.title, statusLabel]);
-        });
-      }
+    } else if (type === "report_360") {
+      const { start, end } = getPeriodDates(period);
+      
+      const { data: projects } = await supabase
+        .from("projects")
+        .select("*")
+        .gte("created_at", start.toISOString())
+        .order("created_at", { ascending: false });
+
+      const allProjects = projects || [];
+      const delivered = allProjects.filter(p => p.status === "completed").length;
+      const open = allProjects.filter(p => p.status === "active").length;
+      const totalValue = allProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
+      const avgHealth = allProjects.length > 0 
+        ? Math.round(allProjects.reduce((sum, p) => sum + (p.health_score || 0), 0) / allProjects.length)
+        : 0;
+
+      pdf.addPortalHeader(
+        "RELATÓRIO 360°",
+        `${start.toLocaleDateString("pt-BR")} — ${end.toLocaleDateString("pt-BR")}`,
+        "report",
+        "analytics",
+        "overview",
+        false
+      );
+
+      pdf.addMetricsGrid([
+        { label: "Total de Projetos", value: String(allProjects.length) },
+        { label: "Entregues", value: String(delivered), color: COLORS.success },
+        { label: "Em Produção", value: String(open), color: COLORS.primary },
+        { label: "Valor Total", value: formatCurrency(totalValue) },
+      ]);
+
+      pdf.addSection("PROJETOS NO PERÍODO");
+      allProjects.slice(0, 12).forEach(p => {
+        pdf.addCard(p.name, [
+          { label: "Cliente", value: p.client_name || "-" },
+          { label: "Etapa", value: STAGE_NAMES[p.stage_current] || p.stage_current || "-" },
+          { label: "Saúde", value: `${p.health_score || 0}%` },
+        ]);
+      });
+
+    } else if (type === "tasks") {
+      const { data: tasks } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      const allTasks = tasks || [];
+      const pending = allTasks.filter(t => t.status !== "done").length;
+      const done = allTasks.filter(t => t.status === "done").length;
+
+      pdf.addPortalHeader(
+        "MINHAS TAREFAS",
+        formatDate(new Date().toISOString()),
+        "tasks",
+        "productivity",
+        "overview",
+        false
+      );
+
+      pdf.addMetricsGrid([
+        { label: "Total", value: String(allTasks.length) },
+        { label: "Pendentes", value: String(pending), color: COLORS.warning },
+        { label: "Concluídas", value: String(done), color: COLORS.success },
+      ]);
+
+      pdf.addSection("TAREFAS PENDENTES");
+      allTasks.filter(t => t.status !== "done").slice(0, 15).forEach(t => {
+        pdf.addText(`• ${t.title}`, 9, COLORS.text);
+      });
 
     } else if (type === "project_overview") {
       const { data: projects } = await supabase
@@ -387,26 +625,27 @@ serve(async (req) => {
       const paused = allProjects.filter(p => p.status === "paused").length;
       const totalValue = allProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
 
-      pdf.addCover("VISÃO GERAL DE PROJETOS", formatDate(new Date().toISOString()));
+      pdf.addPortalHeader(
+        "VISÃO GERAL",
+        "Projetos Ativos",
+        "overview",
+        "projects",
+        "dashboard",
+        false
+      );
 
-      pdf.addSection("RESUMO EXECUTIVO");
-      pdf.addKPIRow([
-        { label: "Total Ativos", value: allProjects.length },
-        { label: "Em Produção", value: active, color: COLORS.success },
-        { label: "Pausados", value: paused, color: COLORS.warning },
+      pdf.addMetricsGrid([
+        { label: "Total Ativos", value: String(allProjects.length) },
+        { label: "Em Produção", value: String(active), color: COLORS.success },
+        { label: "Pausados", value: String(paused), color: COLORS.warning },
         { label: "Valor Total", value: formatCurrency(totalValue) },
       ]);
 
-      pdf.addSpace(20);
       pdf.addSection("LISTA DE PROJETOS");
-      pdf.addTableRow(["Projeto", "Cliente", "Etapa", "Saúde"], true);
-      
-      allProjects.slice(0, 20).forEach(p => {
-        pdf.addTableRow([
-          p.name.substring(0, 25),
-          (p.client_name || "-").substring(0, 20),
-          p.stage_current || "-",
-          `${p.health_score || 0}%`
+      allProjects.slice(0, 15).forEach(p => {
+        pdf.addCard(p.name, [
+          { label: "Cliente", value: p.client_name || "-" },
+          { label: "Etapa", value: STAGE_NAMES[p.stage_current] || p.stage_current || "-", status: p.status },
         ]);
       });
 

@@ -17,7 +17,9 @@ const tabs = [
   { id: "tasks", label: "Tarefas" },
   { id: "deliverables", label: "Entregas" },
   { id: "revisions", label: "Revisões" },
+  { id: "files", label: "Arquivos" },
   { id: "schedule", label: "Cronograma" },
+  { id: "portal", label: "Portal" },
   { id: "audit", label: "Auditoria" },
 ];
 
