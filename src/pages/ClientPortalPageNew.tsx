@@ -1,12 +1,12 @@
 /**
- * ClientPortalPage - Portal do Cliente Premium com animações
- * Layout navegável com smooth scroll e transições
+ * ClientPortalPage - Portal do Cliente Premium com animações impactantes
+ * Scroll reveal, parallax, 3D effects, magnetic interactions
  */
 
 import { useParams } from "react-router-dom";
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Loader2, Lock, AlertTriangle } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
+import { Loader2, Lock, AlertTriangle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
 import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPremium";
@@ -21,14 +21,92 @@ import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/Porta
 import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/PortalScheduleTab";
 import { PortalFilesTab } from "@/components/client-portal/portal-tabs/PortalFilesTab";
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
+import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+// Cursor follower component
+function CursorGlow() {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const updateMousePosition = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      setIsVisible(true);
+    };
+
+    const handleMouseLeave = () => setIsVisible(false);
+    const handleMouseEnter = () => setIsVisible(true);
+
+    window.addEventListener('mousemove', updateMousePosition);
+    document.body.addEventListener('mouseleave', handleMouseLeave);
+    document.body.addEventListener('mouseenter', handleMouseEnter);
+
+    return () => {
+      window.removeEventListener('mousemove', updateMousePosition);
+      document.body.removeEventListener('mouseleave', handleMouseLeave);
+      document.body.removeEventListener('mouseenter', handleMouseEnter);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      className="fixed pointer-events-none z-0 w-96 h-96 rounded-full"
+      style={{
+        background: 'radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%)',
+        left: mousePosition.x - 192,
+        top: mousePosition.y - 192,
+      }}
+      animate={{
+        opacity: isVisible ? 1 : 0,
+        scale: isVisible ? 1 : 0.8,
+      }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    />
+  );
+}
+
+// Animated background particles
+function BackgroundParticles() {
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-primary/20"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0.2, 0.5, 0.2],
+            scale: [1, 1.5, 1],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function ClientPortalPage() {
   const { shareToken } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Parallax scroll effects
+  const { scrollYProgress } = useScroll({ container: containerRef });
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
+  const springBackgroundY = useSpring(backgroundY, { stiffness: 100, damping: 30 });
 
   const {
     data,
@@ -127,7 +205,6 @@ export default function ClientPortalPage() {
     try {
       let fileUrl = uploadData.url;
 
-      // If it's a file, upload to storage first
       if (uploadData.type === 'file' && uploadData.file) {
         const fileName = `${Date.now()}-${uploadData.file.name}`;
         const { data: uploadResult, error: uploadError } = await supabase.storage
@@ -149,7 +226,7 @@ export default function ClientPortalPage() {
         description: uploadData.description,
         type: uploadData.type,
         url: fileUrl,
-        clientName: 'Cliente', // Could be enhanced with actual client name
+        clientName: 'Cliente',
       });
 
       toast.success("Material enviado com sucesso!");
@@ -160,18 +237,34 @@ export default function ClientPortalPage() {
     }
   };
 
-  // Loading state
+  // Loading state with animated loader
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center overflow-hidden">
+        <BackgroundParticles />
         <motion.div 
-          className="text-center space-y-4"
-          initial={{ opacity: 0, scale: 0.95 }}
+          className="text-center space-y-6 relative z-10"
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.5 }}
         >
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-500 mx-auto" />
-          <p className="text-sm text-gray-500">Carregando portal...</p>
+          <Floating duration={2} distance={8}>
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Sparkles className="w-8 h-8 text-primary" />
+              </motion.div>
+            </div>
+          </Floating>
+          <motion.p 
+            className="text-sm text-muted-foreground"
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            Carregando seu portal...
+          </motion.p>
         </motion.div>
       </div>
     );
@@ -184,125 +277,216 @@ export default function ClientPortalPage() {
     const isInactive = errorMessage.includes('inactive');
 
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <BackgroundParticles />
         <motion.div 
-          className="bg-[#0a0a0a] border border-[#1a1a1a] p-10 max-w-md text-center space-y-4"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          className="bg-card border border-border p-10 max-w-md text-center space-y-4 relative z-10"
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, type: "spring" }}
         >
-          <div className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center mx-auto",
-            isInactive ? "bg-gray-800" : isExpired ? "bg-amber-500/20" : "bg-red-500/20"
-          )}>
-            {isInactive ? (
-              <Lock className="w-8 h-8 text-gray-500" />
-            ) : (
-              <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-amber-500" : "text-red-500")} />
+          <motion.div 
+            className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto",
+              isInactive ? "bg-muted" : isExpired ? "bg-amber-500/20" : "bg-destructive/20"
             )}
-          </div>
-          <h1 className="text-xl font-light text-white">
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+          >
+            {isInactive ? (
+              <Lock className="w-8 h-8 text-muted-foreground" />
+            ) : (
+              <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-amber-500" : "text-destructive")} />
+            )}
+          </motion.div>
+          <motion.h1 
+            className="text-xl font-light text-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             {isInactive ? 'Portal Desativado' : isExpired ? 'Link Expirado' : 'Link Inválido'}
-          </h1>
-          <p className="text-gray-500 text-sm">
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground text-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
             {isInactive 
               ? 'O acesso ao portal está temporariamente desativado.'
               : isExpired 
                 ? 'O link de acesso expirou. Solicite um novo link à equipe.'
                 : 'Este link não é válido. Entre em contato com a equipe.'}
-          </p>
+          </motion.p>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen h-screen overflow-y-auto bg-[#050505] scroll-smooth">
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* Header with badges and title */}
-        <PortalHeaderPremium
-          project={project}
-          shareToken={shareToken || ''}
-          onExportPdf={handleExportPdf}
-          isExporting={isExporting}
-        />
+    <div 
+      ref={containerRef}
+      className="min-h-screen h-screen overflow-y-auto bg-background scroll-smooth relative"
+    >
+      {/* Animated Background */}
+      <CursorGlow />
+      <BackgroundParticles />
+      
+      {/* Background Gradient that moves with scroll */}
+      <motion.div 
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{ 
+          y: springBackgroundY,
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(6, 182, 212, 0.05) 0%, transparent 50%)',
+        }}
+      />
+
+      <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+        {/* Header with animations */}
+        <ScrollReveal direction="down" delay={0.1}>
+          <PortalHeaderPremium
+            project={project}
+            shareToken={shareToken || ''}
+            onExportPdf={handleExportPdf}
+            isExporting={isExporting}
+          />
+        </ScrollReveal>
 
         {/* Metrics Grid */}
-        <div className="mt-6">
+        <ScrollReveal delay={0.2} className="mt-8">
           <PortalMetricsGrid project={project} />
-        </div>
+        </ScrollReveal>
 
-        {/* Tabs */}
-        <div className="mt-10">
+        {/* Tabs with Tab Content Animation */}
+        <ScrollReveal delay={0.3} className="mt-12">
           <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab}>
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-8">
-              <div className="grid lg:grid-cols-3 gap-6">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                  <PortalOverviewPremium 
-                    project={project} 
-                    stages={stages}
-                    deliverables={deliverables}
-                    isManager={false}
-                  />
-                  
-                  {/* Client Uploads Section */}
-                  <PortalClientUploads
-                    clientUploads={clientUploads}
-                    onUpload={handleClientUpload}
-                    isUploading={isUploadingMaterial}
-                  />
-                </div>
-                
-                {/* Sidebar */}
-                <div className="space-y-6">
-                  <PortalMaterialsAside deliverables={deliverables} files={files} />
-                  <PortalAuditBadge />
-                </div>
-              </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="overview"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <StaggerContainer className="grid lg:grid-cols-3 gap-6" staggerDelay={0.08}>
+                    {/* Main Content */}
+                    <StaggerItem className="lg:col-span-2 space-y-6">
+                      <PortalOverviewPremium 
+                        project={project} 
+                        stages={stages}
+                        deliverables={deliverables}
+                        isManager={false}
+                      />
+                      
+                      <ScrollReveal delay={0.4}>
+                        <PortalClientUploads
+                          clientUploads={clientUploads}
+                          onUpload={handleClientUpload}
+                          isUploading={isUploadingMaterial}
+                        />
+                      </ScrollReveal>
+                    </StaggerItem>
+                    
+                    {/* Sidebar */}
+                    <StaggerItem className="space-y-6">
+                      <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
+                        <PortalMaterialsAside deliverables={deliverables} files={files} />
+                      </GlowCard>
+                      <ScrollReveal delay={0.5}>
+                        <PortalAuditBadge />
+                      </ScrollReveal>
+                    </StaggerItem>
+                  </StaggerContainer>
+                </motion.div>
+              </AnimatePresence>
             </TabsContent>
 
-            {/* Materials Tab (new) */}
+            {/* Materials Tab */}
             <TabsContent value="materials" className="mt-8">
-              <PortalMaterialsTab
-                deliverables={deliverables}
-                comments={comments}
-                approvals={approvals}
-                versions={versions}
-                selectedMaterialId={selectedMaterialId}
-                onSelectMaterial={setSelectedMaterialId}
-                onAddComment={handleAddComment}
-                onApprove={handleApprove}
-                onRequestRevision={handleRequestRevision}
-                isAddingComment={isAddingComment}
-                isApproving={isApproving}
-                isRequestingRevision={isRequestingRevision}
-                portalLinkId={portal.id}
-                isManager={false}
-              />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="materials"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalMaterialsTab
+                    deliverables={deliverables}
+                    comments={comments}
+                    approvals={approvals}
+                    versions={versions}
+                    selectedMaterialId={selectedMaterialId}
+                    onSelectMaterial={setSelectedMaterialId}
+                    onAddComment={handleAddComment}
+                    onApprove={handleApprove}
+                    onRequestRevision={handleRequestRevision}
+                    isAddingComment={isAddingComment}
+                    isApproving={isApproving}
+                    isRequestingRevision={isRequestingRevision}
+                    portalLinkId={portal.id}
+                    isManager={false}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </TabsContent>
 
             {/* Revisions Tab */}
             <TabsContent value="revisions" className="mt-8">
-              <PortalRevisionsTab changeRequests={changeRequests} comments={comments} />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="revisions"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalRevisionsTab changeRequests={changeRequests} comments={comments} />
+                </motion.div>
+              </AnimatePresence>
             </TabsContent>
 
             {/* Files Tab */}
             <TabsContent value="files" className="mt-8">
-              <PortalFilesTab files={files} />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="files"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalFilesTab files={files} />
+                </motion.div>
+              </AnimatePresence>
             </TabsContent>
 
             {/* Schedule Tab */}
             <TabsContent value="schedule" className="mt-8">
-              <PortalScheduleTab stages={stages} dueDate={project.due_date} />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="schedule"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalScheduleTab stages={stages} dueDate={project.due_date} />
+                </motion.div>
+              </AnimatePresence>
             </TabsContent>
           </PortalTabsPremium>
-        </div>
+        </ScrollReveal>
       </div>
 
       {/* Footer */}
-      <PortalFooterPremium />
+      <ScrollReveal delay={0.5}>
+        <PortalFooterPremium />
+      </ScrollReveal>
     </div>
   );
 }
