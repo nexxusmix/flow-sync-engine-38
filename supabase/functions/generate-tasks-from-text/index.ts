@@ -74,15 +74,15 @@ Retorne um array JSON com as tarefas no formato:
   }
 ]`;
 
-    // Use Lovable AI endpoint
-    const response = await fetch('https://ai-relay.lovable.dev/gemini/v1/chat/completions', {
+    // Use Lovable AI Gateway endpoint
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
       },
       body: JSON.stringify({
-        model: 'gemini-2.5-flash',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

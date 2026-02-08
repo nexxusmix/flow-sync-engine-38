@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES, useTasksStore } from "@/stores/tasksStore";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
+import { TasksDashboard } from "@/components/tasks/TasksDashboard";
+import { TasksTimeline } from "@/components/tasks/TasksTimeline";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Plus, Sparkles, Loader2, Calendar, Tag
+  Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -51,9 +54,12 @@ const defaultTaskForm: TaskFormData = {
   due_date: '',
 };
 
+type ViewMode = 'dashboard' | 'kanban' | 'timeline';
+
 export default function TasksPage() {
   const { tasks, isLoading, isCreating, isGenerating, fetchTasks, createTask, updateTask, createTasksFromAI } = useTasksStore();
   
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
   const [isAISheetOpen, setIsAISheetOpen] = useState(false);
@@ -169,7 +175,23 @@ export default function TasksPage() {
               {tasks.filter(t => t.status !== 'done').length} pendentes • {tasks.filter(t => t.status === 'done').length} concluídas
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+              <TabsList>
+                <TabsTrigger value="dashboard" className="gap-1.5">
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </TabsTrigger>
+                <TabsTrigger value="kanban" className="gap-1.5">
+                  <Columns3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Kanban</span>
+                </TabsTrigger>
+                <TabsTrigger value="timeline" className="gap-1.5">
+                  <CalendarIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Timeline</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
               <Sparkles className="w-4 h-4 mr-2" />
               Criar com IA
@@ -181,11 +203,15 @@ export default function TasksPage() {
           </div>
         </div>
 
-        {/* Board */}
+        {/* Content */}
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
+        ) : viewMode === 'dashboard' ? (
+          <TasksDashboard tasks={tasks} />
+        ) : viewMode === 'timeline' ? (
+          <TasksTimeline tasks={tasks} onEditTask={handleEditTask} />
         ) : (
           <TasksBoard tasks={tasks} onEditTask={handleEditTask} />
         )}

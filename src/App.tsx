@@ -29,6 +29,7 @@ import ContractClientPage from "./pages/contracts/ContractClientPage";
 import ContentPage from "./pages/ContentPage";
 import KnowledgePage from "./pages/KnowledgePage";
 import ReportsDashboard from "./pages/reports/ReportsDashboard";
+import Report360Page from "./pages/reports/Report360Page";
 import OwnerDailyReport from "./pages/reports/OwnerDailyReport";
 import SalesReport from "./pages/reports/SalesReport";
 import OperationsReport from "./pages/reports/OperationsReport";
@@ -160,6 +161,7 @@ function AppRoutes() {
       <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
       {/* Relatórios */}
       <Route path="/relatorios" element={<ProtectedRoute><ReportsDashboard /></ProtectedRoute>} />
+      <Route path="/relatorios/360" element={<ProtectedRoute><Report360Page /></ProtectedRoute>} />
       <Route path="/relatorios/dono" element={<ProtectedRoute><OwnerDailyReport /></ProtectedRoute>} />
       <Route path="/relatorios/vendas" element={<ProtectedRoute><SalesReport /></ProtectedRoute>} />
       <Route path="/relatorios/operacao" element={<ProtectedRoute><OperationsReport /></ProtectedRoute>} />
