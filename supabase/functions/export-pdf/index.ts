@@ -502,22 +502,49 @@ function generatePDFHtml(params: {
 }
 
 // Generate Project PDF content
-async function generateProjectContent(supabase: ReturnType<typeof createClient>, projectId: string): Promise<{ html: string; title: string; slug: string }> {
-  const { data: project, error } = await supabase
-    .from('projects')
-    .select('*, milestones:payment_milestones(*), stages:project_stages(*), deliverables:project_deliverables(*)')
-    .eq('id', projectId)
+async function generateProjectContent(
+  supabase: ReturnType<typeof createClient>,
+  projectId: string
+): Promise<{ html: string; title: string; slug: string }> {
+  // NOTE: Avoid nested selects (requires FK relationships in PostgREST schema cache)
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
     .single();
 
-  if (error || !project) {
-    throw new Error(`Projeto não encontrado: ${error?.message || 'ID inválido'}`);
+  if (projectError || !project) {
+    throw new Error(`Projeto não encontrado: ${projectError?.message || "ID inválido"}`);
   }
+
+  const [{ data: milestonesData, error: milestonesError }, { data: stagesData, error: stagesError }, { data: deliverablesData, error: deliverablesError }] =
+    await Promise.all([
+      supabase
+        .from("payment_milestones")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("due_date", { ascending: true }),
+      supabase
+        .from("project_stages")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("project_deliverables")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: true }),
+    ]);
+
+  if (milestonesError) console.warn("[export-pdf] Could not load payment_milestones:", milestonesError);
+  if (stagesError) console.warn("[export-pdf] Could not load project_stages:", stagesError);
+  if (deliverablesError) console.warn("[export-pdf] Could not load project_deliverables:", deliverablesError);
 
   const contractValue = Number(project.contract_value) || 0;
   const healthScore = project.health_score || 100;
-  const stages = project.stages || [];
-  const deliverables = project.deliverables || [];
-  const milestones = project.milestones || [];
+  const stages = stagesData || [];
+  const deliverables = deliverablesData || [];
+  const milestones = milestonesData || [];
 
   const completedStages = stages.filter((s: any) => s.status === 'concluido').length;
   const progressPercent = stages.length > 0 ? Math.round((completedStages / stages.length) * 100) : 0;
@@ -645,11 +672,16 @@ async function generateProjectContent(supabase: ReturnType<typeof createClient>,
 async function generateReport360Content(supabase: ReturnType<typeof createClient>, period: string): Promise<{ html: string; title: string; slug: string }> {
   const { start, end, label } = getPeriodDates(period);
 
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('*, stages:project_stages(*), deliverables:project_deliverables(*), milestones:payment_milestones(*)')
-    .gte('created_at', start.toISOString())
-    .order('created_at', { ascending: false });
+  // NOTE: Avoid nested selects here too; missing FK relationships can crash the whole export.
+  const { data: projects, error: projectsError } = await supabase
+    .from("projects")
+    .select("*")
+    .gte("created_at", start.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (projectsError) {
+    console.warn("[export-pdf] Could not load projects for report_360:", projectsError);
+  }
 
   const projectList = projects || [];
 
