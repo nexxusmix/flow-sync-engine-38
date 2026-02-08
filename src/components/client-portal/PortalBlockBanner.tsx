@@ -15,27 +15,14 @@ function PortalBlockBannerComponent({ isVisible, onRegularize }: PortalBlockBann
   if (!isVisible) return null;
 
   return (
-    <div className="w-full bg-red-500/10 border-b border-red-500/30 py-4 px-6">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-red-500 mt-0.5" style={{ fontSize: 20 }}>
-            report
-          </span>
-          <div>
-            <h3 className="font-semibold text-red-400 text-sm">
-              Projeto Bloqueado por Inadimplência
-            </h3>
-            <p className="text-gray-400 text-xs mt-0.5">
-              Existe uma fatura em atraso. A entrega final e o acesso a novos materiais estão suspensos.
-            </p>
-          </div>
-        </div>
-        <Button 
-          onClick={onRegularize}
-          className="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-2 h-auto rounded-none font-medium"
-        >
-          Regularizar Agora
-        </Button>
+    <div className="w-full bg-red-500/10 border-b border-red-500/20 py-2 px-6">
+      <div className="max-w-6xl mx-auto flex items-center justify-center gap-2">
+        <span className="material-symbols-outlined text-red-500" style={{ fontSize: 14 }}>
+          lock
+        </span>
+        <span className="text-red-400 text-[10px] uppercase tracking-widest font-medium">
+          Bloqueado
+        </span>
       </div>
     </div>
   );
