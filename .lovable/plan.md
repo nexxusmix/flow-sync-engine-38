@@ -1,126 +1,109 @@
 
+# Plano: Correção da Formatação de Moeda e Alinhamento dos Cards
 
-# Plano: Ajuste Global de Tipografia da Plataforma
+## Problema Identificado
 
-## Resumo do Problema
+Analisando o componente `PortalMetricsGrid.tsx` e `AnimatedCounter`:
 
-A plataforma está com a tipografia muito pequena e restrita:
-- **Escala base**: 80% (muito reduzida)
-- **Pesos importados**: apenas 300 (Light) e 500 (Medium)
-- **Tamanhos mínimos**: muitos elementos usam `text-[10px]` e `text-[11px]`
-- **Falta peso Regular (400)**: solicitado pelo usuário
-
-## Solução Proposta
-
-Ajustar a escala e pesos tipográficos para uma legibilidade elegante, mantendo a estética premium.
-
----
+1. **Moeda sem centavos**: `minimumFractionDigits: 0` → exibe "R$ 15590"
+2. **Falta separador de milhar no contador animado**: `AnimatedCounter` exibe número cru sem formatação
+3. **Cards desalinhados**: Alturas inconsistentes e gap pequeno
 
 ## Alterações Técnicas
 
-### 1. Arquivo `src/index.css`
+### 1. Arquivo `src/components/client-portal/PortalMetricsGrid.tsx`
 
-**A) Importar peso Regular 400**
-```css
-/* Antes */
-@import url('...family=Host+Grotesk:wght@300;500...');
-
-/* Depois */
-@import url('...family=Host+Grotesk:wght@300;400;500...');
-```
-
-**B) Aumentar escala base de 80% para 87.5%**
-```css
-/* Antes */
-html {
-  font-size: 80%;
-}
-
-/* Depois */
-html {
-  font-size: 87.5%; /* 14px base */
-}
-```
-
-**C) Atualizar peso padrão do body para Regular**
-```css
-/* Antes */
-body {
-  font-weight: 300;
-}
-
-/* Depois */
-body {
-  font-weight: 400;
-}
-```
-
-**D) Atualizar classes de badge e labels**
-- `.badge-*`: de `text-[10px]` para `text-[11px]`
-- `.section-label`: de `text-[10px]` para `text-[11px]`
-- `.kpi-label`: de `text-[10px]` para `text-[11px]`
-- `.chip` e `.chip-active`: de `text-[10px]` para `text-[11px]`
-- `.btn-subtle`, `.btn-action`, `.btn-primary`: de `text-[10px]` para `text-[11px]`
-
----
-
-### 2. Arquivo `tailwind.config.ts`
-
-Adicionar peso `regular` ao sistema de design:
+**A) Corrigir função formatCurrency (linha 47-53)**
 ```typescript
-fontWeight: {
-  light: "300",
-  normal: "400",   // adicionar
-  regular: "400",  // adicionar alias
-  medium: "500",
-},
+// Antes
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,  // ← Problema
+  }).format(value);
+};
+
+// Depois
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
 ```
 
----
+**B) Usar displayValue formatado em vez do AnimatedCounter para moeda (linha 158-167)**
 
-### 3. Substituições em Componentes UI
+O AnimatedCounter exibe números sem formatação. Para moeda, vamos usar o valor já formatado:
+```typescript
+// Alterar de isCounter: true para isCounter: false no primeiro métric
+// Ou atualizar AnimatedCounter para aceitar formatação
+```
 
-Buscar e substituir globalmente nos arquivos `.tsx`:
+**C) Melhorar alinhamento do grid (linha 113)**
+```typescript
+// Antes
+className="grid grid-cols-2 lg:grid-cols-4 gap-1"
 
-| De | Para |
-|---|---|
-| `text-[10px]` | `text-[11px]` |
-| `text-[9px]` | `text-[10px]` |
-| `font-light` (em textos de corpo) | `font-normal` |
+// Depois
+className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+```
 
-**Componentes prioritários a atualizar:**
-- `src/components/ui/card.tsx` - CardTitle usa `font-normal` (manter)
-- `src/components/dashboard/*` - labels e descrições
-- `src/components/client-portal/*` - badges e métricas
-- `src/components/projects/*` - tabelas e cards
+**D) Adicionar altura mínima consistente nos cards (linha 127)**
+```typescript
+// Adicionar min-h para consistência
+className="bg-[#0a0a0a] border border-[#1a1a1a] p-6 min-h-[140px] relative overflow-hidden..."
+```
 
----
+### 2. Arquivo `src/components/client-portal/animations/PortalAnimations.tsx`
 
-## Hierarquia Tipográfica Final
+**Atualizar AnimatedCounter para suportar formatação de moeda (linhas 395-431)**
 
-| Elemento | Peso | Tamanho |
-|---|---|---|
-| Títulos principais | Medium 500 | `text-2xl` a `text-4xl` |
-| Subtítulos | Medium 500 | `text-lg` a `text-xl` |
-| Corpo de texto | Regular 400 | `text-sm` a `text-base` |
-| Texto secundário | Light 300 | `text-sm` |
-| Labels/Badges | Light 300 | `text-[11px]` |
-| Micro-texto | Light 300 | `text-[10px]` |
+Adicionar prop opcional `formatAsCurrency` e usar `toLocaleString`:
+```typescript
+interface AnimatedCounterProps {
+  value: number;
+  suffix?: string;
+  prefix?: string;
+  className?: string;
+  duration?: number;
+  formatAsCurrency?: boolean;  // Novo
+}
 
----
+export function AnimatedCounter({ 
+  value, 
+  suffix = "", 
+  prefix = "",
+  className,
+  duration = 2,
+  formatAsCurrency = false  // Novo
+}: AnimatedCounterProps) {
+  // ...
+  
+  const formattedValue = formatAsCurrency 
+    ? displayValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : displayValue.toLocaleString('pt-BR');
+  
+  return (
+    <span ref={ref} className={className}>
+      {prefix}{formattedValue}{suffix}
+    </span>
+  );
+}
+```
 
-## Impacto Visual
+### Resultado Visual Esperado
 
-- Texto mais legível sem parecer pesado
-- Contraste hierárquico mais claro
-- Mantém estética premium "quiet luxury"
-- Compatível com a identidade visual SQUAD Film
-
----
+| Campo | Antes | Depois |
+|-------|-------|--------|
+| Valor | R$ 15590 | R$ 15.590,00 |
+| Gap entre cards | 4px (gap-1) | 16px (gap-4) |
+| Altura | Variável | Mínimo 140px |
 
 ## Arquivos a Modificar
 
-1. `src/index.css` - escala base, pesos, classes utilitárias
-2. `tailwind.config.ts` - adicionar peso `regular`
-3. ~50 componentes `.tsx` com substituição de tamanhos mínimos
-
+1. `src/components/client-portal/PortalMetricsGrid.tsx`
+2. `src/components/client-portal/animations/PortalAnimations.tsx`
