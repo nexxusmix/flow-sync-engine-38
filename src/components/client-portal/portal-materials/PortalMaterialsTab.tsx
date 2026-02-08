@@ -235,6 +235,14 @@ function PortalMaterialsTabComponent({
                     comments={selectedComments}
                     onMarkFrame={handleMarkFrame}
                     onOpenAnnotation={handleOpenAnnotation}
+                    onRequestComment={() => {
+                      onSelectMaterial(material.id);
+                      // Scroll to comment form
+                    }}
+                    onRequestRevision={() => {
+                      onSelectMaterial(material.id);
+                      setShowRevisionForm(true);
+                    }}
                   />
                 </motion.div>
               )}
@@ -282,8 +290,8 @@ function PortalMaterialsTabComponent({
                 />
               )}
 
-              {/* Inline Comment (when selected but no revision form) */}
-              {selectedMaterialId === material.id && !showRevisionForm && (
+              {/* Inline Comment - ALWAYS show when material is selected or expanded */}
+              {(selectedMaterialId === material.id || isExpanded) && !showRevisionForm && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
