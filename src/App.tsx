@@ -15,7 +15,7 @@ import CRMPage from "./pages/CRMPage";
 import InboxPage from "./pages/InboxPage";
 import ProjectsListPage from "./pages/projects/ProjectsListPage";
 import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
-import ClientPortalPage from "./pages/ClientPortalPage";
+import ClientPortalPage from "./pages/ClientPortalPageNew";
 import ProposalsListPage from "./pages/proposals/ProposalsListPage";
 import ProposalDetailPage from "./pages/proposals/ProposalDetailPage";
 import ProposalPreviewPage from "./pages/proposals/ProposalPreviewPage";
@@ -189,6 +189,7 @@ function AppRoutes() {
       <Route path="/configuracoes/auditoria" element={<ProtectedRoute><AuditSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/danger-zone" element={<ProtectedRoute><DangerZoneSettingsPage /></ProtectedRoute>} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />
+      <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
