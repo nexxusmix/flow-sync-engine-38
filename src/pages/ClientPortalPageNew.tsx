@@ -161,13 +161,25 @@ export default function ClientPortalPage() {
     }
   };
 
-  const handleAddComment = ({ authorName, authorEmail, content }: { authorName: string; authorEmail?: string; content: string }) => {
+  const handleAddComment = (data: { 
+    authorName: string; 
+    authorEmail?: string; 
+    content: string;
+    timecode?: string;
+    priority?: string;
+    frameTimestampMs?: number;
+    screenshotUrl?: string;
+  }) => {
     if (!selectedMaterialId) return;
     addComment({
       deliverableId: selectedMaterialId,
-      authorName,
-      authorEmail,
-      content,
+      authorName: data.authorName,
+      authorEmail: data.authorEmail,
+      content: data.content,
+      timecode: data.timecode,
+      priority: data.priority,
+      frameTimestampMs: data.frameTimestampMs,
+      screenshotUrl: data.screenshotUrl,
     });
   };
 
@@ -181,13 +193,25 @@ export default function ClientPortalPage() {
     });
   };
 
-  const handleRequestRevision = ({ authorName, authorEmail, content }: { authorName: string; authorEmail?: string; content: string }) => {
+  const handleRequestRevision = (data: { 
+    authorName: string; 
+    authorEmail?: string; 
+    content: string;
+    timecode?: string;
+    priority?: string;
+    frameTimestampMs?: number;
+    screenshotUrl?: string;
+  }) => {
     if (!selectedMaterialId) return;
     requestRevision({
       deliverableId: selectedMaterialId,
-      authorName,
-      authorEmail,
-      content,
+      authorName: data.authorName,
+      authorEmail: data.authorEmail,
+      content: data.content,
+      timecode: data.timecode,
+      priority: data.priority,
+      frameTimestampMs: data.frameTimestampMs,
+      screenshotUrl: data.screenshotUrl,
     });
   };
 
