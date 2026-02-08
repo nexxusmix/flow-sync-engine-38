@@ -87,7 +87,7 @@ export default function ReportsDashboard() {
 
   return (
     <DashboardLayout title="Relatórios">
-      <div className="space-y-8">
+      <div className="space-y-8 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-light text-foreground tracking-tight">Relatórios</h1>
@@ -121,7 +121,7 @@ export default function ReportsDashboard() {
         </Card>
 
         {/* Report Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {reportTypes.slice(1).map((report) => {
             const Icon = report.icon;
             return (

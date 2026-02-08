@@ -343,7 +343,7 @@ export default function ClientPortalPage() {
         }}
       />
 
-      <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+      <div className="max-w-[1400px] xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Header with animations */}
         <ScrollReveal direction="down" delay={0.1}>
           <PortalHeaderPremium
@@ -372,9 +372,9 @@ export default function ClientPortalPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <StaggerContainer className="grid lg:grid-cols-3 gap-6" staggerDelay={0.08}>
+                  <StaggerContainer className="grid lg:grid-cols-12 gap-6" staggerDelay={0.08}>
                     {/* Main Content */}
-                    <StaggerItem className="lg:col-span-2 space-y-6">
+                    <StaggerItem className="lg:col-span-8 xl:col-span-9 space-y-6">
                       <PortalOverviewPremium 
                         project={project} 
                         stages={stages}
@@ -392,7 +392,7 @@ export default function ClientPortalPage() {
                     </StaggerItem>
                     
                     {/* Sidebar */}
-                    <StaggerItem className="space-y-6">
+                    <StaggerItem className="lg:col-span-4 xl:col-span-3 space-y-6">
                       <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
                         <PortalMaterialsAside deliverables={deliverables} files={files} />
                       </GlowCard>
