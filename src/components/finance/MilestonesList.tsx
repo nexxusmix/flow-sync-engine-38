@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PaymentMilestone, MilestoneStatus } from '@/types/financial';
 import { useFinancialStore } from '@/stores/financialStore';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Check, Edit2, Trash2, Plus, Calendar, DollarSign } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Check, Edit2, Trash2, Plus, Calendar, DollarSign, MoreVertical, Clock, XCircle, Undo2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -32,17 +46,25 @@ interface MilestonesListProps {
   onRefresh: () => void;
 }
 
+type FilterType = 'all' | 'pending' | 'paid' | 'overdue';
+
 export function MilestonesList({ contractId, milestones, onRefresh }: MilestonesListProps) {
   const { createMilestone, updateMilestone, deleteMilestone, markMilestonePaid } = useFinancialStore();
   
   const [editingMilestone, setEditingMilestone] = useState<PaymentMilestone | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [filter, setFilter] = useState<FilterType>('all');
   
   // Form state
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [description, setDescription] = useState('');
+
+  // Payment confirmation modal
+  const [confirmPaymentId, setConfirmPaymentId] = useState<string | null>(null);
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { 
@@ -51,11 +73,62 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
     }).format(value);
   };
 
+  // Calculate status with overdue detection
+  const getMilestoneDisplayStatus = (milestone: PaymentMilestone): MilestoneStatus => {
+    if (milestone.status === 'paid') return 'paid';
+    const today = new Date().toISOString().split('T')[0];
+    if (milestone.due_date < today) return 'overdue';
+    return milestone.status || 'pending';
+  };
+
+  // Filter milestones
+  const filteredMilestones = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    return milestones
+      .map(m => ({
+        ...m,
+        displayStatus: getMilestoneDisplayStatus(m),
+      }))
+      .filter(m => {
+        switch (filter) {
+          case 'pending':
+            return m.displayStatus === 'pending';
+          case 'paid':
+            return m.displayStatus === 'paid';
+          case 'overdue':
+            return m.displayStatus === 'overdue';
+          default:
+            return true;
+        }
+      })
+      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+  }, [milestones, filter]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const pending = milestones.filter(m => m.status !== 'paid' && m.due_date >= today);
+    const paid = milestones.filter(m => m.status === 'paid');
+    const overdue = milestones.filter(m => m.status !== 'paid' && m.due_date < today);
+    
+    return {
+      total: milestones.length,
+      pending: pending.length,
+      paid: paid.length,
+      overdue: overdue.length,
+      pendingValue: pending.reduce((sum, m) => sum + Number(m.amount), 0),
+      paidValue: paid.reduce((sum, m) => sum + Number(m.amount), 0),
+      overdueValue: overdue.reduce((sum, m) => sum + Number(m.amount), 0),
+    };
+  }, [milestones]);
+
   const handleOpenEdit = (milestone: PaymentMilestone) => {
     setEditingMilestone(milestone);
     setTitle(milestone.title);
     setAmount(String(milestone.amount));
     setDueDate(milestone.due_date);
+    setDescription('');
   };
 
   const handleOpenNew = () => {
@@ -63,6 +136,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
     setTitle('');
     setAmount('');
     setDueDate(new Date().toISOString().split('T')[0]);
+    setDescription('');
   };
 
   const handleCloseDialog = () => {
@@ -71,11 +145,12 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
     setTitle('');
     setAmount('');
     setDueDate('');
+    setDescription('');
   };
 
   const handleSave = async () => {
     if (!title || !amount || !dueDate) {
-      toast.error('Preencha todos os campos');
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
@@ -102,13 +177,26 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
     }
   };
 
-  const handleConfirmPayment = async (milestoneId: string) => {
+  const handleConfirmPayment = async () => {
+    if (!confirmPaymentId) return;
+    
     try {
-      await markMilestonePaid(milestoneId);
+      await markMilestonePaid(confirmPaymentId, paymentDate);
       toast.success('Pagamento confirmado');
+      setConfirmPaymentId(null);
       onRefresh();
     } catch (error) {
       toast.error('Erro ao confirmar pagamento');
+    }
+  };
+
+  const handleMarkPending = async (milestoneId: string) => {
+    try {
+      await updateMilestone(milestoneId, { status: 'pending', paid_date: null });
+      toast.success('Parcela marcada como pendente');
+      onRefresh();
+    } catch (error) {
+      toast.error('Erro ao atualizar parcela');
     }
   };
 
@@ -125,41 +213,67 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
     }
   };
 
-  const getStatusBadge = (status: MilestoneStatus, dueDate: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    const isOverdue = status === 'pending' && dueDate < today;
-    
-    if (status === 'paid') {
-      return <Badge className="bg-emerald-500 text-white">Pago</Badge>;
+  const getStatusBadge = (status: MilestoneStatus) => {
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-emerald-500 text-white">Pago</Badge>;
+      case 'overdue':
+        return <Badge className="bg-destructive text-white">Vencido</Badge>;
+      default:
+        return <Badge variant="outline">Pendente</Badge>;
     }
-    if (isOverdue || status === 'overdue') {
-      return <Badge className="bg-red-500 text-white">Vencido</Badge>;
-    }
-    return <Badge variant="outline">Pendente</Badge>;
   };
-
-  const sortedMilestones = [...milestones].sort(
-    (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
-  );
 
   return (
     <div className="space-y-3">
+      {/* Header with filter */}
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
           Parcelas ({milestones.length})
         </h4>
-        <Button size="sm" variant="ghost" onClick={handleOpenNew}>
-          <Plus className="w-4 h-4 mr-1" />
-          Adicionar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <SelectValue placeholder="Filtrar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="pending">Pendentes</SelectItem>
+              <SelectItem value="paid">Pagas</SelectItem>
+              <SelectItem value="overdue">Vencidas</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="ghost" onClick={handleOpenNew}>
+            <Plus className="w-4 h-4 mr-1" />
+            Adicionar
+          </Button>
+        </div>
       </div>
 
+      {/* Stats summary */}
+      {milestones.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="p-2 rounded-lg bg-amber-500/10">
+            <p className="text-xs text-muted-foreground">A receber</p>
+            <p className="text-sm font-medium text-amber-600">{formatCurrency(stats.pendingValue + stats.overdueValue)}</p>
+          </div>
+          <div className="p-2 rounded-lg bg-emerald-500/10">
+            <p className="text-xs text-muted-foreground">Recebido</p>
+            <p className="text-sm font-medium text-emerald-600">{formatCurrency(stats.paidValue)}</p>
+          </div>
+          <div className="p-2 rounded-lg bg-destructive/10">
+            <p className="text-xs text-muted-foreground">Vencido</p>
+            <p className="text-sm font-medium text-destructive">{formatCurrency(stats.overdueValue)}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Milestones list */}
       <div className="space-y-2">
-        {sortedMilestones.map((milestone) => {
-          const isPaid = milestone.status === 'paid';
-          const today = new Date().toISOString().split('T')[0];
-          const isOverdue = !isPaid && milestone.due_date < today;
+        {filteredMilestones.map((milestone) => {
+          const isPaid = milestone.displayStatus === 'paid';
+          const isOverdue = milestone.displayStatus === 'overdue';
 
           return (
             <div
@@ -168,7 +282,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
                 isPaid 
                   ? 'bg-emerald-500/5 border-emerald-500/20' 
                   : isOverdue 
-                    ? 'bg-red-500/5 border-red-500/20'
+                    ? 'bg-destructive/5 border-destructive/20'
                     : 'bg-muted/30 border-border'
               }`}
             >
@@ -176,44 +290,83 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
                 <span className={`font-medium text-sm ${isPaid ? 'text-emerald-600' : ''}`}>
                   {milestone.title}
                 </span>
-                {getStatusBadge(milestone.status, milestone.due_date)}
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(milestone.displayStatus)}
+                  
+                  {/* Actions dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {!isPaid && (
+                        <>
+                          <DropdownMenuItem onClick={() => {
+                            setConfirmPaymentId(milestone.id);
+                            setPaymentDate(new Date().toISOString().split('T')[0]);
+                          }}>
+                            <Check className="w-4 h-4 mr-2 text-emerald-500" />
+                            Marcar como Pago
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      {isPaid && (
+                        <>
+                          <DropdownMenuItem onClick={() => handleMarkPending(milestone.id)}>
+                            <Undo2 className="w-4 h-4 mr-2 text-amber-500" />
+                            Marcar como Pendente
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      <DropdownMenuItem onClick={() => handleOpenEdit(milestone)}>
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeletingId(milestone.id)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
               
               <div className="flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
                   {format(new Date(milestone.due_date), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                  {isPaid && milestone.paid_date && (
+                    <span className="text-emerald-600 ml-2">
+                      (pago em {format(new Date(milestone.paid_date), "dd/MM", { locale: ptBR })})
+                    </span>
+                  )}
                 </div>
-                <div className={`font-semibold ${isPaid ? 'text-emerald-600' : isOverdue ? 'text-red-500' : ''}`}>
+                <div className={`font-semibold ${isPaid ? 'text-emerald-600' : isOverdue ? 'text-destructive' : ''}`}>
                   {formatCurrency(Number(milestone.amount))}
                 </div>
               </div>
 
+              {/* Quick action for unpaid */}
               {!isPaid && (
-                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border">
+                <div className="mt-2 pt-2 border-t border-border/50">
                   <Button
                     size="sm"
                     variant="default"
-                    className="flex-1 h-8"
-                    onClick={() => handleConfirmPayment(milestone.id)}
+                    className="w-full h-7 text-xs"
+                    onClick={() => {
+                      setConfirmPaymentId(milestone.id);
+                      setPaymentDate(new Date().toISOString().split('T')[0]);
+                    }}
                   >
                     <Check className="w-3 h-3 mr-1" />
-                    Confirmar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 px-2"
-                    onClick={() => handleOpenEdit(milestone)}
-                  >
-                    <Edit2 className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 px-2 text-red-500 hover:text-red-600"
-                    onClick={() => setDeletingId(milestone.id)}
-                  >
-                    <Trash2 className="w-3 h-3" />
+                    Confirmar Recebimento
                   </Button>
                 </div>
               )}
@@ -221,9 +374,12 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
           );
         })}
 
-        {milestones.length === 0 && (
+        {filteredMilestones.length === 0 && (
           <div className="text-center py-6 text-muted-foreground text-sm">
-            Nenhuma parcela cadastrada
+            {milestones.length === 0 
+              ? 'Nenhuma parcela cadastrada'
+              : 'Nenhuma parcela encontrada com esse filtro'
+            }
           </div>
         )}
       </div>
@@ -239,7 +395,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
           
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium text-foreground">Título</label>
+              <label className="text-sm font-medium text-foreground">Título *</label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -248,7 +404,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
             </div>
             
             <div>
-              <label className="text-sm font-medium text-foreground">Valor</label>
+              <label className="text-sm font-medium text-foreground">Valor *</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -262,7 +418,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
             </div>
             
             <div>
-              <label className="text-sm font-medium text-foreground">Vencimento</label>
+              <label className="text-sm font-medium text-foreground">Vencimento *</label>
               <Input
                 type="date"
                 value={dueDate}
@@ -282,18 +438,51 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
         </DialogContent>
       </Dialog>
 
+      {/* Payment Confirmation Dialog */}
+      <Dialog open={!!confirmPaymentId} onOpenChange={() => setConfirmPaymentId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-emerald-500" />
+              Confirmar Recebimento
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Informe a data em que o pagamento foi recebido:
+            </p>
+            <Input
+              type="date"
+              value={paymentDate}
+              onChange={(e) => setPaymentDate(e.target.value)}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmPaymentId(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmPayment} className="bg-emerald-500 hover:bg-emerald-600">
+              <Check className="w-4 h-4 mr-2" />
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Parcela</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta parcela? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir esta parcela? A receita vinculada também será removida. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

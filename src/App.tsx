@@ -34,6 +34,7 @@ import OwnerDailyReport from "./pages/reports/OwnerDailyReport";
 import SalesReport from "./pages/reports/SalesReport";
 import OperationsReport from "./pages/reports/OperationsReport";
 import FinancialReport from "./pages/reports/FinancialReport";
+import FinanceReportPage from "./pages/reports/FinanceReportPage";
 import MarketingReport from "./pages/reports/MarketingReport";
 import ProjectsReport from "./pages/reports/ProjectsReport";
 import ClientsReport from "./pages/reports/ClientsReport";
@@ -168,6 +169,7 @@ function AppRoutes() {
       <Route path="/relatorios/vendas" element={<ProtectedRoute><SalesReport /></ProtectedRoute>} />
       <Route path="/relatorios/operacao" element={<ProtectedRoute><OperationsReport /></ProtectedRoute>} />
       <Route path="/relatorios/financeiro" element={<ProtectedRoute><FinancialReport /></ProtectedRoute>} />
+      <Route path="/relatorios/finance" element={<ProtectedRoute><FinanceReportPage /></ProtectedRoute>} />
       <Route path="/relatorios/marketing" element={<ProtectedRoute><MarketingReport /></ProtectedRoute>} />
       <Route path="/relatorios/projetos" element={<ProtectedRoute><ProjectsReport /></ProtectedRoute>} />
       <Route path="/relatorios/clientes" element={<ProtectedRoute><ClientsReport /></ProtectedRoute>} />
