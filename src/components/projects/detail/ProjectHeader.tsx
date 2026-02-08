@@ -190,9 +190,9 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           />
           
           <button 
-            onClick={() => bannerInputRef.current?.click()}
+            onClick={handleEdit}
             disabled={isUploadingBanner}
-            className="w-full aspect-[4/1] border-b border-border/50 overflow-hidden transition-all group bg-muted/30"
+            className="w-full aspect-[8/1] border-b border-border/50 overflow-hidden transition-all group bg-muted/30 relative"
           >
             {bannerUrl ? (
               <div className="relative w-full h-full">
@@ -202,26 +202,14 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                  {isUploadingBanner ? (
-                    <Loader2 className="w-6 h-6 text-white animate-spin" />
-                  ) : (
-                    <>
-                      <Pencil className="w-5 h-5 text-white" />
-                      <span className="text-white text-sm font-medium">Alterar Banner</span>
-                    </>
-                  )}
+                  <Pencil className="w-5 h-5 text-white" />
+                  <span className="text-white text-sm font-medium">Editar Projeto</span>
                 </div>
               </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                {isUploadingBanner ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <ImagePlus className="w-5 h-5" />
-                    <span className="text-sm">Adicionar Banner</span>
-                  </>
-                )}
+                <ImagePlus className="w-5 h-5" />
+                <span className="text-sm">Adicionar Banner via Editar Projeto</span>
               </div>
             )}
           </button>

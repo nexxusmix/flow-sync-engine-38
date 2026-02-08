@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useProjects, ProjectWithStages, DBProject } from "@/hooks/useProjects";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProjectLogoUpload } from "@/components/projects/ProjectLogoUpload";
+import { BANNER_STYLES } from "@/data/bannerStyles";
+import { Wand2, Loader2, ImagePlus } from "lucide-react";
 
 interface EditProjectModalProps {
   open: boolean;
@@ -27,6 +32,7 @@ interface EditProjectModalProps {
 
 export function EditProjectModal({ open, onOpenChange, project }: EditProjectModalProps) {
   const { updateProject } = useProjects();
+  const queryClient = useQueryClient();
   
   const [formData, setFormData] = useState({
     name: project.name,
@@ -37,7 +43,11 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
     contract_value: (project.contract_value || 0).toString(),
     has_payment_block: project.has_payment_block || false,
     logo_url: (project as any).logo_url || null,
+    banner_url: (project as any).banner_url || null,
   });
+  
+  const [bannerStyle, setBannerStyle] = useState('texture_pattern');
+  const [isGeneratingBanner, setIsGeneratingBanner] = useState(false);
 
   useEffect(() => {
     setFormData({
@@ -49,8 +59,35 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
       contract_value: (project.contract_value || 0).toString(),
       has_payment_block: project.has_payment_block || false,
       logo_url: (project as any).logo_url || null,
+      banner_url: (project as any).banner_url || null,
     });
   }, [project]);
+
+  const handleGenerateBanner = async () => {
+    setIsGeneratingBanner(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-project-art', {
+        body: {
+          project_id: project.id,
+          art_type: 'banner',
+          style: bannerStyle,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.public_url) {
+        setFormData(prev => ({ ...prev, banner_url: data.public_url }));
+        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+        toast.success('Banner gerado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Error generating banner:', error);
+      toast.error('Erro ao gerar banner com IA');
+    } finally {
+      setIsGeneratingBanner(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +103,7 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
         contract_value: parseFloat(formData.contract_value) || 0,
         has_payment_block: formData.has_payment_block,
         logo_url: formData.logo_url,
+        banner_url: formData.banner_url,
       } as any,
     });
 
@@ -80,6 +118,58 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+          {/* Banner com Geração IA */}
+          <div className="space-y-3">
+            <Label>Banner do Projeto</Label>
+            
+            {/* Preview do Banner */}
+            <div className="aspect-[8/1] bg-muted/30 rounded-xl overflow-hidden border border-dashed border-border">
+              {formData.banner_url ? (
+                <img 
+                  src={formData.banner_url} 
+                  alt="Banner" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground gap-2">
+                  <ImagePlus className="w-4 h-4" />
+                  <span className="text-xs">Sem banner</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Seletor de Estilo + Botão Gerar */}
+            <div className="flex gap-2">
+              <Select value={bannerStyle} onValueChange={setBannerStyle}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Estilo do banner" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BANNER_STYLES.map(style => (
+                    <SelectItem key={style.id} value={style.id}>
+                      {style.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleGenerateBanner}
+                disabled={isGeneratingBanner}
+                className="gap-2"
+              >
+                {isGeneratingBanner ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4" />
+                )}
+                Gerar com IA
+              </Button>
+            </div>
+          </div>
+
           {/* Logo Upload */}
           <div className="space-y-2">
             <Label>Logo do Projeto</Label>

@@ -9,8 +9,18 @@ const corsHeaders = {
 interface GenerateArtInput {
   project_id: string;
   art_type: "banner" | "favicon" | "cover";
+  style?: string;
   custom_prompt?: string;
 }
+
+const STYLE_PROMPTS: Record<string, string> = {
+  texture_pattern: 'Abstract geometric texture pattern with subtle film grain, repeating shapes, mathematical precision',
+  solid_gradient: 'Smooth cinematic gradient background transitioning from deep black to dark cyan, soft color blend',
+  '3d_abstract': '3D abstract floating shapes with metallic and glass materials, depth of field, volumetric lighting, octane render style',
+  minimal_lines: 'Minimal elegant line art with geometric patterns on dark background, thin strokes, architectural precision',
+  noise_grain: 'Film grain noise texture with analog photography aesthetic, subtle color cast, 35mm film grain',
+  dark_cinematic: 'Dark cinematic atmosphere with fog, volumetric light rays, moody ambiance, anamorphic lens flare',
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    const { project_id, art_type, custom_prompt } = (await req.json()) as GenerateArtInput;
+    const { project_id, art_type, style, custom_prompt } = (await req.json()) as GenerateArtInput;
 
     if (!project_id || !art_type) {
       return new Response(
@@ -50,12 +60,17 @@ serve(async (req) => {
 
     // Build generation prompt
     const dimensions = {
-      banner: { width: 1920, height: 1080, desc: "banner horizontal (16:9)" },
+      banner: { width: 1920, height: 240, desc: "banner horizontal ultra-wide stripe (8:1 aspect ratio)" },
       favicon: { width: 512, height: 512, desc: "favicon quadrado (1:1)" },
       cover: { width: 1200, height: 630, desc: "capa para redes sociais (OG image)" },
     };
 
     const dim = dimensions[art_type];
+    
+    // Get style-specific prompt
+    const stylePrompt = style && STYLE_PROMPTS[style] 
+      ? STYLE_PROMPTS[style] 
+      : STYLE_PROMPTS['texture_pattern'];
 
     const basePrompt = `
 Generate a professional ${dim.desc} for a film production project.
@@ -63,14 +78,18 @@ Project Name: ${project.name}
 Client: ${project.client_name || "N/A"}
 Type: ${project.template || "Institutional Film"}
 
-Style Requirements:
-- Cinematic and modern aesthetic
-- Dark theme with pure black background (#000000)
+Visual Style: ${stylePrompt}
+
+Brand Reference: SQUAD Film logo (cyan #00A3D3 on black #000000)
+
+Requirements:
+- Pure black background (#000000)
 - Cyan accent color (#00A3D3) as highlight
+- NO TEXT, NO LETTERS, NO WORDS in the image
 - Minimalist and elegant
-- NO TEXT in the image
 - Ultra high resolution, professional quality
 - Aspect ratio: ${dim.desc}
+- Seamless edge blending for header use
 
 ${project.logo_url ? `Reference logo available at: ${project.logo_url} - incorporate its colors and style if possible.` : ""}
 ${custom_prompt ? `Additional instructions: ${custom_prompt}` : ""}
