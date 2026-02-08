@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useFinancialStore } from "@/stores/financialStore";
 import { useRealtimeTable } from "@/hooks/useRealtimeSync";
+import { useUrlState } from "@/hooks/useUrlState";
+import { usePersistedState, useScrollPersistence } from "@/hooks/usePersistedState";
 import { FINANCIAL_STATUS_CONFIG } from "@/types/financial";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { ProjectFinanceDetailPanel } from "@/components/finance/ProjectFinanceDetailPanel";
@@ -25,8 +27,12 @@ export default function ProjectsFinancePage() {
     getContractByProject,
   } = useFinancialStore();
 
-  const [search, setSearch] = useState('');
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  // URL-persisted search and selection
+  const [search, setSearch] = useUrlState('search', '');
+  const [selectedProject, setSelectedProject] = useUrlState('project', '');
+  
+  // Scroll persistence
+  useScrollPersistence('finance-projects');
 
   // Fetch data on mount
   useEffect(() => {
@@ -74,9 +80,9 @@ export default function ProjectsFinancePage() {
 
   const selectedProjectData = selectedProject ? {
     project: projectFinancials.find(p => p.project_id === selectedProject),
-    contract: getContractByProject(selectedProject),
-    revenues: getRevenuesByProject(selectedProject),
-    expenses: getExpensesByProject(selectedProject),
+    contract: selectedProject ? getContractByProject(selectedProject) : null,
+    revenues: selectedProject ? getRevenuesByProject(selectedProject) : [],
+    expenses: selectedProject ? getExpensesByProject(selectedProject) : [],
   } : null;
 
   const handleRefresh = useCallback(() => {
