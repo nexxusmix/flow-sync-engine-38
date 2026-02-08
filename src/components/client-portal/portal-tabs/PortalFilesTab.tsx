@@ -22,7 +22,6 @@ import type { PortalFile } from "@/hooks/useClientPortalEnhanced";
 
 interface PortalFilesTabProps {
   files: PortalFile[];
-  hasPaymentBlock?: boolean;
 }
 
 const containerVariants = {
@@ -42,7 +41,7 @@ const itemVariants = {
   },
 };
 
-function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps) {
+function PortalFilesTabComponent({ files }: PortalFilesTabProps) {
   const getFileIcon = (fileType: string | null) => {
     if (!fileType) return <File className="w-5 h-5" />;
     if (fileType.includes('image')) return <Image className="w-5 h-5 text-emerald-500" />;
@@ -136,7 +135,6 @@ function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-gray-500 hover:text-white"
-                    disabled={hasPaymentBlock}
                     onClick={() => {
                       const link = document.createElement('a');
                       link.href = file.file_url;
@@ -152,20 +150,6 @@ function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps
           </div>
         </motion.div>
       ))}
-
-      {/* Payment Block Notice */}
-      {hasPaymentBlock && (
-        <motion.div 
-          className="bg-amber-500/5 border border-amber-500/30 p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <p className="text-sm text-amber-500">
-            <strong>Nota:</strong> Downloads estão temporariamente bloqueados devido a pendência financeira.
-          </p>
-        </motion.div>
-      )}
     </motion.div>
   );
 }

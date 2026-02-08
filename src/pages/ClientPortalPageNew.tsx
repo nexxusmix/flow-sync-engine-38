@@ -9,14 +9,12 @@ import { motion } from "framer-motion";
 import { Loader2, Lock, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
-import { PortalBlockBanner } from "@/components/client-portal/PortalBlockBanner";
 import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPremium";
 import { PortalMetricsGrid } from "@/components/client-portal/PortalMetricsGrid";
 import { PortalTabsPremium, TabsContent } from "@/components/client-portal/PortalTabsPremium";
 import { PortalOverviewPremium } from "@/components/client-portal/PortalOverviewPremium";
 import { PortalFooterPremium } from "@/components/client-portal/PortalFooterPremium";
 import { PortalMaterialsAside } from "@/components/client-portal/PortalMaterialsAside";
-import { PortalPaymentsAside } from "@/components/client-portal/PortalPaymentsAside";
 import { PortalAuditBadge } from "@/components/client-portal/PortalAuditBadge";
 import { PortalClientUploads } from "@/components/client-portal/PortalClientUploads";
 import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/PortalRevisionsTab";
@@ -58,8 +56,6 @@ export default function ClientPortalPage() {
 
   // Filter client uploads
   const clientUploads = deliverables.filter(d => d.uploaded_by_client);
-
-  const hasPaymentBlock = portal?.blocked_by_payment || project?.has_payment_block;
 
   const handleExportPdf = async () => {
     if (!project) return;
@@ -222,15 +218,11 @@ export default function ClientPortalPage() {
 
   return (
     <div className="min-h-screen h-screen overflow-y-auto bg-[#050505] scroll-smooth">
-      {/* Block Banner */}
-      <PortalBlockBanner isVisible={!!hasPaymentBlock} />
-      
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* Header with badges and title */}
         <PortalHeaderPremium
           project={project}
           shareToken={shareToken || ''}
-          hasPaymentBlock={hasPaymentBlock}
           onExportPdf={handleExportPdf}
           isExporting={isExporting}
         />
@@ -252,7 +244,6 @@ export default function ClientPortalPage() {
                     project={project} 
                     stages={stages}
                     deliverables={deliverables}
-                    hasPaymentBlock={hasPaymentBlock}
                     isManager={false}
                   />
                   
@@ -267,7 +258,6 @@ export default function ClientPortalPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                   <PortalMaterialsAside deliverables={deliverables} files={files} />
-                  <PortalPaymentsAside hasPaymentBlock={hasPaymentBlock} />
                   <PortalAuditBadge />
                 </div>
               </div>
@@ -288,7 +278,6 @@ export default function ClientPortalPage() {
                 isAddingComment={isAddingComment}
                 isApproving={isApproving}
                 isRequestingRevision={isRequestingRevision}
-                hasPaymentBlock={hasPaymentBlock}
                 portalLinkId={portal.id}
                 isManager={false}
               />
@@ -301,7 +290,7 @@ export default function ClientPortalPage() {
 
             {/* Files Tab */}
             <TabsContent value="files" className="mt-8">
-              <PortalFilesTab files={files} hasPaymentBlock={hasPaymentBlock} />
+              <PortalFilesTab files={files} />
             </TabsContent>
 
             {/* Schedule Tab */}
