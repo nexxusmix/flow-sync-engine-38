@@ -1,17 +1,18 @@
 /**
  * ExecutiveSummarySection - Report-style executive summary (01 — RESUMO EXECUTIVO)
- * Large heading, editorial paragraphs with AI/Edit buttons
+ * Collapsible by default, large heading, editorial paragraphs with AI/Edit buttons
  * Now with auto-save functionality
  */
 
 import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AiGenerateButton } from "@/components/ai/AiGenerateButton";
-import { ReportSectionHeader } from "./ReportSectionHeader";
 import { SaveIndicator, DraftIndicator } from "@/components/ui/save-indicator";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { Edit3, X } from "lucide-react";
+import { Edit3, X, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { GenerateBriefOutput } from "@/ai/actions";
 
 interface ExecutiveSummarySectionProps {
@@ -33,6 +34,7 @@ export function ExecutiveSummarySection({
   onSave,
   isManager = true,
 }: ExecutiveSummarySectionProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Auto-save hook with debounce
@@ -69,6 +71,7 @@ export function ExecutiveSummarySection({
       setLocalDescription(appendedValue);
     }
     setIsEditing(true);
+    setIsOpen(true);
   }, [setLocalDescription, localDescription]);
 
   // Parse description into paragraphs (use localDescription when editing, otherwise description)
@@ -81,100 +84,178 @@ export function ExecutiveSummarySection({
     : `${projectName} — Projeto Audiovisual Completo.`;
 
   return (
-    <div className="bg-card border border-border p-8 md:p-12">
-      <ReportSectionHeader index="01" title="RESUMO EXECUTIVO">
-        {isManager && (
-          <div className="flex items-center gap-2">
-            <AiGenerateButton
-              actionKey="projects.generateBrief"
-              entityType="project"
-              entityId={projectId}
-              hasExistingContent={!!description}
-              getContext={() => ({
-                id: projectId,
-                name: projectName,
-                client_name: clientName,
-                service_type: template,
-                description: description,
-              })}
-              onApply={handleApplyBrief}
-            />
-            {!isEditing && description && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setIsEditing(true)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Edit3 className="w-4 h-4 mr-1" />
-                Editar
-              </Button>
+    <div className="bg-card border border-border">
+      {/* Collapsible Header */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full p-8 md:p-12 pb-6 flex items-start justify-between hover:bg-muted/30 transition-colors text-left"
+      >
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-primary text-[10px] uppercase tracking-[0.4em] font-bold">
+              01 — RESUMO EXECUTIVO
+            </span>
+            {isManager && !isOpen && (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <AiGenerateButton
+                  actionKey="projects.generateBrief"
+                  entityType="project"
+                  entityId={projectId}
+                  hasExistingContent={!!description}
+                  getContext={() => ({
+                    id: projectId,
+                    name: projectName,
+                    client_name: clientName,
+                    service_type: template,
+                    description: description,
+                  })}
+                  onApply={handleApplyBrief}
+                />
+                {description && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(true);
+                      setIsOpen(true);
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Edit3 className="w-4 h-4 mr-1" />
+                    Editar
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </ReportSectionHeader>
-
-      {isEditing ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between mb-2">
-            <DraftIndicator hasDraft={hasDraft} onDiscard={discardDraft} />
-            <SaveIndicator status={saveStatus} />
-          </div>
-          <Textarea
-            value={localDescription}
-            onChange={(e) => setLocalDescription(e.target.value)}
-            onBlur={saveNow}
-            placeholder="Descreva o resumo executivo do projeto, objetivos e escopo principal..."
-            className="min-h-[200px] bg-muted/20 border-border text-foreground font-light text-lg leading-relaxed"
-          />
-          <div className="flex gap-2 justify-end">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleCancel}
-            >
-              <X className="w-4 h-4 mr-1" />
-              Fechar Edição
-            </Button>
-          </div>
-        </div>
-      ) : description ? (
-        <div className="max-w-4xl">
-          {/* Headline */}
-          <h2 className="font-serif text-3xl md:text-4xl font-normal italic text-foreground mb-8">
-            {headline}
-          </h2>
-
-          {/* Paragraphs with editorial styling */}
-          <div className="space-y-6">
-            {paragraphs.slice(headline === paragraphs[0] ? 1 : 0).map((paragraph, idx) => (
-              <p 
-                key={idx}
-                className="text-lg md:text-xl text-muted-foreground leading-[1.8] font-light"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-lg text-muted-foreground mb-4">Nenhum resumo executivo definido</p>
-          <p className="text-sm text-muted-foreground/70 max-w-lg mb-6">
-            Use o botão "Gerar com IA" para criar um resumo executivo automaticamente baseado nos dados do projeto, 
-            ou clique para escrever manualmente.
-          </p>
-          {isManager && (
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditing(true)}
-            >
-              <Edit3 className="w-4 h-4 mr-2" />
-              Escrever Resumo Executivo
-            </Button>
+          {/* Preview headline when closed */}
+          {!isOpen && description && (
+            <p className="text-lg text-muted-foreground font-light line-clamp-2 max-w-3xl">
+              {headline}
+            </p>
+          )}
+          {!isOpen && !description && (
+            <p className="text-sm text-muted-foreground/70">
+              Clique para expandir e adicionar o resumo executivo
+            </p>
           )}
         </div>
-      )}
+        <ChevronDown 
+          className={cn(
+            "w-5 h-5 text-muted-foreground transition-transform duration-200 mt-1",
+            isOpen && "rotate-180"
+          )} 
+        />
+      </button>
+
+      {/* Collapsible Content */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-8 md:px-12 pb-8 md:pb-12 pt-0 border-t border-border">
+              {/* Action buttons when open */}
+              {isManager && (
+                <div className="flex items-center gap-2 pt-6 mb-6">
+                  <AiGenerateButton
+                    actionKey="projects.generateBrief"
+                    entityType="project"
+                    entityId={projectId}
+                    hasExistingContent={!!description}
+                    getContext={() => ({
+                      id: projectId,
+                      name: projectName,
+                      client_name: clientName,
+                      service_type: template,
+                      description: description,
+                    })}
+                    onApply={handleApplyBrief}
+                  />
+                  {!isEditing && description && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setIsEditing(true)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Edit3 className="w-4 h-4 mr-1" />
+                      Editar
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <DraftIndicator hasDraft={hasDraft} onDiscard={discardDraft} />
+                    <SaveIndicator status={saveStatus} />
+                  </div>
+                  <Textarea
+                    value={localDescription}
+                    onChange={(e) => setLocalDescription(e.target.value)}
+                    onBlur={saveNow}
+                    placeholder="Descreva o resumo executivo do projeto, objetivos e escopo principal..."
+                    className="min-h-[200px] bg-muted/20 border-border text-foreground font-light text-lg leading-relaxed"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleCancel}
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Fechar Edição
+                    </Button>
+                  </div>
+                </div>
+              ) : description ? (
+                <div className="max-w-4xl pt-6">
+                  {/* Headline */}
+                  <h2 className="font-serif text-3xl md:text-4xl font-normal italic text-foreground mb-8">
+                    {headline}
+                  </h2>
+
+                  {/* Paragraphs with editorial styling */}
+                  <div className="space-y-6">
+                    {paragraphs.slice(headline === paragraphs[0] ? 1 : 0).map((paragraph, idx) => (
+                      <p 
+                        key={idx}
+                        className="text-lg md:text-xl text-muted-foreground leading-[1.8] font-light"
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-lg text-muted-foreground mb-4">Nenhum resumo executivo definido</p>
+                  <p className="text-sm text-muted-foreground/70 max-w-lg mb-6">
+                    Use o botão "Gerar com IA" para criar um resumo executivo automaticamente baseado nos dados do projeto, 
+                    ou clique para escrever manualmente.
+                  </p>
+                  {isManager && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Escrever Resumo Executivo
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
