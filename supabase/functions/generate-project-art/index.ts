@@ -11,6 +11,7 @@ interface GenerateArtInput {
   art_type: "banner" | "favicon" | "cover";
   style?: string;
   custom_prompt?: string;
+  include_logo?: boolean;
 }
 
 const STYLE_PROMPTS: Record<string, string> = {
@@ -28,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    const { project_id, art_type, style, custom_prompt } = (await req.json()) as GenerateArtInput;
+    const { project_id, art_type, style, custom_prompt, include_logo = true } = (await req.json()) as GenerateArtInput;
 
     if (!project_id || !art_type) {
       return new Response(
@@ -90,8 +91,10 @@ Requirements:
 - Ultra high resolution, professional quality
 - Aspect ratio: ${dim.desc}
 - Seamless edge blending for header use
-
-${project.logo_url ? `Reference logo available at: ${project.logo_url} - incorporate its colors and style if possible.` : ""}
+${include_logo && project.logo_url ? `
+IMPORTANT: This art will be used as a BACKGROUND behind a logo. Keep the center relatively empty or subtle to allow logo visibility.
+Reference logo available at: ${project.logo_url}
+` : ""}
 ${custom_prompt ? `Additional instructions: ${custom_prompt}` : ""}
     `.trim();
 
