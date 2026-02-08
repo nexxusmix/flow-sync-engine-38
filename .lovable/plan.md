@@ -1,102 +1,138 @@
 
-# Plano: Corrigir PDF e Melhorar Seção de Resumo Executivo
+# Plano: Grid de Materiais com Thumbnails e Player na Aba Visão Geral
 
-## Problemas Identificados
+## Objetivo
+Adicionar uma galeria visual com grid de materiais (vídeos/arquivos) com thumbnails, títulos e player integrado logo abaixo do título "Visão Geral" no portal do cliente.
 
-### 1. PDF Bugado
-O sistema atualmente gera um arquivo **SVG** (imagem vetorial) e o nomeia como PDF. Isso causa problemas:
-- Não é um PDF real
-- Salvamento com extensão `.svg`
-- Content-type `image/svg+xml`
+---
 
-### 2. Botão "Gerar com IA" Visível Quando Fechado
-Atualmente o botão aparece no header quando o resumo está minimizado. O usuário quer que apareça **apenas quando expandido**.
+## Estrutura Atual
+A aba Overview (`PortalOverviewPremium`) tem:
+1. Cards de progresso (3 colunas)
+2. Seção "Materiais Disponíveis" (lista simples com ícones)
+3. Status de Entregas
+4. Resumo Executivo (colapsável)
 
-### 3. Texto do Resumo com Caracteres Especiais
-O texto markdown está sendo exibido com `#`, `##`, `-` e `**` visíveis ao invés de ser renderizado como HTML formatado.
+## Nova Estrutura
+1. Cards de progresso (3 colunas)
+2. **NOVA: Grid de Materiais com Thumbnails e Player** ← Adicionar aqui
+3. Status de Entregas
+4. Resumo Executivo (colapsável)
 
 ---
 
 ## Solução Técnica
 
-### Arquivo 1: `supabase/functions/export-universal-pdf/index.ts`
-Corrigir a exportação para gerar PDF real:
+### Arquivo: `src/components/client-portal/PortalOverviewPremium.tsx`
 
-1. Instalar dependência `jspdf` ou converter SVG para PDF usando biblioteca adequada
-2. Alternativa mais simples: Manter SVG mas gerar HTML com CSS inline que possa ser impresso como PDF pelo navegador
-3. **Solução recomendada**: Gerar HTML profissional com `@media print` e abrir para impressão nativa do browser
+**Mudanças:**
+1. Substituir a seção "Materiais Disponíveis" por uma galeria visual rica
+2. Adicionar grid responsivo (2-3 colunas) com cards de materiais
+3. Cada card terá:
+   - **Thumbnail** (16:9 aspect ratio)
+     - YouTube: usar `img.youtube.com/vi/{ID}/hqdefault.jpg`
+     - Vídeos storage: usar tag `<video>` como preview
+     - Outros: ícone placeholder
+   - **Botão Play** centralizado para vídeos
+   - **Título** do material
+   - **Badge** de tipo (YouTube, Vídeo, Link)
+4. Ao clicar: abrir modal com player embarcado (YouTube embed ou video nativo)
+5. Adicionar estado `useState` para controle do modal de preview
 
-**Mudanças específicas:**
-- Trocar extensão de `.svg` para `.html`
-- Gerar HTML editorial com CSS inline
-- Adicionar meta tags para impressão A4
-- Manter layout sidebar + conteúdo principal
-- Renderizar markdown como HTML estruturado
-
-### Arquivo 2: `src/components/projects/reporting/ExecutiveSummarySection.tsx`
-
-**Remoção do botão quando fechado:**
-```tsx
-// Remover linhas 98-129 (botões no header quando fechado)
-// Manter botões APENAS dentro do conteúdo expandido (linhas 166-191)
+**Layout da Grid:**
+```text
+┌──────────────────────────────────────────────┐
+│ 🎬 MATERIAIS DO PROJETO                       │
+├─────────────────┬─────────────────┬──────────┤
+│ ┌─────────────┐ │ ┌─────────────┐ │ ┌──────┐ │
+│ │  THUMBNAIL  │ │ │  THUMBNAIL  │ │ │ ...  │ │
+│ │   ▶ Play    │ │ │   ▶ Play    │ │ │      │ │
+│ └─────────────┘ │ └─────────────┘ │ └──────┘ │
+│ Video Teaser    │ Institucional   │ ...      │
+│ 🟥 YouTube      │ 📁 Arquivo      │          │
+└─────────────────┴─────────────────┴──────────┘
 ```
 
-**Renderização rica do texto:**
-- Usar `react-markdown` para parsear o conteúdo
-- Aplicar estilos visuais aos headings, listas e parágrafos
-- Remover caracteres especiais do markdown visualmente
-
-**Componentes de estilo:**
+**Código do Card de Material:**
 ```tsx
-// Usar react-markdown com componentes customizados
-import ReactMarkdown from 'react-markdown';
+// Dentro do map de availableMaterials
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {availableMaterials.map((material) => {
+    const youtubeId = getYouTubeVideoId(material.youtube_url);
+    
+    return (
+      <button 
+        key={material.id}
+        onClick={() => setPreviewMaterial(material)}
+        className="bg-[#0a0a0a] border border-[#1a1a1a] overflow-hidden group"
+      >
+        {/* Thumbnail */}
+        <div className="aspect-video relative bg-[#111]">
+          {youtubeId ? (
+            <img 
+              src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
+              alt={material.title}
+              className="w-full h-full object-cover"
+            />
+          ) : material.file_url ? (
+            <video src={material.file_url} className="w-full h-full object-cover" />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <Film className="w-8 h-8 text-gray-600" />
+            </div>
+          )}
+          
+          {/* Play Button Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="w-14 h-14 rounded-full bg-cyan-500 flex items-center justify-center">
+              <Play className="w-6 h-6 text-black ml-0.5" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Info */}
+        <div className="p-4">
+          <h4 className="text-sm font-medium text-white truncate">{material.title}</h4>
+          <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-1">
+            {material.youtube_url ? <Youtube className="w-3 h-3 text-red-500" /> : <Film className="w-3 h-3 text-cyan-400" />}
+            {material.youtube_url ? 'YouTube' : 'Vídeo'}
+          </span>
+        </div>
+      </button>
+    );
+  })}
+</div>
+```
 
-<ReactMarkdown
-  components={{
-    h1: ({children}) => <h2 className="text-2xl font-semibold mb-4">{children}</h2>,
-    h2: ({children}) => <h3 className="text-xl font-medium text-primary mb-3">{children}</h3>,
-    h3: ({children}) => <h4 className="text-lg font-medium mb-2">{children}</h4>,
-    p: ({children}) => <p className="text-muted-foreground leading-relaxed mb-4">{children}</p>,
-    ul: ({children}) => <ul className="space-y-2 mb-4">{children}</ul>,
-    li: ({children}) => <li className="flex gap-2"><span className="text-primary">•</span>{children}</li>,
-  }}
->
-  {description}
-</ReactMarkdown>
+**Modal de Preview:**
+```tsx
+<Dialog open={!!previewMaterial} onOpenChange={() => setPreviewMaterial(null)}>
+  <DialogContent className="max-w-4xl p-0 bg-black border-[#1a1a1a]">
+    <div className="aspect-video">
+      {youtubeId ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+          className="w-full h-full"
+          allow="autoplay; fullscreen"
+          allowFullScreen
+        />
+      ) : previewMaterial?.file_url && (
+        <video src={previewMaterial.file_url} controls autoPlay className="w-full h-full" />
+      )}
+    </div>
+    <div className="p-4">
+      <h4 className="font-medium text-white">{previewMaterial?.title}</h4>
+    </div>
+  </DialogContent>
+</Dialog>
 ```
 
 ---
 
-## Detalhes Técnicos
-
-### Geração de PDF/HTML para Impressão
-
-```typescript
-// Gerar HTML com CSS inline para impressão
-const htmlContent = `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @page { size: A4; margin: 20mm; }
-    @media print { body { -webkit-print-color-adjust: exact; } }
-    body { 
-      font-family: 'Host Grotesk', sans-serif;
-      background: #050505;
-      color: #FFFFFF;
-    }
-    .sidebar { width: 180px; ... }
-    .main { margin-left: 200px; ... }
-    // ... demais estilos
-  </style>
-</head>
-<body>
-  <div class="sidebar">...</div>
-  <div class="main">...</div>
-</body>
-</html>
-`;
+## Imports Necessários
+```tsx
+import { Play, Film, Youtube } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 ```
 
 ---
@@ -105,12 +141,13 @@ const htmlContent = `
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `export-universal-pdf/index.ts` | Converter para HTML imprimível + corrigir extensão |
-| `ExecutiveSummarySection.tsx` | Remover botões do header fechado + usar ReactMarkdown |
+| `PortalOverviewPremium.tsx` | Substituir lista de materiais por grid visual com thumbnails e modal de player |
 
 ---
 
 ## Resultado Esperado
-- PDF exportável corretamente (via impressão HTML)
-- Botão "Gerar com IA" aparece somente quando expandido
-- Texto do resumo renderizado com formatação visual rica (títulos, listas, parágrafos estilizados)
+- Grid de materiais com thumbnails logo abaixo dos cards de progresso
+- Vídeos do YouTube mostram thumbnail automático
+- Botão de play visível ao passar o mouse
+- Clique abre modal com player funcional
+- Layout responsivo (1 coluna mobile, 2-3 desktop)
