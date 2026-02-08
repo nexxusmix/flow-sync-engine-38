@@ -116,7 +116,7 @@ export function useProjects() {
 
   // Create project mutation
   const createProjectMutation = useMutation({
-    mutationFn: async (input: CreateProjectInput) => {
+    mutationFn: async (input: CreateProjectInput & { banner_style?: string }) => {
       // Create the project without FK references to avoid constraint errors
       const { data: project, error: projectError } = await supabase
         .from('projects')
@@ -207,6 +207,20 @@ export function useProjects() {
             status: 'pending',
           });
         }
+      }
+
+      // AUTO-GENERATE BANNER with AI
+      if (input.banner_style) {
+        // Fire and forget - don't block project creation
+        supabase.functions.invoke('generate-project-art', {
+          body: {
+            project_id: project.id,
+            art_type: 'banner',
+            style: input.banner_style,
+          },
+        }).catch(err => {
+          console.error('Error auto-generating banner:', err);
+        });
       }
 
       return project;

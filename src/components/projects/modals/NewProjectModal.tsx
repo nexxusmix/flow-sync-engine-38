@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useProjects, CreateProjectInput } from "@/hooks/useProjects";
 import { PROJECT_TEMPLATES } from "@/data/projectTemplates";
+import { BANNER_STYLES } from "@/data/bannerStyles";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +54,8 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     has_payment_block: true,
     logo_url: null,
   });
+  
+  const [bannerStyle, setBannerStyle] = useState('texture_pattern');
 
   const resetForm = () => {
     setFormData({
@@ -64,6 +69,24 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       has_payment_block: true,
       logo_url: null,
     });
+    setBannerStyle('texture_pattern');
+  };
+
+  // Function to auto-generate banner after project creation
+  const generateBannerForProject = async (projectId: string) => {
+    try {
+      await supabase.functions.invoke('generate-project-art', {
+        body: {
+          project_id: projectId,
+          art_type: 'banner',
+          style: bannerStyle,
+        },
+      });
+      toast.success('Banner gerado automaticamente!');
+    } catch (error) {
+      console.error('Error auto-generating banner:', error);
+      // Don't show error toast since project was created successfully
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,7 +96,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       return;
     }
 
-    const projectData: CreateProjectInput = {
+    const projectData = {
       name: formData.name,
       client_name: formData.client_name,
       description: formData.description || undefined,
@@ -82,9 +105,10 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       due_date: formData.due_date || undefined,
       contract_value: formData.contract_value ? parseFloat(formData.contract_value) : undefined,
       has_payment_block: formData.has_payment_block,
+      banner_style: bannerStyle, // Pass banner style for auto-generation
     };
 
-    createProject(projectData);
+    createProject(projectData as any);
     resetForm();
     onOpenChange(false);
   };
@@ -208,6 +232,26 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
               onChange={(e) => setFormData({ ...formData, contract_value: e.target.value })}
               placeholder="0"
             />
+          </div>
+
+          {/* Banner Style Selection */}
+          <div className="space-y-2">
+            <Label>Estilo do Banner (gerado automaticamente)</Label>
+            <Select value={bannerStyle} onValueChange={setBannerStyle}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                {BANNER_STYLES.map(style => (
+                  <SelectItem key={style.id} value={style.id}>
+                    {style.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              O banner será gerado automaticamente com IA após criar o projeto
+            </p>
           </div>
 
           {/* Block Payment Toggle */}
