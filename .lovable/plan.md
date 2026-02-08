@@ -1,77 +1,175 @@
 
-# Plano: Expansão do Portal do Cliente
+
+# Plano: Portal do Cliente Interativo + Upload de Materiais
 
 ## Resumo
-Expandir o Portal do Cliente para incluir todas as informações que aparecem no detalhe do projeto (Overview), adicionar funcionalidade de upload de materiais/logo pelo gestor, e permitir que o cliente visualize o progresso completo do projeto.
+
+Este plano implementa duas melhorias principais no Portal do Cliente:
+
+1. **Portal navegável e animado** - Transições suaves, scrolling customizado, animações de entrada e efeitos visuais usando Framer Motion (já instalado no projeto)
+2. **Sistema de upload de materiais pelo cliente** - Permitir que o cliente também suba links, vídeos, referências e materiais diretamente no portal
+3. **Padronização tipográfica** - Migrar toda a fonte para **Host Grotesk** (já é a padrão do projeto), removendo qualquer uso de Playfair Display no portal
 
 ---
 
-## Seção 1: Novas Informações no Portal do Cliente
+## Parte 1: Tipografia Host Grotesk
 
-### 1.1 Header Expandido com Banner + Logo
-- Adicionar banner do projeto no topo do header (igual ao ProjectHeader interno)
-- Exibir logo do projeto ao lado do título (já parcialmente implementado)
-- Mostrar badges de status, template e etapa atual
+### Situação Atual
+- O projeto já utiliza **Host Grotesk** como fonte padrão (`tailwind.config.ts` e `index.css`)
+- O único uso de **Playfair Display** no portal está em `PortalHeaderPremium.tsx` (título do projeto)
 
-### 1.2 Cards de Métricas Completos
-O portal já tem 4 cards (Valor, Saúde, Entrega, Responsável). Vamos adicionar:
-- **Progresso**: percentual de etapas concluídas (0/9 etapas)
-- **Etapa Atual**: nome da etapa com badge visual
+### Alterações Necessárias
 
-### 1.3 Seção de Briefing do Projeto
-- Exibir o campo `description` do projeto em formato read-only
-- Renderizado com Markdown para suportar formatação
-
-### 1.4 Etapas do Projeto (Pipeline Visual)
-- Mostrar a timeline de etapas do projeto
-- Status visual: concluída (verde), em andamento (azul), não iniciada (cinza)
-- Baseado nos dados da tabela `project_stages`
-
-### 1.5 Indicadores Adicionais
-Cards de rodapé com:
-- Status do projeto (active/paused/completed)
-- Data de entrega
-- Nome do cliente
-- Bloqueio financeiro (ativo/inativo)
+| Arquivo | Mudança |
+|---------|---------|
+| `PortalHeaderPremium.tsx` | Remover `style={{ fontFamily: "'Playfair Display', serif" }}` do título |
+| Verificação geral | Garantir que nenhum componente do portal usa `font-serif` |
 
 ---
 
-## Seção 2: Upload de Materiais pelo Gestor
+## Parte 2: Portal Navegável com Animações
 
-### 2.1 Novo Componente: AddMaterialDialog
-Opções de envio:
-1. **Upload de Arquivo** - Envia para Storage bucket `project-files`
-2. **Link do YouTube** - Extrai ID e salva `youtube_url`
-3. **Link Externo** - Drive, Vimeo, qualquer URL
+### Componentes a Criar/Atualizar
 
-### 2.2 Dados salvos em `portal_deliverables`
-- `title`: Nome do material
-- `description`: Descrição opcional
-- `file_url`: URL do arquivo (se upload)
-- `youtube_url`: URL do YouTube (se vídeo)
-- `external_url`: URL externa (se link)
-- `awaiting_approval`: true por padrão
-- `visible_in_portal`: true
+#### 2.1. Wrapper de Animação
+Criar `src/components/client-portal/PortalAnimatedSection.tsx`:
+- Wrapper reutilizável com Framer Motion
+- Animações de entrada (fade-in-up) com stagger para múltiplos filhos
+- Suporte a `useInView` para animações ao entrar na viewport
 
-### 2.3 Fluxo do Gestor
-1. Acessar aba "Portal" no detalhe do projeto
-2. Clicar "Adicionar Material"
-3. Escolher tipo: Arquivo / YouTube / Link
-4. Preencher título e fazer upload/colar URL
-5. Material aparece no portal do cliente automaticamente (realtime)
+#### 2.2. Atualizar Componentes Existentes
+
+| Componente | Animações a Adicionar |
+|------------|----------------------|
+| `ClientPortalPageNew.tsx` | Smooth scroll, animação de entrada do header, transição entre abas |
+| `PortalHeaderPremium.tsx` | Fade-in suave dos badges e título |
+| `PortalMetricsGrid.tsx` | Stagger animation nos cards de métricas |
+| `PortalOverviewPremium.tsx` | Animação de entrada sequencial das seções |
+| `PortalDeliverablesPremium.tsx` | Hover lift e glow nos cards, animação de entrada |
+| `PortalTabsPremium.tsx` | Transição suave entre abas com AnimatePresence |
+| `PortalMaterialsAside.tsx` | Hover effects e entrada animada |
+| `PortalFilesTab.tsx` | Grid animado com stagger |
+
+#### 2.3. Efeitos de Scroll
+Implementar em `ClientPortalPageNew.tsx`:
+- Smooth scroll com `scroll-behavior: smooth`
+- Parallax sutil no header (opcional - baseado em preferência de reduced motion)
+- Scroll indicator discreto
+- Snap suave nas seções principais
+
+#### 2.4. Animações Detalhadas
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  ENTRADA DA PÁGINA                                       │
+│  ───────────────                                         │
+│  1. Header (0ms) - Fade in                              │
+│  2. Badges (100ms delay) - Scale in stagger             │
+│  3. Título (200ms delay) - Fade up                      │
+│  4. Métricas (300ms delay) - Stagger cards              │
+│  5. Tabs (400ms delay) - Slide in from bottom           │
+│  6. Conteúdo (500ms delay) - Fade in                    │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  TROCA DE ABA                                            │
+│  ───────────────                                         │
+│  - Exit: Fade out + slide left (150ms)                  │
+│  - Enter: Fade in + slide right (200ms)                 │
+│  - AnimatePresence com mode="wait"                      │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  HOVER EFFECTS                                           │
+│  ───────────────                                         │
+│  - Cards: Lift (translateY -4px) + glow sutil           │
+│  - Links: Underline animado                             │
+│  - Botões: Scale (1.02) + shadow                        │
+│  - Ícones: Rotate ou scale pequeno                      │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Seção 3: Upload de Logo do Projeto pelo Gestor
+## Parte 3: Upload de Materiais pelo Cliente
 
-### 3.1 Integração no PortalTab
-- Adicionar botão "Enviar Logo do Projeto" na aba Portal
-- Usar componente existente `ProjectLogoUpload`
-- Salvar `logo_url` no projeto
+### Situação Atual
+- O **gestor** pode adicionar materiais via `AddMaterialDialog` na aba Portal do projeto
+- O **cliente** não tem opção de enviar materiais, apenas comentar/aprovar
 
-### 3.2 Exibição no Portal
-- Logo aparece no header do portal
-- Fallback para logo da plataforma (squad-hub-logo.png) se não houver
+### Nova Funcionalidade
+
+#### 3.1. Criar `ClientUploadDialog.tsx`
+Similar ao `AddMaterialDialog`, mas adaptado para o cliente:
+- Tipos permitidos: Link do YouTube, Link externo (Drive/Vimeo), Arquivo de referência
+- Campos: Título, Descrição, URL ou Arquivo
+- Indicador de "Enviado pelo cliente"
+
+#### 3.2. Criar Seção "Enviar Material" no Portal
+Em `PortalOverviewPremium.tsx` e/ou nova aba:
+- Card destacado "Envie referências e materiais para a equipe"
+- Botões: Upload Arquivo, Link do YouTube, Link Externo
+- Lista de materiais enviados pelo cliente
+
+#### 3.3. Atualizar Banco de Dados
+
+| Tabela | Campo | Tipo | Descrição |
+|--------|-------|------|-----------|
+| `portal_deliverables` | `uploaded_by_client` | boolean | Se foi enviado pelo cliente |
+| `portal_deliverables` | `client_name` | text | Nome do cliente que enviou |
+| `portal_deliverables` | `material_type` | text | 'reference', 'feedback', 'asset' |
+
+#### 3.4. Atualizar `useClientPortalEnhanced.tsx`
+Adicionar mutation:
+```typescript
+const uploadClientMaterial = useMutation({
+  mutationFn: async ({ title, description, type, url, file }) => {
+    // Upload to storage if file
+    // Insert in portal_deliverables with uploaded_by_client = true
+  }
+});
+```
+
+#### 3.5. UI para Gestor
+No painel interno (aba Portal do projeto), mostrar materiais enviados pelo cliente com badge "Enviado pelo Cliente" para revisão.
+
+---
+
+## Fluxo Visual
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│                      PORTAL DO CLIENTE                           │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  [HEADER ANIMADO]                                           │ │
+│  │  🏷️ Active  │  filme_institucional  │  Pré-Produção         │ │
+│  │  PORTO 153 (Host Grotesk Medium 48px)                       │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐   (stagger animation)     │
+│  │Valor │ │Saúde │ │Data  │ │Owner │                           │
+│  └──────┘ └──────┘ └──────┘ └──────┘                           │
+│                                                                  │
+│  [Visão Geral] [Tarefas] [Entregas] [Revisões] [Arquivos]...   │
+│  ─────────────────────────────────────────────────────────────  │
+│                    (transição suave entre abas)                  │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  📤 ENVIE MATERIAIS                           [+Adicionar]  │ │
+│  │  Compartilhe referências, logos ou arquivos com a equipe    │ │
+│  │                                                             │ │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │ │
+│  │  │ 📎 Arquivo  │ │ 🎥 YouTube  │ │ 🔗 Link     │           │ │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘           │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  📦 ENTREGAS                         (hover: lift + glow)  │ │
+│  │  [Card 1] [Card 2] [Card 3]                                 │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -80,203 +178,63 @@ Opções de envio:
 ### Novos Arquivos
 | Arquivo | Descrição |
 |---------|-----------|
-| `src/components/client-portal/PortalOverviewSection.tsx` | Briefing + Etapas + Métricas |
-| `src/components/client-portal/PortalProjectStages.tsx` | Timeline visual das etapas |
-| `src/components/client-portal/AddMaterialDialog.tsx` | Modal de envio de materiais |
+| `src/components/client-portal/PortalAnimatedSection.tsx` | Wrapper de animação reutilizável |
+| `src/components/client-portal/ClientUploadDialog.tsx` | Dialog para cliente enviar material |
+| `src/components/client-portal/PortalClientUploads.tsx` | Seção mostrando uploads do cliente |
 
-### Arquivos Modificados
-| Arquivo | Mudanças |
-|---------|----------|
-| `src/pages/ClientPortalPageNew.tsx` | Adicionar novas seções |
-| `src/hooks/useClientPortalEnhanced.tsx` | Buscar `project_stages` |
-| `src/components/projects/detail/tabs/PortalTab.tsx` | Botões de upload |
+### Arquivos a Modificar
+| Arquivo | Alterações |
+|---------|------------|
+| `src/pages/ClientPortalPageNew.tsx` | Adicionar Framer Motion, smooth scroll, AnimatePresence nas tabs |
+| `src/components/client-portal/PortalHeaderPremium.tsx` | Remover Playfair Display, adicionar animações |
+| `src/components/client-portal/PortalMetricsGrid.tsx` | Stagger animation nos cards |
+| `src/components/client-portal/PortalOverviewPremium.tsx` | Animações + seção "Enviar Material" |
+| `src/components/client-portal/PortalDeliverablesPremium.tsx` | Hover effects e animações |
+| `src/components/client-portal/PortalTabsPremium.tsx` | AnimatePresence para transição de abas |
+| `src/components/client-portal/portal-tabs/PortalFilesTab.tsx` | Animação de grid |
+| `src/hooks/useClientPortalEnhanced.tsx` | Mutation para upload do cliente |
 
----
+### Migração de Banco
+```sql
+-- Adicionar campos para identificar uploads do cliente
+ALTER TABLE portal_deliverables 
+ADD COLUMN IF NOT EXISTS uploaded_by_client boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS client_upload_name text,
+ADD COLUMN IF NOT EXISTS material_category text DEFAULT 'deliverable';
 
-## Seção Técnica
-
-### Estrutura do Portal Expandido
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│ HEADER (sticky)                                          │
-│ ┌─────────┐                                              │
-│ │ Logo    │  Título do Projeto     [Etapa] [Bloqueado]   │
-│ └─────────┘  Nome do Cliente                             │
-├─────────────────────────────────────────────────────────┤
-│ BANNER DO PROJETO (se existir)                           │
-├─────────────────────────────────────────────────────────┤
-│ MÉTRICAS (grid 2x4 ou 2x3)                               │
-│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐             │
-│ │ Valor  │ │ Saúde  │ │Entrega │ │Respons.│             │
-│ └────────┘ └────────┘ └────────┘ └────────┘             │
-│ ┌────────┐ ┌────────┐                                   │
-│ │Progres.│ │ Etapa  │                                   │
-│ └────────┘ └────────┘                                   │
-├─────────────────────────────────────────────────────────┤
-│ ALERTA DE BLOQUEIO (se inadimplente)                     │
-├─────────────────────────────────────────────────────────┤
-│ BRIEFING DO PROJETO (Markdown)                           │
-├─────────────────────────────────────────────────────────┤
-│ ETAPAS DO PROJETO (pipeline visual)                      │
-│ ● Briefing → ○ Roteiro → ○ Pré-Produção → ...           │
-├─────────────────────────────────────────────────────────┤
-│ MATERIAIS & VÍDEOS (seção existente expandida)           │
-│ [Grid de cards com preview, comentários, aprovação]      │
-├─────────────────────────────────────────────────────────┤
-│ AJUSTES & FEEDBACK (seção existente)                     │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Modificações no Hook `useClientPortalEnhanced.tsx`
-
-```typescript
-// Adicionar busca de stages do projeto
-const { data: stages } = await supabase
-  .from('project_stages')
-  .select('*')
-  .eq('project_id', portal.project_id)
-  .order('order_index', { ascending: true });
-
-// Retornar junto com o resto
-return {
-  portal,
-  project,
-  stages: stages || [], // NOVO
-  deliverables,
-  files,
-  comments,
-  approvals,
-  changeRequests,
-  versions,
-};
-```
-
-### Componente AddMaterialDialog (estrutura)
-
-```typescript
-interface AddMaterialDialogProps {
-  portalLinkId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-}
-
-// Tipos de material
-type MaterialType = 'file' | 'youtube' | 'link';
-
-// Campos do form
-interface MaterialForm {
-  type: MaterialType;
-  title: string;
-  description?: string;
-  file?: File;
-  youtubeUrl?: string;
-  externalUrl?: string;
-}
-```
-
-### Mutation para Adicionar Material
-
-```typescript
-const addMaterial = useMutation({
-  mutationFn: async (form: MaterialForm) => {
-    let fileUrl: string | null = null;
-    
-    // Se for arquivo, upload primeiro
-    if (form.type === 'file' && form.file) {
-      const path = `portal/${portalLinkId}/${Date.now()}_${form.file.name}`;
-      await supabase.storage
-        .from('project-files')
-        .upload(path, form.file);
-      
-      const { data } = supabase.storage
-        .from('project-files')
-        .getPublicUrl(path);
-      fileUrl = data.publicUrl;
-    }
-    
-    // Inserir deliverable
-    return supabase
-      .from('portal_deliverables')
-      .insert({
-        portal_link_id: portalLinkId,
-        title: form.title,
-        description: form.description,
-        file_url: fileUrl,
-        youtube_url: form.type === 'youtube' ? form.youtubeUrl : null,
-        external_url: form.type === 'link' ? form.externalUrl : null,
-        visible_in_portal: true,
-        awaiting_approval: true,
-        status: 'pending',
-      })
-      .select()
-      .single();
-  },
-});
-```
-
-### PortalTab - Adição dos Botões de Upload
-
-```typescript
-// Novo import
-import { AddMaterialDialog } from './AddMaterialDialog';
-import { ProjectLogoUpload } from '../ProjectLogoUpload';
-
-// Dentro do componente, adicionar:
-<div className="flex items-center gap-2">
-  <Button onClick={() => setAddMaterialOpen(true)}>
-    <Plus className="w-4 h-4 mr-2" />
-    Adicionar Material
-  </Button>
-</div>
-
-// Na seção de configurações, adicionar card para logo:
-<div className="glass-card rounded-xl p-4">
-  <div className="flex items-center gap-3">
-    <ImageIcon className="w-5 h-5 text-muted-foreground" />
-    <div>
-      <p className="font-medium">Logo do Projeto</p>
-      <p className="text-xs text-muted-foreground">
-        Aparece no header do portal
-      </p>
-    </div>
-  </div>
-  <div className="mt-3">
-    <ProjectLogoUpload
-      projectId={project.id}
-      currentLogoUrl={project.logo_url}
-      onUpload={handleLogoUpload}
-      compact
-    />
-  </div>
-</div>
+-- RLS para permitir INSERT pelo cliente (via token)
+CREATE POLICY "Allow client upload via portal"
+ON portal_deliverables
+FOR INSERT
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM portal_links 
+    WHERE portal_links.id = portal_deliverables.portal_link_id 
+    AND portal_links.is_active = true
+  )
+);
 ```
 
 ---
 
-## Sequência de Implementação
+## Ordem de Implementação
 
-1. **Expandir hook** `useClientPortalEnhanced` para buscar `project_stages`
-2. **Criar** `PortalOverviewSection` com briefing e métricas expandidas
-3. **Criar** `PortalProjectStages` com timeline visual
-4. **Modificar** `ClientPortalPageNew` para incluir novas seções
-5. **Criar** `AddMaterialDialog` para upload de materiais
-6. **Modificar** `PortalTab` para incluir botões de gestão
+1. **Tipografia** - Remover Playfair do portal (5 min)
+2. **Animação base** - Criar `PortalAnimatedSection` e integrar Framer Motion (30 min)
+3. **Animações por componente** - Header, Metrics, Tabs, Deliverables (45 min)
+4. **Transição de abas** - AnimatePresence no TabsContent (15 min)
+5. **Migração DB** - Adicionar campos para upload do cliente (5 min)
+6. **ClientUploadDialog** - Dialog para cliente enviar material (30 min)
+7. **Integração** - Adicionar seção de upload na visão geral (20 min)
+8. **Testes** - Validar animações, uploads e fluxo completo (15 min)
 
 ---
 
-## Resultado Esperado
+## Considerações Técnicas
 
-### Portal do Cliente
-- Visualização completa do projeto: valor, saúde, progresso, etapa
-- Briefing do projeto legível
-- Pipeline visual das etapas de produção
-- Materiais com vídeos, arquivos e links
-- Sistema de feedback e aprovação
+- **Reduced Motion**: Todas as animações devem respeitar `prefers-reduced-motion: reduce`
+- **Performance**: Usar `will-change` com moderação, preferir `transform` e `opacity`
+- **Mobile**: Animações simplificadas em telas menores
+- **Storage**: Uploads do cliente vão para o bucket `project-files` existente
+- **Segurança**: RLS garante que cliente só pode inserir em portais ativos
 
-### Gestão pelo Admin
-- Botão "Adicionar Material" na aba Portal
-- Opções: Upload arquivo, Link YouTube, Link externo
-- Upload de logo do projeto
-- Materiais aparecem automaticamente no portal (realtime)
