@@ -214,7 +214,7 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
   // Enable realtime updates
   usePortalRealtime(data?.portal?.id, data?.project?.id);
 
-  // Mutations (these still use regular Supabase client with anon RLS)
+  // Mutations - Use Edge Function for secure operations (bypasses RLS with service role)
   const addComment = useMutation({
     mutationFn: async ({ 
       deliverableId, 
@@ -239,35 +239,38 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       screenshotUrl?: string;
       authorRole?: 'client' | 'manager';
     }) => {
-      const insertData: any = {
-        author_name: authorName,
-        author_email: authorEmail,
-        author_role: authorRole,
-        content,
-        timecode,
-        priority: priority || 'normal',
-        frame_timestamp_ms: frameTimestampMs,
-        screenshot_url: screenshotUrl,
-      };
-
-      if (deliverableId) {
-        insertData.deliverable_id = deliverableId;
-      }
-      if (fileId) {
-        insertData.project_file_id = fileId;
+      if (!deliverableId || !shareToken) {
+        throw new Error('Missing deliverableId or shareToken');
       }
 
-      const { data, error } = await supabase
-        .from('portal_comments')
-        .insert(insertData)
-        .select()
-        .single();
+      console.log('[Portal] Adding comment via Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('portal-create-revision', {
+        body: {
+          shareToken,
+          deliverableId,
+          type: 'comment',
+          authorName,
+          authorEmail,
+          content,
+          timecode,
+          priority: priority || 'normal',
+          frameTimestampMs,
+          screenshotUrl,
+        }
+      });
 
       if (error) {
-        console.error('[Portal] Error adding comment:', error);
+        console.error('[Portal] Edge Function error:', error);
         throw error;
       }
-      return data;
+
+      if (!data?.ok) {
+        console.error('[Portal] Edge Function returned error:', data?.error);
+        throw new Error(data?.error || 'Failed to add comment');
+      }
+
+      return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
@@ -293,36 +296,34 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       approvedByEmail?: string;
       notes?: string;
     }) => {
-      const insertData: any = {
-        approved_by_name: approvedByName,
-        approved_by_email: approvedByEmail,
-        notes,
-      };
-
-      if (deliverableId) {
-        insertData.deliverable_id = deliverableId;
-      }
-      if (fileId) {
-        insertData.project_file_id = fileId;
+      if (!deliverableId || !shareToken) {
+        throw new Error('Missing deliverableId or shareToken');
       }
 
-      const { data, error } = await supabase
-        .from('portal_approvals')
-        .insert(insertData)
-        .select()
-        .single();
+      console.log('[Portal] Approving via Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('portal-create-revision', {
+        body: {
+          shareToken,
+          deliverableId,
+          type: 'approval',
+          authorName: approvedByName,
+          authorEmail: approvedByEmail,
+          notes,
+        }
+      });
 
-      if (error) throw error;
-
-      // Update deliverable status if applicable
-      if (deliverableId) {
-        await supabase
-          .from('portal_deliverables')
-          .update({ status: 'approved', awaiting_approval: false })
-          .eq('id', deliverableId);
+      if (error) {
+        console.error('[Portal] Edge Function error:', error);
+        throw error;
       }
 
-      return data;
+      if (!data?.ok) {
+        console.error('[Portal] Edge Function returned error:', data?.error);
+        throw new Error(data?.error || 'Failed to approve');
+      }
+
+      return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
@@ -356,42 +357,38 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       frameTimestampMs?: number;
       screenshotUrl?: string;
     }) => {
-      const insertData: any = {
-        author_name: authorName,
-        author_email: authorEmail,
-        author_role: 'client',
-        content,
-        status: 'revision_requested',
-        timecode,
-        priority: priority || 'normal',
-        frame_timestamp_ms: frameTimestampMs,
-        screenshot_url: screenshotUrl,
-      };
-
-      if (deliverableId) {
-        insertData.deliverable_id = deliverableId;
-      }
-      if (fileId) {
-        insertData.project_file_id = fileId;
+      if (!deliverableId || !shareToken) {
+        throw new Error('Missing deliverableId or shareToken');
       }
 
-      const { data, error } = await supabase
-        .from('portal_comments')
-        .insert(insertData)
-        .select()
-        .single();
+      console.log('[Portal] Requesting revision via Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('portal-create-revision', {
+        body: {
+          shareToken,
+          deliverableId,
+          type: 'revision_request',
+          authorName,
+          authorEmail,
+          content,
+          timecode,
+          priority: priority || 'normal',
+          frameTimestampMs,
+          screenshotUrl,
+        }
+      });
 
-      if (error) throw error;
-
-      // Update deliverable status to in_review (revision requested)
-      if (deliverableId) {
-        await supabase
-          .from('portal_deliverables')
-          .update({ status: 'in_review', awaiting_approval: false })
-          .eq('id', deliverableId);
+      if (error) {
+        console.error('[Portal] Edge Function error:', error);
+        throw error;
       }
 
-      return data;
+      if (!data?.ok) {
+        console.error('[Portal] Edge Function returned error:', data?.error);
+        throw new Error(data?.error || 'Failed to request revision');
+      }
+
+      return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
@@ -419,29 +416,44 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       authorEmail?: string;
       priority?: 'low' | 'normal' | 'high' | 'urgent';
     }) => {
-      if (!data?.portal?.id) throw new Error('Portal not loaded');
+      if (!deliverableId || !shareToken) {
+        throw new Error('Missing deliverableId or shareToken');
+      }
 
-      const { data: cr, error } = await supabase
-        .from('portal_change_requests')
-        .insert({
-          portal_link_id: data.portal.id,
-          deliverable_id: deliverableId,
+      console.log('[Portal] Creating change request via Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('portal-create-revision', {
+        body: {
+          shareToken,
+          deliverableId,
+          type: 'change_request',
+          authorName,
+          authorEmail,
           title,
           description,
-          author_name: authorName,
-          author_email: authorEmail,
-          author_role: 'client',
           priority,
-          status: 'open',
-        })
-        .select()
-        .single();
+        }
+      });
 
-      if (error) throw error;
-      return cr;
+      if (error) {
+        console.error('[Portal] Edge Function error:', error);
+        throw error;
+      }
+
+      if (!data?.ok) {
+        console.error('[Portal] Edge Function returned error:', data?.error);
+        throw new Error(data?.error || 'Failed to create change request');
+      }
+
+      return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
+      toast.success('Solicitação de ajuste criada!');
+    },
+    onError: (error) => {
+      console.error('[Portal] Change request error:', error);
+      toast.error('Erro ao criar solicitação de ajuste.');
     },
   });
 

@@ -2,6 +2,7 @@
  * PortalRevisionsTab - Aba Revisões do portal do cliente (aprimorada)
  * 
  * Exibe solicitações de ajustes e histórico de revisões com UI premium
+ * Permite criar novas solicitações de ajuste
  */
 
 import { memo, useState } from "react";
@@ -19,9 +20,13 @@ import {
   Play,
   ChevronDown,
   Plus,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -29,17 +34,50 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { PortalChangeRequest, PortalComment } from "@/hooks/useClientPortalEnhanced";
+import type { PortalChangeRequest, PortalComment, PortalDeliverable } from "@/hooks/useClientPortalEnhanced";
 
 interface PortalRevisionsTabProps {
   changeRequests: PortalChangeRequest[];
   comments: PortalComment[];
-  onCreateRequest?: () => void;
+  deliverables?: PortalDeliverable[];
+  onCreateRequest?: (data: {
+    deliverableId?: string;
+    title: string;
+    description?: string;
+    authorName: string;
+    authorEmail?: string;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+  }) => void;
+  isCreatingRequest?: boolean;
 }
 
-function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest }: PortalRevisionsTabProps) {
+const PRIORITIES = [
+  { id: 'low', label: 'Baixa', color: 'bg-gray-500' },
+  { id: 'normal', label: 'Normal', color: 'bg-blue-500' },
+  { id: 'high', label: 'Alta', color: 'bg-amber-500' },
+  { id: 'urgent', label: 'Urgente', color: 'bg-red-500' },
+] as const;
+
+function PortalRevisionsTabComponent({ 
+  changeRequests, 
+  comments, 
+  deliverables = [],
+  onCreateRequest,
+  isCreatingRequest = false,
+}: PortalRevisionsTabProps) {
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showNewRequestForm, setShowNewRequestForm] = useState(false);
+  
+  // New request form state
+  const [newRequest, setNewRequest] = useState({
+    title: '',
+    description: '',
+    authorName: '',
+    authorEmail: '',
+    deliverableId: '',
+    priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent',
+  });
 
   const revisionComments = comments.filter(c => c.status === 'revision_requested');
   
@@ -77,125 +115,234 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
     }
   };
 
-  if (totalRevisions === 0) {
-    return (
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="w-4 h-4 text-gray-500" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Total</span>
-            </div>
-            <p className="text-2xl font-bold text-white">0</p>
-          </div>
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-amber-500" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Pendentes</span>
-            </div>
-            <p className="text-2xl font-bold text-white">0</p>
-          </div>
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-blue-500" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Em Análise</span>
-            </div>
-            <p className="text-2xl font-bold text-white">0</p>
-          </div>
-          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Resolvidos</span>
-            </div>
-            <p className="text-2xl font-bold text-white">0</p>
-          </div>
-        </div>
-
-        {/* Empty State */}
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#111] flex items-center justify-center mx-auto mb-4">
-            <MessageSquare className="w-7 h-7 text-gray-600" />
-          </div>
-          <h3 className="font-semibold text-white mb-2">Nenhuma revisão solicitada</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Quando você solicitar ajustes nos materiais, eles aparecerão aqui.
-          </p>
-          {onCreateRequest && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#2a2a2a] text-gray-400 hover:text-white"
-              onClick={onCreateRequest}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Solicitação
-            </Button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const handleSubmitNewRequest = () => {
+    if (!newRequest.title.trim() || !newRequest.authorName.trim()) return;
+    
+    onCreateRequest?.({
+      deliverableId: newRequest.deliverableId || undefined,
+      title: newRequest.title,
+      description: newRequest.description || undefined,
+      authorName: newRequest.authorName,
+      authorEmail: newRequest.authorEmail || undefined,
+      priority: newRequest.priority,
+    });
+    
+    // Reset form
+    setNewRequest({
+      title: '',
+      description: '',
+      authorName: '',
+      authorEmail: '',
+      deliverableId: '',
+      priority: 'normal',
+    });
+    setShowNewRequestForm(false);
+  };
 
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <MessageSquare className="w-4 h-4 text-gray-500" />
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">Total</span>
+            <MessageSquare className="w-4 h-4 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</span>
           </div>
-          <p className="text-2xl font-bold text-white">{totalRevisions}</p>
+          <p className="text-2xl font-bold text-foreground">{totalRevisions}</p>
         </div>
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-amber-500" />
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">Pendentes</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Pendentes</span>
           </div>
-          <p className="text-2xl font-bold text-white">{pendingCount}</p>
+          <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
         </div>
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-blue-500" />
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">Em Análise</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Em Análise</span>
           </div>
-          <p className="text-2xl font-bold text-white">{inProgressCount}</p>
+          <p className="text-2xl font-bold text-foreground">{inProgressCount}</p>
         </div>
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">Resolvidos</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Resolvidos</span>
           </div>
-          <p className="text-2xl font-bold text-white">{resolvedCount}</p>
+          <p className="text-2xl font-bold text-foreground">{resolvedCount}</p>
         </div>
       </div>
 
-      {/* New Request Button */}
-      {onCreateRequest && (
+      {/* New Request Button / Form */}
+      {onCreateRequest && !showNewRequestForm && (
         <Button
           variant="outline"
           size="sm"
-          className="border-[#2a2a2a] text-gray-400 hover:text-white"
-          onClick={onCreateRequest}
+          className="border-border text-muted-foreground hover:text-foreground"
+          onClick={() => setShowNewRequestForm(true)}
         >
           <Plus className="w-4 h-4 mr-2" />
           Nova Solicitação de Ajuste
         </Button>
       )}
 
+      {/* New Request Form */}
+      <AnimatePresence>
+        {showNewRequestForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-card border border-border rounded-xl p-4 space-y-4"
+          >
+            <h3 className="font-medium text-foreground">Nova Solicitação de Ajuste</h3>
+            
+            {/* Title */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Título da solicitação *</label>
+              <Input
+                placeholder="Ex: Ajustar cor do logo..."
+                value={newRequest.title}
+                onChange={(e) => setNewRequest(prev => ({ ...prev, title: e.target.value }))}
+                className="bg-background"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Descrição</label>
+              <Textarea
+                placeholder="Descreva o ajuste necessário em detalhes..."
+                value={newRequest.description}
+                onChange={(e) => setNewRequest(prev => ({ ...prev, description: e.target.value }))}
+                className="bg-background resize-none"
+                rows={3}
+              />
+            </div>
+
+            {/* Material Selection */}
+            {deliverables.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">Material relacionado (opcional)</label>
+                <select
+                  value={newRequest.deliverableId}
+                  onChange={(e) => setNewRequest(prev => ({ ...prev, deliverableId: e.target.value }))}
+                  className="w-full h-10 px-3 rounded-md bg-background border border-input text-sm"
+                >
+                  <option value="">Nenhum (geral)</option>
+                  {deliverables.map(d => (
+                    <option key={d.id} value={d.id}>{d.title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Priority */}
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Prioridade</label>
+              <div className="flex gap-2">
+                {PRIORITIES.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setNewRequest(prev => ({ ...prev, priority: p.id }))}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all",
+                      newRequest.priority === p.id
+                        ? `${p.color} text-white`
+                        : "bg-muted text-muted-foreground hover:bg-accent"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Author Info */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">Seu nome *</label>
+                <Input
+                  placeholder="Nome"
+                  value={newRequest.authorName}
+                  onChange={(e) => setNewRequest(prev => ({ ...prev, authorName: e.target.value }))}
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">E-mail</label>
+                <Input
+                  placeholder="E-mail (opcional)"
+                  type="email"
+                  value={newRequest.authorEmail}
+                  onChange={(e) => setNewRequest(prev => ({ ...prev, authorEmail: e.target.value }))}
+                  className="bg-background"
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNewRequestForm(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSubmitNewRequest}
+                disabled={isCreatingRequest || !newRequest.title.trim() || !newRequest.authorName.trim()}
+              >
+                {isCreatingRequest ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar Solicitação
+                  </>
+                )}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Empty State */}
+      {totalRevisions === 0 && !showNewRequestForm && (
+        <div className="bg-card border border-border rounded-2xl p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+            <MessageSquare className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <h3 className="font-semibold text-foreground mb-2">Nenhuma revisão solicitada</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Quando você solicitar ajustes nos materiais, eles aparecerão aqui.
+          </p>
+          {onCreateRequest && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowNewRequestForm(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Solicitação
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Revision Comments */}
       {revisionComments.length > 0 && (
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden">
-          <div className="p-4 border-b border-[#1a1a1a]">
-            <h3 className="font-semibold text-white">Comentários de Revisão</h3>
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Comentários de Revisão</h3>
           </div>
           
-          <div className="divide-y divide-[#1a1a1a]">
+          <div className="divide-y divide-border">
             {revisionComments.map((comment) => {
               const hasScreenshot = !!(comment as any).screenshot_url;
               const timecode = comment.timecode;
-              const isExpanded = expandedId === comment.id;
 
               return (
                 <motion.div
@@ -208,7 +355,7 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
                     {hasScreenshot && (
                       <button
                         onClick={() => setSelectedScreenshot((comment as any).screenshot_url)}
-                        className="w-20 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-[#111] relative group"
+                        className="w-20 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted relative group"
                       >
                         <img
                           src={(comment as any).screenshot_url}
@@ -224,10 +371,10 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                            <User className="w-3 h-3 text-cyan-400" />
+                          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="w-3 h-3 text-primary" />
                           </div>
-                          <span className="text-sm font-medium text-white">
+                          <span className="text-sm font-medium text-foreground">
                             {comment.author_name}
                           </span>
                           {timecode && (
@@ -237,7 +384,7 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
                             </Badge>
                           )}
                         </div>
-                        <span className="text-[10px] text-gray-600">
+                        <span className="text-[10px] text-muted-foreground">
                           {formatDistanceToNow(new Date(comment.created_at), { 
                             locale: ptBR, 
                             addSuffix: true 
@@ -245,19 +392,19 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
                         </span>
                       </div>
 
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         {comment.content}
                       </p>
 
                       {/* Status Badge */}
                       <div className="mt-3">
                         {comment.status === 'resolved' ? (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px]">
+                          <Badge className="bg-emerald-500/20 text-emerald-500 text-[10px]">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                             Resolvido
                           </Badge>
                         ) : (
-                          <Badge className="bg-amber-500/20 text-amber-400 text-[10px]">
+                          <Badge className="bg-amber-500/20 text-amber-500 text-[10px]">
                             <Clock className="w-3 h-3 mr-1" />
                             Aguardando análise
                           </Badge>
@@ -274,12 +421,12 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
 
       {/* Change Requests */}
       {changeRequests.length > 0 && (
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden">
-          <div className="p-4 border-b border-[#1a1a1a]">
-            <h3 className="font-semibold text-white">Solicitações de Ajuste</h3>
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Solicitações de Ajuste</h3>
           </div>
           
-          <div className="divide-y divide-[#1a1a1a]">
+          <div className="divide-y divide-border">
             {changeRequests.map((request) => {
               const statusConfig = getStatusConfig(request.status);
               const StatusIcon = statusConfig.icon;
@@ -292,8 +439,8 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
                         <StatusIcon className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-white">{request.title}</h4>
-                        <p className="text-[10px] text-gray-500">
+                        <h4 className="font-medium text-foreground">{request.title}</h4>
+                        <p className="text-[10px] text-muted-foreground">
                           por {request.author_name}
                         </p>
                       </div>
@@ -307,12 +454,12 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
                   </div>
 
                   {request.description && (
-                    <p className="text-sm text-gray-400 mb-3">
+                    <p className="text-sm text-muted-foreground mb-3">
                       {request.description}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-4 text-[10px] text-gray-500">
+                  <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -333,9 +480,9 @@ function PortalRevisionsTabComponent({ changeRequests, comments, onCreateRequest
 
       {/* Screenshot Modal */}
       <Dialog open={!!selectedScreenshot} onOpenChange={() => setSelectedScreenshot(null)}>
-        <DialogContent className="max-w-4xl bg-[#0a0a0a] border-[#2a2a2a]">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Anotação Visual</DialogTitle>
+            <DialogTitle>Anotação Visual</DialogTitle>
           </DialogHeader>
           {selectedScreenshot && (
             <div className="relative rounded-lg overflow-hidden bg-black">

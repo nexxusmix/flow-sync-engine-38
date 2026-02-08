@@ -119,6 +119,8 @@ export default function ClientPortalPage() {
     isApproving,
     requestRevision,
     isRequestingRevision,
+    createChangeRequest,
+    isCreatingChangeRequest,
     uploadClientMaterial,
     isUploadingMaterial,
   } = useClientPortalEnhanced(shareToken);
@@ -473,7 +475,24 @@ export default function ClientPortalPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <PortalRevisionsTab changeRequests={changeRequests} comments={comments} />
+                  <PortalRevisionsTab 
+                    changeRequests={changeRequests} 
+                    comments={comments}
+                    deliverables={deliverables}
+                    onCreateRequest={(data) => {
+                      if (data.deliverableId) {
+                        createChangeRequest({
+                          deliverableId: data.deliverableId,
+                          title: data.title,
+                          description: data.description,
+                          authorName: data.authorName,
+                          authorEmail: data.authorEmail,
+                          priority: data.priority,
+                        });
+                      }
+                    }}
+                    isCreatingRequest={isCreatingChangeRequest}
+                  />
                 </motion.div>
               </AnimatePresence>
             </TabsContent>

@@ -33,6 +33,8 @@ export function usePortalRealtime(portalLinkId: string | undefined, projectId: s
         () => {
           queryClient.invalidateQueries({ queryKey: ['portal-deliverables'] });
           queryClient.invalidateQueries({ queryKey: ['client-portal'] });
+          queryClient.invalidateQueries({ queryKey: ['project-revision-comments'] });
+          queryClient.invalidateQueries({ queryKey: ['project-change-requests'] });
         }
       )
       // Comments changes
@@ -46,6 +48,7 @@ export function usePortalRealtime(portalLinkId: string | undefined, projectId: s
         () => {
           queryClient.invalidateQueries({ queryKey: ['portal-comments'] });
           queryClient.invalidateQueries({ queryKey: ['client-portal'] });
+          queryClient.invalidateQueries({ queryKey: ['project-revision-comments'] });
         }
       )
       // Approvals changes
@@ -73,6 +76,7 @@ export function usePortalRealtime(portalLinkId: string | undefined, projectId: s
         () => {
           queryClient.invalidateQueries({ queryKey: ['portal-change-requests'] });
           queryClient.invalidateQueries({ queryKey: ['client-portal'] });
+          queryClient.invalidateQueries({ queryKey: ['project-change-requests'] });
         }
       )
       // Version changes
