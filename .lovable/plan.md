@@ -1,121 +1,215 @@
 
-
-# Plano: Reduzir Tamanho de Caracteres em 30% e Tipografia Light/Medium
+# Plano: Portal de Materiais com Revisões, Versões e Changelog
 
 ## Objetivo
-1. **Reduzir tamanho global dos caracteres em 30%** (de 115% para ~80%)
-2. **Restringir tipografia** apenas a pesos **Light (300)** e **Medium (500)**
+Melhorar a seção "Materiais do Projeto" no Portal do Cliente para:
+1. **Envio fácil de materiais** pelo gestor
+2. **Comentários de revisão** diretamente nos materiais
+3. **Exibir título e versão do vídeo** (V01, V02, V03...)
+4. **Tags de alteração** resumidas do que mudou em cada versão
+5. **Descrição e tópicos** do que foi alterado em cada versão
 
 ---
 
-## Estado Atual
+## Alterações no Banco de Dados
 
-| Configuração | Valor Atual |
-|--------------|-------------|
-| `font-size` no `html` | `115%` |
-| Font weights disponíveis | 200, 300, 400, 500, 600, 700 |
-| Pesos em uso | `light: 300`, `normal: 400` |
+Adicionar campos na tabela `portal_deliverable_versions`:
 
----
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `change_tags` | `text[]` | Tags resumidas do que mudou (ex: "cor", "áudio", "corte") |
+| `changelog_items` | `jsonb` | Lista estruturada de tópicos alterados |
 
-## Mudanças Necessárias
-
-### Cálculo do Novo Tamanho
-
-```text
-115% - 30% de 115% = 115% × 0.70 = 80.5%
-
-Arredondando para valor limpo: 80%
+```sql
+ALTER TABLE public.portal_deliverable_versions
+ADD COLUMN IF NOT EXISTS change_tags TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS changelog_items JSONB DEFAULT '[]';
 ```
 
 ---
 
-## Arquivos a Modificar
+## Arquivos a Modificar/Criar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/index.css` | Alterar `font-size: 115%` para `font-size: 80%`, atualizar import de fontes |
-| `tailwind.config.ts` | Alterar `fontWeight` para usar apenas `light: 300` e `medium: 500` |
-| `index.html` | Atualizar import do Google Fonts para carregar apenas pesos 300 e 500 |
+| `PortalDeliverablesTab.tsx` | Redesign com foco em versões e comentários rápidos |
+| `PortalVersionCard.tsx` | **NOVO** - Card de material com timeline de versões inline |
+| `PortalMaterialDetailPanel.tsx` | **NOVO** - Painel lateral com detalhes, versões e comentários |
+| `AddMaterialDialog.tsx` | Adicionar campos de versão e changelog ao enviar nova versão |
+| `useClientPortalEnhanced.tsx` | Atualizar tipos para incluir novos campos |
+| `PortalTabsPremium.tsx` | Renomear "Entregas" para "Materiais" |
+
+---
+
+## Novo Design da Aba de Materiais
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  MATERIAIS DO PROJETO                                                 │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │ + Enviar Material │ + Nova Versão                               │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                       │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │ 📹 Filme Institucional - Final                    V03 │ Atual │ │
+│  │ ─────────────────────────────────────────────────────────────── │ │
+│  │ Tags: [cor] [áudio] [corte final]                              │ │
+│  │                                                                 │ │
+│  │ O que mudou nesta versão:                                      │ │
+│  │ • Ajuste de color grading nos takes externos                   │ │
+│  │ • Mixagem de áudio final com VO                               │ │
+│  │ • Corte da cena 3 conforme solicitado                         │ │
+│  │                                                                 │ │
+│  │ ┌─────────────────────────────────────────────────────────────┐│ │
+│  │ │ 💬 Adicionar comentário de revisão...                      ││ │
+│  │ └─────────────────────────────────────────────────────────────┘│ │
+│  │                                                                 │ │
+│  │ Versões anteriores: V02 • V01                                  │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Detalhes Técnicos
 
-### 1. src/index.css
+### 1. Novo Componente: PortalMaterialCard
 
-**Linha 1 - Atualizar import de fontes:**
-```css
-/* ANTES */
-@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400&...');
-
-/* DEPOIS */
-@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;500&...');
-```
-
-**Linha 117 - Reduzir tamanho global:**
-```css
-/* ANTES */
-html {
-  font-size: 115%;
+```tsx
+interface PortalMaterialCardProps {
+  material: PortalDeliverable;
+  versions: PortalVersion[];
+  comments: PortalComment[];
+  approval?: PortalApproval;
+  onAddComment: (content: string) => void;
+  onRequestRevision: (content: string) => void;
+  onViewVersion: (version: PortalVersion) => void;
 }
 
-/* DEPOIS */
-html {
-  font-size: 80%;
-}
+// Exibe:
+// - Título com badge de versão (V01, V02, V03)
+// - Thumbnail com overlay de play
+// - Tags de alteração como badges coloridas
+// - Lista de changelog items como bullet points
+// - Input de comentário inline (expandível)
+// - Timeline compacta de versões anteriores
 ```
 
----
+### 2. Tags de Alteração (Predefinidas)
 
-### 2. tailwind.config.ts
-
-**Linhas 84-87 - Atualizar fontWeight:**
 ```typescript
-// ANTES
-fontWeight: {
-  light: "300",
-  normal: "400",
-},
+const REVISION_TAGS = [
+  { id: 'color', label: 'Cor/Grade', color: 'bg-purple-500' },
+  { id: 'audio', label: 'Áudio', color: 'bg-blue-500' },
+  { id: 'cut', label: 'Corte', color: 'bg-amber-500' },
+  { id: 'graphics', label: 'Grafismos', color: 'bg-emerald-500' },
+  { id: 'vo', label: 'Locução', color: 'bg-pink-500' },
+  { id: 'music', label: 'Música', color: 'bg-cyan-500' },
+  { id: 'text', label: 'Texto', color: 'bg-orange-500' },
+  { id: 'other', label: 'Outros', color: 'bg-gray-500' },
+];
+```
 
-// DEPOIS
-fontWeight: {
-  light: "300",
-  medium: "500",
-},
+### 3. Estrutura do Changelog (JSONB)
+
+```typescript
+interface ChangelogItem {
+  description: string;
+  timestamp?: string;
+  category?: string;
+}
+
+// Exemplo:
+const changelog_items: ChangelogItem[] = [
+  { description: "Ajuste de color grading nos takes externos", category: "color" },
+  { description: "Mixagem de áudio final com VO", category: "audio" },
+  { description: "Corte da cena 3 conforme solicitado", category: "cut" },
+];
+```
+
+### 4. Fluxo de Enviar Nova Versão
+
+1. Gestor clica em "Nova Versão" em um material existente
+2. Modal abre com:
+   - Preview do material atual
+   - Upload de novo arquivo / link
+   - Seletor de tags (multi-select)
+   - Campo de changelog (tópicos do que mudou)
+3. Ao salvar:
+   - Incrementa `current_version` no deliverable
+   - Cria novo registro em `portal_deliverable_versions`
+   - Notificação para o cliente (futuro)
+
+### 5. Comentário Inline Rápido
+
+- Input sempre visível abaixo de cada material
+- Placeholder: "Adicionar comentário de revisão..."
+- Ao focar, expande com botões "Aprovar" e "Solicitar Ajuste"
+- Comentários anteriores aparecem em thread colapsável
+
+---
+
+## Tipos Atualizados
+
+```typescript
+// useClientPortalEnhanced.tsx
+export interface PortalVersion {
+  id: string;
+  deliverable_id: string;
+  version_number: number;
+  title: string | null;
+  notes: string | null;
+  file_url: string | null;
+  created_at: string;
+  created_by_name: string | null;
+  change_tags: string[];          // NOVO
+  changelog_items: ChangelogItem[]; // NOVO
+}
+
+interface ChangelogItem {
+  description: string;
+  category?: string;
+}
 ```
 
 ---
 
-### 3. index.html
+## Fluxo Visual
 
-**Linha 13 - Atualizar Google Fonts:**
-```html
-<!-- ANTES -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&..." />
-
-<!-- DEPOIS (remover pesos não utilizados) -->
-<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;500&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" />
 ```
-
----
-
-## Impacto Visual
-
-| Métrica | Antes | Depois | Diferença |
-|---------|-------|--------|-----------|
-| Tamanho base | 115% (~18.4px) | 80% (~12.8px) | -30% |
-| Peso corpo | 300 (Light) | 300 (Light) | Mantido |
-| Peso títulos | 400 (Normal) | 500 (Medium) | Mais definido |
-| Variáveis de peso | 6 (200-700) | 2 (300, 500) | Simplificado |
+Cliente abre Portal
+       │
+       ▼
+┌─────────────────────┐
+│ Aba "Materiais"     │
+│ (antes: "Entregas") │
+└─────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────┐
+│ Lista de Materiais com:                 │
+│ • Título + Versão (V01, V02...)        │
+│ • Tags de alteração (badges)            │
+│ • Changelog (bullet points)             │
+│ • Input de comentário inline            │
+│ • Versões anteriores (colapsável)       │
+└─────────────────────────────────────────┘
+       │
+       ▼
+Cliente pode:
+• Ver detalhes de cada versão
+• Adicionar comentário de revisão
+• Aprovar material
+• Solicitar ajuste com descrição
+```
 
 ---
 
 ## Resultado Esperado
 
-- Interface com caracteres 30% menores em toda a plataforma
-- Tipografia mais coesa usando apenas dois pesos
-- Light (300) para corpo de texto e elementos secundários
-- Medium (500) para títulos, labels e elementos de destaque
-- Performance melhorada (menos variantes de fonte carregadas)
-
+- **Visualização clara** de versões (V01, V02, V03...)
+- **Tags resumidas** do que mudou em cada versão
+- **Changelog estruturado** com bullet points
+- **Comentários de revisão** inline e rápidos
+- **Timeline de versões** para histórico completo
+- **Fluxo intuitivo** para cliente aprovar ou solicitar ajustes
