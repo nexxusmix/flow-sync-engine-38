@@ -254,6 +254,31 @@ ${formData.inputText}
         setSelectedBrief(updatedBrief as unknown as CreativeBrief);
       }
 
+      // Create automation suggestion for next steps (Rule A)
+      try {
+        await supabase.from('automation_suggestions').insert({
+          rule_key: 'marketing.studio.next_steps',
+          entity_type: 'creative_brief',
+          entity_id: brief.id,
+          title: 'Próximos passos do pacote criativo',
+          message: `O pacote "${formData.title}" foi gerado. Considere criar conteúdos no pipeline, vincular a uma campanha ou agendar publicações.`,
+          suggestion_json: {
+            actions: [
+              { key: 'create_content', label: 'Criar conteúdos no Pipeline' },
+              { key: 'link_campaign', label: 'Vincular a Campanha' },
+              { key: 'suggest_schedule', label: 'Sugerir agenda com IA' },
+            ],
+            context: {
+              brief_title: formData.title,
+              package_type: formData.packageType,
+              objective: formData.objective,
+            }
+          }
+        });
+      } catch (suggestionError) {
+        console.log('Could not create automation suggestion:', suggestionError);
+      }
+
       toast.success("Pacote criativo gerado com sucesso!");
 
     } catch (error: unknown) {

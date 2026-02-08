@@ -166,6 +166,87 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_rules: {
+        Row: {
+          config_json: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          is_enabled: boolean
+          key: string
+          name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          config_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          key: string
+          name: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          config_json?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          key?: string
+          name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      automation_suggestions: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ignored_at: string | null
+          message: string | null
+          rule_key: string
+          status: string
+          suggestion_json: Json | null
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ignored_at?: string | null
+          message?: string | null
+          rule_key: string
+          status?: string
+          suggestion_json?: Json | null
+          title: string
+          workspace_id?: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ignored_at?: string | null
+          message?: string | null
+          rule_key?: string
+          status?: string
+          suggestion_json?: Json | null
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       brand_kits: {
         Row: {
           account_id: string | null
