@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
+import { ProjectBannerSection } from "./ProjectBannerSection";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -39,9 +40,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   
   // Upload states
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
   
   const logoUrl = (project as any).logo_url;
   const bannerUrl = (project as any).banner_url;
@@ -140,80 +139,17 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
     }
   };
 
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setIsUploadingBanner(true);
-    try {
-      const fileExt = file.name.split(".").pop();
-      const filePath = `banners/${project.id}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("project-files")
-        .upload(filePath, file, { upsert: true });
-      
-      if (uploadError) throw uploadError;
-      
-      const { data } = supabase.storage.from("project-files").getPublicUrl(filePath);
-      
-      const { error: updateError } = await supabase
-        .from("projects")
-        .update({ banner_url: data.publicUrl })
-        .eq("id", project.id);
-      
-      if (updateError) throw updateError;
-      
-      queryClient.invalidateQueries({ queryKey: ["project", project.id] });
-      toast.success("Banner atualizado!");
-    } catch (error) {
-      console.error("Error uploading banner:", error);
-      toast.error("Erro ao enviar banner");
-    } finally {
-      setIsUploadingBanner(false);
-      if (bannerInputRef.current) bannerInputRef.current.value = "";
-    }
-  };
-
   return (
     <div className="space-y-4">
       {/* Main Info Card */}
       <div className="glass-card rounded-2xl md:rounded-3xl overflow-hidden">
-        {/* Banner Section */}
-        <div className="relative">
-          <input 
-            type="file" 
-            ref={bannerInputRef} 
-            hidden 
-            accept="image/*"
-            onChange={handleBannerUpload} 
-          />
-          
-          <button 
-            onClick={handleEdit}
-            disabled={isUploadingBanner}
-            className="w-full aspect-[21/1] border-b border-border/50 overflow-hidden transition-all group bg-muted/30 relative"
-          >
-            {bannerUrl ? (
-              <div className="relative w-full h-full">
-                <img 
-                  src={bannerUrl} 
-                  alt="Banner do projeto" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                  <Pencil className="w-5 h-5 text-white" />
-                  <span className="text-white text-sm font-medium">Editar Projeto</span>
-                </div>
-              </div>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                <ImagePlus className="w-5 h-5" />
-                <span className="text-sm">Adicionar Banner via Editar Projeto</span>
-              </div>
-            )}
-          </button>
-        </div>
+        {/* Banner Section with AI Generation */}
+        <ProjectBannerSection
+          projectId={project.id}
+          bannerUrl={bannerUrl}
+          logoUrl={logoUrl}
+          onEditProject={handleEdit}
+        />
 
         <div className="p-4 md:p-6">
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
