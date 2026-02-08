@@ -6,6 +6,8 @@ import { TasksDashboard } from "@/components/tasks/TasksDashboard";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
+import { useUrlState } from "@/hooks/useUrlState";
+import { usePersistedState, useScrollPersistence } from "@/hooks/usePersistedState";
 import { 
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown
 } from "lucide-react";
@@ -61,7 +63,12 @@ export default function TasksPage() {
   const { tasks, isLoading, isCreating, isGenerating, fetchTasks, createTask, updateTask, createTasksFromAI } = useTasksStore();
   const { isExporting, exportTasks } = useExportPdf();
   
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  // URL-persisted view mode
+  const [viewMode, setViewMode] = useUrlState('view', 'kanban') as [ViewMode, (v: ViewMode) => void];
+  
+  // Scroll persistence
+  useScrollPersistence('tasks');
+  
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
   const [isAISheetOpen, setIsAISheetOpen] = useState(false);

@@ -1,15 +1,17 @@
 /**
  * ExecutiveSummarySection - Report-style executive summary (01 — RESUMO EXECUTIVO)
  * Large heading, editorial paragraphs with AI/Edit buttons
+ * Now with auto-save functionality
  */
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AiGenerateButton } from "@/components/ai/AiGenerateButton";
 import { ReportSectionHeader } from "./ReportSectionHeader";
-import { Edit3, Save, X } from "lucide-react";
-import { toast } from "sonner";
+import { SaveIndicator, DraftIndicator } from "@/components/ui/save-indicator";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { Edit3, X } from "lucide-react";
 import type { GenerateBriefOutput } from "@/ai/actions";
 
 interface ExecutiveSummarySectionProps {
@@ -32,33 +34,46 @@ export function ExecutiveSummarySection({
   isManager = true,
 }: ExecutiveSummarySectionProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [localDescription, setLocalDescription] = useState(description || '');
 
-  const handleSave = () => {
-    onSave(localDescription);
-    setIsEditing(false);
-    toast.success('Briefing salvo com sucesso!');
-  };
+  // Auto-save hook with debounce
+  const {
+    value: localDescription,
+    setValue: setLocalDescription,
+    status: saveStatus,
+    saveNow,
+    hasDraft,
+    discardDraft,
+  } = useAutoSave({
+    storageKey: `project:${projectId}:description`,
+    debounceMs: 800,
+    onSave: async (value) => {
+      onSave(value);
+    },
+    initialValue: description || '',
+    persistDraft: true,
+  });
 
   const handleCancel = () => {
-    setLocalDescription(description || '');
+    discardDraft();
     setIsEditing(false);
   };
 
-  const handleApplyBrief = (result: unknown, mode: 'replace' | 'append') => {
+  const handleApplyBrief = useCallback((result: unknown, mode: 'replace' | 'append') => {
     const briefData = result as GenerateBriefOutput;
     const fullDescription = briefData.description || '';
     
     if (mode === 'replace') {
       setLocalDescription(fullDescription);
     } else {
-      setLocalDescription(prev => prev ? `${prev}\n\n---\n\n${fullDescription}` : fullDescription);
+      const appendedValue = localDescription ? `${localDescription}\n\n---\n\n${fullDescription}` : fullDescription;
+      setLocalDescription(appendedValue);
     }
     setIsEditing(true);
-  };
+  }, [setLocalDescription, localDescription]);
 
-  // Parse description into paragraphs
-  const paragraphs = (description || '').split('\n\n').filter(p => p.trim());
+  // Parse description into paragraphs (use localDescription when editing, otherwise description)
+  const displayDescription = isEditing ? localDescription : (description || '');
+  const paragraphs = displayDescription.split('\n\n').filter((p: string) => p.trim());
   
   // Extract headline (first line or generate from project name)
   const headline = paragraphs[0]?.length < 80 
@@ -101,9 +116,14 @@ export function ExecutiveSummarySection({
 
       {isEditing ? (
         <div className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <DraftIndicator hasDraft={hasDraft} onDiscard={discardDraft} />
+            <SaveIndicator status={saveStatus} />
+          </div>
           <Textarea
             value={localDescription}
             onChange={(e) => setLocalDescription(e.target.value)}
+            onBlur={saveNow}
             placeholder="Descreva o resumo executivo do projeto, objetivos e escopo principal..."
             className="min-h-[200px] bg-muted/20 border-border text-foreground font-light text-lg leading-relaxed"
           />
@@ -114,11 +134,7 @@ export function ExecutiveSummarySection({
               onClick={handleCancel}
             >
               <X className="w-4 h-4 mr-1" />
-              Cancelar
-            </Button>
-            <Button size="sm" onClick={handleSave}>
-              <Save className="w-4 h-4 mr-1" />
-              Salvar Briefing
+              Fechar Edição
             </Button>
           </div>
         </div>

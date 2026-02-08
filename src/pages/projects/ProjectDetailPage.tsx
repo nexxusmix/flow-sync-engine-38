@@ -1,9 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ProjectHeader } from "@/components/projects/detail/ProjectHeader";
 import { ProjectTabs } from "@/components/projects/detail/ProjectTabs";
 import { useProject } from "@/hooks/useProjects";
+import { useUrlState } from "@/hooks/useUrlState";
+import { useScrollPersistence, useTabPersistence } from "@/hooks/usePersistedState";
 import { ArrowLeft, Folder, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,7 +13,20 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProject(projectId);
-  const [activeTab, setActiveTab] = useState("overview");
+  
+  // URL-based tab persistence
+  const { getPersistedTab, setPersistedTab } = useTabPersistence('project', projectId);
+  const [activeTab, setActiveTab] = useUrlState('tab', getPersistedTab() || 'overview');
+  
+  // Scroll persistence
+  useScrollPersistence(`project:${projectId}`);
+
+  // Sync tab to localStorage for fallback
+  useEffect(() => {
+    if (activeTab) {
+      setPersistedTab(activeTab);
+    }
+  }, [activeTab, setPersistedTab]);
 
   if (isLoading) {
     return (
