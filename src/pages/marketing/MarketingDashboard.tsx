@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Calendar, Sparkles, AlertTriangle, CheckCircle, Clock,
   TrendingUp, Lightbulb, Megaphone, ArrowRight, Plus,
-  Instagram, BarChart3, Target, Wand2, Users, Heart, Zap
+  Instagram, BarChart3, Target, Wand2, Users, Heart, Zap, Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -252,6 +252,11 @@ export default function MarketingDashboard() {
                 icon={Instagram} 
                 label="Instagram Preview" 
                 onClick={() => navigate('/marketing/instagram')} 
+              />
+              <QuickAction 
+                icon={Image} 
+                label="Referências" 
+                onClick={() => navigate('/marketing/references')} 
               />
               <QuickAction 
                 icon={BarChart3} 
