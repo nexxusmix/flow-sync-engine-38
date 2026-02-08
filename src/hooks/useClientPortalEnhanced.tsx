@@ -1,16 +1,8 @@
 /**
  * useClientPortalEnhanced - Hook completo para o portal do cliente
  * 
- * Fonte de dados:
- * - portal_links: token de acesso e configurações
- * - portal_deliverables: entregas publicadas para o cliente
- * - portal_comments: comentários em entregas
- * - portal_approvals: aprovações de entregas
- * - portal_change_requests: solicitações de ajustes
- * - portal_deliverable_versions: histórico de versões
- * - project_files: arquivos do projeto marcados como visíveis
- * 
- * Realtime: Todas as tabelas têm subscription para atualização automática
+ * Usa Edge Function `resolve-portal-token` para resolver token com segurança
+ * (bypassa RLS usando service role, retornando apenas dados públicos)
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -163,148 +155,44 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
     queryFn: async (): Promise<PortalData | null> => {
       if (!shareToken) return null;
 
-      // 1. Get portal link by token
-      const { data: portal, error: portalError } = await supabase
-        .from('portal_links')
-        .select('*')
-        .eq('share_token', shareToken)
-        .single();
+      console.log('[Portal] Resolving token via Edge Function...');
 
-      if (portalError || !portal) {
+      // Use Edge Function to resolve token (bypasses RLS securely)
+      const { data: result, error: fnError } = await supabase.functions.invoke('resolve-portal-token', {
+        body: { token: shareToken }
+      });
+
+      if (fnError) {
+        console.error('[Portal] Edge Function error:', fnError);
+        throw new Error('Failed to resolve portal token');
+      }
+
+      if (!result?.ok) {
+        const code = result?.code || 'UNKNOWN';
+        const message = result?.error || 'Portal not found';
+        console.error(`[Portal] Token resolution failed: ${code} - ${message}`);
+        
+        if (code === 'EXPIRED') {
+          throw new Error('Portal expired');
+        }
+        if (code === 'INACTIVE') {
+          throw new Error('Portal inactive');
+        }
         throw new Error('Portal not found');
       }
 
-      // Check expiration
-      if (portal.expires_at && new Date(portal.expires_at) < new Date()) {
-        throw new Error('Portal expired');
-      }
-
-      // Check active
-      if (!portal.is_active) {
-        throw new Error('Portal inactive');
-      }
-
-      // 2. Get project info
-      const { data: project } = await supabase
-        .from('projects')
-        .select('id, name, client_name, description, template, status, stage_current, health_score, contract_value, has_payment_block, due_date, owner_name, logo_url, banner_url')
-        .eq('id', portal.project_id)
-        .single();
-
-      // 2.5. Get project stages
-      const { data: stagesData } = await supabase
-        .from('project_stages')
-        .select('*')
-        .eq('project_id', portal.project_id)
-        .order('order_index', { ascending: true });
-
-      const stages: ProjectStage[] = (stagesData || []).map(s => ({
-        id: s.id,
-        project_id: s.project_id,
-        title: s.title,
-        stage_key: s.stage_key,
-        order_index: s.order_index,
-        status: s.status,
-        planned_start: s.planned_start,
-        planned_end: s.planned_end,
-        actual_start: s.actual_start,
-        actual_end: s.actual_end,
-      }));
-
-      // 3. Get portal deliverables
-      const { data: deliverables, error: delError } = await supabase
-        .from('portal_deliverables')
-        .select('*')
-        .eq('portal_link_id', portal.id)
-        .eq('visible_in_portal', true)
-        .order('sort_order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false });
-
-      if (delError) throw delError;
-
-      // 4. Get project files visible in portal
-      const { data: files } = await supabase
-        .from('project_files')
-        .select('*')
-        .eq('project_id', portal.project_id)
-        .eq('visible_in_portal', true)
-        .order('created_at', { ascending: false });
-
-      // 5. Get IDs for comments/approvals queries
-      const deliverableIds = deliverables?.map(d => d.id) || [];
-      const fileIds = files?.map(f => f.id) || [];
-
-      // 6. Get comments
-      let comments: PortalComment[] = [];
-      if (deliverableIds.length > 0) {
-        const { data: delComments } = await supabase
-          .from('portal_comments')
-          .select('*')
-          .in('deliverable_id', deliverableIds)
-          .order('created_at', { ascending: true });
-        if (delComments) comments = [...comments, ...(delComments as PortalComment[])];
-      }
-      if (fileIds.length > 0) {
-        const { data: fileComments } = await supabase
-          .from('portal_comments')
-          .select('*')
-          .in('project_file_id', fileIds)
-          .order('created_at', { ascending: true });
-        if (fileComments) comments = [...comments, ...(fileComments as PortalComment[])];
-      }
-
-      // 7. Get approvals
-      let approvals: PortalApproval[] = [];
-      if (deliverableIds.length > 0) {
-        const { data: delApprovals } = await supabase
-          .from('portal_approvals')
-          .select('*')
-          .in('deliverable_id', deliverableIds);
-        if (delApprovals) approvals = [...approvals, ...(delApprovals as PortalApproval[])];
-      }
-      if (fileIds.length > 0) {
-        const { data: fileApprovals } = await supabase
-          .from('portal_approvals')
-          .select('*')
-          .in('project_file_id', fileIds);
-        if (fileApprovals) approvals = [...approvals, ...(fileApprovals as PortalApproval[])];
-      }
-
-      // 8. Get change requests
-      const { data: changeRequests } = await supabase
-        .from('portal_change_requests')
-        .select('*')
-        .eq('portal_link_id', portal.id)
-        .order('created_at', { ascending: false });
-
-      // 9. Get versions for deliverables
-      let versions: PortalVersion[] = [];
-      if (deliverableIds.length > 0) {
-        const { data: versionData } = await supabase
-          .from('portal_deliverable_versions')
-          .select('*')
-          .in('deliverable_id', deliverableIds)
-          .order('version_number', { ascending: false });
-        if (versionData) versions = versionData as PortalVersion[];
-      }
-
-      // 10. Log visit
-      await supabase.from('event_logs').insert({
-        action: 'portal_visited',
-        entity_type: 'portal_link',
-        entity_id: portal.id,
-      });
+      console.log('[Portal] Token resolved successfully for project:', result.project?.name);
 
       return {
-        portal: portal as PortalLink,
-        project: (project || null) as ProjectInfo | null,
-        stages,
-        deliverables: (deliverables || []) as PortalDeliverable[],
-        files: (files || []) as PortalFile[],
-        comments,
-        approvals,
-        changeRequests: (changeRequests || []) as PortalChangeRequest[],
-        versions,
+        portal: result.portal as PortalLink,
+        project: (result.project || null) as ProjectInfo | null,
+        stages: (result.stages || []) as ProjectStage[],
+        deliverables: (result.deliverables || []) as PortalDeliverable[],
+        files: (result.files || []) as PortalFile[],
+        comments: (result.comments || []) as PortalComment[],
+        approvals: (result.approvals || []) as PortalApproval[],
+        changeRequests: (result.changeRequests || []) as PortalChangeRequest[],
+        versions: (result.versions || []) as PortalVersion[],
       };
     },
     enabled: !!shareToken,
@@ -315,7 +203,7 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
   // Enable realtime updates
   usePortalRealtime(data?.portal?.id, data?.project?.id);
 
-  // Mutations
+  // Mutations (these still use regular Supabase client with anon RLS)
   const addComment = useMutation({
     mutationFn: async ({ 
       deliverableId, 
@@ -511,16 +399,12 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
     data,
     isLoading,
     error,
-    // Comments
     addComment: addComment.mutate,
     isAddingComment: addComment.isPending,
-    // Approvals
     approveDeliverable: approveDeliverable.mutate,
     isApproving: approveDeliverable.isPending,
-    // Revisions
     requestRevision: requestRevision.mutate,
     isRequestingRevision: requestRevision.isPending,
-    // Change requests
     createChangeRequest: createChangeRequest.mutate,
     isCreatingChangeRequest: createChangeRequest.isPending,
   };

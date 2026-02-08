@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.export-finance-pdf]
 verify_jwt = false
+
+[functions.resolve-portal-token]
+verify_jwt = false
