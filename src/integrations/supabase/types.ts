@@ -3001,10 +3001,83 @@ export type Database = {
           },
         ]
       }
+      portal_change_requests: {
+        Row: {
+          assigned_to: string | null
+          author_email: string | null
+          author_name: string
+          author_role: string
+          created_at: string
+          deliverable_id: string | null
+          description: string | null
+          evidence_url: string | null
+          id: string
+          portal_link_id: string
+          priority: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          author_email?: string | null
+          author_name: string
+          author_role?: string
+          created_at?: string
+          deliverable_id?: string | null
+          description?: string | null
+          evidence_url?: string | null
+          id?: string
+          portal_link_id: string
+          priority?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          author_email?: string | null
+          author_name?: string
+          author_role?: string
+          created_at?: string
+          deliverable_id?: string | null
+          description?: string | null
+          evidence_url?: string | null
+          id?: string
+          portal_link_id?: string
+          priority?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_change_requests_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "portal_deliverables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_change_requests_portal_link_id_fkey"
+            columns: ["portal_link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_comments: {
         Row: {
           author_email: string | null
           author_name: string
+          author_role: string | null
           content: string
           created_at: string
           deliverable_id: string
@@ -3016,6 +3089,7 @@ export type Database = {
         Insert: {
           author_email?: string | null
           author_name: string
+          author_role?: string | null
           content: string
           created_at?: string
           deliverable_id: string
@@ -3027,6 +3101,7 @@ export type Database = {
         Update: {
           author_email?: string | null
           author_name?: string
+          author_role?: string | null
           content?: string
           created_at?: string
           deliverable_id?: string
@@ -3052,10 +3127,54 @@ export type Database = {
           },
         ]
       }
-      portal_deliverables: {
+      portal_deliverable_versions: {
         Row: {
           created_at: string
+          created_by_name: string | null
+          deliverable_id: string
+          file_url: string | null
+          id: string
+          notes: string | null
+          title: string | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          created_by_name?: string | null
+          deliverable_id: string
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          title?: string | null
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          created_by_name?: string | null
+          deliverable_id?: string
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          title?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_deliverable_versions_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "portal_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_deliverables: {
+        Row: {
+          awaiting_approval: boolean | null
+          created_at: string
+          current_version: number | null
           description: string | null
+          external_url: string | null
           file_url: string | null
           id: string
           portal_link_id: string
@@ -3066,10 +3185,14 @@ export type Database = {
           type: string | null
           updated_at: string
           visible_in_portal: boolean | null
+          youtube_url: string | null
         }
         Insert: {
+          awaiting_approval?: boolean | null
           created_at?: string
+          current_version?: number | null
           description?: string | null
+          external_url?: string | null
           file_url?: string | null
           id?: string
           portal_link_id: string
@@ -3080,10 +3203,14 @@ export type Database = {
           type?: string | null
           updated_at?: string
           visible_in_portal?: boolean | null
+          youtube_url?: string | null
         }
         Update: {
+          awaiting_approval?: boolean | null
           created_at?: string
+          current_version?: number | null
           description?: string | null
+          external_url?: string | null
           file_url?: string | null
           id?: string
           portal_link_id?: string
@@ -3094,6 +3221,7 @@ export type Database = {
           type?: string | null
           updated_at?: string
           visible_in_portal?: boolean | null
+          youtube_url?: string | null
         }
         Relationships: [
           {
