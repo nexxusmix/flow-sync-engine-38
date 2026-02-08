@@ -21,6 +21,8 @@ import { PortalTab } from "./tabs/PortalTab";
 import { AuditTab } from "./tabs/AuditTab";
 import { MeetingsTab } from "../meetings/MeetingsTab";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useProjectRevisions } from "@/hooks/useProjectRevisions";
+import { cn } from "@/lib/utils";
 
 interface ProjectTabsProps {
   project: ProjectWithStages;
@@ -41,6 +43,10 @@ const tabs = [
 ];
 
 export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProps) {
+  // Get revision stats for badge
+  const { stats } = useProjectRevisions(project.id);
+  const pendingCount = stats?.pending || 0;
+
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-6">
       <ScrollArea className="w-full">
@@ -49,10 +55,19 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
             <TabsTrigger
               key={tab.id}
               value={tab.id}
-              className="flex items-center gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm"
+              className="relative flex items-center gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm"
             >
               <tab.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{tab.label}</span>
+              {/* Badge for revisions tab */}
+              {tab.id === 'revisions' && pendingCount > 0 && (
+                <span className={cn(
+                  "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1",
+                  "bg-amber-500 text-white"
+                )}>
+                  {pendingCount > 99 ? '99+' : pendingCount}
+                </span>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>

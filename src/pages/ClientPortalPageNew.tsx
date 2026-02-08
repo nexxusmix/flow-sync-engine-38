@@ -138,6 +138,15 @@ export default function ClientPortalPage() {
   // Filter client uploads
   const clientUploads = deliverables.filter(d => d.uploaded_by_client);
 
+  // Calculate pending revisions for badge
+  const pendingRevisionsCount = changeRequests.filter(cr => cr.status === 'open').length +
+    comments.filter(c => c.status === 'revision_requested' || c.status === 'open').length;
+
+  // Tab badges configuration
+  const tabBadges = {
+    revisions: pendingRevisionsCount > 0 ? { count: pendingRevisionsCount, variant: 'warning' as const } : undefined,
+  };
+
   const handleExportPdf = async () => {
     if (!project) return;
     
@@ -388,7 +397,7 @@ export default function ClientPortalPage() {
 
         {/* Tabs with Tab Content Animation */}
         <ScrollReveal delay={0.3} className="mt-12">
-          <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab}>
+          <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab} badges={tabBadges}>
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-8">
               <AnimatePresence mode="wait">
@@ -483,19 +492,10 @@ export default function ClientPortalPage() {
                     changeRequests={changeRequests} 
                     comments={comments}
                     deliverables={deliverables}
-                    onCreateRequest={(data) => {
-                      if (data.deliverableId) {
-                        createChangeRequest({
-                          deliverableId: data.deliverableId,
-                          title: data.title,
-                          description: data.description,
-                          authorName: data.authorName,
-                          authorEmail: data.authorEmail,
-                          priority: data.priority,
-                        });
-                      }
+                    onNavigateToMaterial={(materialId) => {
+                      setActiveTab('materials');
+                      // Could also set selected material here if needed
                     }}
-                    isCreatingRequest={isCreatingChangeRequest}
                   />
                 </motion.div>
               </AnimatePresence>

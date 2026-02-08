@@ -1,5 +1,6 @@
 /**
  * PortalMaterialsTab - Aba de Materiais do Portal com player de vídeo e anotações
+ * Agora com QuickRevisionDrawer para solicitação rápida de ajustes
  */
 
 import { memo, useState, useEffect } from "react";
@@ -12,6 +13,7 @@ import { AddVersionDialog } from "./AddVersionDialog";
 import { VideoPlayerWithMarkers } from "./VideoPlayerWithMarkers";
 import { AnnotationCanvas } from "./AnnotationCanvas";
 import { RevisionForm } from "./RevisionForm";
+import { QuickRevisionDrawer } from "../QuickRevisionDrawer";
 import type {
   PortalDeliverable,
   PortalComment,
@@ -78,6 +80,10 @@ function PortalMaterialsTabComponent({
   const [showAddVersion, setShowAddVersion] = useState(false);
   const [addVersionForMaterial, setAddVersionForMaterial] = useState<PortalDeliverable | null>(null);
   
+  // Quick Revision Drawer state
+  const [quickRevisionMaterial, setQuickRevisionMaterial] = useState<PortalDeliverable | null>(null);
+  const [showQuickRevisionDrawer, setShowQuickRevisionDrawer] = useState(false);
+  
   // Player state
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   
@@ -98,6 +104,33 @@ function PortalMaterialsTabComponent({
   const [revisionTimecode, setRevisionTimecode] = useState<string | undefined>(undefined);
   const [revisionTimestampMs, setRevisionTimestampMs] = useState<number | undefined>(undefined);
   const [revisionScreenshot, setRevisionScreenshot] = useState<string | undefined>(undefined);
+
+  // Handle quick revision from card
+  const handleQuickRevisionFromCard = (material: PortalDeliverable) => {
+    setQuickRevisionMaterial(material);
+    setShowQuickRevisionDrawer(true);
+  };
+
+  // Handle quick revision submission
+  const handleQuickRevisionSubmit = (data: {
+    deliverableId: string;
+    title: string;
+    description?: string;
+    authorName: string;
+    authorEmail?: string;
+    priority: 'low' | 'normal' | 'high' | 'urgent';
+  }) => {
+    // Use the existing onRequestRevision with the content as title + description
+    onRequestRevision({
+      authorName: data.authorName,
+      authorEmail: data.authorEmail,
+      content: data.description ? `${data.title}\n\n${data.description}` : data.title,
+      priority: data.priority,
+    });
+    
+    setShowQuickRevisionDrawer(false);
+    setQuickRevisionMaterial(null);
+  };
 
   // Filter only manager-uploaded materials (not client uploads)
   const materials = deliverables.filter(d => !d.uploaded_by_client && d.visible_in_portal);
@@ -276,6 +309,7 @@ function PortalMaterialsTabComponent({
                     onViewVersion={(version) => {
                       console.log('View version:', version);
                     }}
+                    onRequestRevision={handleQuickRevisionFromCard}
                   />
                 </div>
               )}
@@ -378,6 +412,15 @@ function PortalMaterialsTabComponent({
           }}
         />
       )}
+
+      {/* Quick Revision Drawer */}
+      <QuickRevisionDrawer
+        material={quickRevisionMaterial}
+        open={showQuickRevisionDrawer}
+        onOpenChange={setShowQuickRevisionDrawer}
+        onSubmit={handleQuickRevisionSubmit}
+        isSubmitting={isRequestingRevision}
+      />
     </div>
   );
 }

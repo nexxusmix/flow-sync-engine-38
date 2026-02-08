@@ -1,5 +1,6 @@
 /**
  * PortalMaterialCard - Card de material com versão, tags e changelog inline
+ * Inclui botão de "Solicitar Ajuste" para acesso rápido ao drawer de revisão
  */
 
 import { memo, useState } from "react";
@@ -19,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Edit3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ interface PortalMaterialCardProps {
   isSelected: boolean;
   onSelect: () => void;
   onViewVersion?: (version: PortalVersion) => void;
+  onRequestRevision?: (material: PortalDeliverable) => void;
 }
 
 function PortalMaterialCardComponent({
@@ -44,6 +47,7 @@ function PortalMaterialCardComponent({
   isSelected,
   onSelect,
   onViewVersion,
+  onRequestRevision,
 }: PortalMaterialCardProps) {
   const [showVersions, setShowVersions] = useState(false);
 
@@ -83,13 +87,18 @@ function PortalMaterialCardComponent({
 
   const isVideo = material.youtube_url || material.type?.includes('video');
 
+  const handleRequestRevision = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRequestRevision?.(material);
+  };
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "bg-[#0a0a0a] border rounded-lg overflow-hidden transition-all cursor-pointer",
+        "bg-[#0a0a0a] border rounded-lg overflow-hidden transition-all cursor-pointer group",
         isSelected
           ? "border-cyan-500/50 ring-1 ring-cyan-500/30"
           : "border-[#1a1a1a] hover:border-[#2a2a2a]"
@@ -139,6 +148,20 @@ function PortalMaterialCardComponent({
             </Badge>
           )}
         </div>
+
+        {/* Quick Revision Button - Visible on hover */}
+        {onRequestRevision && !isApproved && (
+          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              size="sm"
+              className="h-8 bg-cyan-500/90 hover:bg-cyan-500 text-white text-xs shadow-lg"
+              onClick={handleRequestRevision}
+            >
+              <Edit3 className="w-3.5 h-3.5 mr-1.5" />
+              Solicitar Ajuste
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -193,7 +216,7 @@ function PortalMaterialCardComponent({
           </div>
         )}
 
-        {/* Footer: Comments & Version Toggle */}
+        {/* Footer: Comments, Quick Action & Version Toggle */}
         <div className="flex items-center justify-between pt-2 border-t border-[#1a1a1a]">
           <div className="flex items-center gap-3">
             {commentCount > 0 && (
@@ -212,6 +235,16 @@ function PortalMaterialCardComponent({
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
+            )}
+            {/* Inline quick revision button for mobile/small cards */}
+            {onRequestRevision && !isApproved && (
+              <button
+                onClick={handleRequestRevision}
+                className="text-gray-500 hover:text-cyan-400 transition-colors"
+                title="Solicitar Ajuste"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
 
