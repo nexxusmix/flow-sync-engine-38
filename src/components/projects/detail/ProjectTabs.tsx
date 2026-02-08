@@ -8,7 +8,8 @@ import {
   FolderOpen, 
   Calendar, 
   Globe, 
-  FileText 
+  FileText,
+  Users,
 } from "lucide-react";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TasksTab } from "./tabs/TasksTab";
@@ -18,6 +19,7 @@ import { FilesTab } from "./tabs/FilesTab";
 import { ScheduleTab } from "./tabs/ScheduleTab";
 import { PortalTab } from "./tabs/PortalTab";
 import { AuditTab } from "./tabs/AuditTab";
+import { MeetingsTab } from "../meetings/MeetingsTab";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface ProjectTabsProps {
@@ -28,6 +30,7 @@ interface ProjectTabsProps {
 
 const tabs = [
   { id: "overview", label: "Visão Geral", icon: LayoutDashboard },
+  { id: "meetings", label: "Reuniões", icon: Users },
   { id: "tasks", label: "Tarefas", icon: CheckSquare },
   { id: "deliverables", label: "Entregas", icon: Package },
   { id: "revisions", label: "Revisões", icon: MessageSquare },
@@ -58,6 +61,10 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
 
       <TabsContent value="overview" className="mt-6">
         <OverviewTab project={project} />
+      </TabsContent>
+
+      <TabsContent value="meetings" className="mt-6">
+        <MeetingsTab project={project} />
       </TabsContent>
       
       <TabsContent value="tasks" className="mt-6">
