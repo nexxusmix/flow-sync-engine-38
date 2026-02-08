@@ -83,7 +83,7 @@ export default {
       },
       fontWeight: {
         light: "300",
-        normal: "400",
+        medium: "500",
       },
       keyframes: {
         "accordion-down": {
