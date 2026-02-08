@@ -3,10 +3,11 @@
  * Layout com cards de progresso, materiais disponíveis e status de entregas
  */
 
-import { memo } from "react";
+import { memo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, ChevronDown } from "lucide-react";
 import type { ProjectInfo, ProjectStage, PortalDeliverable } from "@/hooks/useClientPortalEnhanced";
 
 interface PortalOverviewPremiumProps {
@@ -37,6 +38,7 @@ function PortalOverviewPremiumComponent({
   stages, 
   deliverables = [],
 }: PortalOverviewPremiumProps) {
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const currentStageKey = project.stage_current;
   const completedStages = stages.filter(s => s.status === 'completed').length;
   const totalStages = stages.length || 9;
@@ -253,27 +255,50 @@ function PortalOverviewPremiumComponent({
         )}
       </div>
 
-      {/* Resumo Executivo */}
+      {/* Resumo Executivo - Collapsible */}
       <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
-        <div className="p-5 border-b border-[#1a1a1a] flex items-center gap-2">
-          <span className="material-symbols-outlined text-cyan-400" style={{ fontSize: 18 }}>
-            summarize
-          </span>
-          <h3 className="text-sm font-medium text-white">Resumo Executivo</h3>
-        </div>
-        <div className="p-5">
-          {project.description ? (
-            <div className="space-y-4 text-sm text-gray-400 leading-relaxed">
-              {project.description.split('\n\n').slice(0, 2).map((paragraph, i) => (
-                <p key={i}>{paragraph.substring(0, 400)}</p>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 leading-relaxed">
-              Este projeto audiovisual visa registrar e transmitir a magnitude do empreendimento através de uma narrativa cinematográfica completa.
-            </p>
+        <button 
+          onClick={() => setIsSummaryOpen(!isSummaryOpen)}
+          className="w-full p-5 flex items-center justify-between hover:bg-white/5 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-cyan-400" style={{ fontSize: 18 }}>
+              summarize
+            </span>
+            <h3 className="text-sm font-medium text-white">Resumo Executivo</h3>
+          </div>
+          <ChevronDown 
+            className={cn(
+              "w-4 h-4 text-gray-500 transition-transform duration-200",
+              isSummaryOpen && "rotate-180"
+            )} 
+          />
+        </button>
+        <AnimatePresence>
+          {isSummaryOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="p-5 pt-0 border-t border-[#1a1a1a]">
+                {project.description ? (
+                  <div className="space-y-4 text-sm text-gray-400 leading-relaxed pt-5">
+                    {project.description.split('\n\n').slice(0, 2).map((paragraph, i) => (
+                      <p key={i}>{paragraph.substring(0, 400)}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 leading-relaxed pt-5">
+                    Este projeto audiovisual visa registrar e transmitir a magnitude do empreendimento através de uma narrativa cinematográfica completa.
+                  </p>
+                )}
+              </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
     </div>
   );
