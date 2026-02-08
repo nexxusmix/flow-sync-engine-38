@@ -3129,6 +3129,8 @@ export type Database = {
       }
       portal_deliverable_versions: {
         Row: {
+          change_tags: string[] | null
+          changelog_items: Json | null
           created_at: string
           created_by_name: string | null
           deliverable_id: string
@@ -3139,6 +3141,8 @@ export type Database = {
           version_number: number
         }
         Insert: {
+          change_tags?: string[] | null
+          changelog_items?: Json | null
           created_at?: string
           created_by_name?: string | null
           deliverable_id: string
@@ -3149,6 +3153,8 @@ export type Database = {
           version_number?: number
         }
         Update: {
+          change_tags?: string[] | null
+          changelog_items?: Json | null
           created_at?: string
           created_by_name?: string | null
           deliverable_id?: string

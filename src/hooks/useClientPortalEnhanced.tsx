@@ -124,6 +124,8 @@ export interface PortalVersion {
   file_url: string | null;
   created_at: string;
   created_by_name: string | null;
+  change_tags: string[];
+  changelog_items: { description: string; category?: string }[];
 }
 
 export interface ProjectStage {
