@@ -71,6 +71,7 @@ export function ProjectFinanceDetailPanel({
   };
 
   const handleRefresh = async () => {
+    // Refetch all financial data to ensure consistency
     await fetchContracts();
     onRefresh();
   };
