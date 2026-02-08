@@ -390,6 +390,7 @@ interface AnimatedCounterProps {
   prefix?: string;
   className?: string;
   duration?: number;
+  formatAsCurrency?: boolean;
 }
 
 export function AnimatedCounter({ 
@@ -397,7 +398,8 @@ export function AnimatedCounter({
   suffix = "", 
   prefix = "",
   className,
-  duration = 2 
+  duration = 2,
+  formatAsCurrency = false
 }: AnimatedCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
@@ -423,9 +425,13 @@ export function AnimatedCounter({
     requestAnimationFrame(animate);
   }, [isInView, value, duration]);
 
+  const formattedValue = formatAsCurrency 
+    ? displayValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : displayValue.toLocaleString('pt-BR');
+
   return (
     <span ref={ref} className={className}>
-      {prefix}{displayValue}{suffix}
+      {prefix}{formattedValue}{suffix}
     </span>
   );
 }

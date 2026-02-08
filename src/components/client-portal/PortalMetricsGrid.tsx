@@ -48,7 +48,8 @@ function PortalMetricsGridComponent({ project }: PortalMetricsGridProps) {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-      minimumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
@@ -75,6 +76,7 @@ function PortalMetricsGridComponent({ project }: PortalMetricsGridProps) {
       glowColor: 'rgba(255, 255, 255, 0.1)',
       isCounter: true,
       prefix: 'R$ ',
+      formatAsCurrency: true,
     },
     {
       label: 'Saúde do Projeto',
@@ -110,7 +112,7 @@ function PortalMetricsGridComponent({ project }: PortalMetricsGridProps) {
   return (
     <motion.div 
       ref={ref}
-      className="grid grid-cols-2 lg:grid-cols-4 gap-1"
+      className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={containerVariants}
@@ -124,7 +126,7 @@ function PortalMetricsGridComponent({ project }: PortalMetricsGridProps) {
           <Card3D intensity={8}>
             <GlowCard glowColor={metric.glowColor}>
               <motion.div
-                className="bg-[#0a0a0a] border border-[#1a1a1a] p-6 relative overflow-hidden transition-colors duration-300 group-hover:border-primary/30"
+                className="bg-[#0a0a0a] border border-[#1a1a1a] p-6 min-h-[140px] relative overflow-hidden transition-colors duration-300 group-hover:border-primary/30"
                 whileHover={{ 
                   backgroundColor: 'rgba(6, 182, 212, 0.03)',
                 }}
@@ -161,6 +163,7 @@ function PortalMetricsGridComponent({ project }: PortalMetricsGridProps) {
                         prefix={metric.prefix} 
                         suffix={metric.suffix}
                         duration={1.5}
+                        formatAsCurrency={metric.formatAsCurrency}
                       />
                     ) : (
                       <span>{metric.displayValue}</span>
