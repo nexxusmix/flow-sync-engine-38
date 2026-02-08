@@ -3,9 +3,11 @@ import { useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ProjectHeader } from "@/components/projects/detail/ProjectHeader";
 import { ProjectTabs } from "@/components/projects/detail/ProjectTabs";
+import { EditProjectModal } from "@/components/projects/modals/EditProjectModal";
 import { useProject } from "@/hooks/useProjects";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence, useTabPersistence } from "@/hooks/usePersistedState";
+import { useProjectsStore } from "@/stores/projectsStore";
 import { ArrowLeft, Folder, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +15,7 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProject(projectId);
+  const { isEditProjectModalOpen, setEditProjectModalOpen } = useProjectsStore();
   
   // URL-based tab persistence
   const { getPersistedTab, setPersistedTab } = useTabPersistence('project', projectId);
@@ -83,6 +86,13 @@ export default function ProjectDetailPage() {
           onTabChange={setActiveTab} 
         />
       </div>
+
+      {/* Edit Project Modal */}
+      <EditProjectModal
+        open={isEditProjectModalOpen}
+        onOpenChange={setEditProjectModalOpen}
+        project={project}
+      />
     </DashboardLayout>
   );
 }
