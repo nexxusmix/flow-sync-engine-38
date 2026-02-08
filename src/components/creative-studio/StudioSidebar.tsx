@@ -181,62 +181,62 @@ export function StudioSidebar({
       <div className="p-4 space-y-3 border-b">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Cliente</Label>
-          <Select
-            value={work?.client_id || ''}
-            onValueChange={(value) => onWorkUpdate({ client_id: value || null })}
-          >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Selecionar cliente" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Nenhum</SelectItem>
-              {clients?.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select
+          value={work?.client_id || 'none'}
+          onValueChange={(value) => onWorkUpdate({ client_id: value === 'none' ? null : value })}
+        >
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Selecionar cliente" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhum</SelectItem>
+            {clients?.map((client) => (
+              <SelectItem key={client.id} value={client.id}>
+                {client.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         </div>
 
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Projeto</Label>
-          <Select
-            value={work?.project_id || ''}
-            onValueChange={(value) => onWorkUpdate({ project_id: value || null })}
-          >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Selecionar projeto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Nenhum</SelectItem>
-              {projects?.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select
+          value={work?.project_id || 'none'}
+          onValueChange={(value) => onWorkUpdate({ project_id: value === 'none' ? null : value })}
+        >
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Selecionar projeto" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhum</SelectItem>
+            {projects?.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                {project.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         </div>
 
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Campanha</Label>
-          <Select
-            value={work?.campaign_id || ''}
-            onValueChange={(value) => onWorkUpdate({ campaign_id: value || null })}
-          >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Selecionar campanha" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Nenhuma</SelectItem>
-              {campaigns?.map((campaign) => (
-                <SelectItem key={campaign.id} value={campaign.id}>
-                  {campaign.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select
+          value={work?.campaign_id || 'none'}
+          onValueChange={(value) => onWorkUpdate({ campaign_id: value === 'none' ? null : value })}
+        >
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Selecionar campanha" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhuma</SelectItem>
+            {campaigns?.map((campaign) => (
+              <SelectItem key={campaign.id} value={campaign.id}>
+                {campaign.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         </div>
       </div>
 
