@@ -1,10 +1,10 @@
 /**
- * PortalDeliverablesPremium - Entregas do portal no estilo premium
+ * PortalDeliverablesPremium - Entregas do portal com animações
+ * Hover lift e glow nos cards, animação de entrada
  */
 
 import { memo } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { motion } from "framer-motion";
 import { 
   CheckCircle2,
   Clock,
@@ -21,6 +21,23 @@ interface PortalDeliverablesPremiumProps {
   selectedMaterialId?: string | null;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.04, delayChildren: 0.1 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.25 },
+  },
+};
+
 function PortalDeliverablesPremiumComponent({
   deliverables,
   approvals,
@@ -33,8 +50,13 @@ function PortalDeliverablesPremiumComponent({
 
   if (deliverables.length === 0) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4">
+      <motion.div 
+        className="space-y-4"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-medium border-l-2 border-cyan-400 pl-4">
           Entregas Contratadas
         </h2>
         <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-12 text-center">
@@ -42,24 +64,43 @@ function PortalDeliverablesPremiumComponent({
           <p className="text-gray-500 text-sm">Nenhuma entrega cadastrada ainda.</p>
           <p className="text-gray-600 text-xs mt-1">Os materiais aparecerão aqui quando forem publicados.</p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold border-l-2 border-cyan-400 pl-4">
+    <motion.div 
+      className="space-y-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.h2 
+        className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-medium border-l-2 border-cyan-400 pl-4"
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         Entregas Contratadas
-      </h2>
+      </motion.h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#1a1a1a] border border-[#1a1a1a]">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#1a1a1a] border border-[#1a1a1a]"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {deliverables.map((deliverable) => {
           const isApproved = getApprovalStatus(deliverable.id);
           const isSelected = selectedMaterialId === deliverable.id;
           
           return (
-            <div
+            <motion.div
               key={deliverable.id}
+              variants={cardVariants}
+              whileHover={{ 
+                y: -4,
+                boxShadow: '0 8px 24px -8px rgba(6, 182, 212, 0.12)',
+              }}
               onClick={() => onSelectMaterial(deliverable.id)}
               className={cn(
                 "bg-[#0a0a0a] p-5 cursor-pointer transition-colors",
@@ -78,7 +119,7 @@ function PortalDeliverablesPremiumComponent({
                   </span>
                 </div>
                 <span className={cn(
-                  "text-[9px] px-2 py-0.5 uppercase tracking-wider font-bold",
+                  "text-[9px] px-2 py-0.5 uppercase tracking-wider font-medium",
                   isApproved 
                     ? "bg-emerald-500/20 text-emerald-400" 
                     : deliverable.awaiting_approval 
@@ -109,11 +150,11 @@ function PortalDeliverablesPremiumComponent({
                   <span>Wide + Vert</span>
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

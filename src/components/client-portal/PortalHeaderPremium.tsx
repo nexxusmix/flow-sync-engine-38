@@ -1,13 +1,13 @@
 /**
- * PortalHeaderPremium - Header do portal idêntico ao HTML de referência
- * Com badges, título, ações e integração com Material Icons
+ * PortalHeaderPremium - Header do portal premium com animações
+ * Typography: Host Grotesk only (removed Playfair Display)
  */
 
 import { memo, useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { 
   Link as LinkIcon,
-  FileText,
   Lock,
   Loader2,
 } from "lucide-react";
@@ -36,6 +36,36 @@ const STAGE_NAMES: Record<string, string> = {
   pos_venda: 'Pós-Venda',
 };
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const badgeVariants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { duration: 0.25 },
+  },
+};
+
+const titleVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.4 },
+  },
+};
+
 function PortalHeaderPremiumComponent({
   project,
   shareToken,
@@ -59,37 +89,60 @@ function PortalHeaderPremiumComponent({
     : 'Pré-produção';
 
   return (
-    <div className="space-y-0">
+    <motion.div 
+      className="space-y-0"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       {/* Badges Row */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <motion.div 
+        className="flex flex-wrap items-center gap-2 mb-4"
+        variants={containerVariants}
+      >
         {/* Status Badge */}
-        <span className="text-[10px] px-3 py-1 uppercase tracking-widest font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+        <motion.span 
+          variants={badgeVariants}
+          className="text-[10px] px-3 py-1 uppercase tracking-widest font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+        >
           {project.status}
-        </span>
+        </motion.span>
         
         {/* Template Badge */}
-        <span className="text-[10px] px-3 py-1 uppercase tracking-widest text-gray-500 border border-[#1a1a1a]">
+        <motion.span 
+          variants={badgeVariants}
+          className="text-[10px] px-3 py-1 uppercase tracking-widest text-gray-500 border border-[#1a1a1a]"
+        >
           {templateLabel}
-        </span>
+        </motion.span>
         
         {/* Stage Badge */}
-        <span className="text-[10px] px-3 py-1 uppercase tracking-widest text-gray-500 border border-[#1a1a1a]">
+        <motion.span 
+          variants={badgeVariants}
+          className="text-[10px] px-3 py-1 uppercase tracking-widest text-gray-500 border border-[#1a1a1a]"
+        >
           {stageName}
-        </span>
+        </motion.span>
         
         {/* Blocked Badge */}
         {hasPaymentBlock && (
-          <span className="text-[10px] px-3 py-1 uppercase tracking-widest font-bold bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
+          <motion.span 
+            variants={badgeVariants}
+            className="text-[10px] px-3 py-1 uppercase tracking-widest font-medium bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1"
+          >
             <Lock className="w-3 h-3" />
             Bloqueado
-          </span>
+          </motion.span>
         )}
-      </div>
+      </motion.div>
 
       {/* Title Section */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+      <motion.div 
+        className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6"
+        variants={titleVariants}
+      >
         <div>
-          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-white mb-2 uppercase">
             {project.name}
           </h1>
           <p className="text-gray-500 text-sm">
@@ -100,11 +153,16 @@ function PortalHeaderPremiumComponent({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <motion.div 
+          className="flex items-center gap-2 flex-shrink-0"
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+        >
           <Button 
             variant="ghost" 
             size="sm" 
-            className="text-gray-400 hover:text-white h-9 gap-2 border border-[#1a1a1a] hover:border-gray-700 rounded-none"
+            className="text-gray-400 hover:text-white h-9 gap-2 border border-[#1a1a1a] hover:border-gray-700 rounded-none transition-all duration-200 hover:-translate-y-0.5"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
               contact_support
@@ -116,7 +174,7 @@ function PortalHeaderPremiumComponent({
             variant="ghost" 
             size="sm" 
             onClick={handleCopyLink}
-            className="text-gray-400 hover:text-white h-9 gap-2 border border-[#1a1a1a] hover:border-gray-700 rounded-none"
+            className="text-gray-400 hover:text-white h-9 gap-2 border border-[#1a1a1a] hover:border-gray-700 rounded-none transition-all duration-200 hover:-translate-y-0.5"
           >
             <LinkIcon className="w-4 h-4" />
           </Button>
@@ -126,7 +184,7 @@ function PortalHeaderPremiumComponent({
             size="sm" 
             onClick={onExportPdf}
             disabled={isExporting}
-            className="text-gray-400 hover:text-white h-9 gap-2 border border-[#1a1a1a] hover:border-gray-700 rounded-none"
+            className="text-gray-400 hover:text-white h-9 gap-2 border border-[#1a1a1a] hover:border-gray-700 rounded-none transition-all duration-200 hover:-translate-y-0.5"
           >
             {isExporting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -136,9 +194,9 @@ function PortalHeaderPremiumComponent({
               </span>
             )}
           </Button>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 
