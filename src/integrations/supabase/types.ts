@@ -3309,8 +3309,10 @@ export type Database = {
       }
       projects: {
         Row: {
+          banner_url: string | null
           client_name: string
           contract_value: number | null
+          cover_image_url: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -3318,6 +3320,7 @@ export type Database = {
           has_payment_block: boolean | null
           health_score: number | null
           id: string
+          logo_url: string | null
           name: string
           owner_id: string | null
           owner_name: string | null
@@ -3329,8 +3332,10 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          banner_url?: string | null
           client_name: string
           contract_value?: number | null
+          cover_image_url?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -3338,6 +3343,7 @@ export type Database = {
           has_payment_block?: boolean | null
           health_score?: number | null
           id?: string
+          logo_url?: string | null
           name: string
           owner_id?: string | null
           owner_name?: string | null
@@ -3349,8 +3355,10 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          banner_url?: string | null
           client_name?: string
           contract_value?: number | null
+          cover_image_url?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -3358,6 +3366,7 @@ export type Database = {
           has_payment_block?: boolean | null
           health_score?: number | null
           id?: string
+          logo_url?: string | null
           name?: string
           owner_id?: string | null
           owner_name?: string | null

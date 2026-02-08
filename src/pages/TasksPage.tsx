@@ -5,8 +5,9 @@ import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksDashboard } from "@/components/tasks/TasksDashboard";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
 import { supabase } from "@/integrations/supabase/client";
+import { useExportPdf } from "@/hooks/useExportPdf";
 import { 
-  Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon
+  Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,6 +59,7 @@ type ViewMode = 'dashboard' | 'kanban' | 'timeline';
 
 export default function TasksPage() {
   const { tasks, isLoading, isCreating, isGenerating, fetchTasks, createTask, updateTask, createTasksFromAI } = useTasksStore();
+  const { isExporting, exportTasks } = useExportPdf();
   
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
@@ -192,6 +194,14 @@ export default function TasksPage() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+            <Button variant="outline" size="sm" onClick={exportTasks} disabled={isExporting}>
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-2" />
+              )}
+              Exportar PDF
+            </Button>
             <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
               <Sparkles className="w-4 h-4 mr-2" />
               Criar com IA

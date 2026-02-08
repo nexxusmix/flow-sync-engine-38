@@ -1,5 +1,6 @@
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { usePortalLink } from "@/hooks/usePortalLink";
+import { useExportPdf } from "@/hooks/useExportPdf";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { 
   Calendar, 
@@ -11,6 +12,8 @@ import {
   Activity,
   Copy,
   Loader2,
+  FileDown,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
@@ -29,6 +32,9 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
     name: project.name,
     clientName: project.client_name || undefined,
   });
+  const { isExporting, exportProject } = useExportPdf();
+  
+  const logoUrl = (project as any).logo_url;
   
   const stageInfo = PROJECT_STAGES.find(s => s.type === project.stage_current);
   const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG];
@@ -110,22 +116,47 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 {stageInfo?.name || project.stage_current}
               </span>
               {project.has_payment_block && (
-                <span className="text-[10px] md:text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
+                <span className="text-[10px] md:text-xs px-2 py-1 rounded bg-destructive/20 text-destructive border border-destructive/30 flex items-center gap-1">
                   <Ban className="w-3 h-3" />
                   Bloqueado
                 </span>
               )}
             </div>
 
-            {/* Title */}
-            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1 truncate">{project.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {project.client_name || 'Sem cliente'}
-            </p>
+            {/* Title with Logo */}
+            <div className="flex items-center gap-3">
+              {logoUrl && (
+                <img
+                  src={logoUrl}
+                  alt="Logo do projeto"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover border border-border"
+                />
+              )}
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1 truncate">{project.name}</h1>
+                <p className="text-sm text-muted-foreground">
+                  {project.client_name || 'Sem cliente'}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Right - Quick Actions */}
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => exportProject(project.id)}
+              disabled={isExporting}
+              className="h-9 hidden sm:flex"
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-2" />
+              )}
+              Exportar PDF
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 

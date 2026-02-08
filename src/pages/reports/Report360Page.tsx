@@ -3,13 +3,14 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useReport360Metrics, PeriodType } from '@/hooks/useReport360Metrics';
+import { useExportPdf } from '@/hooks/useExportPdf';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell
 } from 'recharts';
 import { 
   CheckCircle2, FolderOpen, AlertTriangle, TrendingUp,
-  DollarSign, Activity, Loader2
+  DollarSign, Activity, Loader2, FileDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -38,6 +39,7 @@ const STATUS_LABELS = {
 export default function Report360Page() {
   const [period, setPeriod] = useState<PeriodType>('3m');
   const { metrics, monthlyData, statusDistribution, isLoading, dateRange } = useReport360Metrics(period);
+  const { isExporting, exportReport360 } = useExportPdf();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -74,7 +76,7 @@ export default function Report360Page() {
               {format(dateRange.startDate, "dd MMM yyyy", { locale: ptBR })} — {format(dateRange.endDate, "dd MMM yyyy", { locale: ptBR })}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {PERIOD_OPTIONS.map(option => (
               <Button
                 key={option.value}
@@ -85,6 +87,19 @@ export default function Report360Page() {
                 {option.label}
               </Button>
             ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportReport360(period)}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-2" />
+              )}
+              Exportar PDF
+            </Button>
           </div>
         </div>
 

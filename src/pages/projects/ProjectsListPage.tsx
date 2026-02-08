@@ -12,7 +12,9 @@ import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, List, Kanban, GanttChart, LayoutGrid, Loader2 } from "lucide-react";
+import { useExportPdf } from "@/hooks/useExportPdf";
+import { LayoutDashboard, List, Kanban, GanttChart, LayoutGrid, Loader2, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type ViewType = 'dashboard' | 'board' | 'kanban' | 'timeline' | 'list';
 
@@ -22,6 +24,7 @@ export default function ProjectsListPage() {
   const { isNewProjectModalOpen, isEditProjectModalOpen, isAIProjectModalOpen, selectedProjectId, setEditProjectModalOpen, setSelectedProjectId, setAIProjectModalOpen } = useProjectsStore();
   const { isLoading: authLoading } = useAuth();
   const { projects, isLoading: dataLoading } = useProjects();
+  const { isExporting, exportProjectsOverview } = useExportPdf();
   
   // Show loading only during auth check or data fetch
   const isLoading = authLoading || dataLoading;
@@ -98,6 +101,20 @@ export default function ProjectsListPage() {
               );
             })}
           </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportProjectsOverview}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4 mr-2" />
+            )}
+            Exportar Visão Geral
+          </Button>
         </div>
 
         {/* View Content */}
