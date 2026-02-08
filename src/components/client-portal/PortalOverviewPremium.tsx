@@ -15,7 +15,6 @@ interface PortalOverviewPremiumProps {
   project: ProjectInfo;
   stages: ProjectStage[];
   deliverables?: PortalDeliverable[];
-  hasPaymentBlock?: boolean;
   isManager?: boolean;
   onEditBriefing?: () => void;
   onGenerateAI?: () => void;

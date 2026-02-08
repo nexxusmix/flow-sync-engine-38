@@ -34,7 +34,6 @@ interface PortalInlineCommentProps {
   isAddingComment: boolean;
   isApproving: boolean;
   isRequestingRevision: boolean;
-  hasPaymentBlock?: boolean;
 }
 
 function PortalInlineCommentComponent({
@@ -48,7 +47,6 @@ function PortalInlineCommentComponent({
   isAddingComment,
   isApproving,
   isRequestingRevision,
-  hasPaymentBlock,
 }: PortalInlineCommentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -154,7 +152,7 @@ function PortalInlineCommentComponent({
                 <MessageSquare className="w-3.5 h-3.5 mr-1" />
                 Comentar
               </Button>
-              {!isApproved && !hasPaymentBlock && (
+              {!isApproved && (
                 <>
                   <Button
                     variant={mode === 'approve' ? 'secondary' : 'ghost'}

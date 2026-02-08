@@ -29,7 +29,6 @@ interface PortalMaterialsTabProps {
   isAddingComment: boolean;
   isApproving: boolean;
   isRequestingRevision: boolean;
-  hasPaymentBlock?: boolean;
   portalLinkId?: string;
   isManager?: boolean;
 }
@@ -47,7 +46,6 @@ function PortalMaterialsTabComponent({
   isAddingComment,
   isApproving,
   isRequestingRevision,
-  hasPaymentBlock,
   portalLinkId,
   isManager = false,
 }: PortalMaterialsTabProps) {
@@ -138,7 +136,6 @@ function PortalMaterialsTabComponent({
                   isAddingComment={isAddingComment}
                   isApproving={isApproving}
                   isRequestingRevision={isRequestingRevision}
-                  hasPaymentBlock={hasPaymentBlock}
                 />
               </motion.div>
             )}
@@ -158,19 +155,6 @@ function PortalMaterialsTabComponent({
           </div>
         ))}
       </div>
-
-      {/* Payment Block Notice */}
-      {hasPaymentBlock && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4"
-        >
-          <p className="text-sm text-amber-400">
-            <strong>Nota:</strong> Alguns materiais podem ter download bloqueado devido a pendência financeira.
-          </p>
-        </motion.div>
-      )}
 
       {/* Add Version Dialog */}
       {addVersionForMaterial && portalLinkId && (

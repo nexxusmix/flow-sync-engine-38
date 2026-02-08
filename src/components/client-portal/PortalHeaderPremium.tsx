@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { 
   Link as LinkIcon,
-  Lock,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ import type { ProjectInfo } from "@/hooks/useClientPortalEnhanced";
 interface PortalHeaderPremiumProps {
   project: ProjectInfo;
   shareToken: string;
-  hasPaymentBlock?: boolean;
   onExportPdf?: () => void;
   isExporting?: boolean;
 }
@@ -69,7 +67,6 @@ const titleVariants = {
 function PortalHeaderPremiumComponent({
   project,
   shareToken,
-  hasPaymentBlock,
   onExportPdf,
   isExporting,
 }: PortalHeaderPremiumProps) {
@@ -123,17 +120,6 @@ function PortalHeaderPremiumComponent({
         >
           {stageName}
         </motion.span>
-        
-        {/* Blocked Badge */}
-        {hasPaymentBlock && (
-          <motion.span 
-            variants={badgeVariants}
-            className="text-[10px] px-3 py-1 uppercase tracking-widest font-medium bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1"
-          >
-            <Lock className="w-3 h-3" />
-            Bloqueado
-          </motion.span>
-        )}
       </motion.div>
 
       {/* Title Section */}
