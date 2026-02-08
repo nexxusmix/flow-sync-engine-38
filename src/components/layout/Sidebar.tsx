@@ -19,7 +19,6 @@ const mainMenuItems = [
 ];
 
 const settingsItems = [
-  { name: "Integrações", href: "/integracoes", icon: "hub" },
   { name: "Configurações", href: "/configuracoes", icon: "settings" },
 ];
 
