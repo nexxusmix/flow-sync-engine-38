@@ -62,3 +62,12 @@ verify_jwt = false
 
 [functions.export-campaign-pdf]
 verify_jwt = false
+
+[functions.automation-runner]
+verify_jwt = false
+
+[functions.automation-handle-action]
+verify_jwt = false
+
+[functions.generate-next-steps]
+verify_jwt = false

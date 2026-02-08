@@ -81,6 +81,7 @@ import CreativeStudioPage from "./pages/marketing/CreativeStudioPage";
 import LibraryPage from "./pages/marketing/LibraryPage";
 import ContentDetailPage from "./pages/marketing/ContentDetailPage";
 import ReferencesPage from "./pages/marketing/ReferencesPage";
+import AutomationsPage from "./pages/marketing/AutomationsPage";
 import UnifiedCalendarPage from "./pages/CalendarPage";
 import TasksPage from "./pages/TasksPage";
 
@@ -157,6 +158,7 @@ function AppRoutes() {
       <Route path="/marketing/studio" element={<ProtectedRoute><CreativeStudioPage /></ProtectedRoute>} />
       <Route path="/marketing/studio/:workId" element={<ProtectedRoute><CreativeStudioPage /></ProtectedRoute>} />
       <Route path="/marketing/studio-legacy" element={<ProtectedRoute><StudioCreativoPage /></ProtectedRoute>} />
+      <Route path="/marketing/automacoes" element={<ProtectedRoute><AutomationsPage /></ProtectedRoute>} />
       <Route path="/conteudo" element={<Navigate to="/marketing" replace />} />
       <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
       {/* Relatórios */}

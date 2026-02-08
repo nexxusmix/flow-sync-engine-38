@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Calendar, Sparkles, AlertTriangle, CheckCircle, Clock,
   TrendingUp, Lightbulb, Megaphone, ArrowRight, Plus,
-  Instagram, BarChart3, Target, Wand2, Users, Heart
+  Instagram, BarChart3, Target, Wand2, Users, Heart, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -257,6 +257,11 @@ export default function MarketingDashboard() {
                 icon={BarChart3} 
                 label="Assets & Brand" 
                 onClick={() => navigate('/marketing/assets')} 
+              />
+              <QuickAction 
+                icon={Zap} 
+                label="Automações" 
+                onClick={() => navigate('/marketing/automacoes')} 
               />
             </div>
           </Card>
