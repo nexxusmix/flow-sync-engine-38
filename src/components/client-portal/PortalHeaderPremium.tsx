@@ -102,7 +102,7 @@ function PortalHeaderPremiumComponent({
   return (
     <motion.div 
       ref={headerRef}
-      className="space-y-0 relative"
+      className="space-y-0 relative py-8 md:py-12"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -110,7 +110,7 @@ function PortalHeaderPremiumComponent({
     >
       {/* Decorative Line */}
       <motion.div 
-        className="absolute -top-3 left-0 h-px bg-gradient-to-r from-primary via-primary/50 to-transparent"
+        className="absolute top-0 left-0 h-px bg-gradient-to-r from-primary via-primary/50 to-transparent"
         style={{ width: '40%' }}
         variants={lineVariants}
       />
@@ -160,10 +160,10 @@ function PortalHeaderPremiumComponent({
       >
         <div className="space-y-3">
           {/* Project Name with Text Reveal */}
-          <div className="overflow-hidden">
+          <div className="overflow-hidden pb-2">
             <TextReveal 
               text={project.name}
-              className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight text-foreground uppercase"
+              className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-foreground uppercase leading-tight"
               delay={0.4}
             />
           </div>
