@@ -4,7 +4,6 @@ import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { PROJECT_TEMPLATES, STATUS_CONFIG, STAGE_COLORS, PROJECT_STAGES } from "@/data/projectTemplates";
 import { 
-  Ban, 
   ChevronRight, 
   ExternalLink,
   Loader2
@@ -74,9 +73,6 @@ function ProjectCard({ project }: { project: ProjectWithStages }) {
               <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                 {project.name}
               </h3>
-              {project.has_payment_block && (
-                <Ban className="w-4 h-4 text-destructive flex-shrink-0" />
-              )}
             </div>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <span>{project.client_name}</span>
