@@ -1,27 +1,27 @@
 /**
- * ClientPortalPage - Portal do Cliente expandido
+ * ClientPortalPage - Portal do Cliente Premium
  * 
- * Espelha o design do detalhe interno do projeto com:
- * - Header com badges, métricas e ações
- * - Sistema de abas completo
- * - Realtime updates
+ * Design premium SQUAD com:
+ * - Header minimalista com badges
+ * - Grid de métricas
+ * - Sistema de abas
+ * - Estilo dark editorial
  */
 
 import { useParams } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Loader2, Lock, AlertTriangle } from "lucide-react";
 import { TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
-import { PortalHeaderExpanded } from "@/components/client-portal/PortalHeaderExpanded";
-import { PortalTabs } from "@/components/client-portal/PortalTabs";
-import { PortalOverviewTab } from "@/components/client-portal/portal-tabs/PortalOverviewTab";
-import { PortalDeliverablesTab } from "@/components/client-portal/portal-tabs/PortalDeliverablesTab";
-import { PortalFilesTab } from "@/components/client-portal/portal-tabs/PortalFilesTab";
+import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPremium";
+import { PortalTabsPremium } from "@/components/client-portal/PortalTabsPremium";
+import { PortalOverviewPremium } from "@/components/client-portal/PortalOverviewPremium";
+import { PortalDeliverablesPremium } from "@/components/client-portal/PortalDeliverablesPremium";
+import { PortalFooterPremium } from "@/components/client-portal/PortalFooterPremium";
+import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
 import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/PortalRevisionsTab";
 import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/PortalScheduleTab";
-import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
-import { PortalMaterialsTab } from "@/components/client-portal/portal-tabs/PortalMaterialsTab";
 import { PortalAuditTab } from "@/components/client-portal/portal-tabs/PortalAuditTab";
 import { PortalFeedbackPanel } from "@/components/client-portal/PortalFeedbackPanel";
 import { PortalVersionsTimeline, DeliverableVersion } from "@/components/client-portal/PortalVersionsTimeline";
@@ -66,7 +66,6 @@ export default function ClientPortalPage() {
   const handleExportPdf = async () => {
     setIsExporting(true);
     toast.info("Gerando PDF do portal...");
-    // TODO: Implement PDF export via edge function
     setTimeout(() => {
       setIsExporting(false);
       toast.success("PDF gerado com sucesso!");
@@ -106,10 +105,10 @@ export default function ClientPortalPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-          <p className="text-sm text-muted-foreground">Carregando portal...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-500 mx-auto" />
+          <p className="text-sm text-gray-500">Carregando portal...</p>
         </div>
       </div>
     );
@@ -122,22 +121,22 @@ export default function ClientPortalPage() {
     const isInactive = errorMessage.includes('inactive');
 
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="glass-card rounded-3xl p-8 max-w-md text-center space-y-4">
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-10 max-w-md text-center space-y-4">
           <div className={cn(
             "w-16 h-16 rounded-full flex items-center justify-center mx-auto",
-            isInactive ? "bg-muted" : isExpired ? "bg-amber-500/20" : "bg-destructive/20"
+            isInactive ? "bg-gray-800" : isExpired ? "bg-amber-500/20" : "bg-red-500/20"
           )}>
             {isInactive ? (
-              <Lock className="w-8 h-8 text-muted-foreground" />
+              <Lock className="w-8 h-8 text-gray-500" />
             ) : (
-              <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-amber-500" : "text-destructive")} />
+              <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-amber-500" : "text-red-500")} />
             )}
           </div>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-xl font-light text-white">
             {isInactive ? 'Portal Desativado' : isExpired ? 'Link Expirado' : 'Link Inválido'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 text-sm">
             {isInactive 
               ? 'O acesso ao portal está temporariamente desativado.'
               : isExpired 
@@ -150,10 +149,10 @@ export default function ClientPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="min-h-screen bg-[#050505]">
+      <div className="max-w-6xl mx-auto px-6 py-6">
         {/* Header */}
-        <PortalHeaderExpanded
+        <PortalHeaderPremium
           project={project}
           shareToken={shareToken || ''}
           hasPaymentBlock={hasPaymentBlock}
@@ -162,101 +161,81 @@ export default function ClientPortalPage() {
         />
 
         {/* Tabs */}
-        <PortalTabs activeTab={activeTab} onTabChange={setActiveTab}>
-          <TabsContent value="overview" className="mt-6">
-            <PortalOverviewTab project={project} stages={stages} hasPaymentBlock={hasPaymentBlock} />
-          </TabsContent>
+        <div className="mt-10">
+          <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab}>
+            <TabsContent value="overview" className="mt-8">
+              <PortalOverviewPremium 
+                project={project} 
+                stages={stages} 
+                hasPaymentBlock={hasPaymentBlock} 
+              />
+            </TabsContent>
 
-          <TabsContent value="tasks" className="mt-6">
-            <PortalTasksTab />
-          </TabsContent>
+            <TabsContent value="tasks" className="mt-8">
+              <PortalTasksTab />
+            </TabsContent>
 
-          <TabsContent value="deliverables" className="mt-6">
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <PortalDeliverablesTab
-                  deliverables={deliverables}
-                  files={files}
-                  approvals={approvals}
-                  comments={comments}
-                  hasPaymentBlock={hasPaymentBlock}
-                  onSelectMaterial={setSelectedMaterialId}
-                  selectedMaterialId={selectedMaterialId}
-                />
-              </div>
-              <div>
-                {selectedMaterial ? (
-                  <div className="space-y-4">
-                    <PortalFeedbackPanel
-                      materialId={selectedMaterialId!}
-                      materialTitle={selectedMaterial.title}
-                      comments={selectedComments}
-                      approval={selectedApproval}
-                      onAddComment={handleAddComment}
-                      onApprove={handleApprove}
-                      onRequestRevision={handleRequestRevision}
-                      isAddingComment={isAddingComment}
-                      isApproving={isApproving}
-                      isRequestingRevision={isRequestingRevision}
-                      hasPaymentBlock={hasPaymentBlock}
-                    />
-                    {selectedVersions.length > 0 && (
-                      <PortalVersionsTimeline
-                        versions={selectedVersions as DeliverableVersion[]}
-                        currentVersion={selectedMaterial.current_version}
+            <TabsContent value="deliverables" className="mt-8">
+              <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <PortalDeliverablesPremium
+                    deliverables={deliverables}
+                    approvals={approvals}
+                    onSelectMaterial={setSelectedMaterialId}
+                    selectedMaterialId={selectedMaterialId}
+                  />
+                </div>
+                <div>
+                  {selectedMaterial ? (
+                    <div className="space-y-4">
+                      <PortalFeedbackPanel
+                        materialId={selectedMaterialId!}
+                        materialTitle={selectedMaterial.title}
+                        comments={selectedComments}
+                        approval={selectedApproval}
+                        onAddComment={handleAddComment}
+                        onApprove={handleApprove}
+                        onRequestRevision={handleRequestRevision}
+                        isAddingComment={isAddingComment}
+                        isApproving={isApproving}
+                        isRequestingRevision={isRequestingRevision}
+                        hasPaymentBlock={hasPaymentBlock}
                       />
-                    )}
-                  </div>
-                ) : (
-                  <div className="glass-card rounded-2xl p-8 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Selecione um material para ver detalhes e enviar feedback.
-                    </p>
-                  </div>
-                )}
+                      {selectedVersions.length > 0 && (
+                        <PortalVersionsTimeline
+                          versions={selectedVersions as DeliverableVersion[]}
+                          currentVersion={selectedMaterial.current_version}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-8 text-center">
+                      <p className="text-sm text-gray-500">
+                        Selecione uma entrega para ver detalhes e enviar feedback.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="revisions" className="mt-6">
-            <PortalRevisionsTab changeRequests={changeRequests} comments={comments} />
-          </TabsContent>
+            <TabsContent value="revisions" className="mt-8">
+              <PortalRevisionsTab changeRequests={changeRequests} comments={comments} />
+            </TabsContent>
 
-          <TabsContent value="files" className="mt-6">
-            <PortalFilesTab files={files} hasPaymentBlock={hasPaymentBlock} />
-          </TabsContent>
+            <TabsContent value="schedule" className="mt-8">
+              <PortalScheduleTab stages={stages} dueDate={project.due_date} />
+            </TabsContent>
 
-          <TabsContent value="schedule" className="mt-6">
-            <PortalScheduleTab stages={stages} dueDate={project.due_date} />
-          </TabsContent>
-
-          <TabsContent value="portal" className="mt-6">
-            <PortalMaterialsTab
-              deliverables={deliverables}
-              approvals={approvals}
-              comments={comments}
-              portalLinkId={portal.id}
-              hasPaymentBlock={hasPaymentBlock}
-              isGestor={false}
-              onSelectMaterial={setSelectedMaterialId}
-              selectedMaterialId={selectedMaterialId}
-            />
-          </TabsContent>
-
-          <TabsContent value="audit" className="mt-6">
-            <PortalAuditTab comments={comments} approvals={approvals} versions={versions} />
-          </TabsContent>
-        </PortalTabs>
+            <TabsContent value="audit" className="mt-8">
+              <PortalAuditTab comments={comments} approvals={approvals} versions={versions} />
+            </TabsContent>
+          </PortalTabsPremium>
+        </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-center">
-          <p className="text-xs text-muted-foreground">
-            Powered by <span className="font-semibold text-foreground">SQUAD Hub</span>
-          </p>
-        </div>
-      </footer>
+      <PortalFooterPremium />
     </div>
   );
 }
