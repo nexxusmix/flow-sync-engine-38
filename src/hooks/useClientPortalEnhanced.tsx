@@ -56,6 +56,10 @@ export interface PortalDeliverable {
   sort_order: number | null;
   created_at: string;
   updated_at: string;
+  // Client upload fields
+  uploaded_by_client?: boolean;
+  client_upload_name?: string | null;
+  material_category?: string | null;
 }
 
 export interface PortalFile {
@@ -395,6 +399,58 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
     },
   });
 
+  // Client upload mutation
+  const uploadClientMaterial = useMutation({
+    mutationFn: async ({
+      portalLinkId,
+      title,
+      description,
+      type,
+      url,
+      clientName,
+    }: {
+      portalLinkId: string;
+      title: string;
+      description?: string;
+      type: 'youtube' | 'link' | 'file';
+      url?: string;
+      clientName?: string;
+    }) => {
+      const insertData: any = {
+        portal_link_id: portalLinkId,
+        title,
+        description,
+        uploaded_by_client: true,
+        client_upload_name: clientName,
+        material_category: 'reference',
+        status: 'pending',
+        visible_in_portal: true,
+        current_version: 1,
+        awaiting_approval: false,
+      };
+
+      if (type === 'youtube') {
+        insertData.youtube_url = url;
+      } else if (type === 'link') {
+        insertData.external_url = url;
+      } else if (type === 'file' && url) {
+        insertData.file_url = url;
+      }
+
+      const { data, error } = await supabase
+        .from('portal_deliverables')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
+    },
+  });
+
   return {
     data,
     isLoading,
@@ -407,5 +463,7 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
     isRequestingRevision: requestRevision.isPending,
     createChangeRequest: createChangeRequest.mutate,
     isCreatingChangeRequest: createChangeRequest.isPending,
+    uploadClientMaterial: uploadClientMaterial.mutateAsync,
+    isUploadingMaterial: uploadClientMaterial.isPending,
   };
 }

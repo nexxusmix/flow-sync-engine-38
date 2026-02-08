@@ -1,24 +1,25 @@
 /**
- * ClientPortalPage - Portal do Cliente Premium
- * Layout idêntico ao HTML de referência com sidebar
+ * ClientPortalPage - Portal do Cliente Premium com animações
+ * Layout navegável com smooth scroll e transições
  */
 
 import { useParams } from "react-router-dom";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Lock, AlertTriangle } from "lucide-react";
-import { TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
 import { PortalBlockBanner } from "@/components/client-portal/PortalBlockBanner";
 import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPremium";
 import { PortalMetricsGrid } from "@/components/client-portal/PortalMetricsGrid";
-import { PortalTabsPremium } from "@/components/client-portal/PortalTabsPremium";
+import { PortalTabsPremium, TabsContent } from "@/components/client-portal/PortalTabsPremium";
 import { PortalOverviewPremium } from "@/components/client-portal/PortalOverviewPremium";
 import { PortalDeliverablesPremium } from "@/components/client-portal/PortalDeliverablesPremium";
 import { PortalFooterPremium } from "@/components/client-portal/PortalFooterPremium";
 import { PortalMaterialsAside } from "@/components/client-portal/PortalMaterialsAside";
 import { PortalPaymentsAside } from "@/components/client-portal/PortalPaymentsAside";
 import { PortalAuditBadge } from "@/components/client-portal/PortalAuditBadge";
+import { PortalClientUploads } from "@/components/client-portal/PortalClientUploads";
 import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
 import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/PortalRevisionsTab";
 import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/PortalScheduleTab";
@@ -45,6 +46,8 @@ export default function ClientPortalPage() {
     isApproving,
     requestRevision,
     isRequestingRevision,
+    uploadClientMaterial,
+    isUploadingMaterial,
   } = useClientPortalEnhanced(shareToken);
 
   const portal = data?.portal;
@@ -56,6 +59,9 @@ export default function ClientPortalPage() {
   const approvals = data?.approvals || [];
   const changeRequests = data?.changeRequests || [];
   const versions = data?.versions || [];
+
+  // Filter client uploads
+  const clientUploads = deliverables.filter(d => d.uploaded_by_client);
 
   const hasPaymentBlock = portal?.blocked_by_payment || project?.has_payment_block;
 
@@ -120,14 +126,67 @@ export default function ClientPortalPage() {
     });
   };
 
+  const handleClientUpload = async (uploadData: {
+    type: 'youtube' | 'link' | 'file';
+    title: string;
+    description?: string;
+    url?: string;
+    file?: File;
+  }) => {
+    if (!portal?.id) {
+      toast.error("Portal não carregado");
+      return;
+    }
+
+    try {
+      let fileUrl = uploadData.url;
+
+      // If it's a file, upload to storage first
+      if (uploadData.type === 'file' && uploadData.file) {
+        const fileName = `${Date.now()}-${uploadData.file.name}`;
+        const { data: uploadResult, error: uploadError } = await supabase.storage
+          .from('project-files')
+          .upload(`portal-uploads/${portal.id}/${fileName}`, uploadData.file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrl } = supabase.storage
+          .from('project-files')
+          .getPublicUrl(uploadResult.path);
+
+        fileUrl = publicUrl.publicUrl;
+      }
+
+      await uploadClientMaterial({
+        portalLinkId: portal.id,
+        title: uploadData.title,
+        description: uploadData.description,
+        type: uploadData.type,
+        url: fileUrl,
+        clientName: 'Cliente', // Could be enhanced with actual client name
+      });
+
+      toast.success("Material enviado com sucesso!");
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error("Erro ao enviar material");
+      throw err;
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="text-center space-y-4">
+        <motion.div 
+          className="text-center space-y-4"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
           <Loader2 className="w-8 h-8 animate-spin text-cyan-500 mx-auto" />
           <p className="text-sm text-gray-500">Carregando portal...</p>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -140,7 +199,12 @@ export default function ClientPortalPage() {
 
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-10 max-w-md text-center space-y-4">
+        <motion.div 
+          className="bg-[#0a0a0a] border border-[#1a1a1a] p-10 max-w-md text-center space-y-4"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <div className={cn(
             "w-16 h-16 rounded-full flex items-center justify-center mx-auto",
             isInactive ? "bg-gray-800" : isExpired ? "bg-amber-500/20" : "bg-red-500/20"
@@ -161,13 +225,13 @@ export default function ClientPortalPage() {
                 ? 'O link de acesso expirou. Solicite um novo link à equipe.'
                 : 'Este link não é válido. Entre em contato com a equipe.'}
           </p>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#050505]">
+    <div className="min-h-screen bg-[#050505] scroll-smooth">
       {/* Block Banner */}
       <PortalBlockBanner isVisible={!!hasPaymentBlock} />
       
@@ -193,13 +257,20 @@ export default function ClientPortalPage() {
             <TabsContent value="overview" className="mt-8">
               <div className="grid lg:grid-cols-3 gap-6">
                 {/* Main Content */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 space-y-6">
                   <PortalOverviewPremium 
                     project={project} 
                     stages={stages}
                     deliverables={deliverables}
                     hasPaymentBlock={hasPaymentBlock}
                     isManager={false}
+                  />
+                  
+                  {/* Client Uploads Section */}
+                  <PortalClientUploads
+                    clientUploads={clientUploads}
+                    onUpload={handleClientUpload}
+                    isUploading={isUploadingMaterial}
                   />
                 </div>
                 
@@ -230,7 +301,12 @@ export default function ClientPortalPage() {
                 </div>
                 <div>
                   {selectedMaterial ? (
-                    <div className="space-y-4">
+                    <motion.div 
+                      className="space-y-4"
+                      initial={{ opacity: 0, x: 16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.25 }}
+                    >
                       <PortalFeedbackPanel
                         materialId={selectedMaterialId!}
                         materialTitle={selectedMaterial.title}
@@ -250,13 +326,17 @@ export default function ClientPortalPage() {
                           currentVersion={selectedMaterial.current_version}
                         />
                       )}
-                    </div>
+                    </motion.div>
                   ) : (
-                    <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-8 text-center">
+                    <motion.div 
+                      className="bg-[#0a0a0a] border border-[#1a1a1a] p-8 text-center"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
                       <p className="text-sm text-gray-500">
                         Selecione uma entrega para ver detalhes e enviar feedback.
                       </p>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
               </div>
