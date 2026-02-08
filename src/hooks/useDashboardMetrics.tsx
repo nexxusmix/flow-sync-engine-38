@@ -1,7 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { differenceInDays, parseISO, addDays, format } from 'date-fns';
+import { differenceInDays, parseISO, addDays, format, startOfMonth, endOfMonth } from 'date-fns';
+
+/**
+ * Dashboard Metrics Hook
+ * 
+ * IMPORTANT: This hook aligns with the financial calculations in financialStore.ts
+ * to ensure consistency between Overview and Financial dashboards.
+ * 
+ * Data Sources:
+ * - monthlyRevenue: revenues table (status = 'received', received_date in current month)
+ * - pendingPayments: revenues table (status = 'pending' OR 'overdue', OR pending with due_date < today)
+ * - totalPipelineValue: prospect_opportunities table (estimated_value sum)
+ * - totalProjectsActive: projects table (status = 'active')
+ * - projectsAtRisk: projects with overdue stages
+ * - projectsBlocked: projects with has_payment_block = true
+ */
 
 export interface DashboardMetrics {
   // Project metrics
@@ -22,9 +37,12 @@ export interface DashboardMetrics {
   eventsNext30Days: number;
   overdueItems: number;
   
-  // Financial metrics (from existing tables)
-  monthlyRevenue: number;
-  pendingPayments: number;
+  // Financial metrics - aligned with financialStore.getStats()
+  // Source: revenues table with same logic as FinanceDashboard
+  monthlyRevenue: number;        // Received revenue in current month
+  pendingPayments: number;       // Pending + overdue revenues
+  currentBalance: number;        // Total received - total paid
+  projectedBalance30Days: number; // Projected balance in 30 days
 }
 
 export interface ProjectsByStage {
@@ -54,6 +72,7 @@ export interface TimelineEvent {
 
 export function useDashboardMetrics() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['dashboard-metrics'],
@@ -72,79 +91,59 @@ export function useDashboardMetrics() {
       }>;
     }> => {
       const now = new Date();
+      const today = format(now, 'yyyy-MM-dd');
       const thirtyDaysFromNow = addDays(now, 30);
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
 
-      // Fetch projects - don't throw on error, use empty array
-      const { data: projects, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .neq('status', 'archived');
+      // Fetch all required data in parallel for performance
+      const [
+        projectsResult,
+        stagesResult,
+        dealsResult,
+        eventsResult,
+        revenuesResult,
+        expensesResult,
+        contractsResult,
+      ] = await Promise.all([
+        supabase.from('projects').select('*').neq('status', 'archived'),
+        supabase.from('project_stages').select('*'),
+        supabase.from('prospect_opportunities').select('*'),
+        supabase.from('calendar_events')
+          .select('*')
+          .gte('start_at', now.toISOString())
+          .lte('start_at', thirtyDaysFromNow.toISOString())
+          .order('start_at', { ascending: true }),
+        // Fetch ALL revenues (not just current month) for accurate calculations
+        supabase.from('revenues').select('*'),
+        supabase.from('expenses').select('*'),
+        supabase.from('contracts').select('*').eq('status', 'active'),
+      ]);
 
-      if (projectsError) {
-        console.error('Error fetching projects:', projectsError);
-      }
+      // Log errors but continue with empty arrays
+      if (projectsResult.error) console.error('Error fetching projects:', projectsResult.error);
+      if (stagesResult.error) console.error('Error fetching stages:', stagesResult.error);
+      if (dealsResult.error) console.error('Error fetching deals:', dealsResult.error);
+      if (eventsResult.error) console.error('Error fetching events:', eventsResult.error);
+      if (revenuesResult.error) console.error('Error fetching revenues:', revenuesResult.error);
+      if (expensesResult.error) console.error('Error fetching expenses:', expensesResult.error);
+      if (contractsResult.error) console.error('Error fetching contracts:', contractsResult.error);
 
-      // Fetch project stages to calculate at-risk
-      const { data: stages, error: stagesError } = await supabase
-        .from('project_stages')
-        .select('*');
+      const projects = projectsResult.data || [];
+      const stages = stagesResult.data || [];
+      const deals = dealsResult.data || [];
+      const events = eventsResult.data || [];
+      const revenues = revenuesResult.data || [];
+      const expenses = expensesResult.data || [];
+      const contracts = contractsResult.data || [];
 
-      if (stagesError) {
-        console.error('Error fetching stages:', stagesError);
-      }
-
-      // Fetch deals
-      const { data: deals, error: dealsError } = await supabase
-        .from('prospect_opportunities')
-        .select('*');
-
-      if (dealsError) {
-        console.error('Error fetching deals:', dealsError);
-      }
-
-      // Fetch calendar events for next 30 days
-      const { data: events, error: eventsError } = await supabase
-        .from('calendar_events')
-        .select('*')
-        .gte('start_at', now.toISOString())
-        .lte('start_at', thirtyDaysFromNow.toISOString())
-        .order('start_at', { ascending: true });
-
-      if (eventsError) {
-        console.error('Error fetching events:', eventsError);
-      }
-
-      // Fetch revenues for current month
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-      const { data: revenues, error: revenuesError } = await supabase
-        .from('revenues')
-        .select('*')
-        .gte('due_date', format(startOfMonth, 'yyyy-MM-dd'))
-        .lte('due_date', format(endOfMonth, 'yyyy-MM-dd'));
-
-      if (revenuesError) {
-        console.error('Error fetching revenues:', revenuesError);
-      }
-
-      // Fetch contracts for pipeline value
-      const { data: contracts, error: contractsError } = await supabase
-        .from('contracts')
-        .select('*')
-        .eq('status', 'active');
-
-      if (contractsError) {
-        console.error('Error fetching contracts:', contractsError);
-      }
-
-      // Calculate metrics - use empty arrays as fallback
-      const activeProjects = (projects || []).filter(p => p.status === 'active');
-      const completedProjects = (projects || []).filter(p => p.status === 'completed');
-      const blockedProjects = (projects || []).filter(p => p.has_payment_block);
+      // === PROJECT METRICS ===
+      const activeProjects = projects.filter(p => p.status === 'active');
+      const completedProjects = projects.filter(p => p.status === 'completed');
+      const blockedProjects = projects.filter(p => p.has_payment_block);
 
       // Calculate at-risk projects (stages with planned_end < today and status != done)
-      const projectStagesMap = (stages || []).reduce((acc, stage) => {
+      const projectStagesMap = stages.reduce((acc, stage) => {
         if (!acc[stage.project_id]) acc[stage.project_id] = [];
         acc[stage.project_id].push(stage);
         return acc;
@@ -159,10 +158,10 @@ export function useDashboardMetrics() {
         });
       });
 
-      // Deal metrics by stage
+      // === CRM METRICS ===
       const dealStages = ['lead', 'qualificacao', 'diagnostico', 'proposta', 'negociacao', 'fechado', 'onboarding', 'posvenda'];
       const dealsByStage = dealStages.reduce((acc, stage) => {
-        const stageDeals = (deals || []).filter(d => d.stage === stage);
+        const stageDeals = deals.filter(d => d.stage === stage);
         acc[stage] = {
           count: stageDeals.length,
           value: stageDeals.reduce((sum, d) => sum + (d.estimated_value || 0), 0),
@@ -170,40 +169,83 @@ export function useDashboardMetrics() {
         return acc;
       }, {} as Record<string, { count: number; value: number }>);
 
-      const totalPipelineValue = (deals || []).reduce((acc, d) => acc + (d.estimated_value || 0), 0);
-      const forecast = (deals || [])
+      const totalPipelineValue = deals.reduce((acc, d) => acc + (d.estimated_value || 0), 0);
+      const forecast = deals
         .filter(d => d.stage !== 'lost' && d.probability)
         .reduce((acc, d) => acc + ((d.estimated_value || 0) * (d.probability || 0) / 100), 0);
 
-      // Calculate overdue items
-      const overdueEvents = (events || []).filter(e => {
+      // === FINANCIAL METRICS (aligned with financialStore.getStats) ===
+      // Apply auto-overdue logic to pending revenues (same as financialStore)
+      const processedRevenues = revenues.map(r => ({
+        ...r,
+        status: r.status === 'pending' && r.due_date < today ? 'overdue' : r.status,
+      }));
+
+      const processedExpenses = expenses.map(e => ({
+        ...e,
+        status: e.status === 'pending' && e.due_date < today ? 'overdue' : e.status,
+      }));
+
+      // Monthly revenue: received in current month (by received_date, not due_date)
+      const monthStartStr = format(monthStart, 'yyyy-MM-dd');
+      const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
+      
+      const monthlyRevenue = processedRevenues
+        .filter(r => 
+          r.status === 'received' && 
+          r.received_date && 
+          r.received_date >= monthStartStr && 
+          r.received_date <= monthEndStr
+        )
+        .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+      // Pending payments: pending + overdue (same logic as financialStore)
+      const pendingPayments = processedRevenues
+        .filter(r => r.status === 'pending' || r.status === 'overdue')
+        .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+      // Current balance: total received - total paid (same as financialStore)
+      const totalReceived = processedRevenues
+        .filter(r => r.status === 'received')
+        .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+      
+      const totalPaid = processedExpenses
+        .filter(e => e.status === 'paid')
+        .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+      
+      const currentBalance = totalReceived - totalPaid;
+
+      // Projected balance 30 days (same logic as financialStore)
+      const thirtyDaysFromNowStr = format(thirtyDaysFromNow, 'yyyy-MM-dd');
+      
+      const projected30Revenue = processedRevenues
+        .filter(r => (r.status === 'pending' || r.status === 'received') && r.due_date <= thirtyDaysFromNowStr)
+        .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
+      const projected30Expenses = processedExpenses
+        .filter(e => (e.status === 'pending' || e.status === 'paid') && e.due_date <= thirtyDaysFromNowStr)
+        .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+      const projectedBalance30Days = (totalReceived + projected30Revenue) - (totalPaid + projected30Expenses);
+
+      // === CALENDAR METRICS ===
+      const overdueEvents = events.filter(e => {
         const eventDate = parseISO(e.start_at);
         return differenceInDays(now, eventDate) > 0;
       });
 
-      // Monthly revenue
-      const monthlyRevenue = (revenues || [])
-        .filter(r => r.status === 'received')
-        .reduce((acc, r) => acc + (r.amount || 0), 0);
-
-      const pendingPayments = (revenues || [])
-        .filter(r => r.status === 'pending')
-        .reduce((acc, r) => acc + (r.amount || 0), 0);
-
       // Active contracts pipeline value
-      const contractsPipelineValue = (contracts || [])
-        .reduce((acc, c) => acc + (c.total_value || 0), 0);
+      const contractsPipelineValue = contracts.reduce((acc, c) => acc + (c.total_value || 0), 0);
 
       // Active projects pipeline value (for projects without contracts)
-      const projectsWithContracts = new Set((contracts || []).map(c => c.project_id));
+      const projectsWithContracts = new Set(contracts.map(c => c.project_id));
       const projectsPipelineValue = activeProjects
         .filter(p => !projectsWithContracts.has(p.id))
         .reduce((acc, p) => acc + (p.contract_value || 0), 0);
 
-      // Total pipeline = contracts + projects without contracts
       const activePipelineValue = contractsPipelineValue + projectsPipelineValue;
 
-      // Projects by stage
+      // === PROJECTS BY STAGE ===
       const stageNames: Record<string, string> = {
         briefing: 'Briefing',
         roteiro: 'Roteiro',
@@ -232,8 +274,8 @@ export function useDashboardMetrics() {
           })),
       }));
 
-      // Timeline events
-      const timeline30Days: TimelineEvent[] = (events || []).map(event => {
+      // === TIMELINE EVENTS ===
+      const timeline30Days: TimelineEvent[] = events.map(event => {
         const eventDate = parseISO(event.start_at);
         const daysUntil = differenceInDays(eventDate, now);
         
@@ -254,8 +296,8 @@ export function useDashboardMetrics() {
         };
       });
 
-      // Recent projects (sorted by updated_at)
-      const recentProjects = [...(projects || [])]
+      // === RECENT PROJECTS ===
+      const recentProjects = [...projects]
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
         .slice(0, 8)
         .map(p => ({
@@ -274,16 +316,19 @@ export function useDashboardMetrics() {
           projectsAtRisk: atRiskProjects.length,
           projectsBlocked: blockedProjects.length,
           projectsCompleted: completedProjects.length,
-          totalDeals: (deals || []).length,
+          totalDeals: deals.length,
           totalPipelineValue,
           activePipelineValue,
           forecast,
           dealsByStage,
-          upcomingDeadlines: (events || []).filter(e => e.event_type === 'deadline' || e.event_type === 'delivery').length,
-          eventsNext30Days: (events || []).length,
+          upcomingDeadlines: events.filter(e => e.event_type === 'deadline' || e.event_type === 'delivery').length,
+          eventsNext30Days: events.length,
           overdueItems: overdueEvents.length,
+          // Financial metrics aligned with financialStore
           monthlyRevenue,
           pendingPayments,
+          currentBalance,
+          projectedBalance30Days,
         },
         projectsByStage,
         timeline30Days,
@@ -291,6 +336,8 @@ export function useDashboardMetrics() {
       };
     },
     enabled: !!user,
+    staleTime: 30000, // Consider data stale after 30 seconds
+    refetchOnWindowFocus: true, // Refetch when window regains focus
     refetchInterval: 60000, // Refetch every minute
   });
 
