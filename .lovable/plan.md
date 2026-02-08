@@ -1,340 +1,282 @@
 
-# Plano: Logo de Projeto + Geracao de Imagens com IA + Exportacao PDF Universal
+# Plano: Expansão do Portal do Cliente
 
-## Resumo Executivo
-
-Este plano implementa tres funcionalidades integradas:
-
-1. **Upload de logo/imagem do projeto** - Campo para adicionar uma imagem de identidade visual ao projeto
-2. **Geracao de imagens com IA** - Gerar banner, favicon, foto do projeto a partir do logo
-3. **Exportacao PDF Universal** - Exportar Relatorio 360, Tarefas, Projetos e Overview em PDF com identidade visual da plataforma
+## Resumo
+Expandir o Portal do Cliente para incluir todas as informações que aparecem no detalhe do projeto (Overview), adicionar funcionalidade de upload de materiais/logo pelo gestor, e permitir que o cliente visualize o progresso completo do projeto.
 
 ---
 
-## Arquitetura Geral
+## Seção 1: Novas Informações no Portal do Cliente
+
+### 1.1 Header Expandido com Banner + Logo
+- Adicionar banner do projeto no topo do header (igual ao ProjectHeader interno)
+- Exibir logo do projeto ao lado do título (já parcialmente implementado)
+- Mostrar badges de status, template e etapa atual
+
+### 1.2 Cards de Métricas Completos
+O portal já tem 4 cards (Valor, Saúde, Entrega, Responsável). Vamos adicionar:
+- **Progresso**: percentual de etapas concluídas (0/9 etapas)
+- **Etapa Atual**: nome da etapa com badge visual
+
+### 1.3 Seção de Briefing do Projeto
+- Exibir o campo `description` do projeto em formato read-only
+- Renderizado com Markdown para suportar formatação
+
+### 1.4 Etapas do Projeto (Pipeline Visual)
+- Mostrar a timeline de etapas do projeto
+- Status visual: concluída (verde), em andamento (azul), não iniciada (cinza)
+- Baseado nos dados da tabela `project_stages`
+
+### 1.5 Indicadores Adicionais
+Cards de rodapé com:
+- Status do projeto (active/paused/completed)
+- Data de entrega
+- Nome do cliente
+- Bloqueio financeiro (ativo/inativo)
+
+---
+
+## Seção 2: Upload de Materiais pelo Gestor
+
+### 2.1 Novo Componente: AddMaterialDialog
+Opções de envio:
+1. **Upload de Arquivo** - Envia para Storage bucket `project-files`
+2. **Link do YouTube** - Extrai ID e salva `youtube_url`
+3. **Link Externo** - Drive, Vimeo, qualquer URL
+
+### 2.2 Dados salvos em `portal_deliverables`
+- `title`: Nome do material
+- `description`: Descrição opcional
+- `file_url`: URL do arquivo (se upload)
+- `youtube_url`: URL do YouTube (se vídeo)
+- `external_url`: URL externa (se link)
+- `awaiting_approval`: true por padrão
+- `visible_in_portal`: true
+
+### 2.3 Fluxo do Gestor
+1. Acessar aba "Portal" no detalhe do projeto
+2. Clicar "Adicionar Material"
+3. Escolher tipo: Arquivo / YouTube / Link
+4. Preencher título e fazer upload/colar URL
+5. Material aparece no portal do cliente automaticamente (realtime)
+
+---
+
+## Seção 3: Upload de Logo do Projeto pelo Gestor
+
+### 3.1 Integração no PortalTab
+- Adicionar botão "Enviar Logo do Projeto" na aba Portal
+- Usar componente existente `ProjectLogoUpload`
+- Salvar `logo_url` no projeto
+
+### 3.2 Exibição no Portal
+- Logo aparece no header do portal
+- Fallback para logo da plataforma (squad-hub-logo.png) se não houver
+
+---
+
+## Arquivos a Criar/Modificar
+
+### Novos Arquivos
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/components/client-portal/PortalOverviewSection.tsx` | Briefing + Etapas + Métricas |
+| `src/components/client-portal/PortalProjectStages.tsx` | Timeline visual das etapas |
+| `src/components/client-portal/AddMaterialDialog.tsx` | Modal de envio de materiais |
+
+### Arquivos Modificados
+| Arquivo | Mudanças |
+|---------|----------|
+| `src/pages/ClientPortalPageNew.tsx` | Adicionar novas seções |
+| `src/hooks/useClientPortalEnhanced.tsx` | Buscar `project_stages` |
+| `src/components/projects/detail/tabs/PortalTab.tsx` | Botões de upload |
+
+---
+
+## Seção Técnica
+
+### Estrutura do Portal Expandido
 
 ```text
-+---------------------------+     +------------------------+     +------------------+
-|  Upload Logo do Projeto   | --> |  generate-project-art  | --> | Storage: exports |
-|  (Supabase Storage)       |     |  (Edge Function + IA)  |     | (banner, favicon)|
-+---------------------------+     +------------------------+     +------------------+
-                                           |
-                                           v
-+---------------------------+     +------------------------+
-|  Paginas com Exportar PDF | --> |  export-universal-pdf  |
-|  (Report360, Tasks, Proj) |     |  (Edge Function)       |
-+---------------------------+     +------------------------+
+┌─────────────────────────────────────────────────────────┐
+│ HEADER (sticky)                                          │
+│ ┌─────────┐                                              │
+│ │ Logo    │  Título do Projeto     [Etapa] [Bloqueado]   │
+│ └─────────┘  Nome do Cliente                             │
+├─────────────────────────────────────────────────────────┤
+│ BANNER DO PROJETO (se existir)                           │
+├─────────────────────────────────────────────────────────┤
+│ MÉTRICAS (grid 2x4 ou 2x3)                               │
+│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐             │
+│ │ Valor  │ │ Saúde  │ │Entrega │ │Respons.│             │
+│ └────────┘ └────────┘ └────────┘ └────────┘             │
+│ ┌────────┐ ┌────────┐                                   │
+│ │Progres.│ │ Etapa  │                                   │
+│ └────────┘ └────────┘                                   │
+├─────────────────────────────────────────────────────────┤
+│ ALERTA DE BLOQUEIO (se inadimplente)                     │
+├─────────────────────────────────────────────────────────┤
+│ BRIEFING DO PROJETO (Markdown)                           │
+├─────────────────────────────────────────────────────────┤
+│ ETAPAS DO PROJETO (pipeline visual)                      │
+│ ● Briefing → ○ Roteiro → ○ Pré-Produção → ...           │
+├─────────────────────────────────────────────────────────┤
+│ MATERIAIS & VÍDEOS (seção existente expandida)           │
+│ [Grid de cards com preview, comentários, aprovação]      │
+├─────────────────────────────────────────────────────────┤
+│ AJUSTES & FEEDBACK (seção existente)                     │
+└─────────────────────────────────────────────────────────┘
 ```
 
----
-
-## Parte 1: Upload de Logo/Imagem do Projeto
-
-### 1.1 Alteracao no Banco de Dados
-
-Adicionar colunas na tabela `projects`:
-
-- `logo_url` (TEXT) - URL da imagem de logo do projeto
-- `banner_url` (TEXT) - URL do banner gerado com IA
-- `cover_image_url` (TEXT) - Imagem de capa do projeto
-
-Migration SQL:
-```sql
-ALTER TABLE public.projects 
-ADD COLUMN IF NOT EXISTS logo_url TEXT,
-ADD COLUMN IF NOT EXISTS banner_url TEXT,
-ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
-```
-
-### 1.2 Interface de Upload
-
-**Arquivo:** `src/components/projects/modals/NewProjectModal.tsx`
-
-Adicionar:
-- Campo de upload de imagem para logo
-- Preview da imagem selecionada
-- Upload para bucket `project-files` no path `logos/{project_id}.png`
-
-**Arquivo:** `src/components/projects/modals/EditProjectModal.tsx`
-
-- Mesmo campo de upload
-- Opcao de remover imagem existente
-
-**Arquivo:** `src/components/projects/detail/ProjectHeader.tsx`
-
-- Exibir logo do projeto ao lado do titulo (se existir)
-- Fallback para icone generico
-
----
-
-## Parte 2: Geracao de Arte com IA
-
-### 2.1 Edge Function: `generate-project-art`
-
-**Input:**
-```json
-{
-  "project_id": "uuid",
-  "art_type": "banner" | "favicon" | "cover",
-  "custom_prompt": "opcional - instrucoes adicionais"
-}
-```
-
-**Logica:**
-1. Buscar projeto (nome, cliente, template, logo_url)
-2. Se logo_url existir, usar como referencia na geracao
-3. Chamar `google/gemini-3-pro-image-preview` com prompt construido:
-   - "Generate a professional [art_type] for a film production project called [name] for client [client]. Style: cinematic, modern, dark theme with cyan accents. Based on logo: [logo_url if exists]"
-4. Salvar imagem no Storage: `project-files/art/{project_id}/{art_type}.png`
-5. Atualizar coluna correspondente no projeto (banner_url, etc)
-6. Retornar URL publica
-
-### 2.2 Interface de Geracao
-
-**Arquivo:** `src/components/projects/detail/tabs/OverviewTab.tsx`
-
-Adicionar secao "Arte do Projeto" com:
-- Preview do banner/cover atual (se existir)
-- Botoes: "Gerar Banner com IA", "Gerar Favicon", "Gerar Capa"
-- Loading states e toast de sucesso/erro
-
----
-
-## Parte 3: Exportacao PDF Universal
-
-### 3.1 Edge Function: `export-universal-pdf`
-
-**Arquivo:** `supabase/functions/export-universal-pdf/index.ts`
-
-**Input:**
-```json
-{
-  "type": "report_360" | "tasks" | "project" | "project_overview",
-  "id": "opcional - project_id para project/overview",
-  "period": "opcional - 1m|3m|6m|1y para report_360",
-  "filters": "opcional - filtros aplicados"
-}
-```
-
-**Logica para cada tipo:**
-
-#### report_360
-1. Buscar projetos no periodo
-2. Calcular metricas (entregues, abertos, atrasados, %)
-3. Montar PDF com:
-   - Capa com titulo "Relatorio 360" + periodo + data
-   - KPIs em grid
-   - Grafico de evolucao mensal (representacao visual)
-   - Distribuicao por status
-   - Lista resumida de projetos
-
-#### tasks
-1. Buscar tarefas do usuario
-2. Agrupar por status e categoria
-3. Montar PDF com:
-   - Capa "Minhas Tarefas" + data
-   - KPIs (total, pendentes, vencidas, concluidas hoje)
-   - Lista por status (Backlog, Semana, Hoje, Concluido)
-   - Destaques de tarefas vencidas
-
-#### project
-1. Buscar projeto completo com stages
-2. Montar PDF com:
-   - Capa com nome do projeto + logo (se existir)
-   - Info do cliente, datas, valor
-   - Etapas e status
-   - Briefing
-   - Metricas (saude, progresso)
-
-#### project_overview
-1. Buscar todos os projetos ativos
-2. Montar PDF com:
-   - Capa "Visao Geral de Projetos" + data
-   - KPIs consolidados
-   - Lista de projetos com status
-
-### 3.2 Design Visual do PDF (Identidade SQUAD Film)
-
-O PDF seguira a identidade visual da plataforma:
-
-- **Cores:**
-  - Background: #000000 (preto puro)
-  - Texto primario: #FFFFFF
-  - Texto secundario: #737373
-  - Accent: #00A3D3 (squad-blue)
-  
-- **Tipografia:**
-  - Helvetica Bold para titulos
-  - Helvetica para corpo
-  - Tamanhos: 24pt titulo, 14pt subtitulo, 10pt corpo
-
-- **Layout:**
-  - Margens: 50pt
-  - Formato A4 (595.28 x 841.89)
-  - Separadores visuais com linhas finas
-  - KPIs em grid com icones representados por texto
-
-- **Elementos:**
-  - Logo SQUAD no cabecalho (se disponivel)
-  - Data de geracao no rodape
-  - Numeracao de paginas
-  - Secoes com titulos em uppercase + accent color
-
-### 3.3 Interface de Exportacao
-
-#### Relatorio 360
-
-**Arquivo:** `src/pages/reports/Report360Page.tsx`
-
-Adicionar botao "Exportar PDF" no header que:
-- Chama Edge Function com type='report_360' e periodo selecionado
-- Mostra loading no botao
-- Abre PDF em nova aba ao concluir
-
-#### Tarefas
-
-**Arquivo:** `src/pages/TasksPage.tsx`
-
-Adicionar botao "Exportar PDF" no header que:
-- Chama Edge Function com type='tasks'
-- Exporta todas as tarefas do usuario
-
-#### Projeto (Detail)
-
-**Arquivo:** `src/components/projects/detail/ProjectHeader.tsx`
-
-Adicionar opcao "Exportar PDF" no menu de acoes que:
-- Chama Edge Function com type='project' e project_id
-- Gera PDF completo do projeto
-
-#### Overview de Projetos
-
-**Arquivo:** `src/pages/projects/ProjectsListPage.tsx`
-
-Adicionar botao "Exportar Visao Geral (PDF)" que:
-- Chama Edge Function com type='project_overview'
-- Gera relatorio consolidado
-
-### 3.4 Hook de Exportacao Atualizado
-
-**Arquivo:** `src/hooks/useExportPdf.ts`
-
-Expandir hook existente com novas funcoes:
-- `exportReport360(period)`
-- `exportTasks()`
-- `exportProject(projectId)`
-- `exportProjectsOverview()`
-
----
-
-## Arquivos a Criar
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `supabase/functions/generate-project-art/index.ts` | Geracao de arte com IA |
-| `supabase/functions/export-universal-pdf/index.ts` | Exportacao PDF universal |
-| `src/components/projects/ProjectLogoUpload.tsx` | Componente de upload de logo |
-| `src/components/projects/ProjectArtSection.tsx` | Secao de arte do projeto no Overview |
-
-## Arquivos a Modificar
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/hooks/useProjects.tsx` | Incluir logo_url, banner_url no tipo |
-| `src/hooks/useExportPdf.ts` | Adicionar funcoes de exportacao |
-| `src/components/projects/modals/NewProjectModal.tsx` | Campo de upload de logo |
-| `src/components/projects/modals/EditProjectModal.tsx` | Campo de upload de logo |
-| `src/components/projects/detail/ProjectHeader.tsx` | Exibir logo + botao exportar PDF |
-| `src/components/projects/detail/tabs/OverviewTab.tsx` | Secao de arte do projeto |
-| `src/pages/reports/Report360Page.tsx` | Botao exportar PDF |
-| `src/pages/TasksPage.tsx` | Botao exportar PDF |
-| `src/pages/projects/ProjectsListPage.tsx` | Botao exportar visao geral |
-| `supabase/config.toml` | Registrar novas funcoes |
-
----
-
-## Detalhes Tecnicos
-
-### Upload de Imagem
+### Modificações no Hook `useClientPortalEnhanced.tsx`
 
 ```typescript
-// Componente de upload
-const handleUpload = async (file: File) => {
-  const path = `logos/${projectId || 'temp'}/${Date.now()}.png`;
-  const { error } = await supabase.storage
-    .from('project-files')
-    .upload(path, file, { upsert: true });
-  
-  const { data } = supabase.storage
-    .from('project-files')
-    .getPublicUrl(path);
-  
-  return data.publicUrl;
+// Adicionar busca de stages do projeto
+const { data: stages } = await supabase
+  .from('project_stages')
+  .select('*')
+  .eq('project_id', portal.project_id)
+  .order('order_index', { ascending: true });
+
+// Retornar junto com o resto
+return {
+  portal,
+  project,
+  stages: stages || [], // NOVO
+  deliverables,
+  files,
+  comments,
+  approvals,
+  changeRequests,
+  versions,
 };
 ```
 
-### Geracao de Arte (Prompt Template)
+### Componente AddMaterialDialog (estrutura)
 
 ```typescript
-const prompt = `
-Generate a professional ${artType} for a creative production project.
-Project: ${project.name}
-Client: ${project.client_name}
-Style: Cinematic, modern, dark theme (#000000 background), 
-       cyan accent color (#00A3D3), minimalist.
-${project.logo_url ? `Reference logo available at: ${project.logo_url}` : ''}
-No text in the image.
-Ultra high resolution, professional quality.
-`;
+interface AddMaterialDialogProps {
+  portalLinkId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+// Tipos de material
+type MaterialType = 'file' | 'youtube' | 'link';
+
+// Campos do form
+interface MaterialForm {
+  type: MaterialType;
+  title: string;
+  description?: string;
+  file?: File;
+  youtubeUrl?: string;
+  externalUrl?: string;
+}
 ```
 
-### Estrutura do PDF
+### Mutation para Adicionar Material
 
-```text
-+----------------------------------+
-|  [Logo]  TITULO DO RELATORIO     |
-|          Periodo / Data           |
-+----------------------------------+
-|                                  |
-|  +--------+  +--------+  +------+|
-|  | KPI 1  |  | KPI 2  |  | KPI 3||
-|  +--------+  +--------+  +------+|
-|                                  |
-|  ==============================  |
-|                                  |
-|  SECAO 1                         |
-|  - Item 1                        |
-|  - Item 2                        |
-|                                  |
-|  SECAO 2                         |
-|  ...                             |
-|                                  |
-+----------------------------------+
-|  Gerado em DD/MM/YYYY | Pag X    |
-+----------------------------------+
+```typescript
+const addMaterial = useMutation({
+  mutationFn: async (form: MaterialForm) => {
+    let fileUrl: string | null = null;
+    
+    // Se for arquivo, upload primeiro
+    if (form.type === 'file' && form.file) {
+      const path = `portal/${portalLinkId}/${Date.now()}_${form.file.name}`;
+      await supabase.storage
+        .from('project-files')
+        .upload(path, form.file);
+      
+      const { data } = supabase.storage
+        .from('project-files')
+        .getPublicUrl(path);
+      fileUrl = data.publicUrl;
+    }
+    
+    // Inserir deliverable
+    return supabase
+      .from('portal_deliverables')
+      .insert({
+        portal_link_id: portalLinkId,
+        title: form.title,
+        description: form.description,
+        file_url: fileUrl,
+        youtube_url: form.type === 'youtube' ? form.youtubeUrl : null,
+        external_url: form.type === 'link' ? form.externalUrl : null,
+        visible_in_portal: true,
+        awaiting_approval: true,
+        status: 'pending',
+      })
+      .select()
+      .single();
+  },
+});
+```
+
+### PortalTab - Adição dos Botões de Upload
+
+```typescript
+// Novo import
+import { AddMaterialDialog } from './AddMaterialDialog';
+import { ProjectLogoUpload } from '../ProjectLogoUpload';
+
+// Dentro do componente, adicionar:
+<div className="flex items-center gap-2">
+  <Button onClick={() => setAddMaterialOpen(true)}>
+    <Plus className="w-4 h-4 mr-2" />
+    Adicionar Material
+  </Button>
+</div>
+
+// Na seção de configurações, adicionar card para logo:
+<div className="glass-card rounded-xl p-4">
+  <div className="flex items-center gap-3">
+    <ImageIcon className="w-5 h-5 text-muted-foreground" />
+    <div>
+      <p className="font-medium">Logo do Projeto</p>
+      <p className="text-xs text-muted-foreground">
+        Aparece no header do portal
+      </p>
+    </div>
+  </div>
+  <div className="mt-3">
+    <ProjectLogoUpload
+      projectId={project.id}
+      currentLogoUrl={project.logo_url}
+      onUpload={handleLogoUpload}
+      compact
+    />
+  </div>
+</div>
 ```
 
 ---
 
-## Ordem de Implementacao
+## Sequência de Implementação
 
-1. **Migration de banco** - Adicionar colunas logo_url, banner_url, cover_image_url
-2. **Componente de upload** - ProjectLogoUpload com preview
-3. **Edge Function generate-project-art** - Geracao com IA
-4. **Edge Function export-universal-pdf** - Exportacao com design SQUAD
-5. **Integracao na UI** - Botoes de exportar em cada pagina
-6. **Atualizacao do hook useExportPdf**
+1. **Expandir hook** `useClientPortalEnhanced` para buscar `project_stages`
+2. **Criar** `PortalOverviewSection` com briefing e métricas expandidas
+3. **Criar** `PortalProjectStages` com timeline visual
+4. **Modificar** `ClientPortalPageNew` para incluir novas seções
+5. **Criar** `AddMaterialDialog` para upload de materiais
+6. **Modificar** `PortalTab` para incluir botões de gestão
 
 ---
 
 ## Resultado Esperado
 
-Apos implementacao:
-- Projetos podem ter uma imagem de logo/identidade
-- IA pode gerar banner, favicon e capa baseados no projeto
-- PDFs podem ser exportados de:
-  - Relatorio 360 (com metricas do periodo)
-  - Tarefas (visao pessoal)
-  - Projeto individual (detalhado)
-  - Overview de projetos (consolidado)
-- Todos os PDFs seguem a identidade visual SQUAD Film (dark, cyan, minimalista)
+### Portal do Cliente
+- Visualização completa do projeto: valor, saúde, progresso, etapa
+- Briefing do projeto legível
+- Pipeline visual das etapas de produção
+- Materiais com vídeos, arquivos e links
+- Sistema de feedback e aprovação
+
+### Gestão pelo Admin
+- Botão "Adicionar Material" na aba Portal
+- Opções: Upload arquivo, Link YouTube, Link externo
+- Upload de logo do projeto
+- Materiais aparecem automaticamente no portal (realtime)
