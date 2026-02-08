@@ -3,7 +3,6 @@ import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 import { 
   TrendingUp, 
-  Ban, 
   Clock,
   Wallet,
   Bolt,
@@ -107,7 +106,6 @@ function MiniKanbanCard({ project }: { project: ProjectWithStages }) {
         <h4 className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
           {project.name}
         </h4>
-        {project.has_payment_block && <Ban className="w-3 h-3 text-red-500 flex-shrink-0" />}
       </div>
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-muted-foreground">{project.client_name || 'Sem cliente'}</span>

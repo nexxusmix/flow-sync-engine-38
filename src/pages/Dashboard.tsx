@@ -330,10 +330,10 @@ export default function Dashboard() {
           <div className="glass-card rounded-xl p-4 border-l-2 border-violet-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-violet-500" />
-              <span className="text-[8px] font-normal text-violet-500 uppercase">{metrics?.projectsBlocked || 0} bloqueados</span>
+              <span className="text-[8px] font-normal text-violet-500 uppercase">Faturamento</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-1 font-light">Bloqueio Financeiro</p>
-            <p className="text-lg font-normal text-foreground">{metrics?.projectsBlocked || 0}</p>
+            <p className="text-[10px] text-muted-foreground mb-1 font-light">Projetos Ativos</p>
+            <p className="text-lg font-normal text-foreground">{metrics?.totalProjectsActive || 0}</p>
           </div>
         </div>
 

@@ -7,13 +7,10 @@ import {
   DollarSign, 
   Users, 
   ExternalLink,
-  Ban,
-  AlertTriangle,
   Activity,
   Copy,
   Loader2,
   FileDown,
-  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
@@ -115,12 +112,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               <span className="text-[10px] md:text-xs text-primary bg-primary/10 px-2 py-1 rounded font-medium">
                 {stageInfo?.name || project.stage_current}
               </span>
-              {project.has_payment_block && (
-                <span className="text-[10px] md:text-xs px-2 py-1 rounded bg-destructive/20 text-destructive border border-destructive/30 flex items-center gap-1">
-                  <Ban className="w-3 h-3" />
-                  Bloqueado
-                </span>
-              )}
             </div>
 
             {/* Title with Logo */}
@@ -245,22 +236,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
         </div>
       </div>
 
-      {/* Blockages Alert */}
-      {project.has_payment_block && (
-        <div className="glass-card rounded-2xl p-4 border-red-500/30 bg-red-500/5">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-4 h-4 text-red-500" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Projeto Bloqueado por Inadimplência</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Existe uma fatura em atraso vinculada a este projeto. A entrega final está bloqueada até regularização.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
