@@ -9,6 +9,11 @@ type TableName =
   | 'calendar_events' 
   | 'project_files' 
   | 'portal_links'
+  | 'portal_deliverables'
+  | 'portal_comments'
+  | 'portal_approvals'
+  | 'portal_change_requests'
+  | 'portal_deliverable_versions'
   | 'revenues'
   | 'expenses'
   | 'prospect_opportunities'
@@ -22,6 +27,8 @@ interface QueryKeyMapping {
   table: TableName;
   queryKeys: (string | string[])[];
   getProjectId?: (payload: any) => string | null;
+  getPortalLinkId?: (payload: any) => string | null;
+  getDeliverableId?: (payload: any) => string | null;
 }
 
 // Mapeamento de tabelas para query keys que devem ser invalidadas
@@ -54,8 +61,33 @@ const TABLE_QUERY_MAPPINGS: QueryKeyMapping[] = [
   },
   {
     table: 'portal_links',
-    queryKeys: [],
+    queryKeys: [['portal-link']],
     getProjectId: (payload) => payload.new?.project_id || payload.old?.project_id,
+  },
+  {
+    table: 'portal_deliverables',
+    queryKeys: [['portal-deliverables'], ['client-portal']],
+    getPortalLinkId: (payload) => payload.new?.portal_link_id || payload.old?.portal_link_id,
+  },
+  {
+    table: 'portal_comments',
+    queryKeys: [['portal-comments'], ['client-portal'], ['project-revision-comments']],
+    getDeliverableId: (payload) => payload.new?.deliverable_id || payload.old?.deliverable_id,
+  },
+  {
+    table: 'portal_approvals',
+    queryKeys: [['portal-approvals'], ['client-portal']],
+    getDeliverableId: (payload) => payload.new?.deliverable_id || payload.old?.deliverable_id,
+  },
+  {
+    table: 'portal_change_requests',
+    queryKeys: [['portal-change-requests'], ['client-portal'], ['project-change-requests']],
+    getPortalLinkId: (payload) => payload.new?.portal_link_id || payload.old?.portal_link_id,
+  },
+  {
+    table: 'portal_deliverable_versions',
+    queryKeys: [['portal-versions'], ['client-portal']],
+    getDeliverableId: (payload) => payload.new?.deliverable_id || payload.old?.deliverable_id,
   },
   {
     table: 'revenues',
@@ -174,6 +206,25 @@ export function useRealtimeSync() {
             if (table === 'portal_links') {
               queryClient.invalidateQueries({ queryKey: ['portal-link', projectId] });
             }
+          }
+        }
+
+        // Invalidar queries por portal_link_id
+        if (mapping.getPortalLinkId) {
+          const portalLinkId = mapping.getPortalLinkId(payload);
+          if (portalLinkId) {
+            queryClient.invalidateQueries({ queryKey: ['portal-deliverables', portalLinkId] });
+            queryClient.invalidateQueries({ queryKey: ['portal-change-requests', portalLinkId] });
+          }
+        }
+
+        // Invalidar queries por deliverable_id
+        if (mapping.getDeliverableId) {
+          const deliverableId = mapping.getDeliverableId(payload);
+          if (deliverableId) {
+            queryClient.invalidateQueries({ queryKey: ['portal-comments', deliverableId] });
+            queryClient.invalidateQueries({ queryKey: ['portal-approvals', deliverableId] });
+            queryClient.invalidateQueries({ queryKey: ['portal-versions', deliverableId] });
           }
         }
 
