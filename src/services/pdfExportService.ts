@@ -6,7 +6,7 @@
  * - Error handling
  * - Toast notifications
  * - Signed URL management
- * - Auto-open in new tab
+ * - Auto-open in new tab with print dialog
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -52,26 +52,56 @@ const DEFAULT_OPTIONS: ExportOptions = {
 };
 
 /**
- * Opens the HTML report in a new window optimized for printing/PDF export
- * The HTML already contains @media print styles for proper PDF generation
+ * Opens the HTML report in a new window and triggers print dialog
+ * Fetches HTML content and writes it to a new window to avoid CORS/display issues
  */
-function openPrintableWindow(url: string): void {
-  // Open a new window with the rendered HTML
-  const printWindow = window.open(url, "_blank", "width=1100,height=800");
-  
-  if (!printWindow) {
-    // Fallback: just open normally if popup blocked
-    window.open(url, "_blank");
-    return;
-  }
-
-  // When the page loads, show print dialog automatically
-  printWindow.onload = () => {
-    // Small delay to ensure styles are loaded
+async function openPrintableWindow(url: string): Promise<void> {
+  try {
+    // Fetch the HTML content
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch report');
+    }
+    
+    const htmlContent = await response.text();
+    
+    // Create a new window
+    const printWindow = window.open('', '_blank', 'width=1100,height=900,scrollbars=yes,resizable=yes');
+    
+    if (!printWindow) {
+      // Popup blocked - show instructions
+      toast.error('Popup bloqueado! Permita popups e tente novamente.', {
+        description: 'Clique no ícone de popup bloqueado na barra de endereços'
+      });
+      return;
+    }
+    
+    // Write the HTML content to the new window
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    // Wait for content to load, then trigger print
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 300);
+    };
+    
+    // Also trigger after a delay in case onload doesn't fire
     setTimeout(() => {
-      printWindow.print();
-    }, 500);
-  };
+      if (printWindow && !printWindow.closed) {
+        printWindow.focus();
+        printWindow.print();
+      }
+    }, 1000);
+    
+  } catch (error) {
+    console.error('[pdfExportService] Error opening printable window:', error);
+    // Fallback: just open the URL directly
+    window.open(url, '_blank');
+  }
 }
 
 /**
@@ -117,7 +147,7 @@ async function exportPdf(
 
     if (opts.autoOpen && url) {
       // Open in a new window with print styles applied
-      openPrintableWindow(url);
+      await openPrintableWindow(url);
     }
 
     if (opts.showToasts && toastId) {
@@ -242,7 +272,7 @@ export async function exportCreativePDF(
 
     const url = data.public_url || data.signed_url;
     if (options?.autoOpen !== false && url) {
-      openPrintableWindow(url);
+      await openPrintableWindow(url);
     }
 
     if (toastId) toast.success("PDF criativo exportado!", { id: toastId });
@@ -270,7 +300,7 @@ export async function exportCampaignPDF(
 
     const url = data.public_url || data.signed_url;
     if (options?.autoOpen !== false && url) {
-      openPrintableWindow(url);
+      await openPrintableWindow(url);
     }
 
     if (toastId) toast.success("PDF da campanha exportado!", { id: toastId });
@@ -298,7 +328,7 @@ export async function exportContentPDF(
 
     const url = data.public_url || data.signed_url;
     if (options?.autoOpen !== false && url) {
-      openPrintableWindow(url);
+      await openPrintableWindow(url);
     }
 
     if (toastId) toast.success("PDF do conteúdo exportado!", { id: toastId });
