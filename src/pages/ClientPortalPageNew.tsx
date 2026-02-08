@@ -231,7 +231,7 @@ export default function ClientPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] scroll-smooth">
+    <div className="min-h-screen h-screen overflow-y-auto bg-[#050505] scroll-smooth">
       {/* Block Banner */}
       <PortalBlockBanner isVisible={!!hasPaymentBlock} />
       

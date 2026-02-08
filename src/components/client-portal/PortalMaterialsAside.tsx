@@ -1,11 +1,12 @@
 /**
  * PortalMaterialsAside - Sidebar de materiais com animações
- * Hover effects e entrada animada
+ * Exibe materiais reais do banco (YouTube, links externos, arquivos)
  */
 
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
 import type { PortalDeliverable, PortalFile } from "@/hooks/useClientPortalEnhanced";
 
 interface PortalMaterialsAsideProps {
@@ -34,6 +35,31 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
   // Get materials with external URLs or files
   const materials = deliverables.filter(d => d.external_url || d.file_url || d.youtube_url);
   
+  // Get files visible in portal
+  const visibleFiles = files.filter(f => f.visible_in_portal);
+
+  const handleOpenLink = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const getMaterialUrl = (material: PortalDeliverable): string | null => {
+    return material.youtube_url || material.external_url || material.file_url || null;
+  };
+
+  const getMaterialIcon = (material: PortalDeliverable): string => {
+    if (material.youtube_url) return 'smart_display';
+    if (material.file_url) return 'description';
+    return 'link';
+  };
+
+  const getMaterialColor = (material: PortalDeliverable): { bg: string; text: string } => {
+    if (material.youtube_url) return { bg: 'bg-red-500/20', text: 'text-red-400' };
+    if (material.file_url) return { bg: 'bg-blue-500/20', text: 'text-blue-400' };
+    return { bg: 'bg-cyan-500/20', text: 'text-cyan-400' };
+  };
+
+  const hasMaterials = materials.length > 0 || visibleFiles.length > 0;
+  
   return (
     <motion.div 
       className="space-y-4"
@@ -58,77 +84,84 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
       </motion.p>
       
       <div className="space-y-2">
-        {/* Brand Assets Card */}
-        <motion.div 
-          variants={itemVariants}
-          whileHover={{ y: -2, boxShadow: '0 4px 16px -4px rgba(168, 85, 247, 0.15)' }}
-          className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 flex items-center gap-3 hover:border-gray-700 transition-colors cursor-pointer group"
-        >
-          <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-purple-400" style={{ fontSize: 20 }}>
-              folder_zip
+        {/* Empty state */}
+        {!hasMaterials && (
+          <motion.div 
+            variants={itemVariants}
+            className="bg-[#0a0a0a] border border-[#1a1a1a] p-6 text-center"
+          >
+            <span className="material-symbols-outlined text-gray-600 mb-2" style={{ fontSize: 32 }}>
+              folder_off
             </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
-              Brand Assets
+            <p className="text-xs text-gray-500">
+              Nenhum material disponível ainda.
             </p>
-            <p className="text-xs text-gray-500">Logos & Identidade</p>
-          </div>
-        </motion.div>
-
-        {/* Raw Footage Card */}
-        <motion.div 
-          variants={itemVariants}
-          whileHover={{ y: -2, boxShadow: '0 4px 16px -4px rgba(236, 72, 153, 0.15)' }}
-          className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 flex items-center gap-3 hover:border-gray-700 transition-colors cursor-pointer group"
-        >
-          <div className="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-pink-400" style={{ fontSize: 20 }}>
-              play_circle
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
-              Raw Footage (Preview)
-            </p>
-            <p className="text-xs text-gray-500">Vídeos de Obra - Jan/26</p>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Dynamic materials from deliverables */}
-        {materials.slice(0, 3).map((material, index) => (
+        {materials.map((material) => {
+          const url = getMaterialUrl(material);
+          const icon = getMaterialIcon(material);
+          const colors = getMaterialColor(material);
+          
+          return (
+            <motion.div 
+              key={material.id}
+              variants={itemVariants}
+              whileHover={{ y: -2, boxShadow: '0 4px 16px -4px rgba(6, 182, 212, 0.15)' }}
+              onClick={() => url && handleOpenLink(url)}
+              className={cn(
+                "bg-[#0a0a0a] border border-[#1a1a1a] p-4 flex items-center gap-3 hover:border-gray-700 transition-colors group",
+                url && "cursor-pointer"
+              )}
+            >
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", colors.bg)}>
+                <span className={cn("material-symbols-outlined", colors.text)} style={{ fontSize: 20 }}>
+                  {icon}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
+                  {material.title}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {material.type || 'Material'}
+                </p>
+              </div>
+              {url && (
+                <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
+              )}
+            </motion.div>
+          );
+        })}
+
+        {/* Visible portal files */}
+        {visibleFiles.map((file) => (
           <motion.div 
-            key={material.id}
+            key={file.id}
             variants={itemVariants}
-            whileHover={{ y: -2, boxShadow: '0 4px 16px -4px rgba(6, 182, 212, 0.15)' }}
-            className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 flex items-center gap-3 hover:border-gray-700 transition-colors cursor-pointer group"
+            whileHover={{ y: -2, boxShadow: '0 4px 16px -4px rgba(168, 85, 247, 0.15)' }}
+            onClick={() => file.file_url && handleOpenLink(file.file_url)}
+            className={cn(
+              "bg-[#0a0a0a] border border-[#1a1a1a] p-4 flex items-center gap-3 hover:border-gray-700 transition-colors group",
+              file.file_url && "cursor-pointer"
+            )}
           >
-            <div className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center",
-              material.youtube_url ? "bg-red-500/20" : 
-              material.file_url ? "bg-blue-500/20" : "bg-cyan-500/20"
-            )}>
-              <span 
-                className={cn(
-                  "material-symbols-outlined",
-                  material.youtube_url ? "text-red-400" : 
-                  material.file_url ? "text-blue-400" : "text-cyan-400"
-                )}
-                style={{ fontSize: 20 }}
-              >
-                {material.youtube_url ? 'smart_display' : 
-                 material.file_url ? 'description' : 'link'}
+            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-purple-400" style={{ fontSize: 20 }}>
+                folder_zip
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
-                {material.title}
+                {file.name}
               </p>
-              <p className="text-xs text-gray-500">
-                {material.type || 'Material'}
-              </p>
+              <p className="text-xs text-gray-500">{file.folder || 'Arquivo'}</p>
             </div>
+            {file.file_url && (
+              <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
+            )}
           </motion.div>
         ))}
       </div>
