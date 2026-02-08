@@ -407,6 +407,10 @@ export default function ClientPortalPage() {
                         stages={stages}
                         deliverables={deliverables}
                         isManager={false}
+                        onReviewNow={(deliverableId) => {
+                          setSelectedMaterialId(deliverableId);
+                          setActiveTab("materials");
+                        }}
                       />
                       
                       <ScrollReveal delay={0.4}>
