@@ -11,10 +11,14 @@ import {
   ChevronRight,
   Sparkles,
   Plus,
-  FolderKanban
+  FolderKanban,
+  BarChart3
 } from "lucide-react";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { Button } from "@/components/ui/button";
+import { ProjectsMetricsCharts } from "./ProjectsMetricsCharts";
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Health Score Indicator Component
 function HealthScoreIndicator({ score, compact = false }: { score: number; compact?: boolean }) {
@@ -148,10 +152,13 @@ function VisualBoardColumn({ stage, projects }: { stage: string; projects: Proje
   );
 }
 
+type DashboardView = 'board' | 'metrics';
+
 export function ProjectsDashboard() {
   const navigate = useNavigate();
   const { setNewProjectModalOpen } = useProjectsStore();
   const { projects } = useProjects();
+  const [view, setView] = useState<DashboardView>('board');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -222,15 +229,37 @@ export function ProjectsDashboard() {
             SQUAD <span className="font-serif italic font-normal text-muted-foreground">Dashboard</span>
           </h1>
         </div>
-        <div className="glass-card rounded-2xl p-4 flex items-center gap-4">
-          <div>
-            <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Pipeline Total</p>
-            <p className="text-lg font-bold text-foreground">{formatCurrency(totalPipeline)}</p>
+        <div className="flex items-center gap-4">
+          <Tabs value={view} onValueChange={(v) => setView(v as DashboardView)}>
+            <TabsList>
+              <TabsTrigger value="board" className="gap-1.5">
+                <FolderKanban className="w-4 h-4" />
+                <span className="hidden sm:inline">Board</span>
+              </TabsTrigger>
+              <TabsTrigger value="metrics" className="gap-1.5">
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden sm:inline">Métricas</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="glass-card rounded-2xl p-4 flex items-center gap-4">
+            <div>
+              <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Pipeline Total</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totalPipeline)}</p>
+            </div>
+            <RadialProgress value={avgHealth} size={60} label="HEALTH" />
           </div>
-          <RadialProgress value={avgHealth} size={60} label="HEALTH" />
         </div>
       </div>
 
+      {/* Metrics View */}
+      {view === 'metrics' && (
+        <ProjectsMetricsCharts projects={projects} />
+      )}
+
+      {/* Board View */}
+      {view === 'board' && (
+      <>
       {/* Main Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Left Column - Visual Board */}
@@ -420,7 +449,9 @@ export function ProjectsDashboard() {
             </p>
           </div>
         </div>
-      </div>
+        </div>
+      </>
+      )}
     </div>
   );
 }

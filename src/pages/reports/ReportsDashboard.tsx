@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   BarChart3, TrendingUp, Settings, Users, DollarSign,
-  Megaphone, FolderKanban, UserCheck, ArrowRight
+  Megaphone, FolderKanban, UserCheck, ArrowRight, Target
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,15 @@ const reportTypes = [
     path: '/relatorios/dono',
     color: 'text-primary',
     bgColor: 'bg-primary/10',
+  },
+  {
+    id: '360',
+    title: 'Relatório 360°',
+    description: 'Visão consolidada: projetos entregues, abertos, atrasados e percentuais por período',
+    icon: Target,
+    path: '/relatorios/360',
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-500/10',
   },
   {
     id: 'sales',
