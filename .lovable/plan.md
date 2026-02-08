@@ -1,38 +1,103 @@
 
-# Plano: Corrigir Scroll e Exibir Materiais no Portal do Cliente
+# Plano: Corrigir PDF e Melhorar Seção de Resumo Executivo
 
 ## Problemas Identificados
 
-### 1. Scroll Bloqueado
-O CSS global em `src/index.css` define `overflow: hidden` e `height: 100vh` no `html` e `body`. Isso funciona para páginas internas (DashboardLayout gerencia seu próprio scroll), mas bloqueia o scroll na página do Portal do Cliente que não usa esse layout.
+### 1. PDF Bugado
+O sistema atualmente gera um arquivo **SVG** (imagem vetorial) e o nomeia como PDF. Isso causa problemas:
+- Não é um PDF real
+- Salvamento com extensão `.svg`
+- Content-type `image/svg+xml`
 
-### 2. Materiais não Aparecem no Aside
-O componente `PortalMaterialsAside` tem cards hardcoded (Brand Assets, Raw Footage) ao invés de exibir os materiais reais do banco. Os deliverables com YouTube/URL existem mas não estão sendo renderizados de forma clicável.
+### 2. Botão "Gerar com IA" Visível Quando Fechado
+Atualmente o botão aparece no header quando o resumo está minimizado. O usuário quer que apareça **apenas quando expandido**.
 
-### 3. Materiais Prontos na Página Principal
-Os materiais finalizados precisam aparecer de forma destacada na aba Overview, não apenas os uploads do cliente.
+### 3. Texto do Resumo com Caracteres Especiais
+O texto markdown está sendo exibido com `#`, `##`, `-` e `**` visíveis ao invés de ser renderizado como HTML formatado.
 
 ---
 
 ## Solução Técnica
 
-### Arquivo 1: `src/pages/ClientPortalPageNew.tsx`
-Adicionar `overflow-y-auto` ao container principal para permitir scroll:
+### Arquivo 1: `supabase/functions/export-universal-pdf/index.ts`
+Corrigir a exportação para gerar PDF real:
 
-```text
-Antes:  <div className="min-h-screen bg-[#050505] scroll-smooth">
-Depois: <div className="min-h-screen h-screen overflow-y-auto bg-[#050505] scroll-smooth">
+1. Instalar dependência `jspdf` ou converter SVG para PDF usando biblioteca adequada
+2. Alternativa mais simples: Manter SVG mas gerar HTML com CSS inline que possa ser impresso como PDF pelo navegador
+3. **Solução recomendada**: Gerar HTML profissional com `@media print` e abrir para impressão nativa do browser
+
+**Mudanças específicas:**
+- Trocar extensão de `.svg` para `.html`
+- Gerar HTML editorial com CSS inline
+- Adicionar meta tags para impressão A4
+- Manter layout sidebar + conteúdo principal
+- Renderizar markdown como HTML estruturado
+
+### Arquivo 2: `src/components/projects/reporting/ExecutiveSummarySection.tsx`
+
+**Remoção do botão quando fechado:**
+```tsx
+// Remover linhas 98-129 (botões no header quando fechado)
+// Manter botões APENAS dentro do conteúdo expandido (linhas 166-191)
 ```
 
-### Arquivo 2: `src/components/client-portal/PortalMaterialsAside.tsx`
-Refatorar para exibir dinamicamente os materiais reais:
-- Remover cards hardcoded (Brand Assets, Raw Footage)
-- Renderizar todos os deliverables que tenham `file_url`, `youtube_url` ou `external_url`
-- Tornar os cards clicáveis com link externo
-- Adicionar estado vazio se não houver materiais
+**Renderização rica do texto:**
+- Usar `react-markdown` para parsear o conteúdo
+- Aplicar estilos visuais aos headings, listas e parágrafos
+- Remover caracteres especiais do markdown visualmente
 
-### Arquivo 3: `src/components/client-portal/PortalOverviewPremium.tsx`
-Na aba Overview, adicionar uma seção "Materiais Disponíveis" mostrando os deliverables prontos (com status approved ou com arquivos) de forma destacada, acima do "Status de Entregas".
+**Componentes de estilo:**
+```tsx
+// Usar react-markdown com componentes customizados
+import ReactMarkdown from 'react-markdown';
+
+<ReactMarkdown
+  components={{
+    h1: ({children}) => <h2 className="text-2xl font-semibold mb-4">{children}</h2>,
+    h2: ({children}) => <h3 className="text-xl font-medium text-primary mb-3">{children}</h3>,
+    h3: ({children}) => <h4 className="text-lg font-medium mb-2">{children}</h4>,
+    p: ({children}) => <p className="text-muted-foreground leading-relaxed mb-4">{children}</p>,
+    ul: ({children}) => <ul className="space-y-2 mb-4">{children}</ul>,
+    li: ({children}) => <li className="flex gap-2"><span className="text-primary">•</span>{children}</li>,
+  }}
+>
+  {description}
+</ReactMarkdown>
+```
+
+---
+
+## Detalhes Técnicos
+
+### Geração de PDF/HTML para Impressão
+
+```typescript
+// Gerar HTML com CSS inline para impressão
+const htmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4; margin: 20mm; }
+    @media print { body { -webkit-print-color-adjust: exact; } }
+    body { 
+      font-family: 'Host Grotesk', sans-serif;
+      background: #050505;
+      color: #FFFFFF;
+    }
+    .sidebar { width: 180px; ... }
+    .main { margin-left: 200px; ... }
+    // ... demais estilos
+  </style>
+</head>
+<body>
+  <div class="sidebar">...</div>
+  <div class="main">...</div>
+</body>
+</html>
+`;
+```
 
 ---
 
@@ -40,13 +105,12 @@ Na aba Overview, adicionar uma seção "Materiais Disponíveis" mostrando os del
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `ClientPortalPageNew.tsx` | Adicionar `h-screen overflow-y-auto` no container |
-| `PortalMaterialsAside.tsx` | Substituir cards estáticos por lista dinâmica de materiais |
-| `PortalOverviewPremium.tsx` | Adicionar seção de materiais prontos na Overview |
+| `export-universal-pdf/index.ts` | Converter para HTML imprimível + corrigir extensão |
+| `ExecutiveSummarySection.tsx` | Remover botões do header fechado + usar ReactMarkdown |
 
 ---
 
 ## Resultado Esperado
-- Scroll funcionando em toda a página do portal
-- Materiais reais (como o "Video Teaser" com YouTube URL) aparecendo no sidebar
-- Materiais finalizados visíveis na página principal (Overview)
+- PDF exportável corretamente (via impressão HTML)
+- Botão "Gerar com IA" aparece somente quando expandido
+- Texto do resumo renderizado com formatação visual rica (títulos, listas, parágrafos estilizados)
