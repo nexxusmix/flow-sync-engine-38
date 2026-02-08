@@ -1,180 +1,196 @@
 
-# Plano: Sincronizar Financeiro com Valor do Contrato do Projeto
+# Plano: Correção de IA de Tarefas + Dashboard de Tarefas + Graficos em Projetos + Modulo de Relatorios 360
 
-## Problema Identificado
+## Resumo Executivo
 
-O sistema atual tem uma desconexao entre os dados:
+Este plano aborda 4 areas principais:
+1. **Correcao do erro de geracao de tarefas com IA** - O endpoint da AI Relay esta inacessivel
+2. **Dashboard e graficos para Tarefas** - Adicionar metricas visuais e timeline
+3. **Graficos em Projetos** - Adicionar visualizacoes no dashboard de projetos
+4. **Relatorio 360** - Novo relatorio consolidado com metricas de projetos por periodo
 
-```text
-projects (contract_value: R$ 15.590)
-         |
-         v
-contracts (VAZIO - nenhum registro)
-         |
-         v
-revenues (VAZIO - nenhum registro)
-         |
-         v
-Dashboard Financeiro (R$ 0)
+---
+
+## Problema 1: Erro na Geracao de Tarefas com IA
+
+### Diagnostico
+O erro "Failed to send a request to the Edge Function" ocorre porque a Edge Function `generate-tasks-from-text` esta tentando acessar o endpoint `https://ai-relay.lovable.dev/gemini/v1/chat/completions` que retorna erro de DNS.
+
+**Erro detectado:**
+```
+client error (Connect): dns error: failed to lookup address information
 ```
 
-O projeto "PORTO 153" tem `contract_value = 15590` salvo na tabela `projects`, porem:
-1. Nao existe contrato na tabela `contracts`
-2. Nao existem receitas na tabela `revenues`
-3. Os dashboards financeiros buscam dessas tabelas, nao de `projects.contract_value`
+### Solucao
+Atualizar a Edge Function para usar o endpoint correto da Lovable AI (`https://ai.lovable.dev/v1/chat/completions`) que e o padrao para projetos Lovable Cloud.
 
-## Solucao
+---
 
-Implementar sincronizacao automatica entre projetos e financeiro:
+## Implementacao
 
-### 1. Criar Contrato Automaticamente ao Criar/Atualizar Projeto
+### Fase 1: Correcao da Edge Function de Tarefas
 
-Quando um projeto for criado ou atualizado com `contract_value > 0`:
-- Verificar se ja existe contrato para o projeto
-- Se nao existir, criar contrato na tabela `contracts`
-- Criar milestones de pagamento padrao (50% entrada + 50% entrega)
-- Os milestones criam automaticamente as revenues correspondentes
+**Arquivo:** `supabase/functions/generate-tasks-from-text/index.ts`
 
-### 2. Atualizar Hook useProjects
+Alteracoes:
+- Corrigir URL do endpoint AI de `https://ai-relay.lovable.dev/gemini/v1/chat/completions` para `https://ai.lovable.dev/v1/chat/completions`
+- Manter modelo `gemini-2.5-flash` que e suportado
+- Adicionar logs mais detalhados para debug
 
-Modificar `createProjectMutation` para criar contrato automaticamente.
-Modificar `updateProjectMutation` para sincronizar contrato quando contract_value mudar.
+---
 
-### 3. Invalidar Cache do React Query
+### Fase 2: Dashboard e Metricas de Tarefas
 
-Garantir que ao criar/atualizar projeto, os caches financeiros sejam invalidados:
-- `dashboard-metrics`
-- Stores do Zustand (revenues, contracts)
+**Novos componentes:**
+
+1. **`src/components/tasks/TasksDashboard.tsx`**
+   - Cards KPI: Total de tarefas, Pendentes, Vencidas, Concluidas hoje
+   - Grafico de barras: Tarefas por status (Backlog/Semana/Hoje/Concluido)
+   - Grafico de pizza: Tarefas por categoria (Pessoal/Operacao/Projeto)
+   - Timeline: Tarefas com prazo nos proximos 7 dias
+
+2. **`src/components/tasks/TasksTimeline.tsx`**
+   - Visualizacao de tarefas em formato timeline
+   - Agrupamento por dia
+   - Indicadores de urgencia (cores por vencimento)
+
+**Alteracoes em arquivos existentes:**
+
+- **`src/pages/TasksPage.tsx`**
+  - Adicionar toggle de visualizacao: Dashboard | Kanban
+  - Integrar novos componentes de metricas
+
+---
+
+### Fase 3: Graficos em Projetos
+
+**Novos componentes:**
+
+1. **`src/components/projects/dashboard/ProjectsMetricsCharts.tsx`**
+   - Grafico de pizza: Projetos por status (Ativo/Pausado/Concluido/Arquivado)
+   - Grafico de barras: Projetos por etapa atual
+   - Grafico de linha: Evolucao de saude dos projetos
+   - Metricas: Valor total de contratos, Projetos com bloqueio financeiro
+
+**Alteracoes em arquivos existentes:**
+
+- **`src/components/projects/dashboard/ProjectsDashboard.tsx`**
+  - Integrar graficos de metricas
+  - Melhorar cards de KPIs existentes
+
+---
+
+### Fase 4: Relatorio 360 (Novo Modulo)
+
+**Novo arquivo:** `src/pages/reports/Report360Page.tsx`
+
+**Funcionalidades:**
+- Seletor de periodo: Mes atual | 3 meses | 6 meses | Ano
+- KPIs principais:
+  - Projetos entregues no periodo
+  - Projetos abertos (em andamento)
+  - Projetos atrasados
+  - Percentual de entrega no prazo
+- Graficos:
+  - Evolucao de projetos por mes (barras empilhadas)
+  - Distribuicao por status (pizza)
+  - Timeline de entregas
+- Tabela detalhada com filtros
+
+**Hook:** `src/hooks/useReport360Metrics.ts`
+- Funcao `fetchProjectMetrics(period)` que retorna:
+
+```text
++------------------+-------+-------+-------+--------+
+| Metrica          | 1 mes | 3 mes | 6 mes | 1 ano  |
++------------------+-------+-------+-------+--------+
+| Entregues        |   X   |   X   |   X   |    X   |
+| Em andamento     |   X   |   X   |   X   |    X   |
+| Atrasados        |   X   |   X   |   X   |    X   |
+| % No prazo       |   X   |   X   |   X   |    X   |
+| Valor total      |   X   |   X   |   X   |    X   |
++------------------+-------+-------+-------+--------+
+```
+
+**Rota:** `/relatorios/360`
+
+**Navegacao:**
+- Adicionar novo card no `ReportsDashboard.tsx` para "Relatorio 360"
+- Adicionar rota em `App.tsx`
+
+---
+
+## Arquivos a Criar
+
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/components/tasks/TasksDashboard.tsx` | Dashboard com KPIs e graficos de tarefas |
+| `src/components/tasks/TasksTimeline.tsx` | Timeline de tarefas por data |
+| `src/components/projects/dashboard/ProjectsMetricsCharts.tsx` | Graficos de metricas de projetos |
+| `src/pages/reports/Report360Page.tsx` | Pagina do Relatorio 360 |
+| `src/hooks/useReport360Metrics.ts` | Hook para buscar metricas do relatorio 360 |
 
 ## Arquivos a Modificar
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| `src/hooks/useProjects.tsx` | Adicionar criacao automatica de contrato |
-| `src/stores/financialStore.ts` | Adicionar funcao para criar contrato com milestones padrao |
-| `src/hooks/useDashboardMetrics.tsx` | Incluir contract_value dos projetos nas metricas |
+| `supabase/functions/generate-tasks-from-text/index.ts` | Corrigir URL da API de IA |
+| `src/pages/TasksPage.tsx` | Adicionar toggle Dashboard/Kanban |
+| `src/components/projects/dashboard/ProjectsDashboard.tsx` | Integrar graficos |
+| `src/pages/reports/ReportsDashboard.tsx` | Adicionar card do Relatorio 360 |
+| `src/App.tsx` | Adicionar rota /relatorios/360 |
+
+---
 
 ## Detalhes Tecnicos
 
-### useProjects.tsx - createProjectMutation
+### Bibliotecas utilizadas (ja instaladas)
+- `recharts` - Para graficos (BarChart, PieChart, LineChart)
+- `date-fns` - Para manipulacao de datas e periodos
+- `framer-motion` - Para animacoes
+
+### Queries de Dados (Relatorio 360)
+
+```sql
+-- Projetos por periodo
+SELECT 
+  COUNT(*) FILTER (WHERE status = 'completed') as entregues,
+  COUNT(*) FILTER (WHERE status = 'active') as em_andamento,
+  COUNT(*) FILTER (WHERE status = 'active' AND due_date < CURRENT_DATE) as atrasados,
+  SUM(contract_value) as valor_total
+FROM projects
+WHERE created_at >= [data_inicio]
+```
+
+### Calculo de Metricas de Tarefas
 
 ```typescript
-// Apos criar projeto, criar contrato se contract_value > 0
-if (project && (input.contract_value || 0) > 0) {
-  // Criar contrato na tabela contracts
-  await supabase.from('contracts').insert({
-    project_id: project.id,
-    project_name: input.name,
-    client_name: input.client_name,
-    total_value: input.contract_value,
-    payment_terms: '50/50',
-    status: 'active',
-    start_date: input.start_date || new Date().toISOString().split('T')[0],
-  });
-  
-  // Criar milestones de pagamento (50% entrada + 50% entrega)
-  const entryAmount = (input.contract_value || 0) * 0.5;
-  const deliveryAmount = (input.contract_value || 0) * 0.5;
-  
-  // Criar revenue para entrada (hoje)
-  await supabase.from('revenues').insert({
-    project_id: project.id,
-    description: `${input.name} - Entrada (50%)`,
-    amount: entryAmount,
-    due_date: new Date().toISOString().split('T')[0],
-    status: 'pending',
-  });
-  
-  // Criar revenue para entrega (data de entrega)
-  await supabase.from('revenues').insert({
-    project_id: project.id,
-    description: `${input.name} - Entrega (50%)`,
-    amount: deliveryAmount,
-    due_date: input.due_date || new Date().toISOString().split('T')[0],
-    status: 'pending',
-  });
+// KPIs de Tarefas
+const taskMetrics = {
+  total: tasks.length,
+  pending: tasks.filter(t => t.status !== 'done').length,
+  overdue: tasks.filter(t => t.due_date && new Date(t.due_date) < today && t.status !== 'done').length,
+  completedToday: tasks.filter(t => t.completed_at && isToday(new Date(t.completed_at))).length,
+  byStatus: { backlog: X, week: Y, today: Z, done: W },
+  byCategory: { pessoal: X, operacao: Y, projeto: Z }
 }
 ```
 
-### useDashboardMetrics.tsx - Incluir Pipeline de Projetos
+---
 
-```typescript
-// Adicionar ao calculo de metricas
-const projectsPipelineValue = (projects || [])
-  .filter(p => p.status === 'active')
-  .reduce((sum, p) => sum + (p.contract_value || 0), 0);
+## Ordem de Implementacao
 
-// Usar no totalPipelineValue ou criar metrica separada
-```
+1. **Corrigir Edge Function** (prioritario - desbloqueia funcionalidade)
+2. **Dashboard de Tarefas** (melhoria visual)
+3. **Graficos em Projetos** (melhoria visual)
+4. **Relatorio 360** (nova funcionalidade)
 
-### financialStore.ts - getProjectFinancials Melhorado
-
-```typescript
-// Buscar projetos que tem contract_value mas nao tem contrato
-// Para exibir no dashboard financeiro mesmo sem contrato formal
-```
-
-## Fluxo Corrigido
-
-```text
-Criar Projeto (contract_value: R$ 15.590)
-         |
-         v
-Criar Contrato Automatico (total_value: R$ 15.590)
-         |
-         v
-Criar Milestones (50% + 50%)
-         |
-         v
-Criar Revenues Pendentes
-         |
-         v
-Dashboard Financeiro Atualizado
-```
-
-## Projeto Existente - Sincronizacao
-
-Para o projeto "PORTO 153" que ja existe sem contrato, a solucao pode:
-
-1. Criar contrato manualmente via SQL (mais simples)
-2. Adicionar botao "Sincronizar Financeiro" na UI do projeto
-3. Rodar migracao que cria contratos para projetos existentes
-
-### SQL para Sincronizar Projeto Existente
-
-```sql
--- Criar contrato para projeto existente
-INSERT INTO contracts (project_id, project_name, client_name, total_value, status, start_date)
-SELECT id, name, client_name, contract_value, 'active', COALESCE(start_date, CURRENT_DATE)
-FROM projects
-WHERE id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534'
-  AND contract_value > 0;
-
--- Criar revenue para entrada (50%)
-INSERT INTO revenues (project_id, description, amount, due_date, status)
-SELECT id, name || ' - Entrada (50%)', contract_value * 0.5, CURRENT_DATE, 'pending'
-FROM projects
-WHERE id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534';
-
--- Criar revenue para entrega (50%)
-INSERT INTO revenues (project_id, description, amount, due_date, status)
-SELECT id, name || ' - Entrega (50%)', contract_value * 0.5, COALESCE(due_date, CURRENT_DATE), 'pending'
-FROM projects
-WHERE id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534';
-```
-
-## Sequencia de Implementacao
-
-1. Criar SQL para sincronizar projeto existente
-2. Modificar `useProjects.tsx` para criar contrato automaticamente
-3. Invalidar caches do React Query apos criacao
-4. Testar fluxo completo de criacao de projeto
-5. Verificar dashboards atualizados
+---
 
 ## Resultado Esperado
 
 Apos implementacao:
-- Receita do Mes: valores de revenues recebidas
-- Pipeline Ativo: soma de contracts ativos
-- Dashboard Financeiro: exibira projetos com valores corretos
-- Overview: metricas refletindo dados reais
+- Geracao de tarefas com IA funcionando
+- Tarefas com visualizacao Dashboard + metricas + timeline
+- Projetos com graficos de distribuicao e evolucao
+- Novo Relatorio 360 com visao consolidada por periodo
