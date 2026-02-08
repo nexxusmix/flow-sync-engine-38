@@ -1,215 +1,126 @@
 
-# Plano: Portal de Materiais com Revisões, Versões e Changelog
 
-## Objetivo
-Melhorar a seção "Materiais do Projeto" no Portal do Cliente para:
-1. **Envio fácil de materiais** pelo gestor
-2. **Comentários de revisão** diretamente nos materiais
-3. **Exibir título e versão do vídeo** (V01, V02, V03...)
-4. **Tags de alteração** resumidas do que mudou em cada versão
-5. **Descrição e tópicos** do que foi alterado em cada versão
+# Plano: Ajuste Global de Tipografia da Plataforma
+
+## Resumo do Problema
+
+A plataforma está com a tipografia muito pequena e restrita:
+- **Escala base**: 80% (muito reduzida)
+- **Pesos importados**: apenas 300 (Light) e 500 (Medium)
+- **Tamanhos mínimos**: muitos elementos usam `text-[10px]` e `text-[11px]`
+- **Falta peso Regular (400)**: solicitado pelo usuário
+
+## Solução Proposta
+
+Ajustar a escala e pesos tipográficos para uma legibilidade elegante, mantendo a estética premium.
 
 ---
 
-## Alterações no Banco de Dados
+## Alterações Técnicas
 
-Adicionar campos na tabela `portal_deliverable_versions`:
+### 1. Arquivo `src/index.css`
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `change_tags` | `text[]` | Tags resumidas do que mudou (ex: "cor", "áudio", "corte") |
-| `changelog_items` | `jsonb` | Lista estruturada de tópicos alterados |
+**A) Importar peso Regular 400**
+```css
+/* Antes */
+@import url('...family=Host+Grotesk:wght@300;500...');
 
-```sql
-ALTER TABLE public.portal_deliverable_versions
-ADD COLUMN IF NOT EXISTS change_tags TEXT[] DEFAULT '{}',
-ADD COLUMN IF NOT EXISTS changelog_items JSONB DEFAULT '[]';
+/* Depois */
+@import url('...family=Host+Grotesk:wght@300;400;500...');
 ```
 
----
-
-## Arquivos a Modificar/Criar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `PortalDeliverablesTab.tsx` | Redesign com foco em versões e comentários rápidos |
-| `PortalVersionCard.tsx` | **NOVO** - Card de material com timeline de versões inline |
-| `PortalMaterialDetailPanel.tsx` | **NOVO** - Painel lateral com detalhes, versões e comentários |
-| `AddMaterialDialog.tsx` | Adicionar campos de versão e changelog ao enviar nova versão |
-| `useClientPortalEnhanced.tsx` | Atualizar tipos para incluir novos campos |
-| `PortalTabsPremium.tsx` | Renomear "Entregas" para "Materiais" |
-
----
-
-## Novo Design da Aba de Materiais
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  MATERIAIS DO PROJETO                                                 │
-│  ┌─────────────────────────────────────────────────────────────────┐ │
-│  │ + Enviar Material │ + Nova Versão                               │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────────────┐ │
-│  │ 📹 Filme Institucional - Final                    V03 │ Atual │ │
-│  │ ─────────────────────────────────────────────────────────────── │ │
-│  │ Tags: [cor] [áudio] [corte final]                              │ │
-│  │                                                                 │ │
-│  │ O que mudou nesta versão:                                      │ │
-│  │ • Ajuste de color grading nos takes externos                   │ │
-│  │ • Mixagem de áudio final com VO                               │ │
-│  │ • Corte da cena 3 conforme solicitado                         │ │
-│  │                                                                 │ │
-│  │ ┌─────────────────────────────────────────────────────────────┐│ │
-│  │ │ 💬 Adicionar comentário de revisão...                      ││ │
-│  │ └─────────────────────────────────────────────────────────────┘│ │
-│  │                                                                 │ │
-│  │ Versões anteriores: V02 • V01                                  │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Detalhes Técnicos
-
-### 1. Novo Componente: PortalMaterialCard
-
-```tsx
-interface PortalMaterialCardProps {
-  material: PortalDeliverable;
-  versions: PortalVersion[];
-  comments: PortalComment[];
-  approval?: PortalApproval;
-  onAddComment: (content: string) => void;
-  onRequestRevision: (content: string) => void;
-  onViewVersion: (version: PortalVersion) => void;
+**B) Aumentar escala base de 80% para 87.5%**
+```css
+/* Antes */
+html {
+  font-size: 80%;
 }
 
-// Exibe:
-// - Título com badge de versão (V01, V02, V03)
-// - Thumbnail com overlay de play
-// - Tags de alteração como badges coloridas
-// - Lista de changelog items como bullet points
-// - Input de comentário inline (expandível)
-// - Timeline compacta de versões anteriores
+/* Depois */
+html {
+  font-size: 87.5%; /* 14px base */
+}
 ```
 
-### 2. Tags de Alteração (Predefinidas)
+**C) Atualizar peso padrão do body para Regular**
+```css
+/* Antes */
+body {
+  font-weight: 300;
+}
 
+/* Depois */
+body {
+  font-weight: 400;
+}
+```
+
+**D) Atualizar classes de badge e labels**
+- `.badge-*`: de `text-[10px]` para `text-[11px]`
+- `.section-label`: de `text-[10px]` para `text-[11px]`
+- `.kpi-label`: de `text-[10px]` para `text-[11px]`
+- `.chip` e `.chip-active`: de `text-[10px]` para `text-[11px]`
+- `.btn-subtle`, `.btn-action`, `.btn-primary`: de `text-[10px]` para `text-[11px]`
+
+---
+
+### 2. Arquivo `tailwind.config.ts`
+
+Adicionar peso `regular` ao sistema de design:
 ```typescript
-const REVISION_TAGS = [
-  { id: 'color', label: 'Cor/Grade', color: 'bg-purple-500' },
-  { id: 'audio', label: 'Áudio', color: 'bg-blue-500' },
-  { id: 'cut', label: 'Corte', color: 'bg-amber-500' },
-  { id: 'graphics', label: 'Grafismos', color: 'bg-emerald-500' },
-  { id: 'vo', label: 'Locução', color: 'bg-pink-500' },
-  { id: 'music', label: 'Música', color: 'bg-cyan-500' },
-  { id: 'text', label: 'Texto', color: 'bg-orange-500' },
-  { id: 'other', label: 'Outros', color: 'bg-gray-500' },
-];
-```
-
-### 3. Estrutura do Changelog (JSONB)
-
-```typescript
-interface ChangelogItem {
-  description: string;
-  timestamp?: string;
-  category?: string;
-}
-
-// Exemplo:
-const changelog_items: ChangelogItem[] = [
-  { description: "Ajuste de color grading nos takes externos", category: "color" },
-  { description: "Mixagem de áudio final com VO", category: "audio" },
-  { description: "Corte da cena 3 conforme solicitado", category: "cut" },
-];
-```
-
-### 4. Fluxo de Enviar Nova Versão
-
-1. Gestor clica em "Nova Versão" em um material existente
-2. Modal abre com:
-   - Preview do material atual
-   - Upload de novo arquivo / link
-   - Seletor de tags (multi-select)
-   - Campo de changelog (tópicos do que mudou)
-3. Ao salvar:
-   - Incrementa `current_version` no deliverable
-   - Cria novo registro em `portal_deliverable_versions`
-   - Notificação para o cliente (futuro)
-
-### 5. Comentário Inline Rápido
-
-- Input sempre visível abaixo de cada material
-- Placeholder: "Adicionar comentário de revisão..."
-- Ao focar, expande com botões "Aprovar" e "Solicitar Ajuste"
-- Comentários anteriores aparecem em thread colapsável
-
----
-
-## Tipos Atualizados
-
-```typescript
-// useClientPortalEnhanced.tsx
-export interface PortalVersion {
-  id: string;
-  deliverable_id: string;
-  version_number: number;
-  title: string | null;
-  notes: string | null;
-  file_url: string | null;
-  created_at: string;
-  created_by_name: string | null;
-  change_tags: string[];          // NOVO
-  changelog_items: ChangelogItem[]; // NOVO
-}
-
-interface ChangelogItem {
-  description: string;
-  category?: string;
-}
+fontWeight: {
+  light: "300",
+  normal: "400",   // adicionar
+  regular: "400",  // adicionar alias
+  medium: "500",
+},
 ```
 
 ---
 
-## Fluxo Visual
+### 3. Substituições em Componentes UI
 
-```
-Cliente abre Portal
-       │
-       ▼
-┌─────────────────────┐
-│ Aba "Materiais"     │
-│ (antes: "Entregas") │
-└─────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│ Lista de Materiais com:                 │
-│ • Título + Versão (V01, V02...)        │
-│ • Tags de alteração (badges)            │
-│ • Changelog (bullet points)             │
-│ • Input de comentário inline            │
-│ • Versões anteriores (colapsável)       │
-└─────────────────────────────────────────┘
-       │
-       ▼
-Cliente pode:
-• Ver detalhes de cada versão
-• Adicionar comentário de revisão
-• Aprovar material
-• Solicitar ajuste com descrição
-```
+Buscar e substituir globalmente nos arquivos `.tsx`:
+
+| De | Para |
+|---|---|
+| `text-[10px]` | `text-[11px]` |
+| `text-[9px]` | `text-[10px]` |
+| `font-light` (em textos de corpo) | `font-normal` |
+
+**Componentes prioritários a atualizar:**
+- `src/components/ui/card.tsx` - CardTitle usa `font-normal` (manter)
+- `src/components/dashboard/*` - labels e descrições
+- `src/components/client-portal/*` - badges e métricas
+- `src/components/projects/*` - tabelas e cards
 
 ---
 
-## Resultado Esperado
+## Hierarquia Tipográfica Final
 
-- **Visualização clara** de versões (V01, V02, V03...)
-- **Tags resumidas** do que mudou em cada versão
-- **Changelog estruturado** com bullet points
-- **Comentários de revisão** inline e rápidos
-- **Timeline de versões** para histórico completo
-- **Fluxo intuitivo** para cliente aprovar ou solicitar ajustes
+| Elemento | Peso | Tamanho |
+|---|---|---|
+| Títulos principais | Medium 500 | `text-2xl` a `text-4xl` |
+| Subtítulos | Medium 500 | `text-lg` a `text-xl` |
+| Corpo de texto | Regular 400 | `text-sm` a `text-base` |
+| Texto secundário | Light 300 | `text-sm` |
+| Labels/Badges | Light 300 | `text-[11px]` |
+| Micro-texto | Light 300 | `text-[10px]` |
+
+---
+
+## Impacto Visual
+
+- Texto mais legível sem parecer pesado
+- Contraste hierárquico mais claro
+- Mantém estética premium "quiet luxury"
+- Compatível com a identidade visual SQUAD Film
+
+---
+
+## Arquivos a Modificar
+
+1. `src/index.css` - escala base, pesos, classes utilitárias
+2. `tailwind.config.ts` - adicionar peso `regular`
+3. ~50 componentes `.tsx` com substituição de tamanhos mínimos
+
