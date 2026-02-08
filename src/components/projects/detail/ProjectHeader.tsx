@@ -192,7 +192,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           <button 
             onClick={handleEdit}
             disabled={isUploadingBanner}
-            className="w-full aspect-[8/1] border-b border-border/50 overflow-hidden transition-all group bg-muted/30 relative"
+            className="w-full aspect-[21/1] border-b border-border/50 overflow-hidden transition-all group bg-muted/30 relative"
           >
             {bannerUrl ? (
               <div className="relative w-full h-full">
