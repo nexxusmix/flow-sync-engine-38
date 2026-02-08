@@ -3171,12 +3171,14 @@ export type Database = {
       portal_deliverables: {
         Row: {
           awaiting_approval: boolean | null
+          client_upload_name: string | null
           created_at: string
           current_version: number | null
           description: string | null
           external_url: string | null
           file_url: string | null
           id: string
+          material_category: string | null
           portal_link_id: string
           sort_order: number | null
           status: Database["public"]["Enums"]["deliverable_status"]
@@ -3184,17 +3186,20 @@ export type Database = {
           title: string
           type: string | null
           updated_at: string
+          uploaded_by_client: boolean | null
           visible_in_portal: boolean | null
           youtube_url: string | null
         }
         Insert: {
           awaiting_approval?: boolean | null
+          client_upload_name?: string | null
           created_at?: string
           current_version?: number | null
           description?: string | null
           external_url?: string | null
           file_url?: string | null
           id?: string
+          material_category?: string | null
           portal_link_id: string
           sort_order?: number | null
           status?: Database["public"]["Enums"]["deliverable_status"]
@@ -3202,17 +3207,20 @@ export type Database = {
           title: string
           type?: string | null
           updated_at?: string
+          uploaded_by_client?: boolean | null
           visible_in_portal?: boolean | null
           youtube_url?: string | null
         }
         Update: {
           awaiting_approval?: boolean | null
+          client_upload_name?: string | null
           created_at?: string
           current_version?: number | null
           description?: string | null
           external_url?: string | null
           file_url?: string | null
           id?: string
+          material_category?: string | null
           portal_link_id?: string
           sort_order?: number | null
           status?: Database["public"]["Enums"]["deliverable_status"]
@@ -3220,6 +3228,7 @@ export type Database = {
           title?: string
           type?: string | null
           updated_at?: string
+          uploaded_by_client?: boolean | null
           visible_in_portal?: boolean | null
           youtube_url?: string | null
         }
