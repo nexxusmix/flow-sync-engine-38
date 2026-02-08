@@ -86,7 +86,7 @@ function PortalOverviewPremiumComponent({
       {/* Progress Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Progresso */}
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
             Progresso
           </p>
@@ -95,7 +95,7 @@ function PortalOverviewPremiumComponent({
         </div>
 
         {/* Etapa Atual */}
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
             Etapa Atual
           </p>
@@ -104,7 +104,7 @@ function PortalOverviewPremiumComponent({
         </div>
 
         {/* Materiais Disponíveis */}
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
             Materiais Prontos
           </p>
@@ -115,7 +115,7 @@ function PortalOverviewPremiumComponent({
 
       {/* Materials Grid with Thumbnails */}
       {availableMaterials.length > 0 && (
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl">
           <div className="p-5 border-b border-[#1a1a1a] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Film className="w-[18px] h-[18px] text-primary" />

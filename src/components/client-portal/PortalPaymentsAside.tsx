@@ -64,7 +64,7 @@ function PortalPaymentsAsideComponent({ payments = mockPayments, hasPaymentBlock
           <div 
             key={payment.id}
             className={cn(
-              "bg-[#0a0a0a] border p-4",
+              "bg-[#0a0a0a] border rounded-2xl p-4",
               payment.status === 'overdue' 
                 ? "border-red-500/30 bg-red-500/5" 
                 : "border-[#1a1a1a]"

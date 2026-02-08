@@ -126,7 +126,7 @@ function PortalMetricsGridComponent({ project }: PortalMetricsGridProps) {
           <Card3D intensity={8}>
             <GlowCard glowColor={metric.glowColor}>
               <motion.div
-                className="bg-[#0a0a0a] border border-[#1a1a1a] p-6 min-h-[140px] relative overflow-hidden transition-colors duration-300 group-hover:border-primary/30"
+                className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-6 min-h-[140px] relative overflow-hidden transition-colors duration-300 group-hover:border-primary/30"
                 whileHover={{ 
                   backgroundColor: 'rgba(6, 182, 212, 0.03)',
                 }}

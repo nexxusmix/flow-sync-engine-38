@@ -45,7 +45,7 @@ function PortalClientUploadsComponent({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-[#0a0a0a] border border-[#1a1a1a] overflow-hidden"
+        className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl overflow-hidden"
       >
         {/* Header */}
         <div className="p-5 border-b border-[#1a1a1a] flex items-center justify-between">
