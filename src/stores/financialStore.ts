@@ -180,7 +180,12 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       .order('created_at', { ascending: false });
     
     if (!error && data) {
-      set({ contracts: data as Contract[] });
+      // Map payment_milestones to milestones for consistency with local types
+      const contractsWithMilestones = data.map((c: any) => ({
+        ...c,
+        milestones: c.payment_milestones || [],
+      }));
+      set({ contracts: contractsWithMilestones as Contract[] });
     }
   },
 
@@ -262,6 +267,7 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       title: data.title || 'Marco', 
       amount: data.amount || 0,
       due_date: data.due_date,
+      status: 'pending',
       ...data 
     };
     
@@ -284,9 +290,19 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       // Link revenue to milestone
       if (newRevenue) {
         await supabase.from('payment_milestones').update({ revenue_id: newRevenue.id }).eq('id', newMilestone.id);
+        // Update local milestone with revenue_id
+        (newMilestone as any).revenue_id = newRevenue.id;
       }
       
-      await get().fetchContracts();
+      // Update local state immediately for responsive UI
+      set((state) => ({
+        contracts: state.contracts.map((c) => 
+          c.id === contractId 
+            ? { ...c, milestones: [...(c.milestones || []), newMilestone as PaymentMilestone] }
+            : c
+        ),
+      }));
+      
       return newMilestone as PaymentMilestone;
     }
     return null;

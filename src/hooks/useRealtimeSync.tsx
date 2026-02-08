@@ -14,6 +14,7 @@ type TableName =
   | 'prospect_opportunities'
   | 'proposals'
   | 'contracts'
+  | 'payment_milestones'
   | 'content_items'
   | 'content_ideas';
 
@@ -87,6 +88,15 @@ const TABLE_QUERY_MAPPINGS: QueryKeyMapping[] = [
     table: 'contracts',
     queryKeys: [
       ['contracts'],
+      ['dashboard-metrics'],
+    ],
+  },
+  {
+    // Milestones (parcelas) - invalidate contracts to refetch with milestones
+    table: 'payment_milestones',
+    queryKeys: [
+      ['contracts'],
+      ['dashboard-metrics'],
     ],
   },
   {

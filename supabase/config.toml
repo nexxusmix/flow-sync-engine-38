@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.export-universal-pdf]
 verify_jwt = false
+
+[functions.export-finance-pdf]
+verify_jwt = false

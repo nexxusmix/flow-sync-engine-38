@@ -48,9 +48,15 @@ export default function ProjectsFinancePage() {
     fetchContracts();
   }, [fetchContracts]);
 
+  // Include payment_milestones as part of contract changes
+  const handleMilestoneChange = useCallback(() => {
+    fetchContracts(); // Milestones are loaded with contracts
+  }, [fetchContracts]);
+
   useRealtimeTable('revenues', handleRevenueChange, handleRevenueChange, handleRevenueChange);
   useRealtimeTable('expenses', handleExpenseChange, handleExpenseChange, handleExpenseChange);
   useRealtimeTable('contracts', handleContractChange, handleContractChange, handleContractChange);
+  useRealtimeTable('payment_milestones' as any, handleMilestoneChange, handleMilestoneChange, handleMilestoneChange);
 
   const projectFinancials = getProjectFinancials();
 
