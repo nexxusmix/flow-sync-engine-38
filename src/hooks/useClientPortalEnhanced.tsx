@@ -130,9 +130,23 @@ export interface PortalVersion {
   created_by_name: string | null;
 }
 
+export interface ProjectStage {
+  id: string;
+  project_id: string;
+  title: string;
+  stage_key: string;
+  order_index: number;
+  status: string;
+  planned_start: string | null;
+  planned_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+}
+
 export interface PortalData {
   portal: PortalLink;
   project: ProjectInfo | null;
+  stages: ProjectStage[];
   deliverables: PortalDeliverable[];
   files: PortalFile[];
   comments: PortalComment[];
@@ -176,6 +190,26 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
         .select('id, name, client_name, description, template, status, stage_current, health_score, contract_value, has_payment_block, due_date, owner_name, logo_url, banner_url')
         .eq('id', portal.project_id)
         .single();
+
+      // 2.5. Get project stages
+      const { data: stagesData } = await supabase
+        .from('project_stages')
+        .select('*')
+        .eq('project_id', portal.project_id)
+        .order('order_index', { ascending: true });
+
+      const stages: ProjectStage[] = (stagesData || []).map(s => ({
+        id: s.id,
+        project_id: s.project_id,
+        title: s.title,
+        stage_key: s.stage_key,
+        order_index: s.order_index,
+        status: s.status,
+        planned_start: s.planned_start,
+        planned_end: s.planned_end,
+        actual_start: s.actual_start,
+        actual_end: s.actual_end,
+      }));
 
       // 3. Get portal deliverables
       const { data: deliverables, error: delError } = await supabase
@@ -264,6 +298,7 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       return {
         portal: portal as PortalLink,
         project: (project || null) as ProjectInfo | null,
+        stages,
         deliverables: (deliverables || []) as PortalDeliverable[],
         files: (files || []) as PortalFile[],
         comments,
