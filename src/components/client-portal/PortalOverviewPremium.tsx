@@ -18,6 +18,7 @@ interface PortalOverviewPremiumProps {
   isManager?: boolean;
   onEditBriefing?: () => void;
   onGenerateAI?: () => void;
+  onReviewNow?: (deliverableId: string) => void;
 }
 
 // Stage name mapping
@@ -44,6 +45,7 @@ function PortalOverviewPremiumComponent({
   project, 
   stages, 
   deliverables = [],
+  onReviewNow,
 }: PortalOverviewPremiumProps) {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [previewMaterial, setPreviewMaterial] = useState<PortalDeliverable | null>(null);
@@ -281,6 +283,12 @@ function PortalOverviewPremiumComponent({
                   <Button 
                     size="sm"
                     className="bg-amber-500 hover:bg-amber-600 text-black text-xs h-8 rounded-none font-medium"
+                    onClick={() => {
+                      const firstAwaitingId = deliverables.find(d => d.awaiting_approval)?.id;
+                      if (firstAwaitingId && onReviewNow) {
+                        onReviewNow(firstAwaitingId);
+                      }
+                    }}
                   >
                     Revisar Agora
                   </Button>

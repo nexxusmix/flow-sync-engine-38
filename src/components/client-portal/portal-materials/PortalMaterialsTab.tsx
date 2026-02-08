@@ -2,7 +2,7 @@
  * PortalMaterialsTab - Aba de Materiais do Portal com player de vídeo e anotações
  */
 
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileVideo, Plus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,13 @@ function PortalMaterialsTabComponent({
   
   // Player state
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
+  
+  // Sync expandedPlayerId with selectedMaterialId when it changes externally
+  useEffect(() => {
+    if (selectedMaterialId && selectedMaterialId !== expandedPlayerId) {
+      setExpandedPlayerId(selectedMaterialId);
+    }
+  }, [selectedMaterialId]);
   
   // Annotation state
   const [showAnnotation, setShowAnnotation] = useState(false);
