@@ -20,6 +20,8 @@ import {
   Camera,
   Edit3,
   Clock,
+  MessageSquare,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -34,6 +36,8 @@ interface VideoPlayerWithMarkersProps {
   comments?: PortalComment[];
   onMarkFrame?: (timestampMs: number, screenshotDataUrl?: string) => void;
   onOpenAnnotation?: (timestampMs: number, screenshotDataUrl: string) => void;
+  onRequestComment?: () => void;
+  onRequestRevision?: () => void;
 }
 
 function formatTime(seconds: number): string {
@@ -56,6 +60,8 @@ function VideoPlayerWithMarkersComponent({
   comments = [],
   onMarkFrame,
   onOpenAnnotation,
+  onRequestComment,
+  onRequestRevision,
 }: VideoPlayerWithMarkersProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -189,20 +195,41 @@ function VideoPlayerWithMarkersComponent({
     }
   }, [isPlaying, isHovering, currentTime]);
 
-  // YouTube Embed
+  // YouTube Embed with action buttons
   if (isYoutube && youtubeId) {
     return (
-      <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
-        <iframe
-          src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1`}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-          <p className="text-xs text-gray-400 text-center">
-            Para marcar frames, use um vídeo hospedado diretamente
+      <div className="space-y-3">
+        <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1`}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        {/* Action buttons for YouTube - since we can't capture frames */}
+        <div className="flex items-center gap-2 p-3 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
+          <p className="text-xs text-gray-500 flex-1">
+            Assista o vídeo e deixe seu feedback abaixo:
           </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs border-[#2a2a2a] text-gray-400 hover:text-white hover:border-cyan-500/50"
+            onClick={onRequestComment}
+          >
+            <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+            Comentar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs border-[#2a2a2a] text-amber-400 hover:text-amber-300 hover:border-amber-500/50"
+            onClick={onRequestRevision}
+          >
+            <AlertCircle className="w-3.5 h-3.5 mr-1.5" />
+            Solicitar Ajuste
+          </Button>
         </div>
       </div>
     );

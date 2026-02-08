@@ -8,6 +8,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePortalRealtime } from './usePortalRealtime';
+import { toast } from 'sonner';
 
 // Types
 export interface PortalLink {
@@ -262,11 +263,19 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Portal] Error adding comment:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
+      toast.success('Comentário adicionado!');
+    },
+    onError: (error) => {
+      console.error('[Portal] Comment mutation error:', error);
+      toast.error('Erro ao adicionar comentário. Tente novamente.');
     },
   });
 
@@ -317,6 +326,11 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
+      toast.success('Material aprovado!');
+    },
+    onError: (error) => {
+      console.error('[Portal] Approval mutation error:', error);
+      toast.error('Erro ao aprovar material. Tente novamente.');
     },
   });
 
@@ -381,6 +395,11 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
+      toast.success('Solicitação de revisão enviada!');
+    },
+    onError: (error) => {
+      console.error('[Portal] Revision request error:', error);
+      toast.error('Erro ao enviar solicitação. Tente novamente.');
     },
   });
 
