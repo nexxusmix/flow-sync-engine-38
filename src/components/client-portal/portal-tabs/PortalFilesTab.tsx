@@ -1,10 +1,10 @@
 /**
- * PortalFilesTab - Aba Arquivos do portal do cliente
- * 
- * Lista de arquivos do projeto visíveis ao cliente
+ * PortalFilesTab - Aba Arquivos do portal com animações
+ * Grid animado com stagger
  */
 
 import { memo } from "react";
+import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -25,19 +25,30 @@ interface PortalFilesTabProps {
   hasPaymentBlock?: boolean;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.25 },
+  },
+};
+
 function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps) {
   const getFileIcon = (fileType: string | null) => {
     if (!fileType) return <File className="w-5 h-5" />;
     if (fileType.includes('image')) return <Image className="w-5 h-5 text-emerald-500" />;
     if (fileType.includes('video')) return <Film className="w-5 h-5 text-blue-500" />;
     if (fileType.includes('pdf')) return <FileText className="w-5 h-5 text-red-500" />;
-    return <File className="w-5 h-5 text-muted-foreground" />;
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return <File className="w-5 h-5 text-gray-500" />;
   };
 
   // Group files by folder
@@ -50,45 +61,63 @@ function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps
 
   if (files.length === 0) {
     return (
-      <div className="glass-card rounded-2xl p-8 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-          <FolderOpen className="w-7 h-7 text-muted-foreground" />
+      <motion.div 
+        className="bg-[#0a0a0a] border border-[#1a1a1a] p-8 text-center"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="w-14 h-14 bg-[#1a1a1a] flex items-center justify-center mx-auto mb-4">
+          <FolderOpen className="w-7 h-7 text-gray-500" />
         </div>
-        <h3 className="font-semibold text-foreground mb-2">Nenhum arquivo disponível</h3>
-        <p className="text-sm text-muted-foreground">
+        <h3 className="font-medium text-white mb-2">Nenhum arquivo disponível</h3>
+        <p className="text-sm text-gray-500">
           Os arquivos do projeto aparecerão aqui quando forem compartilhados.
         </p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedFiles).map(([folder, folderFiles]) => (
-        <div key={folder} className="glass-card rounded-2xl p-4 md:p-6">
+    <motion.div 
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {Object.entries(groupedFiles).map(([folder, folderFiles], folderIndex) => (
+        <motion.div 
+          key={folder} 
+          className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 md:p-6"
+          variants={itemVariants}
+        >
           <div className="flex items-center gap-2 mb-4">
-            <FolderOpen className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">{folder}</h3>
-            <Badge variant="secondary" className="text-[10px]">
+            <FolderOpen className="w-5 h-5 text-cyan-400" />
+            <h3 className="font-medium text-white">{folder}</h3>
+            <Badge variant="secondary" className="text-[10px] bg-[#1a1a1a] text-gray-400">
               {folderFiles.length} arquivo{folderFiles.length !== 1 ? 's' : ''}
             </Badge>
           </div>
 
           <div className="space-y-2">
-            {folderFiles.map((file) => (
-              <div
+            {folderFiles.map((file, fileIndex) => (
+              <motion.div
                 key={file.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + fileIndex * 0.03 }}
+                whileHover={{ x: 4, backgroundColor: 'rgba(6, 182, 212, 0.03)' }}
+                className="flex items-center justify-between p-3 bg-[#0a0a0a] border border-[#1a1a1a] hover:border-gray-700 transition-all"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-[#1a1a1a] flex items-center justify-center flex-shrink-0">
                     {getFileIcon(file.file_type)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="text-sm font-medium text-white truncate">
                       {file.name}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-gray-500">
                       {format(new Date(file.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
@@ -98,7 +127,7 @@ function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 text-gray-500 hover:text-white"
                     onClick={() => window.open(file.file_url, '_blank')}
                   >
                     <Eye className="w-4 h-4" />
@@ -106,7 +135,7 @@ function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 text-gray-500 hover:text-white"
                     disabled={hasPaymentBlock}
                     onClick={() => {
                       const link = document.createElement('a');
@@ -118,21 +147,26 @@ function PortalFilesTabComponent({ files, hasPaymentBlock }: PortalFilesTabProps
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       ))}
 
       {/* Payment Block Notice */}
       {hasPaymentBlock && (
-        <div className="glass-card rounded-xl p-4 border-amber-500/30 bg-amber-500/5">
+        <motion.div 
+          className="bg-amber-500/5 border border-amber-500/30 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           <p className="text-sm text-amber-500">
             <strong>Nota:</strong> Downloads estão temporariamente bloqueados devido a pendência financeira.
           </p>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
