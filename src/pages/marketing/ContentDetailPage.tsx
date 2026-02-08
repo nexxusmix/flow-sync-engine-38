@@ -6,7 +6,7 @@ import { ContentItem, CONTENT_ITEM_STAGES, CONTENT_PILLARS, CONTENT_CHANNELS, CO
 import { 
   ArrowLeft, Save, CheckCircle, MessageSquare,
   ExternalLink, Calendar, Link as LinkIcon, User, Plus,
-  Trash2, Square, CheckSquare
+  Trash2, Square, CheckSquare, FileDown, Loader2
 } from "lucide-react";
 import { ContentAssetsTab } from "@/components/marketing/ContentAssetsTab";
 import { LinkedReferences } from "@/components/marketing/LinkedReferences";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import type { GenerateCopyOutput } from "@/ai/actions";
 
 export default function ContentDetailPage() {
@@ -47,6 +48,7 @@ export default function ContentDetailPage() {
   const [formData, setFormData] = useState<Partial<ContentItem>>({});
   const [newComment, setNewComment] = useState('');
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   // Check if there's existing copy content
   const hasExistingCopy = !!(
@@ -140,6 +142,31 @@ export default function ContentDetailPage() {
     await toggleChecklistItem(checklistId, currentStatus === 'pending');
   };
 
+  const handleExportPdf = async () => {
+    if (!item) return;
+    
+    setIsExportingPdf(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('export-content-pdf', {
+        body: { content_item_id: item.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.public_url) {
+        window.open(data.public_url, '_blank');
+        toast.success('PDF gerado com sucesso!');
+      } else {
+        throw new Error('URL não retornada');
+      }
+    } catch (err: any) {
+      console.error('Export PDF error:', err);
+      toast.error(err.message || 'Erro ao exportar PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   if (!item) {
     return (
       <DashboardLayout title="Carregando...">
@@ -178,6 +205,18 @@ export default function ContentDetailPage() {
           </div>
           
           <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-2" />
+              )}
+              Exportar PDF
+            </Button>
             <Select value={item.status} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue />

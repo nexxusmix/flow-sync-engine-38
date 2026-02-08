@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.polo-ai-execute]
 verify_jwt = false
+
+[functions.export-content-pdf]
+verify_jwt = false
+
+[functions.export-campaign-pdf]
+verify_jwt = false

@@ -5,8 +5,9 @@ import { Campaign } from "@/types/marketing";
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Megaphone, Sparkles, Calendar, DollarSign,
-  MoreHorizontal, Play, Pause, Archive, Trash2, Loader2, Package
+  MoreHorizontal, Play, Pause, Archive, Trash2, Loader2, Package, FileDown
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,11 +49,15 @@ function CampaignCard({
   campaigns,
   onStatusChange,
   onDelete,
+  onExportPdf,
+  isExporting,
 }: { 
   campaign: Campaign;
   campaigns: Campaign[];
   onStatusChange: (status: Campaign['status']) => void;
   onDelete: () => void;
+  onExportPdf: () => void;
+  isExporting: boolean;
 }) {
   const [showPackages, setShowPackages] = useState(false);
   
@@ -174,6 +179,20 @@ function CampaignCard({
           <Package className="w-3 h-3" />
           Pacotes
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onExportPdf}
+          disabled={isExporting}
+          className="gap-1"
+        >
+          {isExporting ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <FileDown className="w-3 h-3" />
+          )}
+          PDF
+        </Button>
       </div>
 
       {/* Packages Sheet */}
@@ -207,6 +226,7 @@ export default function CampaignsPage() {
   const [packageResultOpen, setPackageResultOpen] = useState(false);
   const [generatedPackage, setGeneratedPackage] = useState<GenerateCampaignPackageResult | null>(null);
   const [selectedCampaignForPackage, setSelectedCampaignForPackage] = useState<Campaign | null>(null);
+  const [exportingCampaignId, setExportingCampaignId] = useState<string | null>(null);
   const [newCampaign, setNewCampaign] = useState({
     name: '',
     objective: '',
@@ -216,6 +236,29 @@ export default function CampaignsPage() {
     end_date: '',
     budget: '',
   });
+
+  const handleExportCampaignPdf = async (campaignId: string) => {
+    setExportingCampaignId(campaignId);
+    try {
+      const { data, error } = await supabase.functions.invoke('export-campaign-pdf', {
+        body: { campaign_id: campaignId }
+      });
+
+      if (error) throw error;
+
+      if (data?.public_url) {
+        window.open(data.public_url, '_blank');
+        toast.success('PDF do pacote criativo gerado!');
+      } else {
+        throw new Error('URL não retornada');
+      }
+    } catch (err: any) {
+      console.error('Export Campaign PDF error:', err);
+      toast.error(err.message || 'Erro ao exportar PDF');
+    } finally {
+      setExportingCampaignId(null);
+    }
+  };
 
   const handleGeneratePackage = async (campaign?: Campaign) => {
     // If no campaign passed, use first active campaign or first draft
@@ -351,6 +394,8 @@ export default function CampaignsPage() {
                   campaigns={campaigns}
                   onStatusChange={(status) => handleStatusChange(campaign.id, status)}
                   onDelete={() => handleDelete(campaign.id)}
+                  onExportPdf={() => handleExportCampaignPdf(campaign.id)}
+                  isExporting={exportingCampaignId === campaign.id}
                 />
               ))}
             </div>
@@ -372,6 +417,8 @@ export default function CampaignsPage() {
                   campaigns={campaigns}
                   onStatusChange={(status) => handleStatusChange(campaign.id, status)}
                   onDelete={() => handleDelete(campaign.id)}
+                  onExportPdf={() => handleExportCampaignPdf(campaign.id)}
+                  isExporting={exportingCampaignId === campaign.id}
                 />
               ))}
             </div>
@@ -393,6 +440,8 @@ export default function CampaignsPage() {
                   campaigns={campaigns}
                   onStatusChange={(status) => handleStatusChange(campaign.id, status)}
                   onDelete={() => handleDelete(campaign.id)}
+                  onExportPdf={() => handleExportCampaignPdf(campaign.id)}
+                  isExporting={exportingCampaignId === campaign.id}
                 />
               ))}
             </div>
