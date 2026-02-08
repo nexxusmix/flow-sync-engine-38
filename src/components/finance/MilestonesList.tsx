@@ -163,16 +163,23 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
         });
         toast.success('Parcela atualizada');
       } else {
-        await createMilestone(contractId, {
+        const newMilestone = await createMilestone(contractId, {
           title,
           amount: parseFloat(amount),
           due_date: dueDate,
         });
-        toast.success('Parcela criada');
+        if (newMilestone) {
+          toast.success('Parcela criada com sucesso!');
+        } else {
+          toast.error('Erro ao criar parcela');
+          return;
+        }
       }
       handleCloseDialog();
+      // Call onRefresh to update totals in parent component
       onRefresh();
     } catch (error) {
+      console.error('Error saving milestone:', error);
       toast.error('Erro ao salvar parcela');
     }
   };

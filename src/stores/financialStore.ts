@@ -268,16 +268,20 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       amount: data.amount || 0,
       due_date: data.due_date,
       status: 'pending',
-      ...data 
     };
     
     const { data: newMilestone, error } = await supabase
       .from('payment_milestones')
-      .insert([insertData as any])
+      .insert([insertData])
       .select()
       .single();
     
-    if (!error && newMilestone) {
+    if (error) {
+      console.error('Error creating milestone:', error);
+      return null;
+    }
+    
+    if (newMilestone) {
       // Create corresponding revenue
       const contract = get().contracts.find(c => c.id === contractId);
       const newRevenue = await get().createRevenue({
@@ -290,18 +294,11 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       // Link revenue to milestone
       if (newRevenue) {
         await supabase.from('payment_milestones').update({ revenue_id: newRevenue.id }).eq('id', newMilestone.id);
-        // Update local milestone with revenue_id
         (newMilestone as any).revenue_id = newRevenue.id;
       }
       
-      // Update local state immediately for responsive UI
-      set((state) => ({
-        contracts: state.contracts.map((c) => 
-          c.id === contractId 
-            ? { ...c, milestones: [...(c.milestones || []), newMilestone as PaymentMilestone] }
-            : c
-        ),
-      }));
+      // Refetch contracts to get the complete updated state with milestones
+      await get().fetchContracts();
       
       return newMilestone as PaymentMilestone;
     }
@@ -309,28 +306,36 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
   },
 
   updateMilestone: async (id, data) => {
-    await supabase.from('payment_milestones').update(data as any).eq('id', id);
-    
-    // Update local state
-    set((state) => ({
-      contracts: state.contracts.map((c) => ({
-        ...c,
-        milestones: c.milestones?.map((m) => 
-          m.id === id ? { ...m, ...data } : m
-        ),
-      })),
-    }));
-    
-    // If revenue_id exists, update corresponding revenue
+    // Find milestone first to get revenue_id before update
     const contract = get().contracts.find(c => c.milestones?.some(m => m.id === id));
     const milestone = contract?.milestones?.find(m => m.id === id);
-    if (milestone?.revenue_id && (data.amount || data.due_date)) {
+    
+    const { error } = await supabase.from('payment_milestones').update(data as any).eq('id', id);
+    
+    if (error) {
+      console.error('Error updating milestone:', error);
+      throw error;
+    }
+    
+    // If revenue_id exists, update corresponding revenue
+    if (milestone?.revenue_id && (data.amount || data.due_date || data.title)) {
       const updateData: any = {};
-      if (data.amount) updateData.amount = data.amount;
-      if (data.due_date) updateData.due_date = data.due_date;
-      if (data.title) updateData.description = `${contract?.project_name || 'Projeto'} - ${data.title}`;
+      if (data.amount !== undefined) updateData.amount = data.amount;
+      if (data.due_date !== undefined) updateData.due_date = data.due_date;
+      if (data.title !== undefined) updateData.description = `${contract?.project_name || 'Projeto'} - ${data.title}`;
+      if (data.status === 'paid' && data.paid_date) {
+        updateData.status = 'received';
+        updateData.received_date = data.paid_date;
+      } else if (data.status === 'pending') {
+        updateData.status = 'pending';
+        updateData.received_date = null;
+      }
       await get().updateRevenue(milestone.revenue_id, updateData);
     }
+    
+    // Refetch to ensure consistency
+    await get().fetchContracts();
+    await get().fetchRevenues();
   },
 
   deleteMilestone: async (id) => {
@@ -339,44 +344,45 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     const milestone = contract?.milestones?.find(m => m.id === id);
     
     // Delete milestone
-    await supabase.from('payment_milestones').delete().eq('id', id);
+    const { error } = await supabase.from('payment_milestones').delete().eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting milestone:', error);
+      throw error;
+    }
     
     // Delete corresponding revenue if exists
     if (milestone?.revenue_id) {
       await get().deleteRevenue(milestone.revenue_id);
     }
     
-    // Update local state
-    set((state) => ({
-      contracts: state.contracts.map((c) => ({
-        ...c,
-        milestones: c.milestones?.filter((m) => m.id !== id),
-      })),
-    }));
+    // Refetch to ensure consistency
+    await get().fetchContracts();
+    await get().fetchRevenues();
   },
 
   markMilestonePaid: async (milestoneId, date) => {
     const paidDate = date || new Date().toISOString().split('T')[0];
-    await supabase.from('payment_milestones').update({ status: 'paid', paid_date: paidDate }).eq('id', milestoneId);
     
-    // Find milestone to get revenue_id
+    // Find milestone to get revenue_id before update
     const contract = get().contracts.find(c => c.milestones?.some(m => m.id === milestoneId));
     const milestone = contract?.milestones?.find(m => m.id === milestoneId);
+    
+    const { error } = await supabase.from('payment_milestones').update({ status: 'paid', paid_date: paidDate }).eq('id', milestoneId);
+    
+    if (error) {
+      console.error('Error marking milestone as paid:', error);
+      throw error;
+    }
     
     // Also mark corresponding revenue as received
     if (milestone?.revenue_id) {
       await get().markRevenueReceived(milestone.revenue_id, paidDate);
     }
     
-    // Update local state
-    set((state) => ({
-      contracts: state.contracts.map((c) => ({
-        ...c,
-        milestones: c.milestones?.map((m) => 
-          m.id === milestoneId ? { ...m, status: 'paid' as MilestoneStatus, paid_date: paidDate } : m
-        ),
-      })),
-    }));
+    // Refetch to ensure consistency
+    await get().fetchContracts();
+    await get().fetchRevenues();
   },
 
   getMilestonesByContract: (contractId) => {
