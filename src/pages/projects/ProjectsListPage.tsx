@@ -105,7 +105,7 @@ export default function ProjectsListPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={exportProjectsOverview}
+            onClick={() => exportProjectsOverview()}
             disabled={isExporting}
           >
             {isExporting ? (

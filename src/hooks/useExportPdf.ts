@@ -1,236 +1,180 @@
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+/**
+ * useExportPdf - Hook unificado para exportação de PDFs
+ * 
+ * Fornece estado de loading, URL exportada e funções de exportação
+ * para todos os tipos de relatórios da plataforma.
+ */
 
-interface ExportResult {
-  success: boolean;
-  file_path?: string;
-  public_url?: string;
-  file_name?: string;
-  error?: string;
+import { useState, useCallback } from "react";
+import {
+  exportProjectPDF,
+  exportReport360PDF,
+  exportTasksPDF,
+  exportFinancePDF,
+  exportOverviewPDF,
+  exportPortalPDF,
+  exportCreativePDF,
+  exportCampaignPDF,
+  exportContentPDF,
+  type ExportResult,
+  type ExportOptions,
+} from "@/services/pdfExportService";
+
+export interface UseExportPdfReturn {
+  /** Whether an export is currently in progress */
+  isExporting: boolean;
+  /** The URL of the last exported PDF (if available) */
+  exportedUrl: string | null;
+  /** Export a single project */
+  exportProject: (projectId: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Report 360 */
+  exportReport360: (period?: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Tasks/Workflow */
+  exportTasks: (filters?: Record<string, unknown>, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Finance Report */
+  exportFinance: (period?: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Projects Overview */
+  exportProjectsOverview: (period?: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Portal Client PDF */
+  exportPortal: (token: string, projectId?: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Studio Run / Creative Package */
+  exportStudioRun: (studioRunId: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Creative Package */
+  exportCreativePackage: (packageId: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Campaign */
+  exportCampaign: (campaignId: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Export Content Item */
+  exportContent: (contentItemId: string, options?: ExportOptions) => Promise<ExportResult>;
+  /** Open the last exported PDF in a new tab */
+  openPdf: () => void;
+  /** Copy the exported URL to clipboard */
+  copyLink: () => Promise<void>;
+  /** Reset the exported URL */
+  resetExport: () => void;
 }
 
-export function useExportPdf() {
+export function useExportPdf(): UseExportPdfReturn {
   const [isExporting, setIsExporting] = useState(false);
   const [exportedUrl, setExportedUrl] = useState<string | null>(null);
 
-  const exportStudioRun = async (studioRunId: string) => {
-    setIsExporting(true);
-    setExportedUrl(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke<ExportResult>('export-creative-pdf', {
-        body: {
-          type: 'studio_run',
-          id: studioRunId,
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
-
-      setExportedUrl(data.public_url || null);
-      toast.success("PDF exportado com sucesso!");
+  // Helper to wrap export functions with loading state
+  const withLoading = useCallback(
+    async <T extends ExportResult>(
+      exportFn: () => Promise<T>
+    ): Promise<T> => {
+      setIsExporting(true);
+      setExportedUrl(null);
       
-      return data;
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      const message = error instanceof Error ? error.message : "Erro ao exportar PDF";
-      toast.error(message);
-      return null;
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const exportCreativePackage = async (packageId: string) => {
-    setIsExporting(true);
-    setExportedUrl(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke<ExportResult>('export-creative-pdf', {
-        body: {
-          type: 'creative_package',
-          id: packageId,
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
-
-      setExportedUrl(data.public_url || null);
-      toast.success("PDF exportado com sucesso!");
-      
-      return data;
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      const message = error instanceof Error ? error.message : "Erro ao exportar PDF";
-      toast.error(message);
-      return null;
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // New universal export functions
-  const exportReport360 = async (period: string = "3m") => {
-    setIsExporting(true);
-    setExportedUrl(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
-        body: {
-          type: 'report_360',
-          period,
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
-
-      setExportedUrl(data.public_url || null);
-      toast.success("Relatório exportado com sucesso!");
-      
-      if (data.public_url) {
-        window.open(data.public_url, '_blank');
+      try {
+        const result = await exportFn();
+        
+        if (result.success) {
+          const url = result.signed_url || result.public_url || null;
+          setExportedUrl(url);
+        }
+        
+        return result;
+      } finally {
+        setIsExporting(false);
       }
-      
-      return data;
-    } catch (error) {
-      console.error("Error exporting Report 360:", error);
-      const message = error instanceof Error ? error.message : "Erro ao exportar relatório";
-      toast.error(message);
-      return null;
-    } finally {
-      setIsExporting(false);
-    }
-  };
+    },
+    []
+  );
 
-  const exportTasks = async () => {
-    setIsExporting(true);
-    setExportedUrl(null);
+  const exportProject = useCallback(
+    (projectId: string, options?: ExportOptions) =>
+      withLoading(() => exportProjectPDF(projectId, options)),
+    [withLoading]
+  );
 
-    try {
-      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
-        body: {
-          type: 'tasks',
-        },
-      });
+  const exportReport360 = useCallback(
+    (period: string = "3m", options?: ExportOptions) =>
+      withLoading(() => exportReport360PDF(period, options)),
+    [withLoading]
+  );
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
+  const exportTasks = useCallback(
+    (filters?: Record<string, unknown>, options?: ExportOptions) =>
+      withLoading(() => exportTasksPDF(filters, options)),
+    [withLoading]
+  );
 
-      setExportedUrl(data.public_url || null);
-      toast.success("Tarefas exportadas com sucesso!");
-      
-      if (data.public_url) {
-        window.open(data.public_url, '_blank');
-      }
-      
-      return data;
-    } catch (error) {
-      console.error("Error exporting tasks:", error);
-      const message = error instanceof Error ? error.message : "Erro ao exportar tarefas";
-      toast.error(message);
-      return null;
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const exportFinance = useCallback(
+    (period: string = "6m", options?: ExportOptions) =>
+      withLoading(() => exportFinancePDF(period, options)),
+    [withLoading]
+  );
 
-  const exportProject = async (projectId: string) => {
-    setIsExporting(true);
-    setExportedUrl(null);
+  const exportProjectsOverview = useCallback(
+    (period: string = "3m", options?: ExportOptions) =>
+      withLoading(() => exportOverviewPDF(period, options)),
+    [withLoading]
+  );
 
-    try {
-      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
-        body: {
-          type: 'project',
-          id: projectId,
-        },
-      });
+  const exportPortal = useCallback(
+    (token: string, projectId?: string, options?: ExportOptions) =>
+      withLoading(() => exportPortalPDF(token, projectId, options)),
+    [withLoading]
+  );
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
+  const exportStudioRun = useCallback(
+    (studioRunId: string, options?: ExportOptions) =>
+      withLoading(() => exportCreativePDF("studio_run", studioRunId, options)),
+    [withLoading]
+  );
 
-      setExportedUrl(data.public_url || null);
-      toast.success("Projeto exportado com sucesso!");
-      
-      if (data.public_url) {
-        window.open(data.public_url, '_blank');
-      }
-      
-      return data;
-    } catch (error) {
-      console.error("Error exporting project:", error);
-      const message = error instanceof Error ? error.message : "Erro ao exportar projeto";
-      toast.error(message);
-      return null;
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const exportCreativePackage = useCallback(
+    (packageId: string, options?: ExportOptions) =>
+      withLoading(() => exportCreativePDF("creative_package", packageId, options)),
+    [withLoading]
+  );
 
-  const exportProjectsOverview = async () => {
-    setIsExporting(true);
-    setExportedUrl(null);
+  const exportCampaign = useCallback(
+    (campaignId: string, options?: ExportOptions) =>
+      withLoading(() => exportCampaignPDF(campaignId, options)),
+    [withLoading]
+  );
 
-    try {
-      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
-        body: {
-          type: 'project_overview',
-        },
-      });
+  const exportContent = useCallback(
+    (contentItemId: string, options?: ExportOptions) =>
+      withLoading(() => exportContentPDF(contentItemId, options)),
+    [withLoading]
+  );
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
-
-      setExportedUrl(data.public_url || null);
-      toast.success("Visão geral exportada com sucesso!");
-      
-      if (data.public_url) {
-        window.open(data.public_url, '_blank');
-      }
-      
-      return data;
-    } catch (error) {
-      console.error("Error exporting overview:", error);
-      const message = error instanceof Error ? error.message : "Erro ao exportar visão geral";
-      toast.error(message);
-      return null;
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const openPdf = () => {
+  const openPdf = useCallback(() => {
     if (exportedUrl) {
-      window.open(exportedUrl, '_blank');
+      window.open(exportedUrl, "_blank");
     }
-  };
+  }, [exportedUrl]);
 
-  const copyLink = async () => {
+  const copyLink = useCallback(async () => {
     if (exportedUrl) {
       await navigator.clipboard.writeText(exportedUrl);
-      toast.success("Link copiado!");
+      // Toast is handled by the service
     }
-  };
+  }, [exportedUrl]);
 
-  const resetExport = () => {
+  const resetExport = useCallback(() => {
     setExportedUrl(null);
-  };
+  }, []);
 
   return {
     isExporting,
     exportedUrl,
-    exportStudioRun,
-    exportCreativePackage,
+    exportProject,
     exportReport360,
     exportTasks,
-    exportProject,
+    exportFinance,
     exportProjectsOverview,
+    exportPortal,
+    exportStudioRun,
+    exportCreativePackage,
+    exportCampaign,
+    exportContent,
     openPdf,
     copyLink,
     resetExport,
   };
 }
+
+export default useExportPdf;
