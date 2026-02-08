@@ -64,9 +64,9 @@ export function KPICards() {
               >
                 {kpi.icon}
               </motion.span>
-              <span className="text-[9px] text-muted-foreground font-light uppercase tracking-widest">{kpi.detail}</span>
+              <span className="text-[10px] text-muted-foreground font-light uppercase tracking-widest">{kpi.detail}</span>
             </div>
-            <h4 className="text-[10px] text-muted-foreground font-light uppercase tracking-[0.4em] mb-2">{kpi.label}</h4>
+            <h4 className="text-[11px] text-muted-foreground font-light uppercase tracking-[0.4em] mb-2">{kpi.label}</h4>
             <motion.span 
               className="text-4xl font-normal text-foreground tracking-tighter block"
               initial={{ opacity: 0, scale: 0.5 }}

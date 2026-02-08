@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;500&family=Playfair+Display:ital,wght@0,400;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;1,400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,200,0,0');
 
 @tailwind base;
@@ -114,7 +114,7 @@
   html {
     scroll-behavior: smooth;
     perspective: 1500px;
-    font-size: 80%;
+    font-size: 87.5%; /* 14px base - improved readability */
     overflow: hidden;
     height: 100vh;
   }
@@ -122,7 +122,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Host Grotesk', sans-serif;
-    font-weight: 300;
+    font-weight: 400; /* Regular weight for better readability */
     overflow: hidden;
     height: 100vh;
   }
@@ -179,28 +179,28 @@
 
   /* Badge styles */
   .badge-subtle {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-[10px] font-light uppercase tracking-widest bg-muted text-muted-foreground;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-[11px] font-light uppercase tracking-widest bg-muted text-muted-foreground;
   }
 
   .badge-success {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-[10px] font-light uppercase tracking-widest bg-success/15 text-success;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-[11px] font-light uppercase tracking-widest bg-success/15 text-success;
   }
 
   .badge-warning {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-[10px] font-light uppercase tracking-widest bg-warning/15 text-warning;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-[11px] font-light uppercase tracking-widest bg-warning/15 text-warning;
   }
 
   .badge-danger {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-[10px] font-light uppercase tracking-widest bg-destructive/15 text-destructive;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-[11px] font-light uppercase tracking-widest bg-destructive/15 text-destructive;
   }
 
   .badge-info {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-[10px] font-light uppercase tracking-widest bg-primary/15 text-primary;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-[11px] font-light uppercase tracking-widest bg-primary/15 text-primary;
   }
 
   /* Section label - SQUAD Style */
   .section-label {
-    @apply text-[10px] uppercase tracking-[0.5em] text-primary font-light flex items-center gap-3;
+    @apply text-[11px] uppercase tracking-[0.5em] text-primary font-light flex items-center gap-3;
   }
 
   .section-label::before {
@@ -210,7 +210,7 @@
 
   /* Chip/pill for filters */
   .chip {
-    @apply inline-flex items-center px-5 py-2 rounded-full text-[10px] font-light uppercase tracking-widest border border-border bg-transparent text-muted-foreground cursor-pointer;
+    @apply inline-flex items-center px-5 py-2 rounded-full text-[11px] font-light uppercase tracking-widest border border-border bg-transparent text-muted-foreground cursor-pointer;
     transition: all 0.3s ease;
   }
 
@@ -219,7 +219,7 @@
   }
 
   .chip-active {
-    @apply inline-flex items-center px-5 py-2 rounded-full text-[10px] font-light uppercase tracking-widest border border-primary/30 bg-primary/10 text-primary cursor-pointer;
+    @apply inline-flex items-center px-5 py-2 rounded-full text-[11px] font-light uppercase tracking-widest border border-primary/30 bg-primary/10 text-primary cursor-pointer;
   }
 
   /* KPI Card - SQUAD Style */
@@ -232,7 +232,7 @@
   }
 
   .kpi-label {
-    @apply text-[10px] uppercase tracking-[0.4em] text-muted-foreground font-light;
+    @apply text-[11px] uppercase tracking-[0.4em] text-muted-foreground font-light;
   }
 
   /* Mini kanban stage */
@@ -257,17 +257,17 @@
 
   /* Action button subtle */
   .btn-subtle {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl text-[10px] font-light uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl text-[11px] font-light uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all;
   }
 
   /* Quick action button */
   .btn-action {
-    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-light uppercase tracking-widest border border-border bg-transparent text-foreground hover:bg-white hover:text-black transition-all duration-500;
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-light uppercase tracking-widest border border-border bg-transparent text-foreground hover:bg-white hover:text-black transition-all duration-500;
   }
 
   /* Primary action button - Squad Blue */
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-normal uppercase tracking-widest bg-primary text-white hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.5)];
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full text-[11px] font-normal uppercase tracking-widest bg-primary text-white hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.5)];
   }
 
   /* Preserve 3D for animations */
