@@ -1,19 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
-import { ContentIdea, CONTENT_PILLARS, CONTENT_CHANNELS, CONTENT_FORMATS } from "@/types/marketing";
+import { ContentIdea, CONTENT_PILLARS, CONTENT_CHANNELS, CONTENT_FORMATS, InstagramReference } from "@/types/marketing";
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Search, Lightbulb, Sparkles, ArrowRight,
   Star, MoreHorizontal, Trash2, Loader2, Instagram
 } from "lucide-react";
 import { ReferencePicker } from "@/components/marketing/ReferencePicker";
-import { InstagramReference } from "@/types/marketing";
+import { useReferenceLinkCount } from "@/hooks/useReferenceLinks";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -50,9 +51,15 @@ function IdeaCard({
   onDelete: () => void;
   onLinkReference: () => void;
 }) {
+  const { count: referenceCount, fetchCount } = useReferenceLinkCount('idea', idea.id);
   const pillar = CONTENT_PILLARS.find(p => p.type === idea.pillar);
   const channel = CONTENT_CHANNELS.find(c => c.type === idea.channel);
   const format = CONTENT_FORMATS.find(f => f.type === idea.format);
+
+  // Fetch reference count on mount
+  useEffect(() => {
+    fetchCount();
+  }, [fetchCount]);
 
   return (
     <motion.div
@@ -70,6 +77,12 @@ function IdeaCard({
               <Star className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-medium">{idea.score}</span>
             </div>
+          )}
+          {referenceCount > 0 && (
+            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-1">
+              <Instagram className="w-2.5 h-2.5" />
+              {referenceCount}
+            </Badge>
           )}
         </div>
         <DropdownMenu>
@@ -264,13 +277,22 @@ export default function IdeasPage() {
   const handleLinkReference = async (ref: InstagramReference) => {
     if (!selectedIdeaForRef) return;
     
+    // Use the new reference_links table
     const { error } = await supabase
-      .from('instagram_references')
-      .update({ content_idea_id: selectedIdeaForRef })
-      .eq('id', ref.id);
+      .from('reference_links')
+      .insert({
+        reference_id: ref.id,
+        entity_type: 'idea',
+        entity_id: selectedIdeaForRef,
+      });
 
     if (error) {
-      throw error;
+      if (error.code === '23505') {
+        toast.error('Esta referência já está vinculada');
+      } else {
+        throw error;
+      }
+      return;
     }
     
     toast.success('Referência vinculada à ideia!');
