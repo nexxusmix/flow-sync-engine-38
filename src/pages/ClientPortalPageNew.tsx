@@ -166,8 +166,10 @@ export default function ClientPortalPage() {
             <TabsContent value="overview" className="mt-8">
               <PortalOverviewPremium 
                 project={project} 
-                stages={stages} 
-                hasPaymentBlock={hasPaymentBlock} 
+                stages={stages}
+                deliverables={deliverables}
+                hasPaymentBlock={hasPaymentBlock}
+                isManager={false}
               />
             </TabsContent>
 
