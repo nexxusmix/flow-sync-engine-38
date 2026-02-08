@@ -1,11 +1,12 @@
 /**
  * ExecutiveSummarySection - Report-style executive summary (01 — RESUMO EXECUTIVO)
  * Collapsible by default, large heading, editorial paragraphs with AI/Edit buttons
- * Now with auto-save functionality
+ * Now with auto-save functionality and rich text rendering
  */
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AiGenerateButton } from "@/components/ai/AiGenerateButton";
@@ -95,39 +96,6 @@ export function ExecutiveSummarySection({
             <span className="text-primary text-[10px] uppercase tracking-[0.4em] font-bold">
               01 — RESUMO EXECUTIVO
             </span>
-            {isManager && !isOpen && (
-              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                <AiGenerateButton
-                  actionKey="projects.generateBrief"
-                  entityType="project"
-                  entityId={projectId}
-                  hasExistingContent={!!description}
-                  getContext={() => ({
-                    id: projectId,
-                    name: projectName,
-                    client_name: clientName,
-                    service_type: template,
-                    description: description,
-                  })}
-                  onApply={handleApplyBrief}
-                />
-                {description && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditing(true);
-                      setIsOpen(true);
-                    }}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Edit3 className="w-4 h-4 mr-1" />
-                    Editar
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
           {/* Preview headline when closed */}
           {!isOpen && description && (
@@ -222,16 +190,41 @@ export function ExecutiveSummarySection({
                     {headline}
                   </h2>
 
-                  {/* Paragraphs with editorial styling */}
-                  <div className="space-y-6">
-                    {paragraphs.slice(headline === paragraphs[0] ? 1 : 0).map((paragraph, idx) => (
-                      <p 
-                        key={idx}
-                        className="text-lg md:text-xl text-muted-foreground leading-[1.8] font-light"
-                      >
-                        {paragraph}
-                      </p>
-                    ))}
+                  {/* Rich Text Rendering with ReactMarkdown */}
+                  <div className="prose prose-invert max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }) => (
+                          <h2 className="text-2xl font-medium text-foreground mt-8 mb-4">{children}</h2>
+                        ),
+                        h2: ({ children }) => (
+                          <h3 className="text-xl font-medium text-primary mt-6 mb-3 uppercase tracking-wide">{children}</h3>
+                        ),
+                        h3: ({ children }) => (
+                          <h4 className="text-lg font-medium text-foreground mt-4 mb-2">{children}</h4>
+                        ),
+                        p: ({ children }) => (
+                          <p className="text-lg md:text-xl text-muted-foreground leading-[1.8] font-light mb-4">{children}</p>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="space-y-2 mb-4 mt-2">{children}</ul>
+                        ),
+                        li: ({ children }) => (
+                          <li className="flex gap-3 text-muted-foreground">
+                            <span className="text-primary mt-1">•</span>
+                            <span className="flex-1">{children}</span>
+                          </li>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-medium text-foreground">{children}</strong>
+                        ),
+                        em: ({ children }) => (
+                          <em className="text-primary italic">{children}</em>
+                        ),
+                      }}
+                    >
+                      {displayDescription}
+                    </ReactMarkdown>
                   </div>
                 </div>
               ) : (

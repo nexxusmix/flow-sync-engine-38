@@ -20,26 +20,6 @@ const COLORS = {
   error: "#ef4444", // red-500
 };
 
-// PDF dimensions (A4)
-const PAGE = {
-  width: 595.28,
-  height: 841.89,
-  margin: 40,
-  contentWidth: 515.28,
-};
-
-// Typography: Host Grotesk
-// - Títulos: CAIXA ALTA, weight 500 (Medium)
-// - Títulos de corpo: weight 500 (Medium), normal case
-// - Corpo de texto: weight 300 (Light), normal case
-const FONTS = {
-  title: "Host Grotesk, Inter, sans-serif",
-  titleWeight: "500",
-  body: "Host Grotesk, Inter, sans-serif",
-  bodyWeight: "300",
-  headingWeight: "500",
-};
-
 interface ExportInput {
   type: "report_360" | "tasks" | "project" | "project_overview" | "portal";
   id?: string;
@@ -84,807 +64,788 @@ function getPeriodDates(period: string): { start: Date; end: Date } {
   return { start, end };
 }
 
-// Stage name mapping
-const STAGE_NAMES: Record<string, string> = {
-  briefing: 'Briefing',
-  roteiro: 'Roteiro',
-  pre_producao: 'Pré-Produção',
-  captacao: 'Captação',
-  edicao: 'Edição',
-  revisao: 'Revisão',
-  aprovacao: 'Aprovação',
-  entrega: 'Entrega',
-  pos_venda: 'Pós-Venda',
-};
-
-/**
- * Premium Editorial PDF Generator
- * Layout: Sidebar (left) + Main Content (right) 
- * Typography: Host Grotesk only
- * - Titles: UPPERCASE, Medium (500)
- * - Body Headings: Medium (500), normal case  
- * - Body Text: Light (300), normal case
- */
-class PremiumEditorialPDFGenerator {
-  private pages: string[][] = [[]];
-  private currentPageIndex = 0;
-  private currentY = PAGE.margin;
-  private projectName = "";
+// Convert markdown-like text to clean HTML
+function markdownToHtml(text: string): string {
+  if (!text) return '';
   
-  // Layout dimensions
-  private readonly SIDEBAR_WIDTH = 180;
-  private readonly MAIN_WIDTH = PAGE.contentWidth - 190;
-  private readonly MAIN_X = PAGE.margin + 190;
-
-  private escapeXml(str: string): string {
-    if (!str) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
-  }
-
-  private get content() {
-    return this.pages[this.currentPageIndex];
-  }
-
-  private checkPageBreak(requiredHeight: number) {
-    if (this.currentY + requiredHeight > PAGE.height - 60) {
-      this.newPage();
-    }
-  }
-
-  private newPage() {
-    this.currentPageIndex++;
-    this.pages[this.currentPageIndex] = [];
-    this.currentY = PAGE.margin;
-  }
-
-  // ==========================================
-  // SIDEBAR PANEL (Left column - sticky info)
-  // ==========================================
-  addSidebarPanel(
-    project: { 
-      name: string; 
-      client_name: string; 
-      status: string;
-      template: string;
-      health_score: number;
-      contract_value: number;
-      due_date: string | null;
-      owner_name: string;
-      has_payment_block: boolean;
-    },
-    progress: number,
-    totalStages: number
-  ) {
-    const sidebarX = PAGE.margin;
-    const sidebarHeight = 380;
-    let localY = this.currentY;
-
-    // Sidebar container
-    this.content.push(`
-      <rect fill="${COLORS.surface}" x="${sidebarX}" y="${localY}" 
-        width="${this.SIDEBAR_WIDTH}" height="${sidebarHeight}" rx="0"/>
-      <rect fill="none" stroke="${COLORS.border}" stroke-width="0.5" x="${sidebarX}" y="${localY}" 
-        width="${this.SIDEBAR_WIDTH}" height="${sidebarHeight}" rx="0"/>
-    `);
-
-    const innerX = sidebarX + 16;
-    localY += 24;
-
-    // Status badges row
-    const statusLabel = project.status === 'active' ? 'ACTIVE' : project.status?.toUpperCase() || 'ACTIVE';
-    this.content.push(`
-      <rect fill="${COLORS.primary}22" x="${innerX}" y="${localY}" width="50" height="16" rx="0"/>
-      <rect fill="none" stroke="${COLORS.primary}44" stroke-width="0.5" x="${innerX}" y="${localY}" width="50" height="16"/>
-      <text fill="${COLORS.primary}" x="${innerX + 25}" y="${localY + 11}" 
-        font-family="${FONTS.title}" font-size="7" text-anchor="middle" font-weight="${FONTS.titleWeight}" letter-spacing="0.8">
-        ${statusLabel}
-      </text>
-    `);
-    
-    if (project.has_payment_block) {
-      this.content.push(`
-        <rect fill="${COLORS.error}22" x="${innerX + 58}" y="${localY}" width="60" height="16" rx="0"/>
-        <rect fill="none" stroke="${COLORS.error}44" stroke-width="0.5" x="${innerX + 58}" y="${localY}" width="60" height="16"/>
-        <text fill="${COLORS.error}" x="${innerX + 88}" y="${localY + 11}" 
-          font-family="${FONTS.title}" font-size="7" text-anchor="middle" font-weight="${FONTS.titleWeight}" letter-spacing="0.5">
-          BLOQUEADO
-        </text>
-      `);
-    }
-    localY += 28;
-
-    // Project Title - UPPERCASE MEDIUM
-    this.content.push(`
-      <text fill="${COLORS.text}" x="${innerX}" y="${localY}" 
-        font-family="${FONTS.title}" font-size="16" font-weight="${FONTS.titleWeight}">
-        ${this.escapeXml(project.name.substring(0, 18).toUpperCase())}
-      </text>
-    `);
-    localY += 18;
-
-    // Client name - italic style (light)
-    this.content.push(`
-      <text fill="${COLORS.textMuted}" x="${innerX}" y="${localY}" 
-        font-family="${FONTS.body}" font-size="9" font-weight="${FONTS.bodyWeight}" font-style="italic">
-        ${this.escapeXml(project.client_name || 'Cliente')}
-      </text>
-    `);
-    localY += 28;
-
-    // Divider
-    this.content.push(`
-      <line x1="${innerX}" y1="${localY}" x2="${sidebarX + this.SIDEBAR_WIDTH - 16}" y2="${localY}" 
-        stroke="${COLORS.border}" stroke-width="0.5"/>
-    `);
-    localY += 20;
-
-    // Metrics grid (2x2)
-    const metrics = [
-      { label: "VALOR DO CONTRATO", value: formatCurrency(project.contract_value || 0), color: COLORS.primary },
-      { label: "SAÚDE", value: `${project.health_score || 100}%`, color: COLORS.success },
-      { label: "ENTREGA", value: formatDate(project.due_date), color: COLORS.text },
-      { label: "RESPONSÁVEL", value: project.owner_name?.substring(0, 14) || "Squad Film", color: COLORS.text },
-    ];
-
-    metrics.forEach((metric, i) => {
-      const row = Math.floor(i / 2);
-      const col = i % 2;
-      const mx = innerX + (col * 75);
-      const my = localY + (row * 42);
-
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${mx}" y="${my}" 
-          font-family="${FONTS.title}" font-size="6" font-weight="${FONTS.titleWeight}" letter-spacing="0.5">
-          ${metric.label}
-        </text>
-        <text fill="${metric.color}" x="${mx}" y="${my + 15}" 
-          font-family="${FONTS.body}" font-size="11" font-weight="${FONTS.headingWeight}">
-          ${this.escapeXml(metric.value)}
-        </text>
-      `);
-    });
-    localY += 100;
-
-    // Block alert (if applicable)
-    if (project.has_payment_block) {
-      this.content.push(`
-        <rect fill="${COLORS.error}12" x="${innerX - 4}" y="${localY}" 
-          width="${this.SIDEBAR_WIDTH - 24}" height="50" rx="0"/>
-        <rect fill="none" stroke="${COLORS.error}33" stroke-width="0.5" x="${innerX - 4}" y="${localY}" 
-          width="${this.SIDEBAR_WIDTH - 24}" height="50"/>
-        <text fill="${COLORS.error}" x="${innerX + 4}" y="${localY + 16}" 
-          font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" letter-spacing="0.5">
-          BLOQUEADO POR INADIMPLÊNCIA
-        </text>
-        <text fill="${COLORS.textMuted}" x="${innerX + 4}" y="${localY + 30}" 
-          font-family="${FONTS.body}" font-size="7" font-weight="${FONTS.bodyWeight}">
-          Fatura em atraso. Entrega final
-        </text>
-        <text fill="${COLORS.textMuted}" x="${innerX + 4}" y="${localY + 40}" 
-          font-family="${FONTS.body}" font-size="7" font-weight="${FONTS.bodyWeight}">
-          bloqueada até regularização.
-        </text>
-      `);
-      localY += 60;
-    }
-
-    // Progress bar
-    localY = this.currentY + sidebarHeight - 80;
-    this.content.push(`
-      <text fill="${COLORS.textMuted}" x="${innerX}" y="${localY}" 
-        font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" letter-spacing="0.5">
-        PROGRESSO
-      </text>
-      <text fill="${COLORS.text}" x="${sidebarX + this.SIDEBAR_WIDTH - 20}" y="${localY}" 
-        font-family="${FONTS.body}" font-size="8" text-anchor="end">
-        ${progress}% (0/${totalStages} etapas)
-      </text>
-    `);
-    localY += 12;
-    
-    // Progress bar background
-    const barWidth = this.SIDEBAR_WIDTH - 32;
-    this.content.push(`
-      <rect fill="${COLORS.border}" x="${innerX}" y="${localY}" width="${barWidth}" height="3" rx="0"/>
-      <rect fill="${COLORS.primary}" x="${innerX}" y="${localY}" width="${Math.max(2, (progress / 100) * barWidth)}" height="3" rx="0"/>
-    `);
-    localY += 20;
-
-    // Access portal button
-    this.content.push(`
-      <rect fill="none" stroke="${COLORS.border}" stroke-width="0.5" x="${innerX - 4}" y="${localY}" 
-        width="${this.SIDEBAR_WIDTH - 24}" height="28" rx="0"/>
-      <text fill="${COLORS.textMuted}" x="${sidebarX + this.SIDEBAR_WIDTH / 2}" y="${localY + 18}" 
-        font-family="${FONTS.title}" font-size="7" text-anchor="middle" font-weight="${FONTS.titleWeight}" letter-spacing="1">
-        ACESSAR PORTAL DO CLIENTE
-      </text>
-    `);
-
-    this.projectName = project.name;
-  }
-
-  // ==========================================
-  // MAIN CONTENT AREA (Right column)
-  // ==========================================
-  
-  // Section Header - "01 — RESUMO EXECUTIVO" style
-  addSectionHeader(index: string, title: string) {
-    this.checkPageBreak(35);
-    
-    this.content.push(`
-      <text fill="${COLORS.primary}" x="${this.MAIN_X}" y="${this.currentY}" 
-        font-family="${FONTS.title}" font-size="8" font-weight="${FONTS.titleWeight}" letter-spacing="1.5">
-        ${index} — ${this.escapeXml(title.toUpperCase())}
-      </text>
-    `);
-    this.currentY += 22;
-  }
-
-  // Executive Summary - Editorial style with headline + paragraphs
-  addExecutiveSummary(headline: string, paragraphs: string[]) {
-    this.checkPageBreak(120);
-    
-    const cardWidth = this.MAIN_WIDTH;
-    let estimatedHeight = 40;
-    paragraphs.forEach(p => {
-      estimatedHeight += Math.ceil(p.length / 75) * 16 + 12;
-    });
-    estimatedHeight = Math.min(estimatedHeight, 180);
-
-    // Card background
-    this.content.push(`
-      <rect fill="${COLORS.surface}" x="${this.MAIN_X}" y="${this.currentY}" 
-        width="${cardWidth}" height="${estimatedHeight}" rx="0"/>
-      <rect fill="none" stroke="${COLORS.border}" stroke-width="0.5" x="${this.MAIN_X}" y="${this.currentY}" 
-        width="${cardWidth}" height="${estimatedHeight}" rx="0"/>
-    `);
-
-    const innerX = this.MAIN_X + 18;
-    const innerWidth = cardWidth - 36;
-    let localY = this.currentY + 26;
-
-    // Headline - Medium weight, larger size
-    if (headline) {
-      this.content.push(`
-        <text fill="${COLORS.text}" x="${innerX}" y="${localY}" 
-          font-family="${FONTS.body}" font-size="14" font-weight="${FONTS.headingWeight}">
-          Narrativa Audiovisual <tspan fill="${COLORS.primary}" font-style="italic">Completa</tspan>.
-        </text>
-      `);
-      localY += 26;
-    }
-
-    // Paragraphs - Light weight body text
-    paragraphs.slice(0, 3).forEach(paragraph => {
-      const words = paragraph.split(' ');
-      let line = '';
-      const maxChars = 70;
-      
-      words.forEach(word => {
-        if ((line + word).length > maxChars) {
-          this.content.push(`
-            <text fill="${COLORS.textDim}" x="${innerX}" y="${localY}" 
-              font-family="${FONTS.body}" font-size="10" font-weight="${FONTS.bodyWeight}">
-              ${this.escapeXml(line.trim())}
-            </text>
-          `);
-          localY += 14;
-          line = word + ' ';
-        } else {
-          line += word + ' ';
-        }
-      });
-      
-      if (line.trim()) {
-        this.content.push(`
-          <text fill="${COLORS.textDim}" x="${innerX}" y="${localY}" 
-            font-family="${FONTS.body}" font-size="10" font-weight="${FONTS.bodyWeight}">
-            ${this.escapeXml(line.trim())}
-          </text>
-        `);
-        localY += 20;
+  return text
+    // Remove markdown headings and convert to styled paragraphs
+    .replace(/^##\s*(.+)$/gm, '<h3 class="section-title">$1</h3>')
+    .replace(/^#\s*(.+)$/gm, '<h2 class="main-title">$1</h2>')
+    // Convert bullet lists
+    .replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>')
+    // Wrap consecutive li elements in ul
+    .replace(/(<li>[\s\S]*?<\/li>)(?=\s*<li>)/g, '$1')
+    .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul class="deliverable-list">$1</ul>')
+    // Fix multiple ul tags
+    .replace(/<\/ul>\s*<ul class="deliverable-list">/g, '')
+    // Bold text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic text
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Remove remaining # and - at line starts
+    .replace(/^[#-]+\s*/gm, '')
+    // Convert newlines to paragraphs
+    .split('\n\n')
+    .filter(p => p.trim())
+    .map(p => {
+      if (p.includes('<h2') || p.includes('<h3') || p.includes('<ul')) {
+        return p;
       }
-    });
-
-    this.currentY += estimatedHeight + 18;
-  }
-
-  // Scope Section with quote-style border
-  addScopeSection(scopeText: string) {
-    this.checkPageBreak(100);
-    
-    const cardWidth = this.MAIN_WIDTH;
-    const cardHeight = 90;
-
-    // Card background
-    this.content.push(`
-      <rect fill="${COLORS.surface}" x="${this.MAIN_X}" y="${this.currentY}" 
-        width="${cardWidth}" height="${cardHeight}" rx="0"/>
-      <rect fill="none" stroke="${COLORS.border}" stroke-width="0.5" x="${this.MAIN_X}" y="${this.currentY}" 
-        width="${cardWidth}" height="${cardHeight}" rx="0"/>
-    `);
-
-    // Left border accent (quote style)
-    this.content.push(`
-      <rect fill="${COLORS.primary}66" x="${this.MAIN_X}" y="${this.currentY}" width="3" height="${cardHeight}"/>
-    `);
-
-    const innerX = this.MAIN_X + 20;
-    let localY = this.currentY + 22;
-
-    // Scope text with word wrap - Light weight
-    const scopeWords = scopeText.split(' ');
-    let line = '';
-    const maxChars = 68;
-    
-    scopeWords.slice(0, 40).forEach(word => {
-      if ((line + word).length > maxChars) {
-        this.content.push(`
-          <text fill="${COLORS.textMuted}" x="${innerX}" y="${localY}" 
-            font-family="${FONTS.body}" font-size="9" font-weight="${FONTS.bodyWeight}">
-            ${this.escapeXml(line.trim())}
-          </text>
-        `);
-        localY += 14;
-        line = word + ' ';
-      } else {
-        line += word + ' ';
-      }
-    });
-    
-    if (line.trim()) {
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${innerX}" y="${localY}" 
-          font-family="${FONTS.body}" font-size="9" font-weight="${FONTS.bodyWeight}">
-          ${this.escapeXml(line.trim())}
-        </text>
-      `);
-    }
-
-    this.currentY += cardHeight + 18;
-  }
-
-  // Technical Methodology grid (2 columns)
-  addMethodologyGrid() {
-    this.checkPageBreak(80);
-    
-    const halfWidth = (this.MAIN_WIDTH - 10) / 2;
-    
-    // Left column - Metodologia Técnica
-    this.content.push(`
-      <text fill="${COLORS.primary}" x="${this.MAIN_X}" y="${this.currentY}" 
-        font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" letter-spacing="1">
-        METODOLOGIA TÉCNICA
-      </text>
-    `);
-    
-    // Right column - Compromissos SQUAD
-    this.content.push(`
-      <text fill="${COLORS.primary}" x="${this.MAIN_X + halfWidth + 10}" y="${this.currentY}" 
-        font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" letter-spacing="1">
-        COMPROMISSOS SQUAD
-      </text>
-    `);
-    this.currentY += 16;
-
-    const leftItems = ["• Equipamentos Cinema 4K", "• Utilização de Drone 4K", "• Processo de Color Grade", "• Licensing Profissional"];
-    const rightItems = ["• Equipe de 02 Profissionais", "• Rigor no Cronograma", "• Identidade Industrial/Moderna"];
-
-    leftItems.forEach((item, i) => {
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${this.MAIN_X}" y="${this.currentY + (i * 14)}" 
-          font-family="${FONTS.body}" font-size="8" font-weight="${FONTS.bodyWeight}" letter-spacing="0.5">
-          ${item.toUpperCase()}
-        </text>
-      `);
-    });
-
-    rightItems.forEach((item, i) => {
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${this.MAIN_X + halfWidth + 10}" y="${this.currentY + (i * 14)}" 
-          font-family="${FONTS.body}" font-size="8" font-weight="${FONTS.bodyWeight}" letter-spacing="0.5">
-          ${item.toUpperCase()}
-        </text>
-      `);
-    });
-
-    this.currentY += 70;
-  }
-
-  // Deliverables List - Premium indexed style
-  addDeliverablesList(deliverables: { index: number; title: string; description: string; status: string }[]) {
-    deliverables.slice(0, 6).forEach((item) => {
-      this.checkPageBreak(42);
-      
-      const itemHeight = 38;
-      const indexPad = (item.index < 10) ? '0' : '';
-      
-      // Item background with hover effect simulation
-      this.content.push(`
-        <rect fill="${COLORS.surface}" x="${this.MAIN_X}" y="${this.currentY}" 
-          width="${this.MAIN_WIDTH}" height="${itemHeight}" rx="0"/>
-        <rect fill="none" stroke="${COLORS.border}" stroke-width="0.5" x="${this.MAIN_X}" y="${this.currentY}" 
-          width="${this.MAIN_WIDTH}" height="${itemHeight}" rx="0"/>
-      `);
-
-      // Index number - Cyan accent
-      this.content.push(`
-        <text fill="${COLORS.primary}" x="${this.MAIN_X + 14}" y="${this.currentY + 24}" 
-          font-family="${FONTS.body}" font-size="11" font-weight="${FONTS.bodyWeight}">
-          ${indexPad}${item.index}
-        </text>
-      `);
-
-      // Title - Medium weight, UPPERCASE
-      this.content.push(`
-        <text fill="${COLORS.text}" x="${this.MAIN_X + 48}" y="${this.currentY + 18}" 
-          font-family="${FONTS.title}" font-size="9" font-weight="${FONTS.headingWeight}" letter-spacing="0.3">
-          ${this.escapeXml(item.title.substring(0, 40).toUpperCase())}
-        </text>
-      `);
-
-      // Description - Light weight
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${this.MAIN_X + 48}" y="${this.currentY + 30}" 
-          font-family="${FONTS.body}" font-size="8" font-weight="${FONTS.bodyWeight}">
-          ${this.escapeXml(item.description.substring(0, 55))}
-        </text>
-      `);
-
-      // Status badge
-      const statusColor = item.status === 'completed' ? COLORS.success : 
-                         item.status === 'in_progress' ? COLORS.primary : 
-                         item.status === 'blocked' ? COLORS.error : COLORS.textMuted;
-      const statusText = item.status === 'completed' ? 'CONCLUÍDO' : 
-                        item.status === 'in_progress' ? 'WIDE & VERTICAL' : 
-                        item.status === 'blocked' ? 'BLOQUEADO' : 'PENDENTE';
-      
-      const statusX = this.MAIN_X + this.MAIN_WIDTH - 80;
-      this.content.push(`
-        <text fill="${statusColor}" x="${statusX}" y="${this.currentY + 18}" 
-          font-family="${FONTS.title}" font-size="6" font-weight="${FONTS.titleWeight}" letter-spacing="0.5">
-          ${statusText}
-        </text>
-      `);
-
-      this.currentY += itemHeight + 2;
-    });
-
-    // "Ver todas as entregas" link
-    if (deliverables.length > 6) {
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${this.MAIN_X}" y="${this.currentY + 10}" 
-          font-family="${FONTS.body}" font-size="8" font-weight="${FONTS.bodyWeight}">
-          + Ver todas as ${deliverables.length} entregas
-        </text>
-      `);
-      this.currentY += 20;
-    }
-
-    this.currentY += 10;
-  }
-
-  // Financial Conditions Table
-  addFinancialTable(milestones: { description: string; due_date: string; amount: number; status: string }[]) {
-    this.checkPageBreak(120);
-    
-    const tableWidth = this.MAIN_WIDTH;
-    const rowHeight = 32;
-    const headerHeight = 28;
-    const tableHeight = headerHeight + (milestones.length * rowHeight);
-
-    // Table container
-    this.content.push(`
-      <rect fill="${COLORS.surface}" x="${this.MAIN_X}" y="${this.currentY}" 
-        width="${tableWidth}" height="${tableHeight}" rx="0"/>
-      <rect fill="none" stroke="${COLORS.border}" stroke-width="0.5" x="${this.MAIN_X}" y="${this.currentY}" 
-        width="${tableWidth}" height="${tableHeight}" rx="0"/>
-    `);
-
-    // Header row
-    this.content.push(`
-      <rect fill="${COLORS.border}66" x="${this.MAIN_X}" y="${this.currentY}" 
-        width="${tableWidth}" height="${headerHeight}" rx="0"/>
-      <text fill="${COLORS.textMuted}" x="${this.MAIN_X + 16}" y="${this.currentY + 18}" 
-        font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" letter-spacing="0.8">
-        PARCELA
-      </text>
-      <text fill="${COLORS.textMuted}" x="${this.MAIN_X + tableWidth - 140}" y="${this.currentY + 18}" 
-        font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" letter-spacing="0.8">
-        DATA
-      </text>
-      <text fill="${COLORS.textMuted}" x="${this.MAIN_X + tableWidth - 16}" y="${this.currentY + 18}" 
-        font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" text-anchor="end" letter-spacing="0.8">
-        VALOR
-      </text>
-    `);
-
-    let rowY = this.currentY + headerHeight;
-    
-    milestones.forEach((m, i) => {
-      const isPaid = m.status === 'paid';
-      const isOverdue = m.status === 'overdue';
-      
-      // Row divider
-      if (i > 0) {
-        this.content.push(`
-          <line x1="${this.MAIN_X + 10}" y1="${rowY}" x2="${this.MAIN_X + tableWidth - 10}" y2="${rowY}" 
-            stroke="${COLORS.border}" stroke-width="0.5"/>
-        `);
-      }
-
-      // Description
-      this.content.push(`
-        <text fill="${COLORS.text}" x="${this.MAIN_X + 16}" y="${rowY + 20}" 
-          font-family="${FONTS.body}" font-size="9" font-weight="${FONTS.headingWeight}">
-          ${this.escapeXml(m.description || `Parcela ${i + 1}`)}
-        </text>
-      `);
-
-      // Date
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${this.MAIN_X + tableWidth - 140}" y="${rowY + 20}" 
-          font-family="${FONTS.body}" font-size="9" font-weight="${FONTS.bodyWeight}">
-          ${formatDate(m.due_date)}
-        </text>
-      `);
-
-      // Amount with color based on status
-      const amountColor = isPaid ? COLORS.success : isOverdue ? COLORS.error : COLORS.text;
-      this.content.push(`
-        <text fill="${amountColor}" x="${this.MAIN_X + tableWidth - 16}" y="${rowY + 20}" 
-          font-family="${FONTS.body}" font-size="10" font-weight="${FONTS.headingWeight}" text-anchor="end">
-          ${formatCurrency(m.amount)}
-        </text>
-      `);
-
-      rowY += rowHeight;
-    });
-
-    this.currentY += tableHeight + 12;
-
-    // PIX info
-    this.content.push(`
-      <text fill="${COLORS.textMuted}" x="${this.MAIN_X}" y="${this.currentY}" 
-        font-family="${FONTS.body}" font-size="8" font-weight="${FONTS.bodyWeight}" letter-spacing="0.3">
-        PAGAMENTO VIA PIX (SQUADFILMEO@GMAIL.COM) • BANCO NUBANK • TITULAR: MATHEUS FILIPE ALVES
-      </text>
-    `);
-
-    this.currentY += 25;
-  }
-
-  // Observations Section
-  addObservationsSection() {
-    this.checkPageBreak(90);
-    
-    const halfWidth = (this.MAIN_WIDTH - 10) / 2;
-    
-    const leftItems = [
-      "• Direitos patrimoniais cedidos após quitação.",
-      "• Rescisão exige aviso prévio de 30 dias.",
-      "• Sinal não devolvido em rescisão sem justa causa."
-    ];
-    const rightItems = [
-      "• Foro: Comarca de Anápolis/GO.",
-      "• Limite de revisões: 02 por entrega.",
-      "• Entrega em formatos Wide e Vertical."
-    ];
-
-    leftItems.forEach((item, i) => {
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${this.MAIN_X}" y="${this.currentY + (i * 16)}" 
-          font-family="${FONTS.body}" font-size="8" font-weight="${FONTS.bodyWeight}">
-          ${item}
-        </text>
-      `);
-    });
-
-    rightItems.forEach((item, i) => {
-      this.content.push(`
-        <text fill="${COLORS.textMuted}" x="${this.MAIN_X + halfWidth + 10}" y="${this.currentY + (i * 16)}" 
-          font-family="${FONTS.body}" font-size="8" font-weight="${FONTS.bodyWeight}">
-          ${item}
-        </text>
-      `);
-    });
-
-    this.currentY += 60;
-  }
-
-  // ==========================================
-  // FOOTER
-  // ==========================================
-  private addFooter(pageNum: number, totalPages: number) {
-    return `
-      <line x1="${PAGE.margin}" y1="${PAGE.height - 45}" x2="${PAGE.width - PAGE.margin}" y2="${PAGE.height - 45}" 
-        stroke="${COLORS.border}" stroke-width="0.5"/>
-      <text fill="${COLORS.textMuted}" x="${PAGE.margin}" y="${PAGE.height - 26}" 
-        font-family="${FONTS.title}" font-size="9" font-weight="${FONTS.headingWeight}" letter-spacing="2">
-        SQUAD /// FILM
-      </text>
-      <text fill="${COLORS.textDim}" x="${PAGE.margin}" y="${PAGE.height - 14}" 
-        font-family="${FONTS.body}" font-size="7" font-weight="${FONTS.bodyWeight}">
-        Visual Storytelling Studio
-      </text>
-      <text fill="${COLORS.textMuted}" x="${PAGE.width / 2}" y="${PAGE.height - 20}" 
-        font-family="${FONTS.body}" font-size="7" font-weight="${FONTS.bodyWeight}" text-anchor="middle">
-        Relatório Gerado em ${new Date().getFullYear()} • ${this.escapeXml(this.projectName)} — Executivo
-      </text>
-      <text fill="${COLORS.textMuted}" x="${PAGE.width - PAGE.margin}" y="${PAGE.height - 26}" 
-        font-family="${FONTS.body}" font-size="7" font-weight="${FONTS.bodyWeight}" text-anchor="end">
-        Brazil / Global
-      </text>
-      <text fill="${COLORS.textMuted}" x="${PAGE.width - PAGE.margin}" y="${PAGE.height - 14}" 
-        font-family="${FONTS.body}" font-size="7" font-weight="${FONTS.bodyWeight}" text-anchor="end">
-        ©${new Date().getFullYear()} • Página ${pageNum}/${totalPages}
-      </text>
-    `;
-  }
-
-  // ==========================================
-  // GENERATE FINAL SVG
-  // ==========================================
-  generate(): string {
-    const totalPages = this.pages.length;
-    
-    const svgPages = this.pages.map((pageContent, index) => {
-      const pageNum = index + 1;
-      return `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PAGE.width} ${PAGE.height}">
-          <rect fill="${COLORS.background}" x="0" y="0" width="${PAGE.width}" height="${PAGE.height}"/>
-          ${pageContent.join("")}
-          ${this.addFooter(pageNum, totalPages)}
-        </svg>
-      `;
-    });
-
-    if (totalPages === 1) {
-      return `<?xml version="1.0" encoding="UTF-8"?>${svgPages[0]}`;
-    }
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PAGE.width} ${PAGE.height * totalPages}">
-        ${svgPages.map((svg, i) => `
-          <g transform="translate(0, ${i * PAGE.height})">
-            ${svg.replace(/<\/?svg[^>]*>/g, '')}
-          </g>
-        `).join('')}
-      </svg>
-    `;
-  }
+      return `<p>${p.replace(/\n/g, '<br/>')}</p>`;
+    })
+    .join('\n');
 }
 
-// Legacy generator for non-project types
-class SimplePDFGenerator {
-  private content: string[] = [];
-  private currentY = PAGE.margin;
-  private projectName = "";
+function escapeHtml(str: string): string {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-  constructor() {
-    this.content.push(`<rect fill="${COLORS.background}" x="0" y="0" width="${PAGE.width}" height="${PAGE.height}"/>`);
+/**
+ * Premium Editorial HTML PDF Generator
+ * Generates HTML with print-optimized CSS for A4 PDF export
+ */
+function generateProjectHTML(
+  project: any,
+  stages: any[],
+  deliverables: any[],
+  milestones: any[]
+): string {
+  const allStages = stages || [];
+  const completedStages = allStages.filter(s => s.status === 'completed').length;
+  const totalStages = allStages.length || 9;
+  const progress = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
+
+  const description = project.description || 'Este projeto audiovisual visa registrar e transmitir a magnitude do empreendimento através de uma narrativa cinematográfica completa.';
+  const cleanDescription = markdownToHtml(description);
+
+  const deliverablesList = (deliverables || []).map((d: any, i: number) => ({
+    index: i + 1,
+    title: d.title || `Entrega ${i + 1}`,
+    description: d.description || 'Qualidade Cinema 4K. Formatos Wide e Vertical.',
+    status: d.status || 'pending'
+  }));
+  
+  if (deliverablesList.length === 0) {
+    deliverablesList.push(
+      { index: 1, title: "Vídeo Lançamento", description: "Até 02m30s. Qualidade Cinema 4K.", status: "in_progress" },
+      { index: 2, title: "Institucional", description: "Até 03m00s. Wide e Vertical. Cinema 4K.", status: "pending" },
+      { index: 3, title: "Pílulas Motion Social", description: "Até 60s cada. Vertical. Motion Graphics.", status: "pending" },
+      { index: 4, title: "Acompanhamento de Obra", description: "Até 02m00s cada. Wide e Vertical.", status: "pending" }
+    );
   }
 
-  private escapeXml(str: string): string {
-    if (!str) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
+  const milestonesData = (milestones || []).map((m: any) => ({
+    description: m.description || 'Parcela',
+    due_date: m.due_date,
+    amount: m.amount || 0,
+    status: m.status || 'pending'
+  }));
+  
+  if (milestonesData.length === 0) {
+    const totalValue = project.contract_value || 15590;
+    milestonesData.push(
+      { description: "Sinal - Reserva", due_date: "2026-01-15", amount: totalValue * 0.5, status: "paid" },
+      { description: "Parcela 01", due_date: "2026-02-05", amount: totalValue * 0.25, status: "pending" },
+      { description: "Parcela 02", due_date: "2026-03-05", amount: totalValue * 0.25, status: "pending" }
+    );
   }
 
-  addHeader(title: string, subtitle: string) {
-    this.content.push(`
-      <text fill="${COLORS.text}" x="${PAGE.margin}" y="${this.currentY}" 
-        font-family="${FONTS.title}" font-size="20" font-weight="${FONTS.titleWeight}">
-        ${this.escapeXml(title.toUpperCase())}
-      </text>
-    `);
-    this.projectName = title;
-    this.currentY += 22;
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(project.name)} — Relatório Executivo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500;600&display=swap');
     
-    this.content.push(`
-      <text fill="${COLORS.textMuted}" x="${PAGE.margin}" y="${this.currentY}" 
-        font-family="${FONTS.body}" font-size="10" font-weight="${FONTS.bodyWeight}">
-        ${this.escapeXml(subtitle)}
-      </text>
-    `);
-    this.currentY += 30;
-  }
-
-  addMetricsGrid(metrics: { label: string; value: string; color?: string }[]) {
-    const metricWidth = PAGE.contentWidth / metrics.length;
-    const metricHeight = 55;
-
-    metrics.forEach((metric, i) => {
-      const x = PAGE.margin + (i * metricWidth);
-      
-      this.content.push(`
-        <rect fill="${COLORS.surface}" x="${x}" y="${this.currentY}" 
-          width="${metricWidth - 1}" height="${metricHeight}" rx="0"/>
-        <rect fill="none" stroke="${COLORS.border}" stroke-width="0.5" x="${x}" y="${this.currentY}" 
-          width="${metricWidth - 1}" height="${metricHeight}" rx="0"/>
-        <text fill="${COLORS.textMuted}" x="${x + 12}" y="${this.currentY + 18}" 
-          font-family="${FONTS.title}" font-size="7" font-weight="${FONTS.titleWeight}" letter-spacing="0.5">
-          ${this.escapeXml(metric.label.toUpperCase())}
-        </text>
-        <text fill="${metric.color || COLORS.text}" x="${x + 12}" y="${this.currentY + 38}" 
-          font-family="${FONTS.body}" font-size="14" font-weight="${FONTS.headingWeight}">
-          ${this.escapeXml(metric.value)}
-        </text>
-      `);
-    });
-
-    this.currentY += metricHeight + 20;
-  }
-
-  addSection(title: string) {
-    this.content.push(`
-      <text fill="${COLORS.primary}" x="${PAGE.margin}" y="${this.currentY}" 
-        font-family="${FONTS.title}" font-size="8" font-weight="${FONTS.titleWeight}" letter-spacing="1.5">
-        ${this.escapeXml(title.toUpperCase())}
-      </text>
-    `);
-    this.currentY += 20;
-  }
-
-  addText(text: string, size = 10, color = COLORS.text) {
-    const words = text.split(' ');
-    let line = '';
-    const maxChars = Math.floor(PAGE.contentWidth / (size * 0.5));
-    
-    words.forEach(word => {
-      if ((line + word).length > maxChars) {
-        this.content.push(`
-          <text fill="${color}" x="${PAGE.margin}" y="${this.currentY}" 
-            font-family="${FONTS.body}" font-size="${size}" font-weight="${FONTS.bodyWeight}">
-            ${this.escapeXml(line.trim())}
-          </text>
-        `);
-        this.currentY += size + 4;
-        line = word + ' ';
-      } else {
-        line += word + ' ';
-      }
-    });
-    
-    if (line.trim()) {
-      this.content.push(`
-        <text fill="${color}" x="${PAGE.margin}" y="${this.currentY}" 
-          font-family="${FONTS.body}" font-size="${size}" font-weight="${FONTS.bodyWeight}">
-          ${this.escapeXml(line.trim())}
-        </text>
-      `);
-      this.currentY += size + 6;
+    @page {
+      size: A4;
+      margin: 15mm 20mm;
     }
-  }
+    
+    @media print {
+      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Host Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: ${COLORS.background};
+      color: ${COLORS.text};
+      font-size: 11px;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+    
+    .container {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .layout {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 24px;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      background: ${COLORS.surface};
+      border: 1px solid ${COLORS.border};
+      padding: 20px;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-right: 6px;
+      margin-bottom: 12px;
+    }
+    
+    .badge-active {
+      background: ${COLORS.primary}22;
+      border: 1px solid ${COLORS.primary}44;
+      color: ${COLORS.primary};
+    }
+    
+    .badge-blocked {
+      background: ${COLORS.error}22;
+      border: 1px solid ${COLORS.error}44;
+      color: ${COLORS.error};
+    }
+    
+    .project-title {
+      font-size: 16px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    
+    .client-name {
+      font-size: 10px;
+      color: ${COLORS.textMuted};
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+    
+    .divider {
+      height: 1px;
+      background: ${COLORS.border};
+      margin: 16px 0;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    .metric-item {
+      margin-bottom: 8px;
+    }
+    
+    .metric-label {
+      font-size: 7px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: ${COLORS.textMuted};
+      margin-bottom: 4px;
+    }
+    
+    .metric-value {
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .metric-value.primary { color: ${COLORS.primary}; }
+    .metric-value.success { color: ${COLORS.success}; }
+    
+    .progress-section {
+      margin-top: 24px;
+    }
+    
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .progress-label {
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      color: ${COLORS.textMuted};
+    }
+    
+    .progress-value {
+      font-size: 9px;
+      color: ${COLORS.text};
+    }
+    
+    .progress-bar {
+      height: 4px;
+      background: ${COLORS.border};
+      position: relative;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: ${COLORS.primary};
+      min-width: 2px;
+    }
+    
+    /* Main Content */
+    .main-content {
+      min-width: 0;
+    }
+    
+    .section {
+      margin-bottom: 24px;
+    }
+    
+    .section-header {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      color: ${COLORS.primary};
+      margin-bottom: 16px;
+    }
+    
+    .card {
+      background: ${COLORS.surface};
+      border: 1px solid ${COLORS.border};
+      padding: 20px;
+    }
+    
+    .card-headline {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    
+    .card-headline em {
+      color: ${COLORS.primary};
+      font-style: italic;
+    }
+    
+    .executive-content {
+      color: ${COLORS.textDim};
+      font-size: 11px;
+      line-height: 1.8;
+    }
+    
+    .executive-content h2,
+    .executive-content .main-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: ${COLORS.text};
+      margin: 20px 0 12px 0;
+    }
+    
+    .executive-content h3,
+    .executive-content .section-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: ${COLORS.primary};
+      margin: 16px 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .executive-content p {
+      margin-bottom: 12px;
+    }
+    
+    .executive-content ul,
+    .executive-content .deliverable-list {
+      margin: 12px 0;
+      padding-left: 0;
+      list-style: none;
+    }
+    
+    .executive-content li {
+      position: relative;
+      padding-left: 16px;
+      margin-bottom: 6px;
+      color: ${COLORS.textMuted};
+    }
+    
+    .executive-content li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: ${COLORS.primary};
+    }
+    
+    .executive-content strong {
+      font-weight: 500;
+      color: ${COLORS.text};
+    }
+    
+    .scope-card {
+      border-left: 3px solid ${COLORS.primary}66;
+    }
+    
+    .scope-text {
+      font-size: 10px;
+      color: ${COLORS.textMuted};
+      line-height: 1.7;
+    }
+    
+    .methodology-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 16px;
+    }
+    
+    .methodology-title {
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: ${COLORS.primary};
+      margin-bottom: 10px;
+    }
+    
+    .methodology-list {
+      list-style: none;
+    }
+    
+    .methodology-list li {
+      font-size: 9px;
+      color: ${COLORS.textMuted};
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Deliverables */
+    .deliverable-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: ${COLORS.surface};
+      border: 1px solid ${COLORS.border};
+      margin-bottom: 4px;
+    }
+    
+    .deliverable-index {
+      font-size: 12px;
+      color: ${COLORS.primary};
+      font-weight: 300;
+      width: 32px;
+    }
+    
+    .deliverable-content {
+      flex: 1;
+    }
+    
+    .deliverable-title {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .deliverable-desc {
+      font-size: 9px;
+      color: ${COLORS.textMuted};
+      margin-top: 2px;
+    }
+    
+    .deliverable-status {
+      font-size: 7px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-completed { color: ${COLORS.success}; }
+    .status-in_progress { color: ${COLORS.primary}; }
+    .status-pending { color: ${COLORS.textMuted}; }
+    .status-blocked { color: ${COLORS.error}; }
+    
+    /* Financial Table */
+    .financial-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: ${COLORS.surface};
+      border: 1px solid ${COLORS.border};
+    }
+    
+    .financial-table th {
+      padding: 12px 16px;
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: ${COLORS.textMuted};
+      background: ${COLORS.border}66;
+      text-align: left;
+    }
+    
+    .financial-table th:last-child {
+      text-align: right;
+    }
+    
+    .financial-table td {
+      padding: 12px 16px;
+      font-size: 10px;
+      border-top: 1px solid ${COLORS.border};
+    }
+    
+    .financial-table td:last-child {
+      text-align: right;
+      font-weight: 500;
+    }
+    
+    .amount-paid { color: ${COLORS.success}; }
+    .amount-overdue { color: ${COLORS.error}; }
+    .amount-pending { color: ${COLORS.text}; }
+    
+    .pix-info {
+      font-size: 9px;
+      color: ${COLORS.textMuted};
+      margin-top: 12px;
+      letter-spacing: 0.3px;
+    }
+    
+    /* Observations */
+    .observations-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .observation-item {
+      font-size: 9px;
+      color: ${COLORS.textMuted};
+      margin-bottom: 8px;
+    }
+    
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid ${COLORS.border};
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    
+    .footer-brand {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      color: ${COLORS.textMuted};
+    }
+    
+    .footer-tagline {
+      font-size: 8px;
+      color: ${COLORS.textDim};
+      margin-top: 4px;
+    }
+    
+    .footer-meta {
+      text-align: right;
+      font-size: 8px;
+      color: ${COLORS.textMuted};
+    }
+    
+    .print-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: ${COLORS.primary};
+      color: ${COLORS.background};
+      border: none;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    
+    .print-button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <button class="print-button no-print" onclick="window.print()">Imprimir / Salvar PDF</button>
+  
+  <div class="container">
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div>
+          <span class="badge badge-active">${project.status === 'active' ? 'ACTIVE' : (project.status || 'ACTIVE').toUpperCase()}</span>
+          ${project.has_payment_block ? '<span class="badge badge-blocked">BLOQUEADO</span>' : ''}
+        </div>
+        
+        <h1 class="project-title">${escapeHtml((project.name || '').substring(0, 18))}</h1>
+        <p class="client-name">${escapeHtml(project.client_name || 'Cliente')}</p>
+        
+        <div class="divider"></div>
+        
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <div class="metric-label">Valor do Contrato</div>
+            <div class="metric-value primary">${formatCurrency(project.contract_value || 0)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Saúde</div>
+            <div class="metric-value success">${project.health_score || 100}%</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Entrega</div>
+            <div class="metric-value">${formatDate(project.due_date)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Responsável</div>
+            <div class="metric-value">${escapeHtml((project.owner_name || 'Squad Film').substring(0, 14))}</div>
+          </div>
+        </div>
+        
+        ${project.has_payment_block ? `
+        <div style="margin-top: 20px; padding: 12px; background: ${COLORS.error}12; border: 1px solid ${COLORS.error}33;">
+          <div style="font-size: 8px; font-weight: 500; color: ${COLORS.error}; letter-spacing: 0.5px; margin-bottom: 4px;">BLOQUEADO POR INADIMPLÊNCIA</div>
+          <div style="font-size: 8px; color: ${COLORS.textMuted};">Fatura em atraso. Entrega final bloqueada até regularização.</div>
+        </div>
+        ` : ''}
+        
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">PROGRESSO</span>
+            <span class="progress-value">${progress}% (${completedStages}/${totalStages} etapas)</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${Math.max(2, progress)}%"></div>
+          </div>
+        </div>
+      </aside>
+      
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Executive Summary -->
+        <section class="section">
+          <h2 class="section-header">01 — RESUMO EXECUTIVO</h2>
+          <div class="card">
+            <h3 class="card-headline">${escapeHtml(project.name)} — Narrativa Audiovisual <em>Completa</em>.</h3>
+            <div class="executive-content">
+              ${cleanDescription}
+            </div>
+          </div>
+        </section>
+        
+        <!-- Scope -->
+        <section class="section">
+          <h2 class="section-header">02 — ESCOPO DETALHADO</h2>
+          <div class="card scope-card">
+            <p class="scope-text">
+              2.1. O PRESENTE CONTRATO TEM POR OBJETO A PRESTAÇÃO DE SERVIÇOS DE PRODUÇÃO AUDIOVISUAL PARA O PROJETO "${escapeHtml((project.name || '').toUpperCase())}", VISANDO REGISTRAR E TRANSMITIR A MAGNITUDE DO EMPREENDIMENTO ATRAVÉS DE UMA NARRATIVA AUDIOVISUAL COMPLETA. 2.2. O ESCOPO INCLUI CAPTAÇÃO, EDIÇÃO, COLOR GRADING E SOUND DESIGN, UTILIZANDO EQUIPAMENTOS CINEMA 4K E DRONE.
+            </p>
+          </div>
+          
+          <div class="methodology-grid">
+            <div>
+              <h4 class="methodology-title">METODOLOGIA TÉCNICA</h4>
+              <ul class="methodology-list">
+                <li>• Equipamentos Cinema 4K</li>
+                <li>• Utilização de Drone 4K</li>
+                <li>• Processo de Color Grade</li>
+                <li>• Licensing Profissional</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="methodology-title">COMPROMISSOS SQUAD</h4>
+              <ul class="methodology-list">
+                <li>• Equipe de 02 Profissionais</li>
+                <li>• Rigor no Cronograma</li>
+                <li>• Identidade Industrial/Moderna</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Deliverables -->
+        <section class="section">
+          <h2 class="section-header">03 — ENTREGAS & FORMATOS</h2>
+          ${deliverablesList.slice(0, 8).map(d => `
+            <div class="deliverable-item">
+              <span class="deliverable-index">${String(d.index).padStart(2, '0')}</span>
+              <div class="deliverable-content">
+                <div class="deliverable-title">${escapeHtml(d.title.substring(0, 40))}</div>
+                <div class="deliverable-desc">${escapeHtml(d.description.substring(0, 55))}</div>
+              </div>
+              <span class="deliverable-status status-${d.status}">
+                ${d.status === 'completed' ? 'CONCLUÍDO' : d.status === 'in_progress' ? 'EM ANDAMENTO' : d.status === 'blocked' ? 'BLOQUEADO' : 'PENDENTE'}
+              </span>
+            </div>
+          `).join('')}
+          ${deliverablesList.length > 8 ? `<p style="font-size: 9px; color: ${COLORS.textMuted}; margin-top: 8px;">+ Ver todas as ${deliverablesList.length} entregas</p>` : ''}
+        </section>
+        
+        <!-- Financial -->
+        <section class="section">
+          <h2 class="section-header">04 — CONDIÇÕES FINANCEIRAS</h2>
+          <table class="financial-table">
+            <thead>
+              <tr>
+                <th>Parcela</th>
+                <th>Data</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${milestonesData.map(m => `
+                <tr>
+                  <td>${escapeHtml(m.description)}</td>
+                  <td>${formatDate(m.due_date)}</td>
+                  <td class="amount-${m.status}">${formatCurrency(m.amount)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <p class="pix-info">PAGAMENTO VIA PIX (SQUADFILMEO@GMAIL.COM) • BANCO NUBANK • TITULAR: MATHEUS FILIPE ALVES</p>
+        </section>
+        
+        <!-- Observations -->
+        <section class="section">
+          <h2 class="section-header">05 — OBSERVAÇÕES & TERMOS</h2>
+          <div class="observations-grid">
+            <div>
+              <p class="observation-item">• Direitos patrimoniais cedidos após quitação.</p>
+              <p class="observation-item">• Rescisão exige aviso prévio de 30 dias.</p>
+              <p class="observation-item">• Sinal não devolvido em rescisão sem justa causa.</p>
+            </div>
+            <div>
+              <p class="observation-item">• Foro: Comarca de Anápolis/GO.</p>
+              <p class="observation-item">• Limite de revisões: 02 por entrega.</p>
+              <p class="observation-item">• Entrega em formatos Wide e Vertical.</p>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="footer">
+          <div>
+            <div class="footer-brand">SQUAD /// FILM</div>
+            <div class="footer-tagline">Visual Storytelling Studio</div>
+          </div>
+          <div class="footer-meta">
+            <div>Relatório Gerado em ${new Date().getFullYear()} • ${escapeHtml(project.name)} — Executivo</div>
+            <div>Brazil / Global • ©${new Date().getFullYear()}</div>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>`;
+}
 
-  generate(): string {
-    this.content.push(`
-      <line x1="${PAGE.margin}" y1="${PAGE.height - 35}" x2="${PAGE.width - PAGE.margin}" y2="${PAGE.height - 35}" 
-        stroke="${COLORS.border}" stroke-width="0.5"/>
-      <text fill="${COLORS.textMuted}" x="${PAGE.margin}" y="${PAGE.height - 20}" 
-        font-family="${FONTS.title}" font-size="8" font-weight="${FONTS.titleWeight}" letter-spacing="1">
-        SQUAD /// FILM
-      </text>
-      <text fill="${COLORS.textMuted}" x="${PAGE.width - PAGE.margin}" y="${PAGE.height - 20}" 
-        font-family="${FONTS.body}" font-size="7" font-weight="${FONTS.bodyWeight}" text-anchor="end">
-        Página 1
-      </text>
-    `);
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PAGE.width} ${PAGE.height}">
-        ${this.content.join("")}
-      </svg>`;
-  }
+function generateSimpleHTML(
+  title: string,
+  subtitle: string,
+  metrics: { label: string; value: string; color?: string }[],
+  content: string
+): string {
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500;600&display=swap');
+    
+    @page { size: A4; margin: 20mm; }
+    @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .no-print { display: none !important; } }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Host Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: ${COLORS.background};
+      color: ${COLORS.text};
+      font-size: 12px;
+      line-height: 1.6;
+      font-weight: 300;
+      padding: 40px;
+    }
+    
+    .header { margin-bottom: 32px; }
+    .title { font-size: 24px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .subtitle { font-size: 12px; color: ${COLORS.textMuted}; }
+    
+    .metrics { display: flex; gap: 16px; margin-bottom: 32px; }
+    .metric { flex: 1; background: ${COLORS.surface}; border: 1px solid ${COLORS.border}; padding: 16px; }
+    .metric-label { font-size: 8px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: ${COLORS.textMuted}; margin-bottom: 8px; }
+    .metric-value { font-size: 18px; font-weight: 500; }
+    .metric-value.primary { color: ${COLORS.primary}; }
+    .metric-value.success { color: ${COLORS.success}; }
+    .metric-value.warning { color: ${COLORS.warning}; }
+    
+    .section-title { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: ${COLORS.primary}; margin-bottom: 16px; }
+    .content { font-size: 12px; color: ${COLORS.textDim}; line-height: 1.8; }
+    
+    .footer { margin-top: 60px; padding-top: 16px; border-top: 1px solid ${COLORS.border}; display: flex; justify-content: space-between; }
+    .footer-brand { font-size: 10px; font-weight: 500; letter-spacing: 2px; color: ${COLORS.textMuted}; }
+    .footer-meta { font-size: 8px; color: ${COLORS.textMuted}; }
+    
+    .print-button { position: fixed; top: 20px; right: 20px; padding: 12px 24px; background: ${COLORS.primary}; color: ${COLORS.background}; border: none; font-size: 12px; font-weight: 500; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <button class="print-button no-print" onclick="window.print()">Imprimir / Salvar PDF</button>
+  
+  <header class="header">
+    <h1 class="title">${escapeHtml(title)}</h1>
+    <p class="subtitle">${escapeHtml(subtitle)}</p>
+  </header>
+  
+  <div class="metrics">
+    ${metrics.map(m => `
+      <div class="metric">
+        <div class="metric-label">${escapeHtml(m.label)}</div>
+        <div class="metric-value ${m.color || ''}">${escapeHtml(m.value)}</div>
+      </div>
+    `).join('')}
+  </div>
+  
+  <section>
+    <h2 class="section-title">RESUMO</h2>
+    <div class="content">${content}</div>
+  </section>
+  
+  <footer class="footer">
+    <div class="footer-brand">SQUAD /// FILM</div>
+    <div class="footer-meta">©${new Date().getFullYear()} • Página 1</div>
+  </footer>
+</body>
+</html>`;
 }
 
 serve(async (req) => {
@@ -902,12 +863,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    let svgContent: string;
+    let htmlContent: string;
 
-    // Use premium editorial generator for project type
     if (type === "project" && id) {
-      const pdf = new PremiumEditorialPDFGenerator();
-
       const { data: project } = await supabase
         .from("projects")
         .select("*")
@@ -938,96 +896,10 @@ serve(async (req) => {
         .eq("project_id", id)
         .order("due_date", { ascending: true });
 
-      const allStages = stages || [];
-      const completedStages = allStages.filter(s => s.status === 'completed').length;
-      const totalStages = allStages.length || 9;
-      const progress = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
-
-      // ==========================================
-      // BUILD PREMIUM EDITORIAL PDF
-      // ==========================================
-
-      // 1. Sidebar Panel (left column)
-      pdf.addSidebarPanel({
-        name: project.name,
-        client_name: project.client_name || 'Cliente',
-        status: project.status || 'active',
-        template: project.template || 'custom',
-        health_score: project.health_score || 100,
-        contract_value: project.contract_value || 0,
-        due_date: project.due_date,
-        owner_name: project.owner_name || 'Squad Film',
-        has_payment_block: project.has_payment_block || false,
-      }, progress, totalStages);
-
-      // 2. Main content starts at same Y position
-      // Resumo Executivo
-      pdf.addSectionHeader("01", "RESUMO EXECUTIVO");
-      const description = project.description || 'Este projeto audiovisual visa registrar e transmitir a magnitude do empreendimento através de uma narrativa cinematográfica completa.';
-      const paragraphs = description.split('\n\n').filter((p: string) => p.trim());
-      pdf.addExecutiveSummary(
-        `${project.name} — Narrativa Audiovisual Completa.`,
-        paragraphs.length > 0 ? paragraphs : [description]
-      );
-
-      // 3. Escopo Detalhado
-      pdf.addSectionHeader("02", "ESCOPO DETALHADO");
-      const scopeText = `2.1. O presente contrato tem por objeto a prestação de serviços de produção audiovisual para o projeto "${project.name}", visando registrar e transmitir a magnitude do empreendimento através de uma narrativa audiovisual completa. 2.2. O escopo inclui captação, edição, color grading e sound design, utilizando equipamentos Cinema 4K e Drone.`;
-      pdf.addScopeSection(scopeText);
-      pdf.addMethodologyGrid();
-
-      // 4. Entregas & Formatos
-      pdf.addSectionHeader("03", "ENTREGAS & FORMATOS");
-      const deliverablesList = (deliverables || []).map((d: any, i: number) => ({
-        index: i + 1,
-        title: d.title || `Entrega ${i + 1}`,
-        description: d.description || 'Qualidade Cinema 4K. Formatos Wide e Vertical.',
-        status: d.status || 'pending'
-      }));
-      
-      if (deliverablesList.length === 0) {
-        // Default deliverables
-        deliverablesList.push(
-          { index: 1, title: "Vídeo Lançamento", description: "Até 02m30s. Qualidade Cinema 4K.", status: "in_progress" },
-          { index: 1, title: "Institucional Porto 153", description: "Até 03m00s. Wide e Vertical. Cinema 4K.", status: "pending" },
-          { index: 10, title: "Pílulas Motion Social", description: "Até 60s cada. Vertical. Motion Graphics.", status: "pending" },
-          { index: 2, title: "Acompanhamento de Obra", description: "Até 02m00s cada. Wide e Vertical.", status: "pending" }
-        );
-      }
-      pdf.addDeliverablesList(deliverablesList);
-
-      // 5. Condições Financeiras
-      pdf.addSectionHeader("04", "CONDIÇÕES FINANCEIRAS");
-      const milestonesData = (milestones || []).map((m: any) => ({
-        description: m.description || 'Parcela',
-        due_date: m.due_date,
-        amount: m.amount || 0,
-        status: m.status || 'pending'
-      }));
-      
-      if (milestonesData.length === 0) {
-        // Default milestones based on contract value
-        const totalValue = project.contract_value || 15590;
-        milestonesData.push(
-          { description: "Sinal - Reserva", due_date: "2026-01-15", amount: totalValue * 0.5, status: "paid" },
-          { description: "Parcela 01", due_date: "2026-02-05", amount: totalValue * 0.25, status: "pending" },
-          { description: "Parcela 02", due_date: "2026-03-05", amount: totalValue * 0.25, status: "pending" }
-        );
-      }
-      pdf.addFinancialTable(milestonesData);
-
-      // 6. Observações & Termos
-      pdf.addSectionHeader("05", "OBSERVAÇÕES & TERMOS");
-      pdf.addObservationsSection();
-
-      svgContent = pdf.generate();
+      htmlContent = generateProjectHTML(project, stages || [], deliverables || [], milestones || []);
 
     } else if (type === "report_360") {
-      // Report 360 generation (simplified)
-      const pdf = new SimplePDFGenerator();
       const { start, end } = getPeriodDates(period);
-      
-      pdf.addHeader("Relatório 360", `Período: ${formatDate(start.toISOString())} — ${formatDate(end.toISOString())}`);
       
       const { data: projects } = await supabase
         .from("projects")
@@ -1042,22 +914,18 @@ serve(async (req) => {
       const totalProjects = projects?.length || 0;
       const totalRevenue = revenues?.reduce((sum, r) => sum + Number(r.amount || 0), 0) || 0;
       
-      pdf.addMetricsGrid([
-        { label: "Projetos", value: String(totalProjects) },
-        { label: "Receita", value: formatCurrency(totalRevenue), color: COLORS.success },
-        { label: "Período", value: period.toUpperCase() },
-      ]);
-
-      pdf.addSection("Resumo do Período");
-      pdf.addText(`Total de ${totalProjects} projetos no período selecionado com receita acumulada de ${formatCurrency(totalRevenue)}.`);
-
-      svgContent = pdf.generate();
+      htmlContent = generateSimpleHTML(
+        "Relatório 360",
+        `Período: ${formatDate(start.toISOString())} — ${formatDate(end.toISOString())}`,
+        [
+          { label: "Projetos", value: String(totalProjects) },
+          { label: "Receita", value: formatCurrency(totalRevenue), color: "success" },
+          { label: "Período", value: period.toUpperCase() },
+        ],
+        `Total de ${totalProjects} projetos no período selecionado com receita acumulada de ${formatCurrency(totalRevenue)}.`
+      );
 
     } else if (type === "tasks") {
-      const pdf = new SimplePDFGenerator();
-      
-      pdf.addHeader("Relatório de Tarefas", `Gerado em ${formatDate(new Date().toISOString())}`);
-      
       const { data: tasks } = await supabase
         .from("tasks")
         .select("*")
@@ -1068,22 +936,18 @@ serve(async (req) => {
       const completedTasks = tasks?.filter(t => t.status === 'done').length || 0;
       const pendingTasks = tasks?.filter(t => t.status !== 'done').length || 0;
       
-      pdf.addMetricsGrid([
-        { label: "Total", value: String(totalTasks) },
-        { label: "Concluídas", value: String(completedTasks), color: COLORS.success },
-        { label: "Pendentes", value: String(pendingTasks), color: COLORS.warning },
-      ]);
-
-      pdf.addSection("Resumo");
-      pdf.addText(`${completedTasks} tarefas concluídas de um total de ${totalTasks}.`);
-
-      svgContent = pdf.generate();
+      htmlContent = generateSimpleHTML(
+        "Relatório de Tarefas",
+        `Gerado em ${formatDate(new Date().toISOString())}`,
+        [
+          { label: "Total", value: String(totalTasks) },
+          { label: "Concluídas", value: String(completedTasks), color: "success" },
+          { label: "Pendentes", value: String(pendingTasks), color: "warning" },
+        ],
+        `${completedTasks} tarefas concluídas de um total de ${totalTasks}.`
+      );
 
     } else if (type === "project_overview") {
-      const pdf = new SimplePDFGenerator();
-      
-      pdf.addHeader("Visão Geral de Projetos", `Gerado em ${formatDate(new Date().toISOString())}`);
-      
       const { data: projects } = await supabase
         .from("projects")
         .select("*")
@@ -1093,16 +957,16 @@ serve(async (req) => {
       const activeProjects = projects?.filter(p => p.status === 'active').length || 0;
       const totalValue = projects?.reduce((sum, p) => sum + Number(p.contract_value || 0), 0) || 0;
       
-      pdf.addMetricsGrid([
-        { label: "Total", value: String(totalProjects) },
-        { label: "Ativos", value: String(activeProjects), color: COLORS.primary },
-        { label: "Valor Total", value: formatCurrency(totalValue), color: COLORS.success },
-      ]);
-
-      pdf.addSection("Resumo");
-      pdf.addText(`${activeProjects} projetos ativos de um total de ${totalProjects}, com valor acumulado de ${formatCurrency(totalValue)}.`);
-
-      svgContent = pdf.generate();
+      htmlContent = generateSimpleHTML(
+        "Visão Geral de Projetos",
+        `Gerado em ${formatDate(new Date().toISOString())}`,
+        [
+          { label: "Total", value: String(totalProjects) },
+          { label: "Ativos", value: String(activeProjects), color: "primary" },
+          { label: "Valor Total", value: formatCurrency(totalValue), color: "success" },
+        ],
+        `${activeProjects} projetos ativos de um total de ${totalProjects}, com valor acumulado de ${formatCurrency(totalValue)}.`
+      );
 
     } else {
       return new Response(
@@ -1111,14 +975,14 @@ serve(async (req) => {
       );
     }
 
-    // Save to storage
-    const fileName = `${type}_${id || 'report'}_${Date.now()}.svg`;
+    // Save as HTML file (printable to PDF)
+    const fileName = `${type}_${id || 'report'}_${Date.now()}.html`;
     const filePath = `exports/pdf/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("exports")
-      .upload(filePath, svgContent, {
-        contentType: "image/svg+xml",
+      .upload(filePath, htmlContent, {
+        contentType: "text/html",
         upsert: true,
       });
 
@@ -1126,8 +990,8 @@ serve(async (req) => {
       // Try project-files bucket as fallback
       const { error: fallbackError } = await supabase.storage
         .from("project-files")
-        .upload(filePath, svgContent, {
-          contentType: "image/svg+xml",
+        .upload(filePath, htmlContent, {
+          contentType: "text/html",
           upsert: true,
         });
 
@@ -1148,6 +1012,7 @@ serve(async (req) => {
           success: true,
           public_url: publicUrlData.publicUrl,
           file_path: filePath,
+          file_name: fileName,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -1164,6 +1029,7 @@ serve(async (req) => {
         success: true,
         public_url: publicUrlData.publicUrl,
         file_path: filePath,
+        file_name: fileName,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
