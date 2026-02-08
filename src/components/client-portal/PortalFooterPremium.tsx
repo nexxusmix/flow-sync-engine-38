@@ -3,7 +3,7 @@
  */
 
 import { memo } from "react";
-import squadHubLogo from "@/assets/squad-hub-logo.png";
+import squadFilmLogo from "@/assets/squad-film-logo-full.png";
 
 function PortalFooterPremiumComponent() {
   return (
@@ -11,10 +11,10 @@ function PortalFooterPremiumComponent() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src={squadHubLogo} alt="SQUAD Hub" className="h-5 w-auto opacity-50" />
-            <p className="text-xs text-gray-600 font-medium tracking-wider">
-              SQUAD /// FILM
-            </p>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-gray-600 font-medium">
+              powered by
+            </span>
+            <img src={squadFilmLogo} alt="SQUAD///FILM" className="h-4 w-auto opacity-60" />
           </div>
           
           <div className="flex items-center gap-6">
