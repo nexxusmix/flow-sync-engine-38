@@ -3075,38 +3075,50 @@ export type Database = {
       }
       portal_comments: {
         Row: {
+          annotation_data: Json | null
           author_email: string | null
           author_name: string
           author_role: string | null
           content: string
           created_at: string
           deliverable_id: string
+          frame_timestamp_ms: number | null
           id: string
+          priority: string | null
           project_file_id: string | null
+          screenshot_url: string | null
           status: string | null
           timecode: string | null
         }
         Insert: {
+          annotation_data?: Json | null
           author_email?: string | null
           author_name: string
           author_role?: string | null
           content: string
           created_at?: string
           deliverable_id: string
+          frame_timestamp_ms?: number | null
           id?: string
+          priority?: string | null
           project_file_id?: string | null
+          screenshot_url?: string | null
           status?: string | null
           timecode?: string | null
         }
         Update: {
+          annotation_data?: Json | null
           author_email?: string | null
           author_name?: string
           author_role?: string | null
           content?: string
           created_at?: string
           deliverable_id?: string
+          frame_timestamp_ms?: number | null
           id?: string
+          priority?: string | null
           project_file_id?: string | null
+          screenshot_url?: string | null
           status?: string | null
           timecode?: string | null
         }
