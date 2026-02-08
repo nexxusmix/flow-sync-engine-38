@@ -83,6 +83,10 @@ export interface PortalComment {
   content: string;
   timecode: string | null;
   status: string | null;
+  priority: string | null;
+  frame_timestamp_ms: number | null;
+  annotation_data: any | null;
+  screenshot_url: string | null;
   created_at: string;
 }
 
@@ -218,6 +222,9 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       authorEmail, 
       content, 
       timecode,
+      priority,
+      frameTimestampMs,
+      screenshotUrl,
       authorRole = 'client',
     }: {
       deliverableId?: string;
@@ -226,6 +233,9 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       authorEmail?: string;
       content: string;
       timecode?: string;
+      priority?: string;
+      frameTimestampMs?: number;
+      screenshotUrl?: string;
       authorRole?: 'client' | 'manager';
     }) => {
       const insertData: any = {
@@ -234,6 +244,9 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
         author_role: authorRole,
         content,
         timecode,
+        priority: priority || 'normal',
+        frame_timestamp_ms: frameTimestampMs,
+        screenshot_url: screenshotUrl,
       };
 
       if (deliverableId) {
@@ -314,12 +327,20 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       authorName,
       authorEmail,
       content,
+      timecode,
+      priority,
+      frameTimestampMs,
+      screenshotUrl,
     }: {
       deliverableId?: string;
       fileId?: string;
       authorName: string;
       authorEmail?: string;
       content: string;
+      timecode?: string;
+      priority?: string;
+      frameTimestampMs?: number;
+      screenshotUrl?: string;
     }) => {
       const insertData: any = {
         author_name: authorName,
@@ -327,6 +348,10 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
         author_role: 'client',
         content,
         status: 'revision_requested',
+        timecode,
+        priority: priority || 'normal',
+        frame_timestamp_ms: frameTimestampMs,
+        screenshot_url: screenshotUrl,
       };
 
       if (deliverableId) {
