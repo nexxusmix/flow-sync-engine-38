@@ -5,7 +5,7 @@
 
 import { useParams } from "react-router-dom";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Loader2, Lock, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
@@ -14,19 +14,15 @@ import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPrem
 import { PortalMetricsGrid } from "@/components/client-portal/PortalMetricsGrid";
 import { PortalTabsPremium, TabsContent } from "@/components/client-portal/PortalTabsPremium";
 import { PortalOverviewPremium } from "@/components/client-portal/PortalOverviewPremium";
-import { PortalDeliverablesPremium } from "@/components/client-portal/PortalDeliverablesPremium";
 import { PortalFooterPremium } from "@/components/client-portal/PortalFooterPremium";
 import { PortalMaterialsAside } from "@/components/client-portal/PortalMaterialsAside";
 import { PortalPaymentsAside } from "@/components/client-portal/PortalPaymentsAside";
 import { PortalAuditBadge } from "@/components/client-portal/PortalAuditBadge";
 import { PortalClientUploads } from "@/components/client-portal/PortalClientUploads";
-import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
 import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/PortalRevisionsTab";
 import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/PortalScheduleTab";
-import { PortalAuditTab } from "@/components/client-portal/portal-tabs/PortalAuditTab";
 import { PortalFilesTab } from "@/components/client-portal/portal-tabs/PortalFilesTab";
-import { PortalFeedbackPanel } from "@/components/client-portal/PortalFeedbackPanel";
-import { PortalVersionsTimeline, DeliverableVersion } from "@/components/client-portal/PortalVersionsTimeline";
+import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -64,12 +60,6 @@ export default function ClientPortalPage() {
   const clientUploads = deliverables.filter(d => d.uploaded_by_client);
 
   const hasPaymentBlock = portal?.blocked_by_payment || project?.has_payment_block;
-
-  // Selected material data
-  const selectedMaterial = deliverables.find(d => d.id === selectedMaterialId);
-  const selectedComments = comments.filter(c => c.deliverable_id === selectedMaterialId);
-  const selectedApproval = approvals.find(a => a.deliverable_id === selectedMaterialId);
-  const selectedVersions = versions.filter(v => v.deliverable_id === selectedMaterialId);
 
   const handleExportPdf = async () => {
     if (!project) return;
@@ -283,63 +273,25 @@ export default function ClientPortalPage() {
               </div>
             </TabsContent>
 
-            {/* Tasks Tab */}
-            <TabsContent value="tasks" className="mt-8">
-              <PortalTasksTab />
-            </TabsContent>
-
-            {/* Deliverables Tab */}
-            <TabsContent value="deliverables" className="mt-8">
-              <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <PortalDeliverablesPremium
-                    deliverables={deliverables}
-                    approvals={approvals}
-                    onSelectMaterial={setSelectedMaterialId}
-                    selectedMaterialId={selectedMaterialId}
-                  />
-                </div>
-                <div>
-                  {selectedMaterial ? (
-                    <motion.div 
-                      className="space-y-4"
-                      initial={{ opacity: 0, x: 16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      <PortalFeedbackPanel
-                        materialId={selectedMaterialId!}
-                        materialTitle={selectedMaterial.title}
-                        comments={selectedComments}
-                        approval={selectedApproval}
-                        onAddComment={handleAddComment}
-                        onApprove={handleApprove}
-                        onRequestRevision={handleRequestRevision}
-                        isAddingComment={isAddingComment}
-                        isApproving={isApproving}
-                        isRequestingRevision={isRequestingRevision}
-                        hasPaymentBlock={hasPaymentBlock}
-                      />
-                      {selectedVersions.length > 0 && (
-                        <PortalVersionsTimeline
-                          versions={selectedVersions as DeliverableVersion[]}
-                          currentVersion={selectedMaterial.current_version}
-                        />
-                      )}
-                    </motion.div>
-                  ) : (
-                    <motion.div 
-                      className="bg-[#0a0a0a] border border-[#1a1a1a] p-8 text-center"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      <p className="text-sm text-gray-500">
-                        Selecione uma entrega para ver detalhes e enviar feedback.
-                      </p>
-                    </motion.div>
-                  )}
-                </div>
-              </div>
+            {/* Materials Tab (new) */}
+            <TabsContent value="materials" className="mt-8">
+              <PortalMaterialsTab
+                deliverables={deliverables}
+                comments={comments}
+                approvals={approvals}
+                versions={versions}
+                selectedMaterialId={selectedMaterialId}
+                onSelectMaterial={setSelectedMaterialId}
+                onAddComment={handleAddComment}
+                onApprove={handleApprove}
+                onRequestRevision={handleRequestRevision}
+                isAddingComment={isAddingComment}
+                isApproving={isApproving}
+                isRequestingRevision={isRequestingRevision}
+                hasPaymentBlock={hasPaymentBlock}
+                portalLinkId={portal.id}
+                isManager={false}
+              />
             </TabsContent>
 
             {/* Revisions Tab */}
@@ -355,11 +307,6 @@ export default function ClientPortalPage() {
             {/* Schedule Tab */}
             <TabsContent value="schedule" className="mt-8">
               <PortalScheduleTab stages={stages} dueDate={project.due_date} />
-            </TabsContent>
-
-            {/* Audit Tab */}
-            <TabsContent value="audit" className="mt-8">
-              <PortalAuditTab comments={comments} approvals={approvals} versions={versions} />
             </TabsContent>
           </PortalTabsPremium>
         </div>
