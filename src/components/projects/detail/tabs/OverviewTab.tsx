@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ProjectWithStages, useProjects } from "@/hooks/useProjects";
 import { PROJECT_STAGES } from "@/data/projectTemplates";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
+import { LatestAlignmentsBlock } from "@/components/projects/meetings/LatestAlignmentsBlock";
 import { 
   ReportBlockBanner,
   ReportMetricsBar,
@@ -53,6 +54,9 @@ export function OverviewTab({ project }: OverviewTabProps) {
         isBlocked={project.has_payment_block || false}
         onRegularize={() => window.open('/financeiro/projetos', '_blank')}
       />
+
+      {/* Latest Alignments Block */}
+      <LatestAlignmentsBlock projectId={project.id} />
 
       {/* Top Metrics Bar */}
       <ReportMetricsBar

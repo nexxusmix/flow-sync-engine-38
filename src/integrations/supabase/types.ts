@@ -3305,6 +3305,66 @@ export type Database = {
         }
         Relationships: []
       }
+      project_action_items: {
+        Row: {
+          assignee: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          interaction_id: string | null
+          project_id: string
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          assignee?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          interaction_id?: string | null
+          project_id: string
+          status?: string
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          assignee?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          interaction_id?: string | null
+          project_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_action_items_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "project_interactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_action_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_files: {
         Row: {
           created_at: string | null
@@ -3351,6 +3411,153 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_interaction_assets: {
+        Row: {
+          created_at: string
+          file_size: number | null
+          filename: string | null
+          id: string
+          interaction_id: string
+          mime_type: string | null
+          storage_path: string | null
+          type: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          filename?: string | null
+          id?: string
+          interaction_id: string
+          mime_type?: string | null
+          storage_path?: string | null
+          type: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          filename?: string | null
+          id?: string
+          interaction_id?: string
+          mime_type?: string | null
+          storage_path?: string | null
+          type?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_interaction_assets_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "project_interactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_interaction_summaries: {
+        Row: {
+          action_items: Json | null
+          ai_run_id: string | null
+          deadlines: Json | null
+          decisions: Json | null
+          generated_at: string
+          id: string
+          interaction_id: string
+          risks: Json | null
+          summary_bullets: Json | null
+        }
+        Insert: {
+          action_items?: Json | null
+          ai_run_id?: string | null
+          deadlines?: Json | null
+          decisions?: Json | null
+          generated_at?: string
+          id?: string
+          interaction_id: string
+          risks?: Json | null
+          summary_bullets?: Json | null
+        }
+        Update: {
+          action_items?: Json | null
+          ai_run_id?: string | null
+          deadlines?: Json | null
+          decisions?: Json | null
+          generated_at?: string
+          id?: string
+          interaction_id?: string
+          risks?: Json | null
+          summary_bullets?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_interaction_summaries_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: true
+            referencedRelation: "project_interactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_interactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_public: boolean
+          notes_internal: string | null
+          occurred_at: string
+          participants: string | null
+          project_id: string
+          source: string | null
+          title: string
+          transcript: string | null
+          type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_public?: boolean
+          notes_internal?: string | null
+          occurred_at?: string
+          participants?: string | null
+          project_id: string
+          source?: string | null
+          title: string
+          transcript?: string | null
+          type: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_public?: boolean
+          notes_internal?: string | null
+          occurred_at?: string
+          participants?: string | null
+          project_id?: string
+          source?: string | null
+          title?: string
+          transcript?: string | null
+          type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_interactions_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
