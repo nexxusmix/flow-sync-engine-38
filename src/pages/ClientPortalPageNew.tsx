@@ -16,6 +16,7 @@ import { PortalOverviewPremium } from "@/components/client-portal/PortalOverview
 import { PortalFooterPremium } from "@/components/client-portal/PortalFooterPremium";
 import { PortalMaterialsAside } from "@/components/client-portal/PortalMaterialsAside";
 import { PortalAuditBadge } from "@/components/client-portal/PortalAuditBadge";
+import { PortalNextSteps } from "@/components/client-portal/PortalNextSteps";
 import { PortalClientUploads } from "@/components/client-portal/PortalClientUploads";
 import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/PortalRevisionsTab";
 import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/PortalScheduleTab";
@@ -396,6 +397,9 @@ export default function ClientPortalPage() {
                       <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
                         <PortalMaterialsAside deliverables={deliverables} files={files} />
                       </GlowCard>
+                      <ScrollReveal delay={0.4}>
+                        <PortalNextSteps stages={stages} currentStageKey={project.stage_current} />
+                      </ScrollReveal>
                       <ScrollReveal delay={0.5}>
                         <PortalAuditBadge />
                       </ScrollReveal>
