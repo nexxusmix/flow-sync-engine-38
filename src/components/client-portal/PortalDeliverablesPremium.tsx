@@ -59,7 +59,7 @@ function PortalDeliverablesPremiumComponent({
         <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-medium border-l-2 border-cyan-400 pl-4">
           Entregas Contratadas
         </h2>
-        <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-12 text-center">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-12 text-center">
           <Film className="w-10 h-10 text-gray-600 mx-auto mb-4" />
           <p className="text-gray-500 text-sm">Nenhuma entrega cadastrada ainda.</p>
           <p className="text-gray-600 text-xs mt-1">Os materiais aparecerão aqui quando forem publicados.</p>
@@ -84,7 +84,7 @@ function PortalDeliverablesPremiumComponent({
       </motion.h2>
       
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#1a1a1a] border border-[#1a1a1a]"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -103,7 +103,7 @@ function PortalDeliverablesPremiumComponent({
               }}
               onClick={() => onSelectMaterial(deliverable.id)}
               className={cn(
-                "bg-[#0a0a0a] p-5 cursor-pointer transition-colors",
+                "bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-5 cursor-pointer transition-colors",
                 isSelected && "bg-cyan-500/5 border-l-2 border-cyan-500"
               )}
             >
