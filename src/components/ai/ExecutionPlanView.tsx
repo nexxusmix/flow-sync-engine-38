@@ -19,7 +19,10 @@ const actionLabels: Record<string, string> = {
   upsert: 'Criar/Atualizar',
   link: 'Vincular',
   update_contract_status: 'Atualizar Contrato',
+  update_status: 'Atualizar Status',
   sync_financial: 'Sincronizar Financeiro',
+  create_tasks: 'Criar Tarefas',
+  attach_file: 'Anexar Arquivo',
 };
 
 const entityLabels: Record<string, string> = {
@@ -32,6 +35,8 @@ const entityLabels: Record<string, string> = {
   milestone: 'Milestone',
   revenue: 'Receita',
   financial: 'Financeiro',
+  task: 'Tarefa',
+  content_item: 'Conteúdo',
 };
 
 export function ExecutionPlanView({
@@ -84,13 +89,13 @@ export function ExecutionPlanView({
                 {isExecuting ? 'sync' : 'checklist'}
               </span>
               <span className="text-sm font-medium">
-                Plano de Execução ({plan.steps.length} {plan.steps.length === 1 ? 'ação' : 'ações'})
+                {plan.summary || `${plan.steps.length} ${plan.steps.length === 1 ? 'ação' : 'ações'}`}
               </span>
               <span className={cn(
                 'text-[10px] font-semibold uppercase px-2 py-0.5 rounded border',
                 riskColors[plan.risk_level]
               )}>
-                Risco {plan.risk_level === 'low' ? 'Baixo' : plan.risk_level === 'medium' ? 'Médio' : 'Alto'}
+                {plan.risk_level === 'low' ? '⚡' : plan.risk_level === 'medium' ? '⚠️' : '🔴'}
               </span>
             </div>
             {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

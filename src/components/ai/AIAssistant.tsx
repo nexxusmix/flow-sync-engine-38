@@ -35,7 +35,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
   const { createRun, updateRunPlan, executePlan, isExecuting } = useAgentExecution();
   
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "**Polo AI ativo.** Sou seu agente executor autônomo. Diga o que precisa e eu executo.\n\n📎 Anexe arquivos (PDF/DOCX/CSV) para análise\n🔧 Posso criar/atualizar: contratos, projetos, conteúdos, financeiro\n⚡ Executo automaticamente ações de baixo risco" }
+    { role: 'assistant', content: "**Polo AI ativo.** Diga o que precisa → Receba plano → Clique executar." }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -451,14 +451,14 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                     });
                   }}
                 />
-                {/* Auto-execute low risk plans */}
-                {msg.plan && !msg.needsConfirmation && !msg.results && !isExecuting && msg.plan.risk_level === 'low' && (
+                {/* Execute button for plans without results */}
+                {msg.plan && !msg.results && !isExecuting && !msg.needsConfirmation && (
                   <button
                     onClick={() => handleExecutePlan(i)}
-                    className="mt-2 w-full text-xs text-primary hover:underline flex items-center justify-center gap-1"
+                    className="mt-3 w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
                   >
-                    <span className="material-symbols-outlined text-sm">bolt</span>
-                    Executar plano automaticamente
+                    <span className="material-symbols-outlined text-lg">bolt</span>
+                    EXECUTAR TUDO
                   </button>
                 )}
               </div>
