@@ -1,19 +1,19 @@
 /**
  * ExecutiveSummarySection - Report-style executive summary (01 — RESUMO EXECUTIVO)
  * Collapsible by default, large heading, editorial paragraphs with AI/Edit buttons
- * Now with auto-save functionality and rich text rendering
+ * Now with auto-save functionality and visual card-based rendering
  */
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AiGenerateButton } from "@/components/ai/AiGenerateButton";
 import { SaveIndicator, DraftIndicator } from "@/components/ui/save-indicator";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { Edit3, X, ChevronDown } from "lucide-react";
+import { Edit3, X, ChevronDown, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VisualMarkdownRenderer } from "./VisualMarkdownRenderer";
 import type { GenerateBriefOutput } from "@/ai/actions";
 
 interface ExecutiveSummarySectionProps {
@@ -37,6 +37,7 @@ export function ExecutiveSummarySection({
 }: ExecutiveSummarySectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [viewMode, setViewMode] = useState<'visual' | 'text'>('visual');
 
   // Auto-save hook with debounce
   const {
@@ -130,31 +131,56 @@ export function ExecutiveSummarySection({
             <div className="px-8 md:px-12 pb-8 md:pb-12 pt-0 border-t border-border">
               {/* Action buttons when open */}
               {isManager && (
-                <div className="flex items-center gap-2 pt-6 mb-6">
-                  <AiGenerateButton
-                    actionKey="projects.generateBrief"
-                    entityType="project"
-                    entityId={projectId}
-                    hasExistingContent={!!description}
-                    getContext={() => ({
-                      id: projectId,
-                      name: projectName,
-                      client_name: clientName,
-                      service_type: template,
-                      description: description,
-                    })}
-                    onApply={handleApplyBrief}
-                  />
+                <div className="flex items-center justify-between pt-6 mb-6">
+                  <div className="flex items-center gap-2">
+                    <AiGenerateButton
+                      actionKey="projects.generateBrief"
+                      entityType="project"
+                      entityId={projectId}
+                      hasExistingContent={!!description}
+                      getContext={() => ({
+                        id: projectId,
+                        name: projectName,
+                        client_name: clientName,
+                        service_type: template,
+                        description: description,
+                      })}
+                      onApply={handleApplyBrief}
+                    />
+                    {!isEditing && description && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setIsEditing(true)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Edit3 className="w-4 h-4 mr-1" />
+                        Editar
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* View mode toggle */}
                   {!isEditing && description && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setIsEditing(true)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <Edit3 className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1">
+                      <Button
+                        variant={viewMode === 'visual' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('visual')}
+                        className="h-7 px-3 text-xs"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Visual
+                      </Button>
+                      <Button
+                        variant={viewMode === 'text' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('text')}
+                        className="h-7 px-3 text-xs"
+                      >
+                        Texto
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
@@ -169,8 +195,8 @@ export function ExecutiveSummarySection({
                     value={localDescription}
                     onChange={(e) => setLocalDescription(e.target.value)}
                     onBlur={saveNow}
-                    placeholder="Descreva o resumo executivo do projeto, objetivos e escopo principal..."
-                    className="min-h-[200px] bg-muted/20 border-border text-foreground font-light text-lg leading-relaxed"
+                    placeholder={`Use markdown para estruturar o conteúdo:\n\n## ENTREGAS\n- Item 1\n- Item 2\n\n## CONDIÇÕES FINANCEIRAS\n- Parcela 1: R$ 5.000 (2026-01-15) - Sinal\n\n## OBSERVAÇÕES\n- Observação importante`}
+                    className="min-h-[300px] bg-muted/20 border-border text-foreground font-mono text-sm leading-relaxed"
                   />
                   <div className="flex gap-2 justify-end">
                     <Button 
@@ -184,48 +210,21 @@ export function ExecutiveSummarySection({
                   </div>
                 </div>
               ) : description ? (
-                <div className="max-w-4xl pt-6">
+                <div className="pt-6">
                   {/* Headline */}
                   <h2 className="font-serif text-3xl md:text-4xl font-normal italic text-foreground mb-8">
                     {headline}
                   </h2>
 
-                  {/* Rich Text Rendering with ReactMarkdown */}
-                  <div className="prose prose-invert max-w-none">
-                    <ReactMarkdown
-                      components={{
-                        h1: ({ children }) => (
-                          <h2 className="text-2xl font-medium text-foreground mt-8 mb-4">{children}</h2>
-                        ),
-                        h2: ({ children }) => (
-                          <h3 className="text-xl font-medium text-primary mt-6 mb-3 uppercase tracking-wide">{children}</h3>
-                        ),
-                        h3: ({ children }) => (
-                          <h4 className="text-lg font-medium text-foreground mt-4 mb-2">{children}</h4>
-                        ),
-                        p: ({ children }) => (
-                          <p className="text-lg md:text-xl text-muted-foreground leading-[1.8] font-light mb-4">{children}</p>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="space-y-2 mb-4 mt-2">{children}</ul>
-                        ),
-                        li: ({ children }) => (
-                          <li className="flex gap-3 text-muted-foreground">
-                            <span className="text-primary mt-1">•</span>
-                            <span className="flex-1">{children}</span>
-                          </li>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="font-medium text-foreground">{children}</strong>
-                        ),
-                        em: ({ children }) => (
-                          <em className="text-primary italic">{children}</em>
-                        ),
-                      }}
-                    >
-                      {displayDescription}
-                    </ReactMarkdown>
-                  </div>
+                  {viewMode === 'visual' ? (
+                    <VisualMarkdownRenderer content={displayDescription} />
+                  ) : (
+                    <div className="prose prose-invert max-w-none">
+                      <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-sans leading-relaxed bg-transparent p-0 border-0">
+                        {displayDescription}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">

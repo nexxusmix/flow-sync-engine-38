@@ -10,3 +10,4 @@ export { DeliverablesListSection } from './DeliverablesListSection';
 export { ReportAsidePanel } from './ReportAsidePanel';
 export { ReportMetricsBar } from './ReportMetricsBar';
 export { ReportBlockBanner } from './ReportBlockBanner';
+export { VisualMarkdownRenderer } from './VisualMarkdownRenderer';
