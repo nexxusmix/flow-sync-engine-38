@@ -52,6 +52,29 @@ const DEFAULT_OPTIONS: ExportOptions = {
 };
 
 /**
+ * Opens the HTML report in a new window optimized for printing/PDF export
+ * The HTML already contains @media print styles for proper PDF generation
+ */
+function openPrintableWindow(url: string): void {
+  // Open a new window with the rendered HTML
+  const printWindow = window.open(url, "_blank", "width=1100,height=800");
+  
+  if (!printWindow) {
+    // Fallback: just open normally if popup blocked
+    window.open(url, "_blank");
+    return;
+  }
+
+  // When the page loads, show print dialog automatically
+  printWindow.onload = () => {
+    // Small delay to ensure styles are loaded
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  };
+}
+
+/**
  * Core export function - calls the unified export-pdf Edge Function
  */
 async function exportPdf(
@@ -93,7 +116,8 @@ async function exportPdf(
     const url = data.signed_url || data.public_url;
 
     if (opts.autoOpen && url) {
-      window.open(url, "_blank");
+      // Open in a new window with print styles applied
+      openPrintableWindow(url);
     }
 
     if (opts.showToasts && toastId) {
@@ -216,9 +240,9 @@ export async function exportCreativePDF(
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
-    const url = data.public_url;
+    const url = data.public_url || data.signed_url;
     if (options?.autoOpen !== false && url) {
-      window.open(url, "_blank");
+      openPrintableWindow(url);
     }
 
     if (toastId) toast.success("PDF criativo exportado!", { id: toastId });
@@ -244,9 +268,9 @@ export async function exportCampaignPDF(
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
-    const url = data.public_url;
+    const url = data.public_url || data.signed_url;
     if (options?.autoOpen !== false && url) {
-      window.open(url, "_blank");
+      openPrintableWindow(url);
     }
 
     if (toastId) toast.success("PDF da campanha exportado!", { id: toastId });
@@ -272,9 +296,9 @@ export async function exportContentPDF(
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
-    const url = data.public_url;
+    const url = data.public_url || data.signed_url;
     if (options?.autoOpen !== false && url) {
-      window.open(url, "_blank");
+      openPrintableWindow(url);
     }
 
     if (toastId) toast.success("PDF do conteúdo exportado!", { id: toastId });
