@@ -83,6 +83,8 @@ export default {
       },
       fontWeight: {
         light: "300",
+        normal: "400",
+        regular: "400",
         medium: "500",
       },
       keyframes: {

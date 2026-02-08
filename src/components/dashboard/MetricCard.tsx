@@ -40,7 +40,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
         </motion.div>
         {trend && (
           <motion.span 
-            className={`text-[10px] font-normal uppercase tracking-wider flex items-center gap-1 ${trendUp ? 'text-success' : 'text-destructive'}`}
+            className={`text-[11px] font-normal uppercase tracking-wider flex items-center gap-1 ${trendUp ? 'text-success' : 'text-destructive'}`}
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 + index * 0.1 }}

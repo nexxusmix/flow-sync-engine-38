@@ -32,7 +32,7 @@ export function KanbanCard({ deal }: KanbanCardProps) {
 
       {/* Header */}
       <div className="flex items-center justify-between relative">
-        <span className="text-[10px] font-black text-primary uppercase tracking-wider">{deal.company}</span>
+        <span className="text-[11px] font-medium text-primary uppercase tracking-wider">{deal.company}</span>
         <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded-lg">
           <MoreVertical className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -49,7 +49,7 @@ export function KanbanCard({ deal }: KanbanCardProps) {
       {/* Tags */}
       <div className="flex flex-wrap gap-1.5 relative">
         {deal.tags.map(tag => (
-          <span key={tag} className="px-2 py-0.5 rounded-full bg-muted text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+          <span key={tag} className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             {tag}
           </span>
         ))}
@@ -60,20 +60,20 @@ export function KanbanCard({ deal }: KanbanCardProps) {
 
       {/* Footer */}
       <div className="flex items-center justify-between relative">
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Clock className="w-3 h-3" />
           {deal.lastActivity}
         </div>
         
         {/* Owner Avatar */}
-        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-black text-primary">
+        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-medium text-primary">
           {deal.ownerInitials}
         </div>
         
         {/* AI Score Badge */}
         <div className={`flex items-center gap-1 px-2 py-1 rounded-full border ${scoreStyle.bg}`}>
           <Sparkles className={`w-3 h-3 ${scoreStyle.text}`} />
-          <span className={`text-[10px] font-black ${scoreStyle.text}`}>{deal.score}</span>
+          <span className={`text-[11px] font-medium ${scoreStyle.text}`}>{deal.score}</span>
         </div>
       </div>
     </div>
