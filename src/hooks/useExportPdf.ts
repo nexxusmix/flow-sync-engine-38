@@ -47,6 +47,8 @@ export interface UseExportPdfReturn {
   exportContent: (contentItemId: string, options?: ExportOptions) => Promise<ExportResult>;
   /** Open the last exported PDF in a new tab */
   openPdf: () => void;
+  /** Download the last exported PDF directly */
+  downloadPdf: () => Promise<void>;
   /** Copy the exported URL to clipboard */
   copyLink: () => Promise<void>;
   /** Reset the exported URL */
@@ -147,6 +149,25 @@ export function useExportPdf(): UseExportPdfReturn {
     }
   }, [exportedUrl]);
 
+  const downloadPdf = useCallback(async () => {
+    if (exportedUrl) {
+      try {
+        const response = await fetch(exportedUrl);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `relatorio-${Date.now()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch {
+        window.open(exportedUrl, "_blank");
+      }
+    }
+  }, [exportedUrl]);
+
   const copyLink = useCallback(async () => {
     if (exportedUrl) {
       await navigator.clipboard.writeText(exportedUrl);
@@ -172,6 +193,7 @@ export function useExportPdf(): UseExportPdfReturn {
     exportCampaign,
     exportContent,
     openPdf,
+    downloadPdf,
     copyLink,
     resetExport,
   };

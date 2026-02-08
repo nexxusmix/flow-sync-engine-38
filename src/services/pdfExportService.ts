@@ -36,6 +36,10 @@ export type ExportType =
 export interface ExportOptions {
   /** Whether to automatically open the PDF in a new tab */
   autoOpen?: boolean;
+  /** Whether to download the PDF directly instead of opening */
+  autoDownload?: boolean;
+  /** Custom filename for download */
+  fileName?: string;
   /** Show toast notifications */
   showToasts?: boolean;
   /** Custom loading message */
@@ -45,11 +49,41 @@ export interface ExportOptions {
 }
 
 const DEFAULT_OPTIONS: ExportOptions = {
-  autoOpen: true,
+  autoOpen: false,
+  autoDownload: true,
   showToasts: true,
   loadingMessage: "Gerando PDF...",
-  successMessage: "PDF exportado com sucesso!",
+  successMessage: "PDF baixado com sucesso!",
 };
+
+/**
+ * Downloads a file from URL directly to user's device
+ */
+async function downloadFile(url: string, fileName: string): Promise<void> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch file');
+    }
+    
+    const blob = await response.blob();
+    const downloadUrl = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL object
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+  } catch (error) {
+    console.error('[pdfExportService] Error downloading file:', error);
+    // Fallback: open in new tab
+    window.open(url, '_blank');
+  }
+}
 
 /**
  * Opens the HTML report in a new window and triggers print dialog
@@ -144,10 +178,16 @@ async function exportPdf(
     }
 
     const url = data.signed_url || data.public_url;
+    const fileName = data.file_name || opts.fileName || `relatorio-${type}-${Date.now()}`;
 
-    if (opts.autoOpen && url) {
-      // Open in a new window with print styles applied
-      await openPrintableWindow(url);
+    if (url) {
+      if (opts.autoDownload) {
+        // Download the PDF directly
+        await downloadFile(url, fileName);
+      } else if (opts.autoOpen) {
+        // Open in a new window with print styles applied
+        await openPrintableWindow(url);
+      }
     }
 
     if (opts.showToasts && toastId) {
@@ -259,8 +299,8 @@ export async function exportCreativePDF(
   id: string,
   options?: ExportOptions
 ): Promise<ExportResult> {
-  // Use the original export-creative-pdf for now
-  const toastId = options?.showToasts !== false ? toast.loading("Gerando PDF criativo...") : undefined;
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const toastId = opts.showToasts ? toast.loading("Gerando PDF criativo...") : undefined;
 
   try {
     const { data, error } = await supabase.functions.invoke<ExportResult>("export-creative-pdf", {
@@ -271,11 +311,17 @@ export async function exportCreativePDF(
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
     const url = data.public_url || data.signed_url;
-    if (options?.autoOpen !== false && url) {
-      await openPrintableWindow(url);
+    const fileName = data.file_name || opts.fileName || `criativo-${type}-${id}`;
+    
+    if (url) {
+      if (opts.autoDownload) {
+        await downloadFile(url, fileName);
+      } else if (opts.autoOpen) {
+        await openPrintableWindow(url);
+      }
     }
 
-    if (toastId) toast.success("PDF criativo exportado!", { id: toastId });
+    if (toastId) toast.success("PDF criativo baixado!", { id: toastId });
     return data;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro ao exportar";
@@ -288,7 +334,8 @@ export async function exportCampaignPDF(
   campaignId: string,
   options?: ExportOptions
 ): Promise<ExportResult> {
-  const toastId = options?.showToasts !== false ? toast.loading("Gerando PDF da campanha...") : undefined;
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const toastId = opts.showToasts ? toast.loading("Gerando PDF da campanha...") : undefined;
 
   try {
     const { data, error } = await supabase.functions.invoke<ExportResult>("export-campaign-pdf", {
@@ -299,11 +346,17 @@ export async function exportCampaignPDF(
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
     const url = data.public_url || data.signed_url;
-    if (options?.autoOpen !== false && url) {
-      await openPrintableWindow(url);
+    const fileName = data.file_name || opts.fileName || `campanha-${campaignId}`;
+    
+    if (url) {
+      if (opts.autoDownload) {
+        await downloadFile(url, fileName);
+      } else if (opts.autoOpen) {
+        await openPrintableWindow(url);
+      }
     }
 
-    if (toastId) toast.success("PDF da campanha exportado!", { id: toastId });
+    if (toastId) toast.success("PDF da campanha baixado!", { id: toastId });
     return data;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro ao exportar";
@@ -316,7 +369,8 @@ export async function exportContentPDF(
   contentItemId: string,
   options?: ExportOptions
 ): Promise<ExportResult> {
-  const toastId = options?.showToasts !== false ? toast.loading("Gerando PDF do conteúdo...") : undefined;
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const toastId = opts.showToasts ? toast.loading("Gerando PDF do conteúdo...") : undefined;
 
   try {
     const { data, error } = await supabase.functions.invoke<ExportResult>("export-content-pdf", {
@@ -327,11 +381,17 @@ export async function exportContentPDF(
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
     const url = data.public_url || data.signed_url;
-    if (options?.autoOpen !== false && url) {
-      await openPrintableWindow(url);
+    const fileName = data.file_name || opts.fileName || `conteudo-${contentItemId}`;
+    
+    if (url) {
+      if (opts.autoDownload) {
+        await downloadFile(url, fileName);
+      } else if (opts.autoOpen) {
+        await openPrintableWindow(url);
+      }
     }
 
-    if (toastId) toast.success("PDF do conteúdo exportado!", { id: toastId });
+    if (toastId) toast.success("PDF do conteúdo baixado!", { id: toastId });
     return data;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro ao exportar";
