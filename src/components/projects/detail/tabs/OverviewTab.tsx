@@ -135,7 +135,12 @@ export function OverviewTab({ project }: OverviewTabProps) {
           <ReportAsidePanel
             projectId={project.id}
             bannerUrl={(project as any).banner_url}
+            logoUrl={(project as any).logo_url}
             isManager={true}
+            onEditProject={() => {
+              // Trigger edit modal from store
+              import("@/stores/projectsStore").then(m => m.useProjectsStore.getState().setEditProjectModalOpen(true));
+            }}
           />
 
           {/* Timeline Forecast (compact) */}
