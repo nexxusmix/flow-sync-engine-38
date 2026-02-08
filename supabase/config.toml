@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.generate-next-steps]
 verify_jwt = false
+
+[functions.generate-project-art]
+verify_jwt = false
+
+[functions.export-universal-pdf]
+verify_jwt = false

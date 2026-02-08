@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ProjectLogoUpload } from "@/components/projects/ProjectLogoUpload";
 
 interface EditProjectModalProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
     due_date: project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : '',
     contract_value: (project.contract_value || 0).toString(),
     has_payment_block: project.has_payment_block || false,
+    logo_url: (project as any).logo_url || null,
   });
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
       due_date: project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : '',
       contract_value: (project.contract_value || 0).toString(),
       has_payment_block: project.has_payment_block || false,
+      logo_url: (project as any).logo_url || null,
     });
   }, [project]);
 
@@ -62,7 +65,8 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
         due_date: formData.due_date || null,
         contract_value: parseFloat(formData.contract_value) || 0,
         has_payment_block: formData.has_payment_block,
-      },
+        logo_url: formData.logo_url,
+      } as any,
     });
 
     onOpenChange(false);
@@ -76,6 +80,16 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+          {/* Logo Upload */}
+          <div className="space-y-2">
+            <Label>Logo do Projeto</Label>
+            <ProjectLogoUpload
+              projectId={project.id}
+              currentLogoUrl={formData.logo_url}
+              onUpload={(url) => setFormData({ ...formData, logo_url: url })}
+            />
+          </div>
+
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Projeto *</Label>

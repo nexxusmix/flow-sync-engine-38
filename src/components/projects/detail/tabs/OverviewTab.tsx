@@ -3,6 +3,7 @@ import { ProjectWithStages, useProjects } from "@/hooks/useProjects";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { AiGenerateButton } from "@/components/ai/AiGenerateButton";
+import { ProjectArtSection } from "@/components/projects/ProjectArtSection";
 import type { GenerateBriefOutput } from "@/ai/actions";
 import { 
   Activity,
@@ -197,6 +198,14 @@ export function OverviewTab({ project }: OverviewTabProps) {
           </div>
         )}
       </div>
+
+      {/* Project Art Section - AI Generated Images */}
+      <ProjectArtSection
+        projectId={project.id}
+        bannerUrl={(project as any).banner_url}
+        coverUrl={(project as any).cover_image_url}
+        logoUrl={(project as any).logo_url}
+      />
 
       {/* Timeline Forecast 30D */}
       <TimelineForecast30D 

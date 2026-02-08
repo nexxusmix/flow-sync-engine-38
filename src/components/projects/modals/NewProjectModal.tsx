@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Wand2 } from "lucide-react";
+import { ProjectLogoUpload } from "@/components/projects/ProjectLogoUpload";
 
 interface NewProjectModalProps {
   open: boolean;
@@ -38,6 +39,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     due_date: string;
     contract_value: string;
     has_payment_block: boolean;
+    logo_url: string | null;
   }>({
     name: "",
     client_name: "",
@@ -47,6 +49,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     due_date: "",
     contract_value: "",
     has_payment_block: true,
+    logo_url: null,
   });
 
   const resetForm = () => {
@@ -59,6 +62,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
       due_date: "",
       contract_value: "",
       has_payment_block: true,
+      logo_url: null,
     });
   };
 
@@ -110,6 +114,15 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+          {/* Logo Upload */}
+          <div className="space-y-2">
+            <Label>Logo do Projeto</Label>
+            <ProjectLogoUpload
+              currentLogoUrl={formData.logo_url}
+              onUpload={(url) => setFormData({ ...formData, logo_url: url })}
+            />
+          </div>
+
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Projeto *</Label>

@@ -72,6 +72,137 @@ export function useExportPdf() {
     }
   };
 
+  // New universal export functions
+  const exportReport360 = async (period: string = "3m") => {
+    setIsExporting(true);
+    setExportedUrl(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
+        body: {
+          type: 'report_360',
+          period,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
+
+      setExportedUrl(data.public_url || null);
+      toast.success("Relatório exportado com sucesso!");
+      
+      if (data.public_url) {
+        window.open(data.public_url, '_blank');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error exporting Report 360:", error);
+      const message = error instanceof Error ? error.message : "Erro ao exportar relatório";
+      toast.error(message);
+      return null;
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportTasks = async () => {
+    setIsExporting(true);
+    setExportedUrl(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
+        body: {
+          type: 'tasks',
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
+
+      setExportedUrl(data.public_url || null);
+      toast.success("Tarefas exportadas com sucesso!");
+      
+      if (data.public_url) {
+        window.open(data.public_url, '_blank');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error exporting tasks:", error);
+      const message = error instanceof Error ? error.message : "Erro ao exportar tarefas";
+      toast.error(message);
+      return null;
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportProject = async (projectId: string) => {
+    setIsExporting(true);
+    setExportedUrl(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
+        body: {
+          type: 'project',
+          id: projectId,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
+
+      setExportedUrl(data.public_url || null);
+      toast.success("Projeto exportado com sucesso!");
+      
+      if (data.public_url) {
+        window.open(data.public_url, '_blank');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error exporting project:", error);
+      const message = error instanceof Error ? error.message : "Erro ao exportar projeto";
+      toast.error(message);
+      return null;
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportProjectsOverview = async () => {
+    setIsExporting(true);
+    setExportedUrl(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke<ExportResult>('export-universal-pdf', {
+        body: {
+          type: 'project_overview',
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Falha na exportação');
+
+      setExportedUrl(data.public_url || null);
+      toast.success("Visão geral exportada com sucesso!");
+      
+      if (data.public_url) {
+        window.open(data.public_url, '_blank');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error exporting overview:", error);
+      const message = error instanceof Error ? error.message : "Erro ao exportar visão geral";
+      toast.error(message);
+      return null;
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const openPdf = () => {
     if (exportedUrl) {
       window.open(exportedUrl, '_blank');
@@ -94,6 +225,10 @@ export function useExportPdf() {
     exportedUrl,
     exportStudioRun,
     exportCreativePackage,
+    exportReport360,
+    exportTasks,
+    exportProject,
+    exportProjectsOverview,
     openPdf,
     copyLink,
     resetExport,
