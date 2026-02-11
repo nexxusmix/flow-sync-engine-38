@@ -10,6 +10,7 @@ import {
   Globe, 
   FileText,
   Users,
+  Clapperboard,
 } from "lucide-react";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TasksTab } from "./tabs/TasksTab";
@@ -20,6 +21,7 @@ import { ScheduleTab } from "./tabs/ScheduleTab";
 import { PortalTab } from "./tabs/PortalTab";
 import { AuditTab } from "./tabs/AuditTab";
 import { MeetingsTab } from "../meetings/MeetingsTab";
+import { StoryboardTab } from "./tabs/StoryboardTab";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useProjectRevisions } from "@/hooks/useProjectRevisions";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,7 @@ const tabs = [
   { id: "revisions", label: "Revisões", icon: MessageSquare },
   { id: "files", label: "Arquivos", icon: FolderOpen },
   { id: "schedule", label: "Cronograma", icon: Calendar },
+  { id: "storyboard", label: "Storyboard IA", icon: Clapperboard },
   { id: "portal", label: "Portal", icon: Globe },
   { id: "audit", label: "Auditoria", icon: FileText },
 ];
@@ -100,6 +103,10 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
       
       <TabsContent value="schedule" className="mt-6">
         <ScheduleTab project={project} />
+      </TabsContent>
+
+      <TabsContent value="storyboard" className="mt-6">
+        <StoryboardTab project={project} />
       </TabsContent>
       
       <TabsContent value="portal" className="mt-6">
