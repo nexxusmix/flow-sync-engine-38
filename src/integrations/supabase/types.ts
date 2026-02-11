@@ -4355,6 +4355,8 @@ export type Database = {
         Row: {
           client_email: string | null
           client_name: string
+          contract_id: string | null
+          converted_to_contract: boolean
           created_at: string
           created_by: string | null
           id: string
@@ -4372,6 +4374,8 @@ export type Database = {
         Insert: {
           client_email?: string | null
           client_name: string
+          contract_id?: string | null
+          converted_to_contract?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
@@ -4389,6 +4393,8 @@ export type Database = {
         Update: {
           client_email?: string | null
           client_name?: string
+          contract_id?: string | null
+          converted_to_contract?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
@@ -4404,6 +4410,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "proposals_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "proposals_opportunity_id_fkey"
             columns: ["opportunity_id"]
