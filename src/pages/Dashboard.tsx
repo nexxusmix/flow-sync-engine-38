@@ -404,7 +404,7 @@ export default function Dashboard() {
                       title={project.name}
                       client={project.client_name}
                       status={project.status === 'active' ? 'Em Produção' : project.status === 'paused' ? 'Em Pausa' : project.status === 'completed' ? 'Concluído' : 'Arquivado'}
-                      image="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&h=600&fit=crop"
+                      image={project.logo_url || undefined}
                       date={`Saúde: ${project.health_score}%`}
                       index={idx}
                     />

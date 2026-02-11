@@ -1,16 +1,20 @@
-import { Play } from "lucide-react";
+import { Play, Clapperboard } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 interface ProjectCardProps {
   title: string;
   client: string;
   status: string;
-  image: string;
+  image?: string;
   date: string;
   index?: number;
 }
 
 export function ProjectCard({ title, client, status, image, date, index = 0 }: ProjectCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const hasValidImage = image && !imgError;
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 40 }}
@@ -30,13 +34,20 @@ export function ProjectCard({ title, client, status, image, date, index = 0 }: P
       className="glass-card rounded-[2rem] overflow-hidden group cursor-pointer hover:border-primary/30 transition-all duration-500"
     >
       <div className="relative aspect-video overflow-hidden">
-        <motion.img 
-          src={image} 
-          alt={title} 
-          className="w-full h-full object-cover"
-          whileHover={{ scale: 1.15 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        />
+        {hasValidImage ? (
+          <motion.img 
+            src={image} 
+            alt={title} 
+            className="w-full h-full object-cover"
+            whileHover={{ scale: 1.15 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 via-muted to-muted/80 flex items-center justify-center">
+            <Clapperboard className="w-12 h-12 text-primary/40" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         <motion.button 
           className="absolute inset-0 flex items-center justify-center"
