@@ -205,6 +205,7 @@ export default function ClientPortalPage() {
   };
 
   const handleRequestRevision = (data: { 
+    deliverableId?: string;
     authorName: string; 
     authorEmail?: string; 
     content: string;
@@ -213,9 +214,10 @@ export default function ClientPortalPage() {
     frameTimestampMs?: number;
     screenshotUrl?: string;
   }) => {
-    if (!selectedMaterialId) return;
+    const targetId = data.deliverableId || selectedMaterialId;
+    if (!targetId) return;
     requestRevision({
-      deliverableId: selectedMaterialId,
+      deliverableId: targetId,
       authorName: data.authorName,
       authorEmail: data.authorEmail,
       content: data.content,
