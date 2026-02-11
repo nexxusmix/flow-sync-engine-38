@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { ExecutionPlanView } from "./ExecutionPlanView";
@@ -32,6 +33,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
     createConversation,
     deleteConversation,
     handleExecutePlan,
+    regeneratePlan,
     cancelStream,
     setMessages,
   } = useAgentChat();
@@ -266,12 +268,34 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                     }}
                   />
                   {msg.plan && !msg.results && !isExecuting && !msg.needsConfirmation && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => handleExecutePlan(i)}
+                        className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+                      >
+                        <span className="material-symbols-outlined text-lg">bolt</span>
+                        EXECUTAR TUDO
+                      </button>
+                      <button
+                        onClick={() => regeneratePlan(i, location.pathname)}
+                        disabled={isLoading}
+                        className="py-2.5 px-4 bg-muted border border-border text-foreground rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-accent transition-all disabled:opacity-50"
+                        title="Regenerar plano com system prompt atualizado"
+                      >
+                        <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                        Regenerar
+                      </button>
+                    </div>
+                  )}
+                  {/* Show prominent regenerate button after execution with errors */}
+                  {msg.plan && msg.results && msg.results.some((r: any) => r.status === 'error') && !isExecuting && (
                     <button
-                      onClick={() => handleExecutePlan(i)}
-                      className="mt-3 w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+                      onClick={() => regeneratePlan(i, location.pathname)}
+                      disabled={isLoading}
+                      className="mt-3 w-full py-2.5 bg-destructive text-destructive-foreground rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg disabled:opacity-50"
                     >
-                      <span className="material-symbols-outlined text-lg">bolt</span>
-                      EXECUTAR TUDO
+                      <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                      REGENERAR PLANO (corrigir erros)
                     </button>
                   )}
                 </div>

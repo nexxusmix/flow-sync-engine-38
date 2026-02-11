@@ -446,6 +446,171 @@ export function useAgentChat() {
     }
   }, [messages, createRun, updateRunPlan, executePlan, activeConversationId]);
 
+  // ── Regenerate plan for a message ──
+  const regeneratePlan = useCallback(async (messageIndex: number, currentRoute?: string) => {
+    if (!user || !session || isLoading) return;
+
+    const assistantMsg = messages[messageIndex];
+    if (!assistantMsg?.plan) return;
+
+    // Find the user message that generated this plan (the one right before)
+    const userMsg = messages[messageIndex - 1];
+    if (!userMsg || userMsg.role !== 'user') {
+      toast.error('Não foi possível encontrar a mensagem original.');
+      return;
+    }
+
+    const convId = activeConversationId;
+    if (!convId) return;
+
+    setIsLoading(true);
+
+    // Build messages for API (all messages up to and including the user message)
+    const apiMessages = messages.slice(0, messageIndex).map(m => {
+      let content = m.content;
+      if (m.files && m.files.length > 0) {
+        const fileContents = m.files.map(f =>
+          `\n\n---\n📎 **Arquivo: ${f.name}** (${(f.size / 1024).toFixed(1)}KB)\n${f.content || '[Conteúdo não disponível]'}\n---`
+        ).join('');
+        content += fileContents;
+      }
+      return { role: m.role, content };
+    });
+
+    const memoryContext = memories.length > 0
+      ? memories.map(m => `${m.key}: ${JSON.stringify(m.value)}`).join('\n')
+      : '';
+
+    try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      // Mark as regenerating in UI
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        newMsgs[messageIndex] = { ...newMsgs[messageIndex], content: '🔄 Regenerando plano...', plan: undefined, results: undefined };
+        return newMsgs;
+      });
+
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: apiMessages,
+          context: {
+            currentRoute,
+            timestamp: new Date().toISOString(),
+            conversationId: convId,
+            memories: memoryContext,
+          },
+        }),
+        signal: controller.signal,
+      });
+
+      if (!resp.ok) throw new Error('AI gateway error');
+      if (!resp.body) throw new Error('No response body');
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let assistantContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const newMsgs = [...prev];
+                newMsgs[messageIndex] = { ...newMsgs[messageIndex], content: assistantContent };
+                return newMsgs;
+              });
+            }
+          } catch { break; }
+        }
+      }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split('\n')) {
+          if (!raw) continue;
+          if (raw.endsWith('\r')) raw = raw.slice(0, -1);
+          if (raw.startsWith(':') || raw.trim() === '') continue;
+          if (!raw.startsWith('data: ')) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) assistantContent += content;
+          } catch { /* ignore */ }
+        }
+      }
+
+      // Parse new plan
+      const { text, plan } = parseExecutionPlan(assistantContent);
+      const finalMsg: AgentMessage = {
+        ...assistantMsg,
+        content: text,
+        plan: plan || undefined,
+        results: undefined,
+        runId: undefined,
+        needsConfirmation: plan?.needs_confirmation,
+      };
+
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        newMsgs[messageIndex] = finalMsg;
+        return newMsgs;
+      });
+
+      // Update in DB
+      if (assistantMsg.dbId) {
+        await supabase
+          .from('agent_messages')
+          .update({
+            content: assistantContent,
+            plan_json: (plan || null) as unknown as Json,
+            result_json: null,
+            run_id: null,
+          })
+          .eq('id', assistantMsg.dbId);
+      }
+
+      toast.success('Plano regenerado com sucesso!');
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') return;
+      console.error('Regenerate error:', error);
+      toast.error('Erro ao regenerar plano.');
+      // Restore original message
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        newMsgs[messageIndex] = assistantMsg;
+        return newMsgs;
+      });
+    } finally {
+      setIsLoading(false);
+      abortRef.current = null;
+    }
+  }, [user, session, isLoading, messages, memories, activeConversationId, parseExecutionPlan]);
+
   // ── Delete memory ──
   const deleteMemory = useCallback(async (id: string) => {
     await supabase.from('agent_memory').delete().eq('id', id);
@@ -479,6 +644,7 @@ export function useAgentChat() {
     createConversation,
     deleteConversation,
     handleExecutePlan,
+    regeneratePlan,
     deleteMemory,
     cancelStream,
     setMessages,
