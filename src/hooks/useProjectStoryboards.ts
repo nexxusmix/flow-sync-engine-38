@@ -29,6 +29,8 @@ export interface Storyboard {
   source_text?: string;
   style_global: string;
   created_at: string;
+  deliverable_id?: string;
+  source_files?: any[];
   scenes?: StoryboardScene[];
 }
 
@@ -48,6 +50,17 @@ export const PRODUCTION_TYPES: Record<string, string> = {
   mixed_media: "Mixed Media",
 };
 
+export interface ProjectContextData {
+  hasContext: boolean;
+  project?: any;
+  deliverable?: any;
+  contract?: any;
+  scripts?: any[];
+  knowledgeArticles?: any[];
+  contentItems?: any[];
+  fileSummaries?: { name: string; summary: string }[];
+}
+
 export function useProjectStoryboards(projectId: string | undefined) {
   const queryClient = useQueryClient();
 
@@ -66,20 +79,56 @@ export function useProjectStoryboards(projectId: string | undefined) {
     enabled: !!projectId,
   });
 
-  const scenesQuery = (storyboardId: string) =>
-    useQuery({
-      queryKey: ["storyboard-scenes", storyboardId],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("project_storyboard_scenes")
-          .select("*")
-          .eq("storyboard_id", storyboardId)
-          .order("scene_number", { ascending: true });
-        if (error) throw error;
-        return data as StoryboardScene[];
-      },
-      enabled: !!storyboardId,
-    });
+  const deliverablesQuery = useQuery({
+    queryKey: ["project-deliverables", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("project_deliverables")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!projectId,
+  });
+
+  const projectFilesQuery = useQuery({
+    queryKey: ["project-files-storyboard", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("project_files")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!projectId,
+  });
+
+  const fetchProjectContext = async (): Promise<ProjectContextData> => {
+    if (!projectId) return { hasContext: false };
+
+    const [projectRes, contractRes, scriptsRes, knowledgeRes, contentRes] = await Promise.all([
+      supabase.from("projects").select("*").eq("id", projectId).single(),
+      supabase.from("contracts").select("notes, payment_terms, public_summary").eq("project_id", projectId).limit(1).maybeSingle(),
+      supabase.from("content_scripts").select("id, script, cta, hashtags").limit(10),
+      supabase.from("knowledge_articles").select("id, title, content_md").limit(5),
+      supabase.from("content_items").select("id, title, format, caption_short, hook, script").eq("project_id", projectId).limit(10),
+    ]);
+
+    return {
+      hasContext: true,
+      project: projectRes.data,
+      contract: contractRes.data,
+      scripts: scriptsRes.data || [],
+      knowledgeArticles: knowledgeRes.data || [],
+      contentItems: contentRes.data || [],
+    };
+  };
 
   const generateMutation = useMutation({
     mutationFn: async (params: {
@@ -90,11 +139,14 @@ export function useProjectStoryboards(projectId: string | undefined) {
       projectName?: string;
       clientName?: string;
       objective?: string;
+      deliverableId?: string;
+      sourceFiles?: any[];
+      projectContext?: ProjectContextData;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
 
-      // Call edge function
+      // Call edge function with enriched context
       const { data: aiData, error: aiError } = await supabase.functions.invoke("generate-storyboard-ai", {
         body: {
           sourceText: params.sourceText,
@@ -102,6 +154,7 @@ export function useProjectStoryboards(projectId: string | undefined) {
           clientName: params.clientName,
           colorGrading: params.colorGrading,
           objective: params.objective,
+          projectContext: params.projectContext,
         },
       });
 
@@ -118,6 +171,8 @@ export function useProjectStoryboards(projectId: string | undefined) {
           source_text: params.sourceText,
           style_global: params.colorGrading,
           created_by: user.id,
+          deliverable_id: params.deliverableId || null,
+          source_files: params.sourceFiles || [],
         })
         .select("id")
         .single();
@@ -190,7 +245,9 @@ export function useProjectStoryboards(projectId: string | undefined) {
   return {
     storyboards: storyboardsQuery.data || [],
     isLoading: storyboardsQuery.isLoading,
-    scenesQuery,
+    deliverables: deliverablesQuery.data || [],
+    projectFiles: projectFilesQuery.data || [],
+    fetchProjectContext,
     generate: generateMutation,
     updateScene,
     deleteStoryboard,
