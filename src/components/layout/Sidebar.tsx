@@ -29,15 +29,16 @@ interface SidebarProps {
 }
 
 const menuItemVariants = {
-  hidden: { opacity: 0, x: -20 },
+  hidden: { opacity: 0, x: -20, filter: "blur(8px)" },
   visible: (i: number) => ({
     opacity: 1,
     x: 0,
+    filter: "blur(0px)",
     transition: {
-      delay: i * 0.05,
+      delay: i * 0.04,
       type: "spring" as const,
       stiffness: 100,
-      damping: 15,
+      damping: 18,
     },
   }),
 };
@@ -63,10 +64,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               src={squadHubLogo} 
               alt="SQUAD Hub" 
               className="h-7 w-auto object-contain"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
+              transition={{ duration: 0.25 }}
             />
           )}
         </AnimatePresence>

@@ -34,15 +34,15 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       {/* Background Blobs */}
       <motion.div 
         className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 0.15, scale: 1 }}
-        transition={{ duration: 2 }}
+        initial={{ opacity: 0, scale: 0.6, filter: "blur(100px)" }}
+        animate={{ opacity: 0.15, scale: 1, filter: "blur(220px)" }}
+        transition={{ duration: 2.5 }}
       />
       <motion.div 
         className="blob w-[800px] h-[800px] bg-white bottom-[-20%] right-[-10%] opacity-5"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 0.05, scale: 1 }}
-        transition={{ duration: 2, delay: 0.3 }}
+        initial={{ opacity: 0, scale: 0.6, filter: "blur(100px)" }}
+        animate={{ opacity: 0.05, scale: 1, filter: "blur(220px)" }}
+        transition={{ duration: 2.5, delay: 0.3 }}
       />
       
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
@@ -61,9 +61,10 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
         <main className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 flex flex-col" style={{ zoom: 1.2 }}>
           <motion.div 
             className="w-full flex-1"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.6, type: "spring", stiffness: 80, damping: 18 }}
+            style={{ transformStyle: "preserve-3d" }}
           >
             {children}
           </motion.div>

@@ -112,9 +112,9 @@ export default function Dashboard() {
         {/* Header Title */}
         <motion.div 
           className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0, y: -20, filter: "blur(15px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.8, type: "spring", stiffness: 80 }}
         >
           <motion.div 
             className="flex items-center gap-4"
@@ -124,32 +124,53 @@ export default function Dashboard() {
               src={squadLogo} 
               alt="SQUAD Hub" 
               className="w-10 h-10 object-contain"
-              initial={{ opacity: 0, rotate: -180, scale: 0 }}
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              transition={{ type: "spring" as const, stiffness: 200, damping: 15, delay: 0.2 }}
+              initial={{ opacity: 0, scale: 0.5, filter: "blur(20px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              transition={{ type: "spring" as const, stiffness: 150, damping: 15, delay: 0.1 }}
             />
-            <h1 className="text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground">
+            <motion.h1 
+              className="text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground"
+              initial={{ opacity: 0, x: -20, filter: "blur(10px)" }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+            >
               Over<span className="squad-logo-text font-light text-muted-foreground">view</span>
-            </h1>
+            </motion.h1>
           </motion.div>
           
           <motion.div 
             className="glass-card px-6 py-4 rounded-2xl flex items-center gap-4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            whileHover={{ scale: 1.02, borderColor: "rgba(0, 163, 211, 0.2)" }}
+            initial={{ opacity: 0, x: 30, filter: "blur(12px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
+            whileHover={{ scale: 1.02, borderColor: "rgba(0, 163, 211, 0.2)", rotateY: 2 }}
+            style={{ transformStyle: "preserve-3d", perspective: 800 }}
           >
             <motion.span 
               className="material-symbols-outlined text-primary"
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 4, repeat: Infinity }}
+              initial={{ opacity: 0, scale: 0, filter: "blur(8px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              transition={{ delay: 0.5 }}
             >
               calendar_today
             </motion.span>
             <div>
-              <p className="text-[9px] text-muted-foreground font-light uppercase">Data Atual</p>
-              <p className="text-xs text-foreground font-normal">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</p>
+              <motion.p 
+                className="text-[9px] text-muted-foreground font-light uppercase"
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{ delay: 0.5 }}
+              >
+                Data Atual
+              </motion.p>
+              <motion.p 
+                className="text-xs text-foreground font-normal"
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{ delay: 0.55 }}
+              >
+                {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
+              </motion.p>
             </div>
           </motion.div>
         </motion.div>
@@ -157,9 +178,9 @@ export default function Dashboard() {
         {/* Section: Metrics */}
         <motion.div 
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          initial={{ opacity: 0, filter: "blur(10px)" }}
+          animate={{ opacity: 1, filter: "blur(0px)" }}
+          transition={{ delay: 0.25 }}
         >
           {metricCards.map((metric, idx) => (
             <MetricCard
@@ -181,7 +202,13 @@ export default function Dashboard() {
         <TimelineForecast30D milestones={timelineMilestones} />
 
         {/* Visual Board Section - PROJETOS */}
-        <div className="glass-card rounded-[2rem] p-6 min-h-[400px]">
+        <motion.div 
+          className="glass-card rounded-[2rem] p-6 min-h-[400px]"
+          initial={{ opacity: 0, y: 30, filter: "blur(15px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ delay: 0.35, type: "spring", stiffness: 70, damping: 18 }}
+          style={{ transformStyle: "preserve-3d" }}
+        >
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-normal text-foreground">Visual Board</h2>
@@ -300,10 +327,15 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Key Metrics Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <motion.div 
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+          initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ delay: 0.45 }}
+        >
           <div className="glass-card rounded-xl p-4 border-l-2 border-emerald-500 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -339,10 +371,15 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mb-1 font-light">Projetos Ativos</p>
             <p className="text-lg font-normal text-foreground">{metrics?.totalProjectsActive || 0}</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Visão de Contas - Financeiro */}
-        <div className="glass-card rounded-[2rem] p-6 min-h-[250px]">
+        <motion.div 
+          className="glass-card rounded-[2rem] p-6 min-h-[250px]"
+          initial={{ opacity: 0, y: 25, filter: "blur(12px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ delay: 0.5, type: "spring", stiffness: 70, damping: 18 }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-normal text-foreground">Visão de Contas</h3>
@@ -385,7 +422,7 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground/40 mt-1">Contas aparecerão quando houver projetos</p>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Section: Main Layout Split */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
