@@ -12,13 +12,27 @@ serve(async (req) => {
     const { audioBase64, mimeType, fileName } = await req.json();
 
     if (!audioBase64) {
-      return new Response(JSON.stringify({ error: "Arquivo de áudio/vídeo é obrigatório" }), {
+      return new Response(JSON.stringify({ error: "Arquivo é obrigatório" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // Detect document vs audio/video
+    const isDocument = (mimeType || '').includes('pdf') ||
+                       (mimeType || '').includes('word') ||
+                       (mimeType || '').includes('officedocument') ||
+                       (fileName || '').match(/\.(pdf|docx?|rtf)$/i);
+
+    const systemContent = isDocument
+      ? "Você é um extrator de conteúdo profissional. Extraia todo o texto do documento fornecido preservando a estrutura (títulos, parágrafos, listas). Retorne APENAS o conteúdo textual extraído, sem comentários ou formatação markdown adicional."
+      : "Você é um transcritor profissional. Transcreva o áudio/vídeo fornecido com precisão total. Retorne APENAS a transcrição do conteúdo falado, sem comentários, formatação markdown ou explicações. Se houver múltiplos falantes, identifique-os como Falante 1, Falante 2, etc.";
+
+    const userText = isDocument
+      ? `Extraia todo o conteúdo textual do seguinte documento (${fileName || 'document'}). Retorne apenas o texto.`
+      : `Transcreva o seguinte arquivo de mídia (${fileName || 'audio'}). Retorne apenas o texto transcrito.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -29,21 +43,15 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          {
-            role: "system",
-            content: "Você é um transcritor profissional. Transcreva o áudio/vídeo fornecido com precisão total. Retorne APENAS a transcrição do conteúdo falado, sem comentários, formatação markdown ou explicações. Se houver múltiplos falantes, identifique-os como Falante 1, Falante 2, etc. Preserve pausas como '...' e indique sons relevantes entre colchetes [música], [aplausos], etc."
-          },
+          { role: "system", content: systemContent },
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: `Transcreva o seguinte arquivo de mídia (${fileName || 'audio'}). Retorne apenas o texto transcrito.`
-              },
+              { type: "text", text: userText },
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:${mimeType || 'audio/mpeg'};base64,${audioBase64}`
+                  url: `data:${mimeType || 'application/octet-stream'};base64,${audioBase64}`
                 }
               }
             ]

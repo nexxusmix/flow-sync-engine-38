@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
-import { useProjectStoryboards, COLOR_GRADINGS, PRODUCTION_TYPES, StoryboardScene } from "@/hooks/useProjectStoryboards";
+import { useProjectStoryboards, COLOR_GRADINGS, PRODUCTION_TYPES, StoryboardScene, ProjectContextData } from "@/hooks/useProjectStoryboards";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Sparkles, Loader2, Film, Camera, Sun, Palette, 
   ChevronDown, Copy, Check, Trash2, Eye, Plus, Clapperboard,
-  Mic, Upload, FileAudio
+  Mic, Upload, FileAudio, FileText, FolderSearch, Brain, 
+  FileUp, X, CheckCircle2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -40,7 +43,6 @@ export function StoryboardTab({ project }: StoryboardTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
@@ -48,7 +50,7 @@ export function StoryboardTab({ project }: StoryboardTabProps) {
             Storyboard IA
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Gere storyboards cinematográficos completos com IA
+            Motor inteligente de leitura e direção criativa do projeto
           </p>
         </div>
         <Button onClick={() => setShowForm(!showForm)} size="sm" className="gap-2">
@@ -57,7 +59,6 @@ export function StoryboardTab({ project }: StoryboardTabProps) {
         </Button>
       </div>
 
-      {/* Generate Form */}
       {showForm && (
         <StoryboardForm 
           project={project} 
@@ -66,14 +67,13 @@ export function StoryboardTab({ project }: StoryboardTabProps) {
         />
       )}
 
-      {/* Storyboards List */}
       {storyboards.length === 0 && !showForm ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Film className="w-12 h-12 text-muted-foreground/40 mb-4" />
             <h4 className="font-medium text-foreground">Nenhum storyboard</h4>
             <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Crie seu primeiro storyboard a partir de um roteiro, documento ou texto.
+              Crie seu primeiro storyboard a partir de roteiros, arquivos do projeto ou contexto completo.
             </p>
             <Button onClick={() => setShowForm(true)} variant="outline" size="sm" className="mt-4 gap-2">
               <Sparkles className="w-4 h-4" />
@@ -98,59 +98,69 @@ export function StoryboardTab({ project }: StoryboardTabProps) {
   );
 }
 
+// ───── FORM ─────
 function StoryboardForm({ project, onGenerate, onClose }: {
   project: ProjectWithStages;
   onGenerate: ReturnType<typeof useProjectStoryboards>["generate"];
   onClose: () => void;
 }) {
-  const [sourceType, setSourceType] = useState<string>("text");
+  const { deliverables, projectFiles, fetchProjectContext } = useProjectStoryboards(project.id);
   const [sourceText, setSourceText] = useState("");
   const [title, setTitle] = useState("");
   const [colorGrading, setColorGrading] = useState("Original neutro");
   const [objective, setObjective] = useState("");
+  const [deliverableId, setDeliverableId] = useState<string>("");
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [mediaFileName, setMediaFileName] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoadingContext, setIsLoadingContext] = useState(false);
+  const [contextLoaded, setContextLoaded] = useState(false);
+  const [projectContext, setProjectContext] = useState<ProjectContextData | null>(null);
+  const [uploadedDocs, setUploadedDocs] = useState<{ name: string; content: string }[]>([]);
+  const [selectedProjectFiles, setSelectedProjectFiles] = useState<string[]>([]);
+  const [showFilesBrowser, setShowFilesBrowser] = useState(false);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-load project context
+  const handleLoadContext = async () => {
+    setIsLoadingContext(true);
+    try {
+      const ctx = await fetchProjectContext();
+      setProjectContext(ctx);
+      setContextLoaded(true);
+      toast.success("Contexto do projeto carregado!");
+    } catch {
+      toast.error("Erro ao carregar contexto do projeto");
+    } finally {
+      setIsLoadingContext(false);
+    }
+  };
+
+  // Transcribe audio/video
   const handleTranscribe = async (file: File) => {
     if (file.size > 20 * 1024 * 1024) {
       toast.error("Arquivo muito grande. Máximo 20MB.");
       return;
     }
-
     setIsTranscribing(true);
-    setMediaFileName(file.name);
     toast.info(`Transcrevendo "${file.name}"...`);
-
     try {
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-
       const { data, error } = await supabase.functions.invoke("transcribe-media", {
-        body: {
-          audioBase64: base64,
-          mimeType: file.type,
-          fileName: file.name,
-        },
+        body: { audioBase64: base64, mimeType: file.type, fileName: file.name },
       });
-
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
-
       const transcription = data?.transcription || "";
       if (!transcription.trim()) {
-        toast.warning("Nenhum conteúdo detectado no áudio/vídeo.");
+        toast.warning("Nenhum conteúdo detectado.");
         return;
       }
-
-      setSourceText((prev) => prev ? `${prev}\n\n--- Transcrição de ${file.name} ---\n${transcription}` : transcription);
+      setSourceText(prev => prev ? `${prev}\n\n--- Transcrição de ${file.name} ---\n${transcription}` : transcription);
       toast.success("Transcrição concluída!");
     } catch (err: any) {
       toast.error(err.message || "Erro ao transcrever");
@@ -159,25 +169,102 @@ function StoryboardForm({ project, onGenerate, onClose }: {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleTranscribe(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  // Upload documents (PDF, DOCX, TXT, RTF)
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      if (file.size > 25 * 1024 * 1024) {
+        toast.error(`"${file.name}" excede 25MB.`);
+        continue;
+      }
+      // For TXT/RTF, read as text
+      if (file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".rtf")) {
+        const text = await file.text();
+        setUploadedDocs(prev => [...prev, { name: file.name, content: text }]);
+        setSourceText(prev => prev ? `${prev}\n\n--- ${file.name} ---\n${text}` : text);
+        toast.success(`"${file.name}" carregado.`);
+      } else {
+        // For PDF/DOCX, read as base64 and send to transcribe-media (Gemini can parse docs)
+        toast.info(`Processando "${file.name}"...`);
+        try {
+          const reader = new FileReader();
+          const base64 = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve((reader.result as string).split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const { data, error } = await supabase.functions.invoke("transcribe-media", {
+            body: { audioBase64: base64, mimeType: file.type, fileName: file.name },
+          });
+          if (error) throw new Error(error.message);
+          if (data?.error) throw new Error(data.error);
+          const extracted = data?.transcription || "";
+          if (extracted.trim()) {
+            setUploadedDocs(prev => [...prev, { name: file.name, content: extracted }]);
+            setSourceText(prev => prev ? `${prev}\n\n--- ${file.name} ---\n${extracted}` : extracted);
+            toast.success(`"${file.name}" processado.`);
+          } else {
+            toast.warning(`Nenhum conteúdo extraído de "${file.name}".`);
+          }
+        } catch (err: any) {
+          toast.error(`Erro ao processar "${file.name}": ${err.message}`);
+        }
+      }
+    }
+    if (docInputRef.current) docInputRef.current.value = "";
   };
 
-  const handleSubmit = () => {
-    if (!sourceText.trim()) {
-      toast.error("Insira o texto/roteiro para processar");
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleTranscribe(file);
+    if (mediaInputRef.current) mediaInputRef.current.value = "";
+  };
+
+  const handleToggleProjectFile = (fileId: string) => {
+    setSelectedProjectFiles(prev =>
+      prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!sourceText.trim() && !contextLoaded) {
+      toast.error("Insira texto, upload de arquivo ou carregue o contexto do projeto");
       return;
     }
+
+    // Build file summaries from selected project files
+    const fileSummaries = selectedProjectFiles.map(fid => {
+      const pf = projectFiles.find((f: any) => f.id === fid);
+      return pf ? { name: pf.name, summary: `Arquivo do projeto: ${pf.name} (${pf.folder})` } : null;
+    }).filter(Boolean);
+
+    // Merge uploaded doc summaries
+    const allFileSummaries = [
+      ...fileSummaries,
+      ...uploadedDocs.map(d => ({ name: d.name, summary: d.content.substring(0, 2000) })),
+    ];
+
+    const finalContext: ProjectContextData = projectContext 
+      ? { ...projectContext, fileSummaries: allFileSummaries as any }
+      : { hasContext: allFileSummaries.length > 0, fileSummaries: allFileSummaries as any };
+
+    // Set deliverable if selected
+    if (deliverableId) {
+      const del = deliverables.find((d: any) => d.id === deliverableId);
+      if (del) finalContext.deliverable = del;
+    }
+
     onGenerate.mutate({
       sourceText,
       title: title || `Storyboard - ${project.name}`,
-      sourceType,
+      sourceType: uploadedDocs.length > 0 ? "upload" : contextLoaded ? "project_context" : "text",
       colorGrading,
       projectName: project.name,
-      clientName: (project as any).account_name,
+      clientName: (project as any).client_name,
       objective,
+      deliverableId: deliverableId || undefined,
+      sourceFiles: allFileSummaries,
+      projectContext: finalContext,
     });
     onClose();
   };
@@ -187,33 +274,35 @@ function StoryboardForm({ project, onGenerate, onClose }: {
       <CardHeader className="pb-4">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
-          Gerar Storyboard com IA
+          Gerar Storyboard com IA — Motor Inteligente
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent className="space-y-5">
+        {/* Row 1: Project info + deliverable */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label>Título</Label>
-            <Input 
-              placeholder={`Storyboard - ${project.name}`} 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-            />
+            <Label>Projeto</Label>
+            <Input value={project.name} disabled className="bg-muted/50" />
           </div>
           <div className="space-y-2">
-            <Label>Fonte</Label>
-            <Select value={sourceType} onValueChange={setSourceType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Label>Entrega / Subprojeto</Label>
+            <Select value={deliverableId} onValueChange={setDeliverableId}>
+              <SelectTrigger><SelectValue placeholder="Selecionar (opcional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="text">Colar texto</SelectItem>
-                <SelectItem value="script">Roteiro existente</SelectItem>
-                <SelectItem value="file">Arquivo do projeto</SelectItem>
-                <SelectItem value="transcription">Transcrição de áudio/vídeo</SelectItem>
+                <SelectItem value="">Nenhum</SelectItem>
+                {deliverables.map((d: any) => (
+                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label>Título</Label>
+            <Input placeholder={`Storyboard - ${project.name}`} value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
         </div>
 
+        {/* Row 2: Color + Objective */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Color Grading Global</Label>
@@ -227,79 +316,166 @@ function StoryboardForm({ project, onGenerate, onClose }: {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Objetivo (opcional)</Label>
-            <Input 
-              placeholder="Ex: Vídeo institucional, Reel Instagram..." 
-              value={objective} 
-              onChange={(e) => setObjective(e.target.value)} 
-            />
+            <Label>Objetivo</Label>
+            <Input placeholder="Ex: Vídeo institucional, Reel Instagram..." value={objective} onChange={(e) => setObjective(e.target.value)} />
           </div>
         </div>
 
-        {/* Transcription Upload */}
+        <Separator />
+
+        {/* Context Engine */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Brain className="w-4 h-4 text-primary" />
+            Motor de Contexto
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            A IA analisa automaticamente roteiros, briefings, escopo, contrato e arquivos do projeto.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={contextLoaded ? "default" : "outline"}
+              size="sm"
+              onClick={handleLoadContext}
+              disabled={isLoadingContext}
+              className="gap-2"
+            >
+              {isLoadingContext ? <Loader2 className="w-4 h-4 animate-spin" /> : contextLoaded ? <CheckCircle2 className="w-4 h-4" /> : <Brain className="w-4 h-4" />}
+              {isLoadingContext ? "Carregando..." : contextLoaded ? "Contexto carregado" : "Buscar contexto do projeto"}
+            </Button>
+
+            <Dialog open={showFilesBrowser} onOpenChange={setShowFilesBrowser}>
+              <DialogTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="gap-2">
+                  <FolderSearch className="w-4 h-4" />
+                  Pesquisar arquivos do projeto
+                  {selectedProjectFiles.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 text-xs">{selectedProjectFiles.length}</Badge>
+                  )}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Arquivos do Projeto</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[400px]">
+                  {projectFiles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum arquivo encontrado.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {projectFiles.map((f: any) => (
+                        <label key={f.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
+                          <Checkbox
+                            checked={selectedProjectFiles.includes(f.id)}
+                            onCheckedChange={() => handleToggleProjectFile(f.id)}
+                          />
+                          <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{f.name}</p>
+                            <p className="text-xs text-muted-foreground">{f.folder} · {f.file_type || 'arquivo'}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={() => setShowFilesBrowser(false)}>
+                    Confirmar ({selectedProjectFiles.length} selecionados)
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Context summary badges */}
+          {contextLoaded && projectContext && (
+            <div className="flex flex-wrap gap-1.5">
+              {projectContext.project && <Badge variant="outline" className="text-xs">Projeto ✓</Badge>}
+              {projectContext.contract && <Badge variant="outline" className="text-xs">Contrato ✓</Badge>}
+              {(projectContext.scripts?.length ?? 0) > 0 && <Badge variant="outline" className="text-xs">Roteiros ({projectContext.scripts?.length})</Badge>}
+              {(projectContext.knowledgeArticles?.length ?? 0) > 0 && <Badge variant="outline" className="text-xs">Artigos ({projectContext.knowledgeArticles?.length})</Badge>}
+              {(projectContext.contentItems?.length ?? 0) > 0 && <Badge variant="outline" className="text-xs">Conteúdos ({projectContext.contentItems?.length})</Badge>}
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Document Upload */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <FileUp className="w-3.5 h-3.5" />
+            Fontes adicionais (PDF, DOCX, TXT, RTF)
+          </Label>
+          <div className="flex items-center gap-2">
+            <input
+              ref={docInputRef}
+              type="file"
+              accept=".pdf,.docx,.doc,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/rtf"
+              multiple
+              onChange={handleDocUpload}
+              className="hidden"
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => docInputRef.current?.click()} className="gap-2">
+              <FileUp className="w-4 h-4" />
+              Upload de documentos
+            </Button>
+          </div>
+          {uploadedDocs.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {uploadedDocs.map((doc, i) => (
+                <Badge key={i} variant="secondary" className="gap-1 text-xs">
+                  <FileText className="w-3 h-3" />
+                  {doc.name}
+                  <button onClick={() => setUploadedDocs(prev => prev.filter((_, idx) => idx !== i))} className="ml-1">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">Máximo 25MB por arquivo. Conteúdo extraído automaticamente.</p>
+        </div>
+
+        {/* Audio/Video transcription */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Mic className="w-3.5 h-3.5" />
             Transcrever Áudio / Vídeo
           </Label>
           <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*,video/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isTranscribing}
-              className="gap-2"
-            >
-              {isTranscribing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Upload className="w-4 h-4" />
-              )}
+            <input ref={mediaInputRef} type="file" accept="audio/*,video/*" onChange={handleMediaChange} className="hidden" />
+            <Button type="button" variant="outline" size="sm" onClick={() => mediaInputRef.current?.click()} disabled={isTranscribing} className="gap-2">
+              {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               {isTranscribing ? "Transcrevendo..." : "Enviar áudio/vídeo"}
             </Button>
-            {mediaFileName && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <FileAudio className="w-3 h-3" />
-                {mediaFileName}
-              </span>
-            )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            MP3, MP4, WAV, M4A, WebM — máx 20MB. A transcrição será adicionada ao texto abaixo.
-          </p>
+          <p className="text-xs text-muted-foreground">MP3, MP4, WAV, M4A, WebM — máx 20MB</p>
         </div>
 
+        {/* Text area */}
         <div className="space-y-2">
-          <Label>Texto / Roteiro</Label>
-          <Textarea 
-            placeholder="Cole aqui o roteiro, briefing ou texto que será transformado em storyboard... Ou use o botão acima para transcrever um áudio/vídeo."
+          <Label>Texto / Roteiro / Conteúdo Agregado</Label>
+          <Textarea
+            placeholder="Cole aqui texto adicional ou use os recursos acima para agregar conteúdo automaticamente..."
             value={sourceText}
             onChange={(e) => setSourceText(e.target.value)}
-            className="min-h-[160px]"
+            className="min-h-[140px]"
           />
         </div>
 
+        {/* Actions */}
         <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={onClose}>Cancelar</Button>
-          <Button 
-            size="sm" 
-            onClick={handleSubmit} 
+          <Button
+            size="sm"
+            onClick={handleSubmit}
             disabled={onGenerate.isPending || isTranscribing}
             className="gap-2"
           >
-            {onGenerate.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
+            {onGenerate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {onGenerate.isPending ? "Processando..." : "Processar com IA"}
           </Button>
         </div>
@@ -308,6 +484,7 @@ function StoryboardForm({ project, onGenerate, onClose }: {
   );
 }
 
+// ───── STORYBOARD CARD ─────
 function StoryboardCard({ storyboard, isSelected, onSelect, onDelete }: {
   storyboard: any;
   isSelected: boolean;
@@ -381,8 +558,7 @@ function SceneCard({ scene }: { scene: any }) {
   const [showPrompt, setShowPrompt] = useState(false);
 
   const copyPrompt = () => {
-    const prompt = scene.ai_prompt || "";
-    navigator.clipboard.writeText(prompt);
+    navigator.clipboard.writeText(scene.ai_prompt || "");
     setCopied(true);
     toast.success("Prompt copiado!");
     setTimeout(() => setCopied(false), 2000);
@@ -391,12 +567,9 @@ function SceneCard({ scene }: { scene: any }) {
   return (
     <Card className="bg-muted/20 border-border/50">
       <CardContent className="p-4 space-y-3">
-        {/* Scene Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs font-mono">
-              Cena {scene.scene_number}
-            </Badge>
+            <Badge variant="secondary" className="text-xs font-mono">Cena {scene.scene_number}</Badge>
             <span className="text-sm font-medium">{scene.title}</span>
           </div>
           <div className="flex gap-1">
@@ -409,17 +582,14 @@ function SceneCard({ scene }: { scene: any }) {
           </div>
         </div>
 
-        {/* Description */}
         <p className="text-sm text-muted-foreground">{scene.description}</p>
 
-        {/* Technical Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <TechBadge icon={Camera} label="Lente" value={scene.lens} />
           <TechBadge icon={Film} label="FPS" value={scene.fps} />
           <TechBadge icon={Camera} label="Movimento" value={scene.camera_movement} />
           <TechBadge icon={Sun} label="Luz" value={scene.lighting} />
         </div>
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <TechBadge icon={Palette} label="Mood" value={scene.mood} />
           <TechBadge icon={Palette} label="Color" value={scene.color_grading} />
@@ -427,7 +597,6 @@ function SceneCard({ scene }: { scene: any }) {
           <TechBadge icon={Camera} label="Direção" value={scene.direction?.substring(0, 40)} />
         </div>
 
-        {/* AI Prompt */}
         {showPrompt && scene.ai_prompt && (
           <div className="space-y-2 pt-2">
             <Separator />

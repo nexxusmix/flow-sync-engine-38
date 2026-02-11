@@ -3565,6 +3565,50 @@ export type Database = {
           },
         ]
       }
+      project_deliverables: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_deliverables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_files: {
         Row: {
           created_at: string | null
@@ -3923,8 +3967,10 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          deliverable_id: string | null
           id: string
           project_id: string
+          source_files: Json | null
           source_reference_id: string | null
           source_text: string | null
           source_type: string
@@ -3936,8 +3982,10 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          deliverable_id?: string | null
           id?: string
           project_id: string
+          source_files?: Json | null
           source_reference_id?: string | null
           source_text?: string | null
           source_type: string
@@ -3949,8 +3997,10 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          deliverable_id?: string | null
           id?: string
           project_id?: string
+          source_files?: Json | null
           source_reference_id?: string | null
           source_text?: string | null
           source_type?: string
@@ -3960,6 +4010,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_storyboards_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "project_deliverables"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "project_storyboards_project_id_fkey"
             columns: ["project_id"]
