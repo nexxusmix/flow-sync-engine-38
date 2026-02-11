@@ -114,7 +114,7 @@
   html {
     scroll-behavior: smooth;
     perspective: 1500px;
-    font-size: 87.5%; /* 14px base - improved readability */
+    font-size: 100%; /* 16px base - improved readability */
     overflow: hidden;
     height: 100vh;
   }

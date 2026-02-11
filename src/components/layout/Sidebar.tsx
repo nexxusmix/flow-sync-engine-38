@@ -48,20 +48,20 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     <motion.aside 
       className={cn(
         "fixed left-0 top-0 z-40 h-screen bg-[#030303] border-r border-white/[0.04] flex flex-col",
-        collapsed ? "w-14" : "w-56"
+        collapsed ? "w-[72px]" : "w-[280px]"
       )}
       initial={false}
-      animate={{ width: collapsed ? 56 : 224 }}
+      animate={{ width: collapsed ? 72 : 280 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
       {/* Logo & Toggle */}
-      <div className="flex h-14 items-center justify-between px-3 border-b border-white/[0.04]">
+      <div className="flex h-16 items-center justify-between px-4 border-b border-white/[0.04]">
         <AnimatePresence mode="wait">
           {!collapsed && (
             <motion.img 
               src={squadHubLogo} 
               alt="SQUAD Hub" 
-              className="h-6 w-auto object-contain"
+              className="h-7 w-auto object-contain"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -106,7 +106,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <span 
                   className={cn(
-                    "material-symbols-outlined text-lg",
+                    "material-symbols-outlined text-xl",
                     isActive ? "text-black" : "text-muted-foreground/70 group-hover:text-primary"
                   )}
                 >
@@ -121,13 +121,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       exit={{ opacity: 0, x: -8 }}
                       transition={{ duration: 0.15 }}
                     >
-                      <span className="text-[11px] font-light uppercase tracking-wider flex-1">
+                      <span className="text-[13px] font-light uppercase tracking-wider flex-1">
                         {item.name}
                       </span>
                       {item.badge && (
                         <span 
                           className={cn(
-                            "flex items-center justify-center h-4 min-w-4 px-1 rounded text-[9px] font-light",
+                            "flex items-center justify-center h-5 min-w-5 px-1.5 rounded text-[10px] font-light",
                             isActive ? "bg-black/10 text-black" : "bg-primary/15 text-primary"
                           )}
                         >
@@ -178,7 +178,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <AnimatePresence mode="wait">
                   {!collapsed && (
                     <motion.span 
-                      className="text-[11px] font-light uppercase tracking-wider"
+                      className="text-[13px] font-light uppercase tracking-wider"
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -8 }}
@@ -208,7 +208,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           )}
         >
           <div 
-            className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center text-primary text-[10px] font-light flex-shrink-0"
+            className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center text-primary text-[11px] font-light flex-shrink-0"
           >
             RS
           </div>
@@ -221,8 +221,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.15 }}
               >
-                <p className="text-[10px] text-foreground/90 font-light uppercase truncate tracking-wider">Rodrigo S.</p>
-                <p className="text-[9px] text-muted-foreground/60 font-light uppercase tracking-wider">Admin Root</p>
+                <p className="text-[11px] text-foreground/90 font-light uppercase truncate tracking-wider">Rodrigo S.</p>
+                <p className="text-[10px] text-muted-foreground/60 font-light uppercase tracking-wider">Admin Root</p>
               </motion.div>
             )}
           </AnimatePresence>
