@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.generate-contract-milestones]
 verify_jwt = false
+
+[functions.generate-template-fields]
+verify_jwt = false

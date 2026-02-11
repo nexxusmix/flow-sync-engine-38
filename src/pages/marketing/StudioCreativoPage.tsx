@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { StudioBriefForm, StudioOutputTabs, StudioApplyActions } from "@/components/studio";
+import { TemplateStudioPanel } from "@/components/studio/TemplateStudioPanel";
 import { useExportPdf } from "@/hooks/useExportPdf";
 
 export default function StudioCreativoPage() {
@@ -513,7 +514,7 @@ ${formData.inputText}
     <DashboardLayout title="Studio Criativo">
       <div className="h-[calc(100vh-120px)] flex gap-6">
         {/* Left Column - Create/Select Brief */}
-        <div className="w-[380px] flex flex-col gap-4">
+        <div className="w-[380px] flex flex-col gap-4 overflow-hidden">
           {/* Create New Brief */}
           <StudioBriefForm
             brandKits={brandKits}
@@ -593,11 +594,11 @@ ${formData.inputText}
           </Card>
         </div>
 
-        {/* Right Column - Preview */}
+        {/* Center Column - Preview */}
         <div className="flex-1 overflow-hidden">
           {selectedBrief ? (
             <Card className="bg-card/50 backdrop-blur border-border/50 h-full overflow-hidden flex flex-col">
-              {/* Header */}
+              {/* ... keep existing code */}
               <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
                 <div>
                   <h2 className="font-semibold text-foreground">{selectedBrief.title}</h2>
@@ -657,7 +658,6 @@ ${formData.inputText}
                 </div>
               </div>
 
-              {/* Tabs */}
               <div className="flex-1 overflow-hidden">
                 <StudioOutputTabs
                   concept={concept}
@@ -683,6 +683,11 @@ ${formData.inputText}
               </div>
             </Card>
           )}
+        </div>
+
+        {/* Right Column - Templates & Brand Kit */}
+        <div className="w-[340px] flex-shrink-0">
+          <TemplateStudioPanel brandKits={brandKits} />
         </div>
       </div>
     </DashboardLayout>
