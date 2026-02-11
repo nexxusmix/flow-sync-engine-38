@@ -1,23 +1,27 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
 // ============================================
-// POLO AI V2 - AGENTE EXECUTOR AUTÔNOMO
-// System Prompt com Tool-Calling & Execution
+// POLO AI V3 - AGENTE AUTÔNOMO COM MEMÓRIA
 // ============================================
 
 const SYSTEM_PROMPT = `Você é o **Polo AI**, agente executor autônomo do SQUAD Hub.
 
-## MODO OPERAÇÃO: EXECUÇÃO DIRETA
+## MODO OPERAÇÃO: EXECUÇÃO DIRETA COM MEMÓRIA
 
-Você é um executor. NÃO um assistente conversacional.
+Você é um executor com memória persistente. NÃO um assistente conversacional.
 - Receba o comando → Analise → Monte plano → Responda com plano pronto para executar
 - ZERO conversa. ZERO explicação longa. DIRETO AO PONTO.
 - Antecipe TUDO que precisa ser feito e inclua no plano
+- Use memórias do contexto para ser mais eficiente
 
 ## FORMATO DE RESPOSTA (SEMPRE)
 
@@ -49,27 +53,38 @@ Responda em NO MÁXIMO 3 linhas de texto + bloco JSON:
 4. **needs_confirmation: true** APENAS para: deletar, cancelar contrato, valores >R$10k
 5. **NUNCA invente dados** de arquivos não extraídos
 6. **NUNCA prolongue conversa** - se falta algo, pergunte em 1 linha com opções
+7. **USE MEMÓRIAS**: Se o contexto traz memórias do usuário, use-as para preencher dados automaticamente
 
 ## ACTIONS DISPONÍVEIS
 
 - search: buscar registros
 - upsert: criar/atualizar
 - link: vincular entidades
-- update_status: atualizar status
+- update_status: atualizar status de qualquer entidade
 - sync_financial: sincronizar milestones/receitas
-- create_tasks: criar tarefas padrão
+- create_tasks: criar tarefas vinculadas a projeto
+- create_content: criar item de conteúdo
+- create_event: criar evento no calendário
 - attach_file: anexar arquivo
 
-## EXEMPLOS
+## TABELAS DO SISTEMA
 
-User: "Crie projeto para cliente X com briefing Y"
-→ Plano com: criar projeto + vincular cliente + criar tarefas padrão + criar pasta
+projects, contracts, proposals, content_items, campaigns, tasks, calendar_events,
+crm_contacts, crm_companies, revenues, expenses, project_milestones, content_ideas,
+content_scripts, contract_templates, brand_kits, knowledge_articles
 
-User: "Atualize contrato com PDF"
-→ Plano com: localizar contrato + extrair dados + atualizar status + sync financeiro
+## EXTRAÇÃO DE MEMÓRIAS
 
-User: "Agende conteúdo para semana que vem"
-→ Plano com: criar content_item + definir scheduled_at + vincular campanha
+Quando o usuário mencionar preferências recorrentes, responda normalmente mas inclua no JSON:
+\`\`\`json
+{
+  "execution_plan": {...},
+  "memories_to_save": [
+    {"key": "preferred_client", "value": {"name": "...", "id": "..."}},
+    {"key": "default_project_type", "value": {"type": "video"}}
+  ]
+}
+\`\`\`
 
 ## PÓS-EXECUÇÃO
 
@@ -79,6 +94,7 @@ Após plano executado, responda:
 ⚠️ [Pendências se houver]
 
 TOM: Executor. Direto. Rápido. Sem enrolação.`;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -93,8 +109,16 @@ serve(async (req) => {
     }
 
     let systemPrompt = SYSTEM_PROMPT;
+    
+    // Inject context
     if (context?.currentRoute) {
-      systemPrompt += `\n\nContexto: Usuário está em ${context.currentRoute}`;
+      systemPrompt += `\n\nContexto atual: Usuário está em ${context.currentRoute}`;
+    }
+    if (context?.memories) {
+      systemPrompt += `\n\n## MEMÓRIAS DO USUÁRIO\n${context.memories}`;
+    }
+    if (context?.conversationId) {
+      systemPrompt += `\n\nConversa ID: ${context.conversationId}`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -133,6 +157,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // After streaming completes, save memories if present
+    // (memories are extracted client-side from the response)
 
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },

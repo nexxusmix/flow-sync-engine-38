@@ -1,46 +1,45 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
-import { useAgentExecution } from "@/hooks/useAgentExecution";
+import { useAgentChat } from "@/hooks/useAgentChat";
 import { ExecutionPlanView } from "./ExecutionPlanView";
-import type { ExecutionPlan, ActionResult, AttachmentInfo } from "@/types/agent";
+import type { AttachmentInfo } from "@/types/agent";
+import { cn } from "@/lib/utils";
 
 interface UploadedFile {
   name: string;
   type: string;
   content?: string;
   size: number;
-  isProcessing?: boolean;
-}
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  files?: UploadedFile[];
-  plan?: ExecutionPlan;
-  results?: ActionResult[];
-  runId?: string;
-  needsConfirmation?: boolean;
 }
 
 interface AIAssistantProps {
   onClose: () => void;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/polo-ai-chat`;
-
 export function AIAssistant({ onClose }: AIAssistantProps) {
   const location = useLocation();
-  const { createRun, updateRunPlan, executePlan, isExecuting } = useAgentExecution();
-  
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "**Polo AI ativo.** Diga o que precisa → Receba plano → Clique executar." }
-  ]);
+  const {
+    conversations,
+    activeConversationId,
+    messages,
+    memories,
+    isLoading,
+    isExecuting,
+    sendMessage,
+    selectConversation,
+    createConversation,
+    deleteConversation,
+    handleExecutePlan,
+    cancelStream,
+    setMessages,
+  } = useAgentChat();
+
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,318 +49,58 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
     }
   }, [messages]);
 
-  const readFileAsText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  const readFileAsText = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
       reader.readAsText(file);
     });
-  };
-
-  const readFileAsBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     setIsProcessingFiles(true);
     const newFiles: UploadedFile[] = [];
 
     for (const file of Array.from(files)) {
-      const fileInfo: UploadedFile = {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        isProcessing: true,
-      };
-
-      // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         toast.error(`Arquivo ${file.name} muito grande (máx 10MB)`);
         continue;
       }
-
       try {
-        // Process based on file type
-        if (file.type.startsWith('text/') || 
-            file.name.endsWith('.json') || 
-            file.name.endsWith('.csv') ||
-            file.name.endsWith('.md') ||
-            file.name.endsWith('.txt')) {
-          fileInfo.content = await readFileAsText(file);
-        } else if (file.type === 'application/pdf' || 
-                   file.type.includes('word') ||
-                   file.type.includes('spreadsheet') ||
-                   file.type.includes('excel')) {
-          // For complex documents, read as base64 for potential processing
-          fileInfo.content = `[Arquivo binário: ${file.name}] - Tipo: ${file.type}`;
-        } else if (file.type.startsWith('image/')) {
-          const base64 = await readFileAsBase64(file);
-          fileInfo.content = `[Imagem: ${file.name}]\nBase64 preview disponível para análise visual.`;
+        let content: string | undefined;
+        if (file.type.startsWith('text/') || /\.(json|csv|md|txt)$/.test(file.name)) {
+          content = await readFileAsText(file);
         } else {
-          fileInfo.content = `[Arquivo: ${file.name}] - Tipo: ${file.type}`;
+          content = `[Arquivo: ${file.name}] - Tipo: ${file.type}`;
         }
-
-        fileInfo.isProcessing = false;
-        newFiles.push(fileInfo);
-      } catch (error) {
-        console.error(`Error processing file ${file.name}:`, error);
+        newFiles.push({ name: file.name, type: file.type, size: file.size, content });
+      } catch {
         toast.error(`Erro ao processar ${file.name}`);
       }
     }
 
     setUploadedFiles(prev => [...prev, ...newFiles]);
     setIsProcessingFiles(false);
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-
-    if (newFiles.length > 0) {
-      toast.success(`${newFiles.length} arquivo(s) anexado(s)`);
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (newFiles.length > 0) toast.success(`${newFiles.length} arquivo(s) anexado(s)`);
   };
 
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const streamChat = async (userMessages: Message[]) => {
-    const context = {
-      currentRoute: location.pathname,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Include file contents in the message
-    const processedMessages = userMessages.map(m => {
-      let content = m.content;
-      if (m.files && m.files.length > 0) {
-        const fileContents = m.files.map(f => 
-          `\n\n---\n📎 **Arquivo: ${f.name}** (${(f.size / 1024).toFixed(1)}KB)\n${f.content || '[Conteúdo não disponível]'}\n---`
-        ).join('');
-        content = content + fileContents;
-      }
-      return { role: m.role, content };
-    });
-
-    const resp = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({ 
-        messages: processedMessages,
-        context 
-      }),
-    });
-
-    if (!resp.ok) {
-      const errorData = await resp.json().catch(() => ({}));
-      if (resp.status === 429) {
-        toast.error("Limite de requisições excedido. Aguarde alguns segundos.");
-        throw new Error("Rate limited");
-      }
-      if (resp.status === 402) {
-        toast.error("Créditos de IA insuficientes.");
-        throw new Error("Payment required");
-      }
-      throw new Error(errorData.error || "Failed to start stream");
-    }
-
-    if (!resp.body) throw new Error("No response body");
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let assistantContent = "";
-
-    // Add empty assistant message
-    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") break;
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            assistantContent += content;
-            setMessages(prev => {
-              const newMessages = [...prev];
-              newMessages[newMessages.length - 1] = { role: 'assistant', content: assistantContent };
-              return newMessages;
-            });
-          }
-        } catch {
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
-
-    // Final flush
-    if (textBuffer.trim()) {
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw) continue;
-        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-        if (raw.startsWith(":") || raw.trim() === "") continue;
-        if (!raw.startsWith("data: ")) continue;
-        const jsonStr = raw.slice(6).trim();
-        if (jsonStr === "[DONE]") continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            assistantContent += content;
-            setMessages(prev => {
-              const newMessages = [...prev];
-              newMessages[newMessages.length - 1] = { role: 'assistant', content: assistantContent };
-              return newMessages;
-            });
-          }
-        } catch { /* ignore */ }
-      }
-    }
-  };
-
-  // Parse execution plan from AI response
-  const parseExecutionPlan = useCallback((content: string): { text: string; plan: ExecutionPlan | null } => {
-    const planMatch = content.match(/```json\s*\n?\s*(\{[\s\S]*?"execution_plan"[\s\S]*?\})\s*\n?\s*```/);
-    
-    if (planMatch) {
-      try {
-        const parsed = JSON.parse(planMatch[1]);
-        const plan = parsed.execution_plan as ExecutionPlan;
-        const textWithoutPlan = content.replace(planMatch[0], '').trim();
-        return { text: textWithoutPlan, plan };
-      } catch {
-        return { text: content, plan: null };
-      }
-    }
-    
-    return { text: content, plan: null };
-  }, []);
-
-  // Handle execution of a plan
-  const handleExecutePlan = useCallback(async (messageIndex: number) => {
-    const message = messages[messageIndex];
-    if (!message.plan) return;
-
-    const runId = await createRun(
-      messages[messageIndex - 1]?.content || 'Execução via chat',
-      message.files?.map(f => ({ name: f.name, type: f.type, size: f.size, content: f.content })) || [],
-      {}
-    );
-
-    if (!runId) return;
-
-    await updateRunPlan(runId, message.plan);
-    
-    // Update message with runId
-    setMessages(prev => {
-      const newMessages = [...prev];
-      newMessages[messageIndex] = { ...newMessages[messageIndex], runId };
-      return newMessages;
-    });
-
-    // Execute the plan
-    const result = await executePlan(runId, message.plan);
-    
-    if (result) {
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[messageIndex] = { 
-          ...newMessages[messageIndex], 
-          results: result.actions,
-          needsConfirmation: false
-        };
-        return newMessages;
-      });
-      
-      if (result.errors.length === 0) {
-        toast.success('Execução concluída com sucesso!');
-      } else {
-        toast.warning(`Execução concluída com ${result.errors.length} erro(s)`);
-      }
-    }
-  }, [messages, createRun, updateRunPlan, executePlan]);
-
-  // Post-process assistant message to extract plan
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === 'assistant' && lastMessage.content && !lastMessage.plan) {
-      const { text, plan } = parseExecutionPlan(lastMessage.content);
-      if (plan) {
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            ...newMessages[newMessages.length - 1],
-            content: text,
-            plan,
-            needsConfirmation: plan.needs_confirmation
-          };
-          return newMessages;
-        });
-      }
-    }
-  }, [messages, parseExecutionPlan]);
+  const removeFile = (index: number) => setUploadedFiles(prev => prev.filter((_, i) => i !== index));
 
   const handleSend = async () => {
     if ((!input.trim() && uploadedFiles.length === 0) || isLoading) return;
-
-    const userMsg = input.trim() || "Analise os arquivos anexados.";
-    const newMessage: Message = { 
-      role: 'user', 
-      content: userMsg,
-      files: uploadedFiles.length > 0 ? [...uploadedFiles] : undefined
-    };
-    const newMessages: Message[] = [...messages, newMessage];
-    
-    setMessages(newMessages);
+    const text = input.trim() || 'Analise os arquivos anexados.';
+    const files: AttachmentInfo[] = uploadedFiles.map(f => ({
+      name: f.name,
+      type: f.type,
+      size: f.size,
+      content: f.content,
+    }));
     setInput('');
     setUploadedFiles([]);
-    setIsLoading(true);
-
-    try {
-      await streamChat(newMessages);
-    } catch (error) {
-      console.error("Chat error:", error);
-      if (!(error instanceof Error && (error.message === "Rate limited" || error.message === "Payment required"))) {
-        toast.error("Erro ao processar sua solicitação.");
-      }
-      // Remove empty assistant message on error
-      setMessages(prev => prev.filter(m => m.content !== ''));
-    } finally {
-      setIsLoading(false);
-    }
+    await sendMessage(text, files, location.pathname);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -377,177 +116,242 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
     return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
   };
 
+  const handleNewChat = async () => {
+    await createConversation();
+    setShowSidebar(false);
+  };
+
   return (
-    <div className="fixed bottom-32 right-8 z-50 w-full max-w-[420px] glass-card rounded-[2rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] overflow-hidden border border-border flex flex-col h-[560px]">
-      {/* Header */}
-      <div className="p-5 bg-card border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary">smart_toy</span>
-          </div>
-          <div>
-            <span className="font-black text-xs uppercase tracking-widest text-foreground">Polo AI</span>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Agente Executor</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="text-[9px] font-semibold text-green-500 uppercase">Online</span>
-          </div>
-          <button 
-            onClick={onClose} 
-            className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center transition-colors"
-          >
-            <span className="material-symbols-outlined text-muted-foreground hover:text-foreground">close</span>
-          </button>
-        </div>
-      </div>
+    <div className="fixed bottom-32 right-8 z-50 w-full max-w-[480px] glass-card rounded-[2rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] overflow-hidden border border-border flex h-[600px]">
       
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-            <div className={`max-w-[90%] px-4 py-3 rounded-2xl text-sm ${
-              msg.role === 'user' 
-                ? 'bg-foreground text-background font-medium' 
-                : 'bg-muted border border-border text-foreground'
-            }`}>
-              {msg.role === 'assistant' ? (
-                <div className="prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5">
-                  <ReactMarkdown>{msg.content || '...'}</ReactMarkdown>
-                </div>
-              ) : (
-                <div>
-                  <span>{msg.content}</span>
-                  {msg.files && msg.files.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {msg.files.map((f, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-1 text-[10px] bg-background/20 px-2 py-0.5 rounded">
-                          <span className="material-symbols-outlined text-xs">attach_file</span>
-                          {f.name}
-                        </span>
-                      ))}
-                    </div>
+      {/* Conversations Sidebar */}
+      {showSidebar && (
+        <div className="w-[200px] border-r border-border bg-card flex flex-col shrink-0">
+          <div className="p-3 border-b border-border">
+            <button
+              onClick={handleNewChat}
+              className="w-full py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity"
+            >
+              + Nova conversa
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {conversations.map(conv => (
+              <button
+                key={conv.id}
+                onClick={() => { selectConversation(conv.id); setShowSidebar(false); }}
+                className={cn(
+                  "w-full text-left px-3 py-2.5 text-xs border-b border-border/50 hover:bg-muted transition-colors group",
+                  activeConversationId === conv.id && "bg-muted"
+                )}
+              >
+                <p className="truncate font-medium text-foreground">{conv.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {new Date(conv.updated_at).toLocaleDateString('pt-BR')}
+                </p>
+              </button>
+            ))}
+            {conversations.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-6">Nenhuma conversa</p>
+            )}
+          </div>
+          {memories.length > 0 && (
+            <div className="p-2 border-t border-border">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider text-center">
+                🧠 {memories.length} memória{memories.length > 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main Chat */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <div className="p-4 bg-card border-b border-border flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center transition-colors"
+              title="Conversas"
+            >
+              <span className="material-symbols-outlined text-muted-foreground text-lg">
+                {showSidebar ? 'chevron_left' : 'menu'}
+              </span>
+            </button>
+            <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-sm">smart_toy</span>
+            </div>
+            <div>
+              <span className="font-black text-xs uppercase tracking-widest text-foreground">Polo AI</span>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Agente Autônomo</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[9px] font-semibold text-green-500 uppercase">Online</span>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center transition-colors">
+              <span className="material-symbols-outlined text-muted-foreground hover:text-foreground">close</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-primary text-2xl">auto_awesome</span>
+              </div>
+              <p className="text-sm font-semibold text-foreground">Polo AI pronto</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-[250px]">
+                Diga o que precisa → Receba plano → Execução automática ou com 1 clique.
+              </p>
+            </div>
+          )}
+
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div className={cn(
+                "max-w-[90%] px-4 py-3 rounded-2xl text-sm",
+                msg.role === 'user'
+                  ? 'bg-foreground text-background font-medium'
+                  : 'bg-muted border border-border text-foreground'
+              )}>
+                {msg.role === 'assistant' ? (
+                  <div className="prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5">
+                    <ReactMarkdown>{msg.content || '...'}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div>
+                    <span>{msg.content}</span>
+                    {msg.files && msg.files.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {msg.files.map((f, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1 text-[10px] bg-background/20 px-2 py-0.5 rounded">
+                            <span className="material-symbols-outlined text-xs">attach_file</span>
+                            {f.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Execution Plan */}
+              {msg.plan && (
+                <div className="max-w-[90%] mt-2">
+                  <ExecutionPlanView
+                    plan={msg.plan}
+                    results={msg.results}
+                    isExecuting={isExecuting && msg.runId !== undefined && !msg.results}
+                    needsConfirmation={msg.needsConfirmation}
+                    onConfirm={() => handleExecutePlan(i)}
+                    onCancel={() => {
+                      setMessages(prev => {
+                        const newMsgs = [...prev];
+                        newMsgs[i] = { ...newMsgs[i], needsConfirmation: false, plan: undefined };
+                        return newMsgs;
+                      });
+                    }}
+                  />
+                  {msg.plan && !msg.results && !isExecuting && !msg.needsConfirmation && (
+                    <button
+                      onClick={() => handleExecutePlan(i)}
+                      className="mt-3 w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+                    >
+                      <span className="material-symbols-outlined text-lg">bolt</span>
+                      EXECUTAR TUDO
+                    </button>
                   )}
                 </div>
               )}
             </div>
-            
-            {/* Execution Plan */}
-            {msg.plan && (
-              <div className="max-w-[90%] mt-2">
-                <ExecutionPlanView
-                  plan={msg.plan}
-                  results={msg.results}
-                  isExecuting={isExecuting && msg.runId !== undefined && !msg.results}
-                  needsConfirmation={msg.needsConfirmation}
-                  onConfirm={() => handleExecutePlan(i)}
-                  onCancel={() => {
-                    setMessages(prev => {
-                      const newMessages = [...prev];
-                      newMessages[i] = { ...newMessages[i], needsConfirmation: false, plan: undefined };
-                      return newMessages;
-                    });
-                  }}
-                />
-                {/* Execute button for plans without results */}
-                {msg.plan && !msg.results && !isExecuting && !msg.needsConfirmation && (
-                  <button
-                    onClick={() => handleExecutePlan(i)}
-                    className="mt-3 w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
-                  >
-                    <span className="material-symbols-outlined text-lg">bolt</span>
-                    EXECUTAR TUDO
-                  </button>
-                )}
+          ))}
+
+          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+            <div className="flex justify-start">
+              <div className="bg-muted border border-border px-4 py-3 rounded-2xl">
+                <span className="flex gap-1.5">
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                </span>
               </div>
-            )}
-          </div>
-        ))}
-        {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-          <div className="flex justify-start">
-            <div className="bg-muted border border-border px-4 py-3 rounded-2xl">
-              <span className="flex gap-1.5">
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Uploaded Files Preview */}
+        {uploadedFiles.length > 0 && (
+          <div className="px-4 py-2 border-t border-border bg-muted/50 shrink-0">
+            <div className="flex flex-wrap gap-2">
+              {uploadedFiles.map((file, idx) => (
+                <div key={idx} className="flex items-center gap-2 bg-card border border-border rounded-lg px-2 py-1 text-xs">
+                  <span className="material-symbols-outlined text-sm text-primary">
+                    {file.type.startsWith('image/') ? 'image' : file.type.includes('pdf') ? 'picture_as_pdf' : 'description'}
+                  </span>
+                  <span className="max-w-[100px] truncate">{file.name}</span>
+                  <span className="text-muted-foreground">{formatFileSize(file.size)}</span>
+                  <button onClick={() => removeFile(idx)} className="hover:text-destructive transition-colors">
+                    <span className="material-symbols-outlined text-sm">close</span>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
-      </div>
 
-      {/* Uploaded Files Preview */}
-      {uploadedFiles.length > 0 && (
-        <div className="px-4 py-2 border-t border-border bg-muted/50">
-          <div className="flex flex-wrap gap-2">
-            {uploadedFiles.map((file, idx) => (
-              <div 
-                key={idx} 
-                className="flex items-center gap-2 bg-card border border-border rounded-lg px-2 py-1 text-xs"
-              >
-                <span className="material-symbols-outlined text-sm text-primary">
-                  {file.type.startsWith('image/') ? 'image' : 
-                   file.type.includes('pdf') ? 'picture_as_pdf' : 
-                   file.type.includes('sheet') || file.type.includes('excel') ? 'table_chart' :
-                   'description'}
-                </span>
-                <span className="max-w-[100px] truncate">{file.name}</span>
-                <span className="text-muted-foreground">{formatFileSize(file.size)}</span>
-                <button 
-                  onClick={() => removeFile(idx)}
-                  className="hover:text-destructive transition-colors"
-                >
-                  <span className="material-symbols-outlined text-sm">close</span>
-                </button>
-              </div>
-            ))}
+        {/* Input */}
+        <div className="p-4 border-t border-border bg-card/80 shrink-0">
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".txt,.md,.json,.csv,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.webp"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || isProcessingFiles}
+              className="w-10 h-10 bg-muted border border-border rounded-xl flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-50 shrink-0"
+              title="Anexar arquivos"
+            >
+              {isProcessingFiles ? (
+                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              ) : (
+                <span className="material-symbols-outlined text-sm">attach_file</span>
+              )}
+            </button>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={uploadedFiles.length > 0 ? 'Descreva o que fazer com os arquivos...' : 'O que você precisa? Eu executo.'}
+              disabled={isLoading}
+              className="flex-1 bg-muted border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 placeholder:text-muted-foreground transition-colors disabled:opacity-50 min-w-0"
+            />
+            <button
+              onClick={isLoading ? cancelStream : handleSend}
+              disabled={!isLoading && !input.trim() && uploadedFiles.length === 0}
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0",
+                isLoading
+                  ? "bg-destructive text-destructive-foreground hover:opacity-90"
+                  : "bg-primary text-primary-foreground disabled:opacity-50 hover:scale-105 active:scale-95 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.5)]"
+              )}
+            >
+              <span className="material-symbols-outlined text-sm">
+                {isLoading ? 'stop' : 'bolt'}
+              </span>
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="p-4 border-t border-border bg-card/80">
-        <div className="flex gap-2">
-          {/* File Upload Button */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".txt,.md,.json,.csv,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.webp"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading || isProcessingFiles}
-            className="w-12 h-12 bg-muted border border-border rounded-xl flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-50"
-            title="Anexar arquivos"
-          >
-            {isProcessingFiles ? (
-              <span className="material-symbols-outlined animate-spin">progress_activity</span>
-            ) : (
-              <span className="material-symbols-outlined">attach_file</span>
-            )}
-          </button>
-          
-          <input 
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={uploadedFiles.length > 0 ? "Descreva o que fazer com os arquivos..." : "O que você precisa? Eu executo."}
-            disabled={isLoading}
-            className="flex-1 bg-muted border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 placeholder:text-muted-foreground transition-colors disabled:opacity-50"
-          />
-          <button 
-            onClick={handleSend}
-            disabled={isLoading || (!input.trim() && uploadedFiles.length === 0)}
-            className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center disabled:opacity-50 hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.5)]"
-          >
-            <span className="material-symbols-outlined">bolt</span>
-          </button>
         </div>
       </div>
     </div>
