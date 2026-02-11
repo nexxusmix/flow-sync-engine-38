@@ -1087,6 +1087,7 @@ export type Database = {
         Row: {
           ai_generated: boolean | null
           assets: Json | null
+          brand_kit_snapshot: Json | null
           campaign_id: string | null
           caption_long: string | null
           caption_short: string | null
@@ -1110,6 +1111,8 @@ export type Database = {
           scheduled_at: string | null
           script: string | null
           status: string | null
+          template_fields: Json | null
+          template_id: string | null
           title: string
           updated_at: string
           workspace_id: string
@@ -1117,6 +1120,7 @@ export type Database = {
         Insert: {
           ai_generated?: boolean | null
           assets?: Json | null
+          brand_kit_snapshot?: Json | null
           campaign_id?: string | null
           caption_long?: string | null
           caption_short?: string | null
@@ -1140,6 +1144,8 @@ export type Database = {
           scheduled_at?: string | null
           script?: string | null
           status?: string | null
+          template_fields?: Json | null
+          template_id?: string | null
           title: string
           updated_at?: string
           workspace_id?: string
@@ -1147,6 +1153,7 @@ export type Database = {
         Update: {
           ai_generated?: boolean | null
           assets?: Json | null
+          brand_kit_snapshot?: Json | null
           campaign_id?: string | null
           caption_long?: string | null
           caption_short?: string | null
@@ -1170,6 +1177,8 @@ export type Database = {
           scheduled_at?: string | null
           script?: string | null
           status?: string | null
+          template_fields?: Json | null
+          template_id?: string | null
           title?: string
           updated_at?: string
           workspace_id?: string
