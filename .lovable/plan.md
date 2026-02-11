@@ -1,35 +1,53 @@
 
 
-# Aumentar o tamanho geral da plataforma em 35%
+## Plan: Add pillar constraint and dependency rules to Polo AI system prompt
 
-## Problema atual
+### What changed and why
 
-A plataforma usa `font-size: 87.5%` (14px base) no `html` e tamanhos de texto muito pequenos espalhados por 130+ arquivos (`text-[9px]`, `text-[10px]`, `text-[11px]`). Isso torna a leitura difícil e a interface "apertada".
+Two errors persist in generated plans:
+- The AI invents pillar values (e.g. "Institucional", "Expectativa") that violate the `content_items_pillar_check` database constraint.
+- The AI uses literal placeholder strings like `"CONTRACT_UUID_FROM_STEP_1"` in `contractId`, which fail because the executor does not resolve cross-step references.
 
-## Estrategia
+### Changes (single file)
 
-Alterar individualmente 2.695 ocorrencias de tamanho em 130 arquivos seria arriscado e lento. A abordagem mais segura e eficiente:
+**File:** `supabase/functions/polo-ai-chat/index.ts`
 
-1. **Aumentar o `font-size` base do `html`** de `87.5%` (14px) para `118%` (~19px) -- isso escala automaticamente tudo que usa `rem`, `em` e unidades relativas.
+Two blocks will be **appended** to the existing `REGRAS CRITICAS PARA GERACAO DE PLANOS` section (after the `create_tasks` rule, around line 142). Nothing will be removed.
 
-2. **Aplicar `zoom: 1.35`** no container principal do conteudo (dentro do `DashboardLayout`, apos o sidebar) para escalar uniformemente todos os elementos fixos em pixels (`text-[11px]`, icones, paddings em `px`). O sidebar e header serao ajustados separadamente para manter a proporcao.
+---
 
-3. **Ajustar o sidebar** para acompanhar o novo tamanho -- aumentar a largura colapsada e expandida proporcionalmente.
+**Block 1 -- Pillar whitelist (after line ~142)**
 
-## Arquivos a modificar
+```
+### Valores validos para content_items.pillar (OBRIGATORIO)
+O campo "pillar" SO aceita estes valores: autoridade, bastidores, cases, oferta, prova_social, educacional.
+NUNCA use variantes como "Institucional", "Expectativa", "Branding", "Relacionamento" ou qualquer outro valor inventado.
+Se nao tiver certeza do pilar correto, use "educacional" como fallback seguro.
+```
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/index.css` | `font-size: 87.5%` para `100%` (16px base, mais legivel) |
-| `src/components/layout/DashboardLayout.tsx` | Aplicar `zoom: 1.2` no container `main` para escalar conteudo uniformemente |
-| `src/components/layout/Sidebar.tsx` | Aumentar larguras de `w-14`/`w-56` para `w-[72px]`/`w-[280px]`, aumentar tamanhos de texto e icones |
-| `src/components/layout/Header.tsx` | Aumentar altura e tamanhos de fonte |
+**Block 2 -- Dependency / placeholder prohibition (after Block 1)**
 
-## Detalhes tecnicos
+```
+### Proibicao de placeholders entre steps (OBRIGATORIO)
+E PROIBIDO usar placeholders literais no JSON (ex.: "CONTRACT_UUID_FROM_STEP_1", "ID_DO_STEP_ANTERIOR", "uuid-aqui").
+O executor NAO resolve referencias entre steps.
+- Se o plano incluir upsert contract E sync_financial no mesmo run: OMITA o step sync_financial.
+  Em vez disso, adicione ao step create_tasks uma task extra com title "Sincronizar financeiro do contrato (executar apos contrato criado)" e priority "high".
+- SOMENTE inclua sync_financial se o usuario fornecer explicitamente um contracts.id (UUID real) ja existente.
+```
 
-- A combinacao de `font-size: 100%` (de 87.5%) ja da +14% de aumento em tudo que usa rem
-- O `zoom: 1.2` no conteudo principal da +20% adicional nos elementos com tamanho fixo em px
-- Resultado combinado: ~35% maior visualmente
-- O `zoom` CSS e suportado em todos os browsers modernos e escala tudo (texto, bordas, espacamentos, icones) sem quebrar layouts
-- O sidebar fica fora do zoom para manter posicao fixa correta
+**Update to existing sync_financial section (lines 122-128):** Replace the current instruction "Se nao for possivel referenciar, omita o step sync_financial e instrua o usuario a executar depois" with clearer language that points to the new rule above, reinforcing that the replacement is a task, not a placeholder.
+
+---
+
+### What stays unchanged
+- `polo-ai-execute` -- no changes
+- Frontend (`AIAssistant.tsx`, `useAgentChat.tsx`) -- no changes
+- Database schema/constraints -- no changes
+- All other edge functions -- no changes
+
+### Expected outcome
+- New plans will never include invalid `pillar` values
+- New plans will never contain placeholder strings in `contractId`
+- When a contract is created in the same plan, `sync_financial` is replaced by a follow-up task
 
