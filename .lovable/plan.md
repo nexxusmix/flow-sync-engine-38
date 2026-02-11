@@ -1,190 +1,168 @@
 
-# Plano: Simplificar e Otimizar Funcionalidade de Revisões
+# Plano: Polo AI com Persistencia, Memoria e Execucao Autonoma Total
 
-## Diagnóstico dos Problemas Atuais
+## Diagnostico Atual
 
-### 1. Fluxo Confuso no Portal do Cliente
-- Cliente precisa navegar entre abas "Materiais" e "Revisões"
-- O botão "Revisar Agora" leva para a aba Materiais, mas para criar change requests precisa ir na aba Revisões
-- Formulário de revisão só aparece após expandir player de vídeo
-- Muitos cliques para uma ação simples
+### O que existe:
+- `AIAssistant.tsx`: Chat com streaming, parse de execution_plan, upload de arquivos
+- `polo-ai-chat`: Edge function que faz streaming via Lovable AI Gateway
+- `polo-ai-execute`: Edge function que executa planos (search, upsert, link, sync_financial, update_contract_status)
+- `agent_runs` / `agent_actions`: Tabelas de auditoria de execucoes
+- `ai_runs`: Tabela de auditoria de acoes de IA generica
 
-### 2. Duplicação de Funcionalidades
-- `PortalInlineComment` (na aba Materiais) permite comentar/aprovar/solicitar ajuste
-- `PortalRevisionsTab` tem formulário de "Nova Solicitação" separado
-- Cliente não sabe qual usar
-
-### 3. UX do Gestor Interno
-- Aba Revisões do projeto mostra comentários e change requests misturados
-- Sem indicação visual clara de qual material cada revisão se refere
-- Botão "Gerar Resumo IA" não funciona
-
-### 4. Falta de Contexto Visual
-- Comentários aparecem sem preview do material
-- Difícil entender o contexto do feedback
+### Problemas Criticos:
+1. **Zero persistencia**: Mensagens vivem em `useState` - fechar o chat perde TUDO
+2. **Zero memoria**: Cada conversa comeca do zero, sem contexto de conversas anteriores
+3. **Sem conversas multiplas**: Nao existe conceito de "sessoes" ou "threads"
+4. **Historico inacessivel**: `agent_runs` grava execucoes mas nao ha UI para consultar
+5. **Execucao limitada**: Apenas 5 tools disponiveis (search, upsert, link, update_contract_status, sync_financial) - faltam create_tasks, update_status, attach_file
+6. **Sem auto-execucao**: Planos low-risk ainda exigem clique manual em "EXECUTAR TUDO"
 
 ---
 
-## Solução: Interface Unificada e Simplificada
+## Solucao Completa
 
-### Princípios de Design
-1. **Um lugar para tudo**: Unificar experiência de revisão em um único componente
-2. **Menos cliques**: Ação de revisão acessível diretamente do card do material
-3. **Contexto visual**: Sempre mostrar preview do material junto com o formulário
-4. **Feedback imediato**: Toast + atualização realtime
+### 1. Banco de Dados - Tabelas de Conversas
+
+**Nova tabela: `agent_conversations`**
+- `id` (uuid, PK)
+- `user_id` (uuid, FK profiles)
+- `workspace_id` (uuid)
+- `title` (text) - gerado automaticamente do primeiro comando
+- `summary` (text) - resumo da conversa para memoria
+- `is_active` (boolean, default true)
+- `created_at`, `updated_at` (timestamptz)
+
+**Nova tabela: `agent_messages`**
+- `id` (uuid, PK)
+- `conversation_id` (uuid, FK agent_conversations)
+- `role` (text: 'user' | 'assistant' | 'system')
+- `content` (text)
+- `attachments` (jsonb) - arquivos enviados
+- `plan_json` (jsonb) - plano de execucao se houver
+- `result_json` (jsonb) - resultado da execucao
+- `run_id` (uuid, FK agent_runs, nullable)
+- `created_at` (timestamptz)
+
+**Nova tabela: `agent_memory`**
+- `id` (uuid, PK)
+- `user_id` (uuid, FK profiles)
+- `workspace_id` (uuid)
+- `key` (text) - ex: "preferred_client", "last_project"
+- `value` (jsonb) - dado memorizado
+- `source_conversation_id` (uuid, nullable)
+- `created_at`, `updated_at` (timestamptz)
+
+RLS: Todas restritas por `auth.uid() = user_id`.
+
+### 2. Backend - Edge Function Atualizada
+
+**`polo-ai-chat` atualizado:**
+- Receber `conversation_id` (ou criar nova conversa)
+- Carregar ultimas N mensagens da conversa do banco
+- Carregar memorias relevantes do `agent_memory`
+- Injetar contexto de memoria no system prompt
+- Apos resposta completa, salvar mensagem do usuario + assistente no banco
+- Gerar titulo automatico na primeira mensagem
+- Extrair e salvar memorias importantes (nomes de clientes favoritos, preferencias)
+
+**System prompt expandido com:**
+- Dados de tabelas disponiveis (lista completa das 80+ tabelas)
+- Instrucoes para auto-execucao em low-risk
+- Instrucoes para extrair memorias
+
+**`polo-ai-execute` expandido com novas tools:**
+- `create_tasks`: Criar tarefas vinculadas a projeto
+- `update_status`: Atualizar status de qualquer entidade
+- `attach_file`: Upload de arquivo ao storage e vinculacao
+- `create_content`: Criar item de conteudo
+- `create_event`: Criar evento no calendario
+- `send_notification`: Criar notificacao
+- `generate_ai`: Disparar geracao de IA (scripts, captions, imagens)
+
+### 3. Frontend - AIAssistant Redesenhado
+
+**Sidebar de conversas:**
+- Lista de conversas anteriores (ultimas 20) com titulo e data
+- Botao "Nova Conversa"
+- Indicador de conversa ativa
+- Busca em conversas
+
+**Chat principal:**
+- Carrega mensagens da conversa selecionada do banco
+- Scroll infinito para historico
+- Auto-save de cada mensagem
+- Indicador de memoria ativa ("Sei que voce prefere...")
+
+**Auto-execucao:**
+- Planos `risk_level: low` executam automaticamente apos streaming
+- Planos `risk_level: medium` mostram plano + botao "Executar"
+- Planos `risk_level: high` exigem confirmacao explicita
+
+**Memoria visivel:**
+- Chip no header mostrando "X memorias ativas"
+- Opcao de limpar/editar memorias
+
+### 4. Hook Atualizado
+
+**`useAgentChat` (novo hook unificado):**
+- Gerencia conversas (criar, listar, selecionar)
+- Gerencia mensagens com persistencia
+- Integra execucao automatica
+- Carrega e salva memorias
 
 ---
 
-## Implementação
+## Arquivos a Criar/Modificar
 
-### 1. Portal do Cliente - Aba "Materiais" Redesenhada
+### Banco de Dados
+1. **Migracao**: Criar `agent_conversations`, `agent_messages`, `agent_memory` com RLS
 
-**Mudanças:**
-- Adicionar botão "Solicitar Ajuste" diretamente no card do material (sem precisar expandir player)
-- Ao clicar, abre um drawer/modal simples com:
-  - Preview do material (thumbnail + título)
-  - Campo de texto "O que precisa mudar?"
-  - Seletor de prioridade (Normal/Alta/Urgente)
-  - Nome + Email
-  - Botão "Enviar"
-- Remover a necessidade de expandir player para comentar
+### Backend
+2. **`supabase/functions/polo-ai-chat/index.ts`**: Reescrever com persistencia, memoria, contexto expandido
+3. **`supabase/functions/polo-ai-execute/index.ts`**: Adicionar tools faltantes (create_tasks, update_status, etc.)
 
-**Novo Componente: `QuickRevisionDrawer`**
+### Frontend
+4. **Criar `src/hooks/useAgentChat.tsx`**: Hook unificado com persistencia
+5. **Reescrever `src/components/ai/AIAssistant.tsx`**: Layout com sidebar de conversas + chat persistido + auto-execucao
+6. **Atualizar `src/components/ai/AICommandButton.tsx`**: Manter trigger, ajustar tamanho do painel
+
+### Tipos
+7. **Atualizar `src/types/agent.ts`**: Adicionar tipos para Conversation, AgentMessage persistido, Memory
+
+---
+
+## Fluxo Final
+
 ```text
-┌────────────────────────────────────────┐
-│ 📹 [Thumbnail]  Material X (V2)        │
-├────────────────────────────────────────┤
-│                                        │
-│ O que precisa mudar? *                 │
-│ ┌────────────────────────────────────┐ │
-│ │                                    │ │
-│ └────────────────────────────────────┘ │
-│                                        │
-│ Prioridade:  [Normal] [Alta] [Urgente] │
-│                                        │
-│ Seu nome *          Email (opcional)   │
-│ ┌──────────────┐    ┌────────────────┐ │
-│ │              │    │                │ │
-│ └──────────────┘    └────────────────┘ │
-│                                        │
-│        [Cancelar]  [Enviar Feedback]   │
-└────────────────────────────────────────┘
+Usuario abre Polo AI
+  |
+  +-- Ve conversas anteriores na sidebar
+  |
+  +-- Seleciona conversa ou cria nova
+  |
+  +-- Envia comando: "Crie projeto para Haus Arquitetura"
+  |
+  +-- Backend carrega:
+  |     - Historico da conversa
+  |     - Memorias: "Haus Arquitetura = cliente ID xxx"
+  |     - Contexto: rota atual, tabelas disponiveis
+  |
+  +-- IA responde com plano (low-risk)
+  |
+  +-- Auto-execucao: projeto criado + tarefas + vinculacao
+  |
+  +-- Mensagens salvas no banco
+  |
+  +-- Memoria atualizada: "Ultimo projeto criado: Haus v2"
+  |
+  +-- Usuario fecha chat, abre depois → tudo la
 ```
 
-### 2. Portal do Cliente - Simplificar Aba "Revisões"
+## Resultado
 
-**Mudanças:**
-- Remover formulário de "Nova Solicitação" (já existe no material)
-- Focar em mostrar histórico de revisões com status claro
-- Agrupar por material
-- Mostrar timeline de interações
-
-**Layout:**
-```text
-┌─────────────────────────────────────────────────────────┐
-│  📊 Resumo: 2 Pendentes | 1 Em Análise | 3 Resolvidos   │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  📹 Material X (V2)                                     │
-│  ├── ⚠ "Ajustar cor do logo" - Alta - Pendente        │
-│  │    └── Resp: "Vamos ajustar na V3" - Equipe        │
-│  └── ✅ "Reduzir volume da música" - Resolvido        │
-│                                                         │
-│  📹 Material Y (V1)                                     │
-│  └── 🔄 "Trocar imagem inicial" - Em Análise          │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 3. Projeto Interno - Aba "Revisões" Melhorada
-
-**Mudanças:**
-- Layout em duas colunas: Lista de materiais | Detalhes da revisão
-- Preview do material no painel de detalhes
-- Ações rápidas: Responder, Resolver, Iniciar Análise
-- Filtro por material além de status
-
-**Layout:**
-```text
-┌────────────────────────┬────────────────────────────────────┐
-│ Filtros: [Status ▼]    │  📹 Material X (V2)                │
-│          [Material ▼]  │  ──────────────────────────────────│
-│                        │  ⚠ Ajustar cor do logo             │
-│ ┌────────────────────┐ │  Prioridade: Alta                  │
-│ │ 📹 Material X      │ │  Por: João Silva - há 2h           │
-│ │ 2 pendentes        │ │                                    │
-│ ├────────────────────┤ │  "O logo está muito escuro,        │
-│ │ 📹 Material Y      │ │   precisa de mais contraste"       │
-│ │ 1 em análise       │ │                                    │
-│ └────────────────────┘ │  ┌────────────────────────────────┐│
-│                        │  │ Responder...                   ││
-│                        │  └────────────────────────────────┘│
-│                        │                                    │
-│                        │  [Iniciar Análise] [Resolver]      │
-└────────────────────────┴────────────────────────────────────┘
-```
-
-### 4. Melhorias na UX Geral
-
-1. **Toast com ação de desfazer** (quando aplicável)
-2. **Badge de contagem no ícone da aba** - Mostrar número de pendentes
-3. **Botão "Revisar" em cada card** - Acesso direto sem expandir
-4. **Indicador de "Nova revisão"** - Highlight para itens não vistos
-
----
-
-## Arquivos a Modificar
-
-### Portal do Cliente
-1. **`src/components/client-portal/portal-materials/PortalMaterialCard.tsx`**
-   - Adicionar botão "Solicitar Ajuste" no card
-
-2. **Criar: `src/components/client-portal/QuickRevisionDrawer.tsx`**
-   - Drawer simplificado para solicitar revisão
-   - Props: material, onSubmit, isSubmitting
-
-3. **`src/components/client-portal/portal-materials/PortalMaterialsTab.tsx`**
-   - Integrar QuickRevisionDrawer
-   - Simplificar lógica de exibição
-
-4. **`src/components/client-portal/portal-tabs/PortalRevisionsTab.tsx`**
-   - Remover formulário duplicado
-   - Agrupar por material
-   - Adicionar timeline view
-
-5. **`src/components/client-portal/PortalTabsPremium.tsx`**
-   - Adicionar badge de contagem nas abas
-
-### Projeto Interno
-6. **`src/components/projects/detail/tabs/RevisionsTab.tsx`**
-   - Layout em duas colunas
-   - Adicionar filtro por material
-   - Painel de detalhes com preview
-
-7. **`src/components/projects/detail/ProjectTabs.tsx`**
-   - Badge de contagem na aba Revisões
-
----
-
-## Fluxo Simplificado (Resultado Final)
-
-### Cliente quer revisar:
-1. Abre portal → Vê materiais
-2. Clica "Solicitar Ajuste" no card do material
-3. Drawer abre → Escreve feedback → Envia
-4. Toast confirma → Revisão aparece na aba Revisões
-
-### Gestor vê revisões:
-1. Abre projeto → Badge mostra "3 pendentes"
-2. Clica aba Revisões → Vê lista por material
-3. Clica em uma revisão → Vê detalhes + preview
-4. Responde ou resolve diretamente
-
----
-
-## Resultado Esperado
-
-- **Menos cliques**: 2-3 cliques para enviar revisão (antes: 5+)
-- **Menos confusão**: Um caminho claro para cada ação
-- **Mais contexto**: Sempre vê o material junto com o feedback
-- **Realtime**: Atualizações instantâneas em ambos os lados
+- **Persistencia total**: Conversas e mensagens salvas no banco, nunca se perdem
+- **Memoria**: Polo AI lembra preferencias, clientes, projetos anteriores
+- **Multiplas conversas**: Historico organizado por threads
+- **Execucao autonoma**: Low-risk executa sozinho, medium pede 1 clique, high pede confirmacao
+- **Tools expandidas**: 12+ acoes disponiveis cobrindo todo o sistema
