@@ -85,6 +85,12 @@ function resolveTable(entity: string): string | null {
   return ENTITY_MAP[entity.toLowerCase()] || null;
 }
 
+// ── Valid status values for content_items ──
+const VALID_CONTENT_STATUS = new Set([
+  'briefing', 'writing', 'recording', 'editing', 'review',
+  'approved', 'scheduled', 'published', 'archived',
+]);
+
 // ── Tool implementations ──
 
 const TABLE_SEARCH_FIELDS: Record<string, string[]> = {
@@ -111,6 +117,7 @@ async function toolSearch(
   const searchFields = TABLE_SEARCH_FIELDS[table] || ['name', 'title'];
   const q = query.toLowerCase();
 
+  // First try with workspace_id filter
   const { data, error } = await supabase
     .from(table)
     .select('*')
@@ -118,7 +125,21 @@ async function toolSearch(
     .or(searchFields.map(f => `${f}.ilike.%${q}%`).join(','))
     .limit(10);
 
-  return { data: data || [], error: error?.message || null };
+  if (error) return { data: null, error: error.message };
+
+  // If no results found, retry WITHOUT workspace_id filter (handles workspace_id mismatch)
+  if (!data || data.length === 0) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from(table)
+      .select('*')
+      .or(searchFields.map(f => `${f}.ilike.%${q}%`).join(','))
+      .limit(10);
+
+    if (fallbackError) return { data: null, error: fallbackError.message };
+    return { data: fallbackData || [], error: null };
+  }
+
+  return { data: data || [], error: null };
 }
 
 async function toolUpsert(
@@ -265,7 +286,10 @@ async function toolCreateContent(
       remapped[mapped] = value;
     }
   }
-  const insertData = { ...remapped, workspace_id: workspaceId, status: remapped.status || 'briefing' };
+  // Validate status against allowed values; fallback to 'briefing' if missing or invalid
+  const rawStatus = String(remapped.status || '');
+  const validStatus = VALID_CONTENT_STATUS.has(rawStatus) ? rawStatus : 'briefing';
+  const insertData = { ...remapped, workspace_id: workspaceId, status: validStatus };
   const { data: inserted, error } = await supabase.from('content_items').insert(insertData).select().single();
   return { data: inserted, error: error?.message || null };
 }
@@ -308,6 +332,9 @@ serve(async (req) => {
     const results: ActionResult[] = [];
     const errors: string[] = [];
 
+    // Shared context: resolved IDs from previous steps propagate to subsequent steps
+    let resolvedProjectId: string | null = null;
+
     for (let i = 0; i < plan.steps.length; i++) {
       const step = plan.steps[i];
       const t0 = Date.now();
@@ -317,6 +344,11 @@ serve(async (req) => {
         switch (step.action) {
           case 'search': {
             const r = await toolSearch(supabase, step.entity!, step.query!, workspaceId);
+            // If search found results and entity is project, extract project_id for later steps
+            const searchResults = (r.data || []) as any[];
+            if (!r.error && searchResults.length > 0 && step.entity === 'project') {
+              resolvedProjectId = searchResults[0].id;
+            }
             result = { step_index: i, action_type: 'search', entity_type: step.entity, status: r.error ? 'error' : 'success', after_json: { results: r.data }, error_message: r.error || undefined, duration_ms: Date.now() - t0 };
             break;
           }
@@ -326,6 +358,10 @@ serve(async (req) => {
             if (step.entity === 'knowledge' && upsertData.notes && !upsertData.content_md) {
               upsertData.content_md = upsertData.notes;
               delete upsertData.notes;
+            }
+            // Inject resolved project_id for contracts if missing
+            if (step.entity === 'contract' && !upsertData.project_id && resolvedProjectId) {
+              upsertData.project_id = resolvedProjectId;
             }
             const r = await toolUpsert(supabase, step.entity!, upsertData, step.matchBy, workspaceId);
             result = { step_index: i, action_type: 'upsert', entity_type: step.entity, entity_id: (r.data as any)?.id, status: r.error ? 'error' : 'success', before_json: r.before as any, after_json: r.data as any, error_message: r.error || undefined, duration_ms: Date.now() - t0 };
@@ -352,12 +388,22 @@ serve(async (req) => {
             break;
           }
           case 'create_tasks': {
-            const r = await toolCreateTasks(supabase, step.data || {}, workspaceId);
+            const taskData = { ...(step.data || {}) };
+            // Inject resolved project_id if available
+            if (!taskData.project_id && resolvedProjectId) {
+              taskData.project_id = resolvedProjectId;
+            }
+            const r = await toolCreateTasks(supabase, taskData, workspaceId);
             result = { step_index: i, action_type: 'create_tasks', entity_type: 'task', status: r.error ? 'error' : 'success', after_json: { created: r.created }, error_message: r.error || undefined, duration_ms: Date.now() - t0 };
             break;
           }
           case 'create_content': {
-            const r = await toolCreateContent(supabase, step.data || {}, workspaceId);
+            const contentData = { ...(step.data || {}) };
+            // Inject resolved project_id if available
+            if (!contentData.project_id && resolvedProjectId) {
+              contentData.project_id = resolvedProjectId;
+            }
+            const r = await toolCreateContent(supabase, contentData, workspaceId);
             result = { step_index: i, action_type: 'create_content', entity_type: 'content', entity_id: (r.data as any)?.id, status: r.error ? 'error' : 'success', after_json: r.data as any, error_message: r.error || undefined, duration_ms: Date.now() - t0 };
             break;
           }

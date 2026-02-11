@@ -440,7 +440,24 @@ export function useAgentChat() {
 
       if (result.errors.length === 0) {
         toast.success('Execução concluída com sucesso!');
+        const successCount = result.actions.filter((a: any) => a.status === 'success').length;
+        setMessages(prev => [...prev, {
+          role: 'assistant' as const,
+          content: `✅ **Execução concluída!** Todas as ${successCount} ações foram executadas com sucesso.`,
+        }]);
       } else {
+        const successCount = result.actions.filter((a: any) => a.status === 'success').length;
+        const failedActions = result.actions.filter((a: any) => a.status === 'error');
+        const errorLines = failedActions.map((a: any) => {
+          const actionName = a.action_type || 'ação';
+          const entityName = a.entity_type || '';
+          return `- **${actionName}** ${entityName}: ${a.error_message}`;
+        }).join('\n');
+        
+        setMessages(prev => [...prev, {
+          role: 'assistant' as const,
+          content: `⚠️ **Execução com ${result.errors.length} erro(s)**\n\n${successCount} ações ok, ${failedActions.length} falharam:\n\n${errorLines}\n\nClique em **Regenerar Plano** acima para tentar novamente ou **Executar Tudo** para reexecutar.`,
+        }]);
         toast.warning(`Execução com ${result.errors.length} erro(s)`);
       }
     }
