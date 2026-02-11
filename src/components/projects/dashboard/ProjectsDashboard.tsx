@@ -1,3 +1,4 @@
+import { ProjectQuickAccessGrid } from "@/components/dashboard/ProjectQuickAccessGrid";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
@@ -249,6 +250,9 @@ export function ProjectsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Projetos Ativos - Quick Access */}
+      <ProjectQuickAccessGrid projects={projects} />
 
       {/* Metrics View */}
       {view === 'metrics' && (
