@@ -131,7 +131,7 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
   return (
     <>
       <motion.header 
-        className="sticky top-0 z-30 h-14 bg-background/60 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-4 md:px-6"
+        className="sticky top-0 z-30 h-16 bg-background/60 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-4 md:px-6"
         initial={{ y: -56, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 25 }}
@@ -143,7 +143,7 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="hidden md:flex items-center gap-2 text-[9px] text-muted-foreground/60 uppercase tracking-[0.2em]">
+          <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em]">
             <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-pulse" />
             <span>Alpha v2.4</span>
           </div>
