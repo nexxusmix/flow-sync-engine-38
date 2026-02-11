@@ -147,34 +147,42 @@
 }
 
 @layer components {
-  /* Glass Card - SQUAD Film Style */
+  /* Glass Card - SQUAD Film Style - defocused blur depth */
   .glass-card {
     background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px) saturate(1.2);
+    -webkit-backdrop-filter: blur(24px) saturate(1.2);
     border: 1px solid rgba(255, 255, 255, 0.05);
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
   }
   
   .glass-card:hover {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.1);
+    transform: perspective(800px) translateZ(5px);
+    box-shadow: 0 20px 60px -20px hsl(var(--primary) / 0.12);
   }
 
-  /* Card Elevated */
+  /* Card Elevated - 3D depth on hover */
   .card-elevated {
     @apply rounded-[2rem] border border-border bg-card p-6;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
   }
 
   .card-elevated:hover {
     border-color: hsl(var(--primary) / 0.2);
     background: hsl(0 0% 3%);
+    transform: perspective(800px) translateZ(8px) rotateX(-1deg);
+    box-shadow: 0 20px 50px -20px hsl(var(--primary) / 0.1);
   }
 
   /* Flat card */
   .card-flat {
     @apply rounded-[2rem] border border-border bg-card p-6;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
   }
 
   /* Badge styles */
@@ -317,57 +325,88 @@
      HYPER ANIMATIONS SYSTEM
      ======================================== */
 
-  /* Fade In Animations */
+  /* Fade In Animations - with defocused blur */
   .animate-fade-in {
-    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-fade-in-up {
-    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-fade-in-down {
-    animation: fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeInDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-fade-in-left {
-    animation: fadeInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeInLeft 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-fade-in-right {
-    animation: fadeInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeInRight 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Defocused Blur Entry - cinematic focus pull */
+  .animate-blur-in {
+    animation: blurIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-blur-in-up {
+    animation: blurInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-blur-in-scale {
+    animation: blurInScale 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* 3D Depth Animations */
+  .animate-depth-in {
+    animation: depthIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-style: preserve-3d;
+  }
+
+  .animate-depth-tilt-in {
+    animation: depthTiltIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-style: preserve-3d;
+  }
+
+  .animate-depth-rotate-in {
+    animation: depthRotateIn 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-style: preserve-3d;
   }
 
   /* Scale Animations */
   .animate-scale-in {
-    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-scale-bounce {
-    animation: scaleBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: scaleBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 
   /* Slide Animations */
   .animate-slide-up {
-    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-slide-down {
-    animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  /* Float animation */
+  /* Float animation with 3D depth */
   .animate-float {
-    animation: float 8s ease-in-out infinite;
+    animation: float3D 8s ease-in-out infinite;
+    transform-style: preserve-3d;
   }
 
   .animate-float-slow {
-    animation: float 12s ease-in-out infinite;
+    animation: float3D 12s ease-in-out infinite;
+    transform-style: preserve-3d;
   }
 
-  /* Pulse Glow */
+  /* Pulse Glow with blur halo */
   .animate-pulse-glow {
-    animation: pulseGlow 2s ease-in-out infinite;
+    animation: pulseGlowBlur 2.5s ease-in-out infinite;
   }
 
   /* Shimmer Effect */
@@ -380,6 +419,41 @@
       transparent 100%
     );
     background-size: 200% 100%;
+  }
+
+  /* Defocused blur hover - elements go out of focus on idle, sharp on hover */
+  .defocus-idle {
+    filter: blur(1px);
+    transition: filter 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .defocus-idle:hover {
+    filter: blur(0px);
+  }
+
+  /* 3D Card perspective on hover */
+  .hover-3d {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .hover-3d:hover {
+    transform: perspective(800px) rotateX(-2deg) rotateY(3deg) translateZ(10px);
+    box-shadow: 
+      -8px 12px 30px -10px hsl(var(--primary) / 0.2),
+      0 0 50px -20px hsl(var(--primary) / 0.15);
+  }
+
+  /* Depth layers - parallax-like z offsets */
+  .depth-layer-1 { transform: translateZ(10px); transform-style: preserve-3d; }
+  .depth-layer-2 { transform: translateZ(20px); transform-style: preserve-3d; }
+  .depth-layer-3 { transform: translateZ(40px); transform-style: preserve-3d; }
+
+  /* Blur backdrop for modals/overlays */
+  .backdrop-blur-heavy {
+    backdrop-filter: blur(40px) saturate(1.5);
+    -webkit-backdrop-filter: blur(40px) saturate(1.5);
   }
 
   /* Stagger Animation Delays */
@@ -396,47 +470,54 @@
      HOVER EFFECTS
      ======================================== */
 
-  /* Lift Effect */
+  /* Lift Effect - with blur shadow */
   .hover-lift {
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+    transform-style: preserve-3d;
   }
 
   .hover-lift:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px -20px hsl(var(--primary) / 0.3);
+    transform: perspective(800px) translateY(-8px) translateZ(15px);
+    box-shadow: 
+      0 25px 50px -20px hsl(var(--primary) / 0.25),
+      0 0 60px -30px hsl(var(--primary) / 0.15);
   }
 
-  /* Glow Effect */
+  /* Glow Effect - with defocused halo */
   .hover-glow {
-    transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+    transition: box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.5s ease, filter 0.5s ease;
   }
 
   .hover-glow:hover {
-    box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.4), inset 0 0 20px -10px hsl(var(--primary) / 0.1);
+    box-shadow: 
+      0 0 40px -5px hsl(var(--primary) / 0.35),
+      0 0 80px -20px hsl(var(--primary) / 0.15),
+      inset 0 0 20px -10px hsl(var(--primary) / 0.08);
     border-color: hsl(var(--primary) / 0.3);
   }
 
-  /* Scale Effect */
+  /* Scale Effect with depth */
   .hover-scale {
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .hover-scale:hover {
-    transform: scale(1.02);
-  }
-
-  .hover-scale-lg:hover {
-    transform: scale(1.05);
-  }
-
-  /* Tilt Effect */
-  .hover-tilt {
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     transform-style: preserve-3d;
   }
 
+  .hover-scale:hover {
+    transform: scale(1.02) translateZ(5px);
+  }
+
+  .hover-scale-lg:hover {
+    transform: scale(1.05) translateZ(10px);
+  }
+
+  /* Tilt Effect - deeper 3D */
+  .hover-tilt {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
+  }
+
   .hover-tilt:hover {
-    transform: perspective(1000px) rotateX(2deg) rotateY(-2deg);
+    transform: perspective(800px) rotateX(3deg) rotateY(-3deg) translateZ(10px);
   }
 
   /* Border Glow */
@@ -526,54 +607,144 @@
     from {
       opacity: 0;
       transform: translateY(20px);
+      filter: blur(8px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
+      filter: blur(0px);
     }
   }
 
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translateY(30px) translateZ(-20px);
+      filter: blur(6px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) translateZ(0);
+      filter: blur(0px);
     }
   }
 
   @keyframes fadeInDown {
     from {
       opacity: 0;
-      transform: translateY(-30px);
+      transform: translateY(-30px) translateZ(-20px);
+      filter: blur(6px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) translateZ(0);
+      filter: blur(0px);
     }
   }
 
   @keyframes fadeInLeft {
     from {
       opacity: 0;
-      transform: translateX(-30px);
+      transform: translateX(-30px) translateZ(-15px);
+      filter: blur(6px);
     }
     to {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateX(0) translateZ(0);
+      filter: blur(0px);
     }
   }
 
   @keyframes fadeInRight {
     from {
       opacity: 0;
-      transform: translateX(30px);
+      transform: translateX(30px) translateZ(-15px);
+      filter: blur(6px);
     }
     to {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateX(0) translateZ(0);
+      filter: blur(0px);
+    }
+  }
+
+  /* Defocused blur keyframes */
+  @keyframes blurIn {
+    from {
+      opacity: 0;
+      filter: blur(20px);
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0px);
+      transform: scale(1);
+    }
+  }
+
+  @keyframes blurInUp {
+    from {
+      opacity: 0;
+      filter: blur(15px);
+      transform: translateY(40px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0px);
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes blurInScale {
+    from {
+      opacity: 0;
+      filter: blur(25px);
+      transform: perspective(800px) scale(0.8) translateZ(-100px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0px);
+      transform: perspective(800px) scale(1) translateZ(0);
+    }
+  }
+
+  /* 3D Depth keyframes */
+  @keyframes depthIn {
+    from {
+      opacity: 0;
+      filter: blur(10px);
+      transform: perspective(800px) translateZ(-80px) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0px);
+      transform: perspective(800px) translateZ(0) translateY(0);
+    }
+  }
+
+  @keyframes depthTiltIn {
+    from {
+      opacity: 0;
+      filter: blur(12px);
+      transform: perspective(800px) rotateX(8deg) rotateY(-4deg) translateZ(-60px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0px);
+      transform: perspective(800px) rotateX(0) rotateY(0) translateZ(0);
+    }
+  }
+
+  @keyframes depthRotateIn {
+    from {
+      opacity: 0;
+      filter: blur(15px);
+      transform: perspective(1000px) rotateY(-12deg) translateZ(-100px) translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0px);
+      transform: perspective(1000px) rotateY(0) translateZ(0) translateX(0);
     }
   }
 
@@ -581,10 +752,12 @@
     from {
       opacity: 0;
       transform: scale(0.9);
+      filter: blur(8px);
     }
     to {
       opacity: 1;
       transform: scale(1);
+      filter: blur(0px);
     }
   }
 
@@ -592,13 +765,16 @@
     0% {
       opacity: 0;
       transform: scale(0.3);
+      filter: blur(15px);
     }
     50% {
       transform: scale(1.05);
+      filter: blur(2px);
     }
     100% {
       opacity: 1;
       transform: scale(1);
+      filter: blur(0px);
     }
   }
 
@@ -606,10 +782,12 @@
     from {
       opacity: 0;
       transform: translateY(100%);
+      filter: blur(10px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
+      filter: blur(0px);
     }
   }
 
@@ -617,24 +795,42 @@
     from {
       opacity: 0;
       transform: translateY(-100%);
+      filter: blur(10px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
+      filter: blur(0px);
     }
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0) translateZ(20px); }
-    50% { transform: translateY(-20px) translateZ(40px); }
+  @keyframes float3D {
+    0%, 100% { 
+      transform: translateY(0) translateZ(10px) rotateX(0deg); 
+    }
+    25% {
+      transform: translateY(-10px) translateZ(25px) rotateX(1deg);
+    }
+    50% { 
+      transform: translateY(-20px) translateZ(40px) rotateX(2deg); 
+    }
+    75% {
+      transform: translateY(-10px) translateZ(25px) rotateX(1deg);
+    }
   }
 
-  @keyframes pulseGlow {
+  @keyframes pulseGlowBlur {
     0%, 100% {
-      box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+      box-shadow: 
+        0 0 20px -5px hsl(var(--primary) / 0.3),
+        0 0 60px -20px hsl(var(--primary) / 0.1);
+      filter: blur(0px);
     }
     50% {
-      box-shadow: 0 0 40px -5px hsl(var(--primary) / 0.5);
+      box-shadow: 
+        0 0 40px -5px hsl(var(--primary) / 0.5),
+        0 0 100px -20px hsl(var(--primary) / 0.2);
+      filter: blur(0.5px);
     }
   }
 
@@ -661,12 +857,12 @@
     z-index: 9999;
   }
 
-  /* Blob background */
+  /* Blob background - heavier defocused blur */
   .blob {
     position: fixed;
     border-radius: 50%;
-    filter: blur(180px);
-    opacity: 0.15;
+    filter: blur(220px);
+    opacity: 0.12;
     pointer-events: none;
     z-index: -1;
     animation: blobFloat 20s ease-in-out infinite;
