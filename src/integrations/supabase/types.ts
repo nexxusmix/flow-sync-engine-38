@@ -246,6 +246,63 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_scout_outputs: {
+        Row: {
+          approved_at: string | null
+          audio_url: string | null
+          conversation_id: string | null
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          last_error: string | null
+          message_text: string | null
+          n8n_execution_id: string | null
+          recipient_name: string
+          recipient_phone: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          audio_url?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          message_text?: string | null
+          n8n_execution_id?: string | null
+          recipient_name: string
+          recipient_phone?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          approved_at?: string | null
+          audio_url?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          message_text?: string | null
+          n8n_execution_id?: string | null
+          recipient_name?: string
+          recipient_phone?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       ai_runs: {
         Row: {
           action_key: string
