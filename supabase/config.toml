@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.agent-approve-whatsapp-send]
 verify_jwt = false
+
+[functions.generate-storyboard-ai]
+verify_jwt = false

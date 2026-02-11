@@ -3851,6 +3851,124 @@ export type Database = {
           },
         ]
       }
+      project_storyboard_scenes: {
+        Row: {
+          ai_prompt: string | null
+          camera_movement: string | null
+          color_grading: string | null
+          created_at: string
+          description: string | null
+          direction: string | null
+          fps: string | null
+          id: string
+          lens: string | null
+          lighting: string | null
+          mood: string | null
+          negative_prompt: string | null
+          production_type: string | null
+          scene_number: number
+          storyboard_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_prompt?: string | null
+          camera_movement?: string | null
+          color_grading?: string | null
+          created_at?: string
+          description?: string | null
+          direction?: string | null
+          fps?: string | null
+          id?: string
+          lens?: string | null
+          lighting?: string | null
+          mood?: string | null
+          negative_prompt?: string | null
+          production_type?: string | null
+          scene_number: number
+          storyboard_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_prompt?: string | null
+          camera_movement?: string | null
+          color_grading?: string | null
+          created_at?: string
+          description?: string | null
+          direction?: string | null
+          fps?: string | null
+          id?: string
+          lens?: string | null
+          lighting?: string | null
+          mood?: string | null
+          negative_prompt?: string | null
+          production_type?: string | null
+          scene_number?: number
+          storyboard_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_storyboard_scenes_storyboard_id_fkey"
+            columns: ["storyboard_id"]
+            isOneToOne: false
+            referencedRelation: "project_storyboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_storyboards: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          source_reference_id: string | null
+          source_text: string | null
+          source_type: string
+          style_global: string | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id: string
+          source_reference_id?: string | null
+          source_text?: string | null
+          source_type: string
+          style_global?: string | null
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id?: string
+          source_reference_id?: string | null
+          source_text?: string | null
+          source_type?: string
+          style_global?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_storyboards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           banner_url: string | null
