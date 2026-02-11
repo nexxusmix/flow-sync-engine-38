@@ -70,6 +70,131 @@ export type Database = {
           },
         ]
       }
+      agent_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          summary: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      agent_memory: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          source_conversation_id: string | null
+          updated_at: string
+          user_id: string
+          value: Json
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          source_conversation_id?: string | null
+          updated_at?: string
+          user_id: string
+          value?: Json
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          source_conversation_id?: string | null
+          updated_at?: string
+          user_id?: string
+          value?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_memory_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          plan_json: Json | null
+          result_json: Json | null
+          role: string
+          run_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          plan_json?: Json | null
+          result_json?: Json | null
+          role?: string
+          run_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          plan_json?: Json | null
+          result_json?: Json | null
+          role?: string
+          run_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_messages_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_runs: {
         Row: {
           attachments: Json | null

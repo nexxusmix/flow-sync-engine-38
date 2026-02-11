@@ -97,14 +97,55 @@ export interface ActionResult {
   duration_ms: number;
 }
 
-// Chat message with execution support
+// ============================================
+// Conversation & Memory Types
+// ============================================
+
+export interface AgentConversation {
+  id: string;
+  user_id: string;
+  workspace_id: string;
+  title: string;
+  summary: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentMessageDB {
+  id: string;
+  conversation_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  attachments: AttachmentInfo[] | null;
+  plan_json: ExecutionPlan | null;
+  result_json: ExecutionResult | null;
+  run_id: string | null;
+  created_at: string;
+}
+
+export interface AgentMemory {
+  id: string;
+  user_id: string;
+  workspace_id: string;
+  key: string;
+  value: Record<string, unknown>;
+  source_conversation_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Chat message with execution support (UI state)
 export interface AgentMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   files?: AttachmentInfo[];
   plan?: ExecutionPlan;
   execution?: ExecutionResult;
+  results?: ActionResult[];
   runId?: string;
+  needsConfirmation?: boolean;
+  dbId?: string; // ID from agent_messages table
 }
 
 // Response format from Polo AI
