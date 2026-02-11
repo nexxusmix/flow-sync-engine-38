@@ -13,6 +13,9 @@ import {
 import { useCreativeWorks, useCreativeWork, useBlockVersions } from '@/hooks/useCreativeWorks';
 import { supabase } from '@/integrations/supabase/client';
 import type { CreativeBlockType, NarrativeScriptContent } from '@/types/creative-works';
+import type { StudioNavItem } from '@/components/creative-studio/StudioSidebar';
+import type { BrandKit } from '@/types/marketing';
+import { TemplateStudioPanel } from '@/components/studio/TemplateStudioPanel';
 
 const BLOCK_LABELS: Record<CreativeBlockType, string> = {
   brief: 'Brief',
@@ -32,16 +35,27 @@ export default function CreativeStudioPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  const [activeBlock, setActiveBlock] = useState<CreativeBlockType>('narrative_script');
+  const [activeBlock, setActiveBlock] = useState<StudioNavItem>('narrative_script');
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewResult, setPreviewResult] = useState<Record<string, unknown> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [brandKits, setBrandKits] = useState<BrandKit[]>([]);
 
   const { createWork } = useCreativeWorks();
   const { work, blocks, isLoading, updateWork, upsertBlock, getBlock } = useCreativeWork(workId);
   
-  const currentBlock = getBlock(activeBlock);
+  const currentBlockType = activeBlock === 'templates' ? 'narrative_script' : activeBlock as CreativeBlockType;
+  const currentBlock = getBlock(currentBlockType);
   const { versions } = useBlockVersions(currentBlock?.id);
+
+  // Fetch brand kits for templates panel
+  useEffect(() => {
+    const fetchBrandKits = async () => {
+      const { data } = await supabase.from('brand_kits').select('*').order('name');
+      if (data) setBrandKits(data as unknown as BrandKit[]);
+    };
+    fetchBrandKits();
+  }, []);
 
   // Create new work handler
   const handleCreateNewWork = async () => {
@@ -81,7 +95,7 @@ export default function CreativeStudioPage() {
       const { data, error } = await supabase.functions.invoke('studio-generate-block', {
         body: {
           workId: work.id,
-          blockType: activeBlock,
+          blockType: currentBlockType,
           action: 'generate',
           context: {
             title: work.title,
@@ -114,7 +128,7 @@ export default function CreativeStudioPage() {
       const { data, error } = await supabase.functions.invoke('studio-generate-block', {
         body: {
           workId: work.id,
-          blockType: activeBlock,
+          blockType: currentBlockType,
           action: 'improve',
           currentContent: currentBlock.content,
           context: {
@@ -146,7 +160,7 @@ export default function CreativeStudioPage() {
   // Save block content
   const handleSaveBlock = async (content: NarrativeScriptContent) => {
     await upsertBlock.mutateAsync({
-      type: activeBlock,
+      type: currentBlockType,
       content: content as unknown as Record<string, unknown>,
       source: 'manual',
       status: 'draft',
@@ -158,7 +172,7 @@ export default function CreativeStudioPage() {
     if (!previewResult) return;
     
     await upsertBlock.mutateAsync({
-      type: activeBlock,
+      type: currentBlockType,
       content: previewResult,
       source: 'ai',
       status: 'draft',
@@ -182,7 +196,7 @@ export default function CreativeStudioPage() {
       const { data, error } = await supabase.functions.invoke('studio-generate-block', {
         body: {
           workId: work.id,
-          blockType: activeBlock,
+          blockType: currentBlockType,
           action,
           instruction,
           currentContent: currentBlock.content,
@@ -226,7 +240,7 @@ export default function CreativeStudioPage() {
     const targetVersion = versions.find(v => v.version === version);
     if (targetVersion) {
       await upsertBlock.mutateAsync({
-        type: activeBlock,
+        type: currentBlockType,
         content: targetVersion.content as Record<string, unknown>,
         source: 'manual',
         status: 'draft',
@@ -264,8 +278,8 @@ export default function CreativeStudioPage() {
       default:
         return (
           <EmptyBlockPlaceholder
-            blockType={activeBlock}
-            blockLabel={BLOCK_LABELS[activeBlock]}
+            blockType={currentBlockType}
+            blockLabel={BLOCK_LABELS[currentBlockType]}
             onGenerate={handleGenerate}
           />
         );
@@ -287,7 +301,13 @@ export default function CreativeStudioPage() {
 
         {/* Main Editor */}
         <div className="flex-1 bg-background overflow-hidden">
-          {renderBlockEditor()}
+          {activeBlock === 'templates' ? (
+            <div className="h-full p-4">
+              <TemplateStudioPanel brandKits={brandKits} />
+            </div>
+          ) : (
+            renderBlockEditor()
+          )}
         </div>
 
         {/* Copilot Panel */}

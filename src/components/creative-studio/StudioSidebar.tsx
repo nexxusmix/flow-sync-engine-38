@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   FileText, ScrollText, LayoutGrid, Image, Video, Palette, 
   Paintbrush, Clapperboard, Type, MessageSquare, Plus, ChevronDown,
-  Circle, CheckCircle2, AlertCircle
+  Circle, CheckCircle2, AlertCircle, LayoutTemplate
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,11 +63,14 @@ const BLOCK_ORDER: CreativeBlockType[] = [
   'copy_variations',
 ];
 
+// Extended navigation type that includes non-block panels
+export type StudioNavItem = CreativeBlockType | 'templates';
+
 interface StudioSidebarProps {
   work: CreativeWork | null;
   blocks: CreativeBlock[];
-  activeBlock: CreativeBlockType;
-  onBlockSelect: (type: CreativeBlockType) => void;
+  activeBlock: StudioNavItem;
+  onBlockSelect: (type: StudioNavItem) => void;
   onWorkUpdate: (updates: Partial<CreativeWork>) => void;
   onTitleChange: (title: string) => void;
 }
@@ -268,6 +271,26 @@ export function StudioSidebar({
               </button>
             );
           })}
+
+          <Separator className="my-2" />
+          
+          <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Ferramentas
+          </div>
+          <button
+            onClick={() => onBlockSelect('templates')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+              "hover:bg-accent/50",
+              activeBlock === 'templates' && "bg-accent text-accent-foreground"
+            )}
+          >
+            <span className="text-muted-foreground">
+              <LayoutTemplate className="w-4 h-4" />
+            </span>
+            <span className="flex-1 text-left">Templates Figma</span>
+            <Badge variant="outline" className="text-[9px] py-0 px-1">Novo</Badge>
+          </button>
         </div>
       </ScrollArea>
     </div>
