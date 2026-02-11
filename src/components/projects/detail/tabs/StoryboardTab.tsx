@@ -286,10 +286,10 @@ function StoryboardForm({ project, onGenerate, onClose }: {
           </div>
           <div className="space-y-2">
             <Label>Entrega / Subprojeto</Label>
-            <Select value={deliverableId} onValueChange={setDeliverableId}>
+            <Select value={deliverableId || "none"} onValueChange={(val) => setDeliverableId(val === "none" ? "" : val)}>
               <SelectTrigger><SelectValue placeholder="Selecionar (opcional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {deliverables.map((d: any) => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                 ))}
