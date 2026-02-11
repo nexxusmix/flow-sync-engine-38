@@ -89,6 +89,7 @@ export function useDashboardMetrics() {
         contract_value: number;
         status: string;
         logo_url: string | null;
+        cover_image_url: string | null;
       }>;
     }> => {
       const now = new Date();
@@ -310,6 +311,7 @@ export function useDashboardMetrics() {
           contract_value: p.contract_value,
           status: p.status,
           logo_url: p.logo_url,
+          cover_image_url: p.cover_image_url,
         }));
 
       return {
