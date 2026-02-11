@@ -205,7 +205,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 </div>
 
                 <div className="min-w-0">
-                  <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1 truncate">{project.name}</h1>
+                  <h1 className="text-xl md:text-2xl font-normal text-foreground mb-1 truncate">{project.name}</h1>
                   <p className="text-sm text-muted-foreground">
                     {project.client_name || 'Sem cliente'}
                   </p>
@@ -271,7 +271,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-base md:text-lg font-bold text-foreground truncate">{formatCurrency(project.contract_value || 0)}</p>
+                <p className="text-base md:text-lg font-medium text-foreground truncate">{formatCurrency(project.contract_value || 0)}</p>
                 <p className="text-[10px] md:text-xs text-muted-foreground">Valor do Contrato</p>
               </div>
             </div>
@@ -288,7 +288,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 }`} />
               </div>
               <div className="min-w-0">
-                <p className="text-base md:text-lg font-bold text-foreground">{project.health_score || 0}%</p>
+                <p className="text-base md:text-lg font-medium text-foreground">{project.health_score || 0}%</p>
                 <p className="text-[10px] md:text-xs text-muted-foreground">Saúde</p>
               </div>
             </div>
@@ -299,7 +299,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 <Calendar className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
               </div>
               <div className="min-w-0">
-                <p className="text-base md:text-lg font-bold text-foreground truncate">{formatDate(project.due_date)}</p>
+                <p className="text-base md:text-lg font-medium text-foreground truncate">{formatDate(project.due_date)}</p>
                 <p className="text-[10px] md:text-xs text-muted-foreground">Entrega</p>
               </div>
             </div>

@@ -36,7 +36,7 @@ function HealthScoreIndicator({ score, compact = false }: { score: number; compa
         <div className="w-12 h-1 bg-muted rounded-full overflow-hidden">
           <div className={`h-full ${colors.bar}`} style={{ width: `${score}%` }}></div>
         </div>
-        <span className={`text-[10px] font-bold ${colors.main}`}>{score}%</span>
+        <span className={`text-[10px] font-medium ${colors.main}`}>{score}%</span>
       </div>
     );
   }
@@ -44,7 +44,7 @@ function HealthScoreIndicator({ score, compact = false }: { score: number; compa
   return (
     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${colors.bg} ${colors.border}`}>
       <div className={`w-1.5 h-1.5 rounded-full ${colors.bar} animate-pulse`}></div>
-      <span className={`text-[9px] font-bold uppercase tracking-wider ${colors.main}`}>{score}%</span>
+      <span className={`text-[9px] font-medium uppercase tracking-wider ${colors.main}`}>{score}%</span>
     </div>
   );
 }
@@ -86,8 +86,8 @@ function RadialProgress({ value, size = 80, strokeWidth = 6, color = "hsl(var(--
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-lg font-bold text-foreground">{value}%</span>
-        {label && <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">{label}</span>}
+        <span className="text-lg font-medium text-foreground">{value}%</span>
+        {label && <span className="text-[8px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>}
       </div>
     </div>
   );
@@ -133,8 +133,8 @@ function VisualBoardColumn({ stage, projects }: { stage: string; projects: Proje
   return (
     <div className="flex-shrink-0 w-56 md:w-64">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{stageInfo?.name || stage}</h4>
-        <span className="text-[10px] font-bold text-foreground/50">{projects.length}</span>
+        <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{stageInfo?.name || stage}</h4>
+        <span className="text-[10px] font-medium text-foreground/50">{projects.length}</span>
       </div>
       <div className="space-y-2 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
         {projects.map(p => (
@@ -190,10 +190,10 @@ export function ProjectsDashboard() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-lg">analytics</span>
-              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">Operational Overview</span>
+              <span className="text-[10px] font-medium text-primary uppercase tracking-[0.3em]">Operational Overview</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-              SQUAD <span className="font-serif italic font-normal text-muted-foreground">Dashboard</span>
+            <h1 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">
+              SQUAD <span className="font-serif italic font-light text-muted-foreground">Dashboard</span>
             </h1>
           </div>
         </div>
@@ -222,10 +222,10 @@ export function ProjectsDashboard() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-lg">analytics</span>
-            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">Operational Overview</span>
+            <span className="text-[10px] font-medium text-primary uppercase tracking-[0.3em]">Operational Overview</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-            SQUAD <span className="font-serif italic font-normal text-muted-foreground">Dashboard</span>
+          <h1 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">
+            SQUAD <span className="font-serif italic font-light text-muted-foreground">Dashboard</span>
           </h1>
         </div>
         <div className="flex items-center gap-4">
@@ -243,8 +243,8 @@ export function ProjectsDashboard() {
           </Tabs>
           <div className="glass-card rounded-2xl p-4 flex items-center gap-4">
             <div>
-              <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Pipeline Total</p>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(totalPipeline)}</p>
+              <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mb-1">Pipeline Total</p>
+              <p className="text-lg font-medium text-foreground">{formatCurrency(totalPipeline)}</p>
             </div>
             <RadialProgress value={avgHealth} size={60} label="HEALTH" />
           </div>
@@ -270,12 +270,12 @@ export function ProjectsDashboard() {
           <div className="glass-card rounded-3xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Visual Board</h3>
+                <h3 className="text-sm font-medium text-foreground uppercase tracking-wider">Visual Board</h3>
                 <p className="text-[10px] text-muted-foreground mt-1">Controle de Fluxo Operacional</p>
               </div>
               <button 
                 onClick={() => navigate('/projetos')}
-                className="text-[10px] font-bold text-primary uppercase tracking-wider hover:underline flex items-center gap-1"
+                className="text-[10px] font-medium text-primary uppercase tracking-wider hover:underline flex items-center gap-1"
               >
                 Ver Tudo <ChevronRight className="w-3 h-3" />
               </button>
@@ -292,7 +292,7 @@ export function ProjectsDashboard() {
             <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="w-4 h-4 text-primary" />
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Timeline Janela 30D</h3>
+                <h3 className="text-xs font-medium text-foreground uppercase tracking-wider">Timeline Janela 30D</h3>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-4">SQUAD ENGINE</p>
               <div className="space-y-3">
@@ -319,7 +319,7 @@ export function ProjectsDashboard() {
             </div>
 
             <div className="glass-card rounded-3xl p-6">
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-6">Capacity Monitor</h3>
+              <h3 className="text-xs font-medium text-foreground uppercase tracking-wider mb-6">Capacity Monitor</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Workload Editores</span>
@@ -327,7 +327,7 @@ export function ProjectsDashboard() {
                     <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div className="h-full bg-primary" style={{ width: `${projects.length * 10}%` }}></div>
                     </div>
-                    <span className="text-[10px] font-bold text-foreground">{Math.min(projects.length * 10, 100)}%</span>
+                    <span className="text-[10px] font-medium text-foreground">{Math.min(projects.length * 10, 100)}%</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
@@ -336,7 +336,7 @@ export function ProjectsDashboard() {
                     <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div className="h-full bg-emerald-500" style={{ width: '0%' }}></div>
                     </div>
-                    <span className="text-[10px] font-bold text-foreground">0%</span>
+                    <span className="text-[10px] font-medium text-foreground">0%</span>
                   </div>
                 </div>
               </div>
@@ -355,7 +355,7 @@ export function ProjectsDashboard() {
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Pipeline Ativo</p>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(totalPipeline)}</p>
+              <p className="text-lg font-medium text-foreground">{formatCurrency(totalPipeline)}</p>
             </div>
 
             <div className="glass-card rounded-2xl p-4">
@@ -365,7 +365,7 @@ export function ProjectsDashboard() {
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Projetos Ativos</p>
-              <p className="text-lg font-bold text-foreground">{projects.length}</p>
+              <p className="text-lg font-medium text-foreground">{projects.length}</p>
             </div>
 
             <div className="glass-card rounded-2xl p-4">
@@ -375,7 +375,7 @@ export function ProjectsDashboard() {
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Health Médio</p>
-              <p className="text-lg font-bold text-foreground">{avgHealth}%</p>
+              <p className="text-lg font-medium text-foreground">{avgHealth}%</p>
             </div>
 
             <div className="glass-card rounded-2xl p-4">
@@ -385,7 +385,7 @@ export function ProjectsDashboard() {
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Margem Líquida</p>
-              <p className="text-lg font-bold text-foreground">--</p>
+              <p className="text-lg font-medium text-foreground">--</p>
             </div>
           </div>
 
@@ -393,7 +393,7 @@ export function ProjectsDashboard() {
           <div className="glass-card rounded-3xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Visão de Contas</h3>
+                <h3 className="text-xs font-medium text-foreground uppercase tracking-wider">Visão de Contas</h3>
                 <p className="text-[10px] text-muted-foreground">Financeiro</p>
               </div>
             </div>
@@ -409,7 +409,7 @@ export function ProjectsDashboard() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="text-[10px] text-primary font-bold">{project.client_name || 'Sem cliente'}</p>
+                          <p className="text-[10px] text-primary font-medium">{project.client_name || 'Sem cliente'}</p>
                           <p className="text-[9px] text-muted-foreground">{project.id.slice(0, 8).toUpperCase()}</p>
                         </div>
                         <HealthScoreIndicator score={project.health_score || 0} compact />
@@ -418,11 +418,11 @@ export function ProjectsDashboard() {
                       <div className="flex items-center justify-between text-[9px]">
                         <div>
                           <span className="text-muted-foreground">Valor </span>
-                          <span className="font-bold text-foreground">{formatCurrency(project.contract_value || 0)}</span>
+                          <span className="font-medium text-foreground">{formatCurrency(project.contract_value || 0)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Fase </span>
-                          <span className="font-bold text-foreground">{stageInfo?.name || project.stage_current}</span>
+                          <span className="font-medium text-foreground">{stageInfo?.name || project.stage_current}</span>
                         </div>
                       </div>
                     </div>
@@ -441,7 +441,7 @@ export function ProjectsDashboard() {
           <div className="rounded-3xl p-5 bg-primary/5 border border-primary/10">
             <div className="flex items-center gap-3 mb-3">
               <Sparkles className="w-4 h-4 text-primary" />
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">IA Squad Assistant</h4>
+              <h4 className="text-xs font-medium text-foreground uppercase tracking-wider">IA Squad Assistant</h4>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               {projects.length === 0 

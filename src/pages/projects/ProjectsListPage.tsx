@@ -253,10 +253,10 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
           {/* Header */}
           <div className="flex items-start justify-between mb-4 pr-10">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{project.client_name}</p>
-              <h3 className="text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.name}</h3>
+              <p className="text-[10px] font-medium text-primary uppercase tracking-wider mb-1">{project.client_name}</p>
+              <h3 className="text-lg font-normal text-foreground truncate group-hover:text-primary transition-colors">{project.name}</h3>
             </div>
-            <span className={`px-2 py-1 rounded-full text-[9px] font-bold uppercase border ${getStatusColor(project.status)}`}>
+            <span className={`px-2 py-1 rounded-full text-[9px] font-medium uppercase border ${getStatusColor(project.status)}`}>
               {project.status === 'active' ? 'Ativo' : project.status === 'paused' ? 'Pausado' : project.status === 'completed' ? 'Concluído' : 'Arquivado'}
             </span>
           </div>
@@ -264,8 +264,8 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
           {/* Progress Bar */}
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] text-muted-foreground uppercase font-bold">Progresso</span>
-              <span className="text-[10px] font-bold text-foreground">{getStageProgress(project)}%</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-medium">Progresso</span>
+              <span className="text-[10px] font-medium text-foreground">{getStageProgress(project)}%</span>
             </div>
             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
               <div 
@@ -277,8 +277,8 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
 
           {/* Stage Badge */}
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-[9px] font-bold text-muted-foreground uppercase">Etapa:</span>
-            <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg uppercase">
+            <span className="text-[9px] font-medium text-muted-foreground uppercase">Etapa:</span>
+            <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-medium rounded-lg uppercase">
               {project.stage_current?.replace('_', ' ') || 'Briefing'}
             </span>
           </div>
@@ -286,7 +286,7 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
           {/* Alerts */}
           <div className="flex flex-wrap gap-2 mb-4">
             {project.has_payment_block && (
-              <span className="px-2 py-1 bg-red-500/10 text-red-400 text-[8px] font-bold rounded-full flex items-center gap-1">
+              <span className="px-2 py-1 bg-red-500/10 text-red-400 text-[8px] font-medium rounded-full flex items-center gap-1">
                 <span className="material-symbols-outlined text-[10px]">block</span>
                 Bloqueio Financeiro
               </span>
@@ -302,8 +302,8 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
               <span className="text-[10px] text-muted-foreground">{project.owner_name || 'Squad'}</span>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-foreground">{formatCurrency(project.contract_value || 0)}</p>
-              <p className={`text-[9px] font-bold ${getHealthColor(project.health_score)}`}>{project.health_score}% saúde</p>
+              <p className="text-[10px] font-medium text-foreground">{formatCurrency(project.contract_value || 0)}</p>
+              <p className={`text-[9px] font-medium ${getHealthColor(project.health_score)}`}>{project.health_score}% saúde</p>
             </div>
           </div>
         </div>
@@ -367,7 +367,7 @@ function TimelineView({ projects }: { projects: ProjectWithStages[] }) {
     <div className="glass-card rounded-2xl p-6 overflow-hidden">
       {/* Timeline Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">Timeline de Projetos</h3>
+        <h3 className="text-sm font-medium text-foreground uppercase tracking-wide">Timeline de Projetos</h3>
         <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-emerald-500" /> On Track
@@ -387,7 +387,7 @@ function TimelineView({ projects }: { projects: ProjectWithStages[] }) {
         <div className="flex-1 flex">
           {[currentMonth, (currentMonth + 1) % 12].map((month, idx) => (
             <div key={idx} className="flex-1 text-center py-2">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase">{months[month]}</span>
+              <span className="text-[10px] font-medium text-muted-foreground uppercase">{months[month]}</span>
             </div>
           ))}
         </div>
@@ -406,7 +406,7 @@ function TimelineView({ projects }: { projects: ProjectWithStages[] }) {
             >
               {/* Project Info */}
               <div className="w-48 flex-shrink-0">
-                <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.name}</p>
+                <p className="text-xs font-normal text-foreground truncate group-hover:text-primary transition-colors">{project.name}</p>
                 <p className="text-[10px] text-muted-foreground truncate">{project.client_name}</p>
               </div>
               
@@ -417,7 +417,7 @@ function TimelineView({ projects }: { projects: ProjectWithStages[] }) {
                   style={position}
                 >
                   <div className="h-full flex items-center justify-center">
-                    <span className="text-[8px] font-bold text-white px-2 truncate">{project.stage_current?.replace('_', ' ') || 'Briefing'}</span>
+                    <span className="text-[8px] font-medium text-white px-2 truncate">{project.stage_current?.replace('_', ' ') || 'Briefing'}</span>
                   </div>
                 </div>
                 
