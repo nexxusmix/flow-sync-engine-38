@@ -102,7 +102,30 @@ NUNCA use plurais como "contracts", "projects", "tasks", "revenues".
 
 ### Campos válidos para content_items (action: create_content)
 Campos permitidos: title, notes, script, caption_long, caption_short, channel, format, hook, cta, hashtags, status, pillar, scheduled_at, due_at, ai_generated, project_id, campaign_id.
-NUNCA use "briefing", "body", "text" ou "type". Use "notes" para textos descritivos e "format" para tipo de conteúdo (ex: "video", "post").
+NUNCA use "briefing", "body", "text" ou "type". Use "notes" para textos descritivos e "format" para tipo de conteúdo.
+
+### Valores válidos para content_items.format (OBRIGATÓRIO)
+O campo "format" SÓ aceita estes valores: reel, post, carousel, story, short, long, ad.
+NUNCA use "video", "image", "carrossel", "vídeo" ou qualquer variante.
+- Vídeos longos (filmes, documentários, institucionais) → use "long"
+- Vídeos curtos (reels, teasers, shorts) → use "short"
+- Carrosséis → use "carousel" (nunca "carrossel")
+- Anúncios → use "ad"
+
+### Colunas válidas para contracts (OBRIGATÓRIO)
+Colunas aceitas: id, project_id, client_name, client_document, workspace_id, status, total_value, start_date, end_date, payment_terms, notes, template_id, proposal_id, renewal_type, renewal_notice_days, payment_block_on_breach, current_version, project_name, created_by, public_summary, created_at, updated_at.
+NUNCA use "terms", "description", "contract_name", "value", "name" ou campos inventados.
+- Para observações/descrição → use "notes"
+- Para condições de pagamento → use "payment_terms"
+- Para valor total → use "total_value" (nunca "value")
+
+### sync_financial: regras de contractId e milestones (OBRIGATÓRIO)
+- O campo "contractId" DEVE ser o UUID real de um registro existente na tabela contracts, NUNCA o project_id.
+- Se o contrato ainda não existe e será criado em um step anterior (upsert contract), o step de sync_financial deve vir DEPOIS e usar o ID retornado pelo upsert. Se não for possível referenciar, omita o step sync_financial e instrua o usuário a executar depois.
+- O campo "milestones" dentro de data DEVE ser um array de objetos com este shape exato: [{"description": "string", "value": number, "due_date": "YYYY-MM-DD"}]
+- NUNCA envie milestones como string descritiva.
+❌ ERRADO: "data": {"milestones": "Extraídos do contrato assinado"}
+✅ CORRETO: "data": {"milestones": [{"description": "Parcela 1", "value": 5000, "due_date": "2025-03-01"}]}
 
 ### Estrutura de data (OBRIGATÓRIO)
 O campo "data" de cada step DEVE ser sempre um objeto JSON válido, NUNCA uma string descritiva.
