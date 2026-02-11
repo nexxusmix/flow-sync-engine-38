@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   Plus, CalendarDays, Kanban, Lightbulb, Megaphone, 
   FolderOpen, Sparkles, TrendingUp, AlertTriangle, 
-  CheckCircle, Clock, ArrowRight, Instagram
+  CheckCircle, Clock, ArrowRight, Instagram, Mic
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CONTENT_ITEM_STAGES } from "@/types/marketing";
@@ -266,6 +266,12 @@ export default function MarketingPage() {
                   <Link to="/marketing/library">
                     <FolderOpen className="w-4 h-4 mr-3" />
                     Biblioteca
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start" asChild>
+                  <Link to="/marketing/transcricao">
+                    <Mic className="w-4 h-4 mr-3" />
+                    Transcrição IA
                   </Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start text-primary">
