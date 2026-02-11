@@ -87,6 +87,20 @@ function resolveTable(entity: string): string | null {
 
 // ── Tool implementations ──
 
+const TABLE_SEARCH_FIELDS: Record<string, string[]> = {
+  projects: ['name', 'client_name', 'description'],
+  contracts: ['project_name', 'client_name', 'notes'],
+  proposals: ['title', 'client_name', 'description'],
+  content_items: ['title', 'notes', 'caption_long'],
+  campaigns: ['name', 'objective'],
+  tasks: ['title', 'description'],
+  crm_contacts: ['name', 'title', 'description'],
+  crm_companies: ['name', 'description'],
+  content_ideas: ['title', 'notes'],
+  calendar_events: ['title', 'description'],
+  knowledge_articles: ['title', 'content_md'],
+};
+
 async function toolSearch(
   supabase: ReturnType<typeof createClient>,
   entity: string, query: string, workspaceId: string,
@@ -94,7 +108,7 @@ async function toolSearch(
   const table = resolveTable(entity);
   if (!table) return { data: null, error: `Entidade desconhecida: ${entity}` };
 
-  const searchFields = ['name', 'title', 'project_name', 'client_name', 'code', 'description'];
+  const searchFields = TABLE_SEARCH_FIELDS[table] || ['name', 'title'];
   const q = query.toLowerCase();
 
   const { data, error } = await supabase
@@ -307,7 +321,13 @@ serve(async (req) => {
             break;
           }
           case 'upsert': {
-            const r = await toolUpsert(supabase, step.entity!, step.data!, step.matchBy, workspaceId);
+            const upsertData = { ...step.data! };
+            // Remap knowledge_articles: 'notes' → 'content_md'
+            if (step.entity === 'knowledge' && upsertData.notes && !upsertData.content_md) {
+              upsertData.content_md = upsertData.notes;
+              delete upsertData.notes;
+            }
+            const r = await toolUpsert(supabase, step.entity!, upsertData, step.matchBy, workspaceId);
             result = { step_index: i, action_type: 'upsert', entity_type: step.entity, entity_id: (r.data as any)?.id, status: r.error ? 'error' : 'success', before_json: r.before as any, after_json: r.data as any, error_message: r.error || undefined, duration_ms: Date.now() - t0 };
             break;
           }
