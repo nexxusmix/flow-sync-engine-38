@@ -224,11 +224,34 @@ async function toolCreateTasks(
   return { created, error: null };
 }
 
+const CONTENT_ITEMS_COLUMNS = new Set([
+  'title', 'notes', 'script', 'caption_long', 'caption_short', 'channel', 'format',
+  'hook', 'cta', 'hashtags', 'status', 'project_id', 'campaign_id', 'idea_id',
+  'owner_id', 'owner_name', 'owner_initials', 'scheduled_at', 'published_at',
+  'due_at', 'pillar', 'post_url', 'ai_generated', 'assets', 'workspace_id',
+]);
+
+const CONTENT_FIELD_ALIASES: Record<string, string> = {
+  briefing: 'notes',
+  description: 'notes',
+  body: 'script',
+  text: 'caption_long',
+  type: 'format',
+};
+
 async function toolCreateContent(
   supabase: ReturnType<typeof createClient>,
   data: Record<string, unknown>, workspaceId: string,
 ): Promise<{ data: unknown | null; error: string | null }> {
-  const insertData = { ...data, workspace_id: workspaceId, status: data.status || 'draft' };
+  // Remap aliased fields
+  const remapped: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    const mapped = CONTENT_FIELD_ALIASES[key] || key;
+    if (CONTENT_ITEMS_COLUMNS.has(mapped)) {
+      remapped[mapped] = value;
+    }
+  }
+  const insertData = { ...remapped, workspace_id: workspaceId, status: remapped.status || 'draft' };
   const { data: inserted, error } = await supabase.from('content_items').insert(insertData).select().single();
   return { data: inserted, error: error?.message || null };
 }
