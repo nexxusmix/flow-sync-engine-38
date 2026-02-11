@@ -10,6 +10,7 @@ const mainMenuItems = [
   { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8 },
   { name: "CRM", href: "/crm", icon: "radar", badge: 3 },
   { name: "Marketing", href: "/marketing", icon: "perm_media", badge: 12 },
+  { name: "Gerar Posts", href: "/marketing/studio?tab=templates", icon: "auto_awesome" },
   { name: "Transcrição", href: "/marketing/transcricao", icon: "mic" },
   { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
   { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
