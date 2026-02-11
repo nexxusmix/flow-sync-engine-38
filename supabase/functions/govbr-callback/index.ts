@@ -179,6 +179,61 @@ serve(async (req) => {
       .update({ status: 'signed', updated_at: new Date().toISOString() })
       .eq('id', session.contract_id);
 
+    // Auto-generate financial milestones
+    try {
+      const serviceClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      // Check if revenues already exist
+      const { data: existing } = await serviceClient
+        .from('revenues')
+        .select('id')
+        .eq('contract_id', session.contract_id)
+        .limit(1);
+
+      if (!existing || existing.length === 0) {
+        // Fetch contract to get values
+        const { data: ctr } = await serviceClient
+          .from('contracts')
+          .select('*')
+          .eq('id', session.contract_id)
+          .single();
+
+        if (ctr) {
+          const today = new Date().toISOString().split('T')[0];
+          const halfValue = Math.round((ctr.total_value / 2) * 100) / 100;
+          const secondDate = new Date();
+          secondDate.setDate(secondDate.getDate() + 30);
+
+          await serviceClient.from('revenues').insert([
+            {
+              workspace_id: ctr.workspace_id,
+              project_id: ctr.project_id,
+              contract_id: ctr.id,
+              description: 'Entrada na assinatura (50%) — Gerado automaticamente',
+              amount: halfValue,
+              due_date: today,
+              status: 'pending',
+              installment_group_id: ctr.id,
+            },
+            {
+              workspace_id: ctr.workspace_id,
+              project_id: ctr.project_id,
+              contract_id: ctr.id,
+              description: 'Parcela final (50%) — Gerado automaticamente',
+              amount: ctr.total_value - halfValue,
+              due_date: secondDate.toISOString().split('T')[0],
+              status: 'pending',
+              installment_group_id: ctr.id,
+            },
+          ]);
+        }
+      }
+    } catch (milestoneErr) {
+      console.warn('Auto milestone generation in govbr callback failed:', milestoneErr);
+    }
+
     // Marcar sessão como completa
     await supabase
       .from('govbr_signing_sessions')

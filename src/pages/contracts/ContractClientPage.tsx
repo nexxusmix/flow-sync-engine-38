@@ -195,6 +195,26 @@ export default function ContractClientPage() {
         .update({ status: 'signed' })
         .eq('id', contractId);
 
+      // Auto-generate financial milestones
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-contract-milestones`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ contractId }),
+            }
+          );
+        }
+      } catch (e) {
+        console.warn('Auto milestone generation failed, can be done manually', e);
+      }
+
       toast.success("PDF enviado e contrato assinado!");
       setShowUploadModal(false);
       validateAndFetch();

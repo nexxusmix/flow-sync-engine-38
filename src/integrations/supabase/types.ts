@@ -4855,6 +4855,7 @@ export type Database = {
       revenues: {
         Row: {
           amount: number
+          contract_id: string | null
           created_at: string
           description: string
           due_date: string
@@ -4870,6 +4871,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          contract_id?: string | null
           created_at?: string
           description: string
           due_date: string
@@ -4885,6 +4887,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          contract_id?: string | null
           created_at?: string
           description?: string
           due_date?: string
@@ -4898,7 +4901,15 @@ export type Database = {
           updated_at?: string
           workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "revenues_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       storyboard_frames: {
         Row: {

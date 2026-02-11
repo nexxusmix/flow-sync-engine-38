@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.convert-proposal-to-contract]
 verify_jwt = false
+
+[functions.generate-contract-milestones]
+verify_jwt = false
