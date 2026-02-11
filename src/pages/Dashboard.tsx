@@ -407,6 +407,7 @@ export default function Dashboard() {
                       image={project.cover_image_url || project.logo_url || undefined}
                       date={`Saúde: ${project.health_score}%`}
                       index={idx}
+                      projectId={project.id}
                     />
                   ))}
                 </div>
