@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Loader2, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Loader2, Clock, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ExecutionPlan, ActionResult } from '@/types/agent';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ const actionLabels: Record<string, string> = {
   update_status: 'Atualizar Status',
   sync_financial: 'Sincronizar Financeiro',
   create_tasks: 'Criar Tarefas',
+  create_content: 'Criar Conteúdo',
+  create_event: 'Criar Evento',
   attach_file: 'Anexar Arquivo',
 };
 
@@ -37,7 +39,28 @@ const entityLabels: Record<string, string> = {
   financial: 'Financeiro',
   task: 'Tarefa',
   content_item: 'Conteúdo',
+  knowledge: 'Conhecimento',
+  event: 'Evento',
 };
+
+function friendlyError(error: string): string {
+  if (error.includes('violates not-null constraint')) {
+    const col = error.match(/column "(\w+)"/)?.[1];
+    return `Campo obrigatório "${col}" está vazio`;
+  }
+  if (error.includes('violates check constraint')) {
+    const constraint = error.match(/check constraint "(\w+)"/)?.[1];
+    return `Valor inválido para ${constraint?.replace(/_check$/, '').replace(/_/g, ' ')}`;
+  }
+  if (error.includes('does not exist')) {
+    return 'Coluna ou tabela não encontrada no banco';
+  }
+  if (error.includes('schema cache')) {
+    const col = error.match(/'(\w+)' column/)?.[1];
+    return `Campo "${col}" não existe nesta tabela`;
+  }
+  return error;
+}
 
 export function ExecutionPlanView({
   plan,
@@ -48,6 +71,16 @@ export function ExecutionPlanView({
   needsConfirmation,
 }: ExecutionPlanViewProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const [expandedErrors, setExpandedErrors] = useState<Set<number>>(new Set());
+
+  const toggleErrorDetail = (index: number) => {
+    setExpandedErrors(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
 
   const getStepStatus = (index: number): 'pending' | 'success' | 'error' | 'skipped' => {
     if (!results) return 'pending';
@@ -79,6 +112,10 @@ export function ExecutionPlanView({
     high: 'bg-red-500/10 text-red-500 border-red-500/20',
   };
 
+  const successCount = results?.filter(r => r.status === 'success').length || 0;
+  const errorCount = results?.filter(r => r.status === 'error').length || 0;
+  const hasResults = results && results.length > 0;
+
   return (
     <div className="bg-muted/50 border border-border rounded-xl overflow-hidden">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -104,6 +141,32 @@ export function ExecutionPlanView({
 
         <CollapsibleContent>
           <div className="px-3 pb-3 space-y-2">
+            {/* Execution Summary */}
+            {hasResults && !isExecuting && (
+              <div className={cn(
+                'text-xs rounded-lg p-2.5 flex items-center gap-2 border',
+                errorCount === 0
+                  ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                  : 'bg-destructive/10 border-destructive/20 text-destructive'
+              )}>
+                {errorCount === 0 ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span className="font-semibold">
+                      Todas as {successCount} ações executadas com sucesso!
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span className="font-semibold">
+                      {successCount} de {results.length} ações ok • {errorCount} {errorCount === 1 ? 'falhou' : 'falharam'}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Context */}
             {Object.keys(plan.context).length > 0 && (
               <div className="text-xs text-muted-foreground bg-background/50 rounded-lg p-2">
@@ -121,40 +184,57 @@ export function ExecutionPlanView({
                 const status = getStepStatus(index);
                 const result = results?.find(r => r.step_index === index);
                 const isCurrentStep = isExecuting && !result && index === (results?.length || 0);
+                const hasError = result?.error_message;
+                const isErrorExpanded = expandedErrors.has(index);
 
                 return (
-                  <div
-                    key={index}
-                    className={cn(
-                      'flex items-center gap-2 p-2 rounded-lg text-xs transition-colors',
-                      status === 'success' && 'bg-green-500/5',
-                      status === 'error' && 'bg-red-500/5',
-                      isCurrentStep && 'bg-primary/5',
-                    )}
-                  >
-                    {getStepIcon(index)}
-                    <span className="font-medium">
-                      {actionLabels[step.action] || step.action}
-                    </span>
-                    {step.entity && (
-                      <span className="text-muted-foreground">
-                        {entityLabels[step.entity] || step.entity}
+                  <div key={index} className="space-y-0">
+                    <div
+                      className={cn(
+                        'flex items-center gap-2 p-2 rounded-lg text-xs transition-colors',
+                        status === 'success' && 'bg-green-500/5',
+                        status === 'error' && 'bg-red-500/5',
+                        isCurrentStep && 'bg-primary/5',
+                        hasError && 'cursor-pointer',
+                      )}
+                      onClick={hasError ? () => toggleErrorDetail(index) : undefined}
+                    >
+                      {getStepIcon(index)}
+                      <span className="font-medium">
+                        {actionLabels[step.action] || step.action}
                       </span>
-                    )}
-                    {step.query && (
-                      <span className="text-muted-foreground truncate max-w-[100px]">
-                        "{step.query}"
-                      </span>
-                    )}
-                    {result?.error_message && (
-                      <span className="text-destructive ml-auto truncate max-w-[150px]">
+                      {step.entity && (
+                        <span className="text-muted-foreground">
+                          {entityLabels[step.entity] || step.entity}
+                        </span>
+                      )}
+                      {step.data?.title && (
+                        <span className="text-muted-foreground truncate max-w-[120px]" title={String(step.data.title)}>
+                          "{String(step.data.title)}"
+                        </span>
+                      )}
+                      {step.query && (
+                        <span className="text-muted-foreground truncate max-w-[100px]">
+                          "{step.query}"
+                        </span>
+                      )}
+                      {hasError && (
+                        <span className="text-destructive ml-auto text-[10px] font-semibold flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          {friendlyError(result.error_message!)}
+                        </span>
+                      )}
+                      {!hasError && result?.duration_ms && (
+                        <span className="text-muted-foreground ml-auto">
+                          {result.duration_ms}ms
+                        </span>
+                      )}
+                    </div>
+                    {/* Expanded error detail */}
+                    {hasError && isErrorExpanded && (
+                      <div className="ml-6 mr-2 mb-1 p-2 rounded bg-destructive/5 border border-destructive/10 text-[10px] text-destructive/80 font-mono break-all">
                         {result.error_message}
-                      </span>
-                    )}
-                    {result?.duration_ms && (
-                      <span className="text-muted-foreground ml-auto">
-                        {result.duration_ms}ms
-                      </span>
+                      </div>
                     )}
                   </div>
                 );
