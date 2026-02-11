@@ -9,7 +9,7 @@ import {
 import {
   FileText, Save, Eye, Link2, Sparkles, Plus, Trash2,
   GripVertical, ChevronDown, ChevronUp, Calendar, DollarSign,
-  ArrowLeft, Send, Check, X
+  ArrowLeft, Send, Check, X, FileSignature
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +63,8 @@ export default function ProposalDetailPage() {
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiBriefing, setAiBriefing] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     if (proposalId) {
@@ -397,6 +409,30 @@ export default function ProposalDetailPage() {
   }
 
   const isLocked = ['approved', 'rejected'].includes(proposal.status);
+  const canConvert = proposal.status === 'approved' && !(proposal as any).converted_to_contract;
+
+  const handleConvertToContract = async () => {
+    if (!proposal) return;
+    setConverting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('convert-proposal-to-contract', {
+        body: { proposal_id: proposal.id },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("Contrato gerado com sucesso!");
+      setShowConvertModal(false);
+      navigate(`/contratos/${data.contract_id}`);
+    } catch (error: any) {
+      console.error("Error converting proposal:", error);
+      toast.error(error?.message || "Erro ao converter proposta em contrato");
+    } finally {
+      setConverting(false);
+    }
+  };
 
   return (
     <DashboardLayout title={proposal.title}>
@@ -414,6 +450,26 @@ export default function ProposalDetailPage() {
             <Badge variant="outline" className="text-xs">v{proposal.version}</Badge>
           </div>
           <div className="flex items-center gap-2">
+            {canConvert && (
+              <Button 
+                size="sm" 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => setShowConvertModal(true)}
+              >
+                <FileSignature className="w-4 h-4 mr-2" />
+                Aprovar e gerar contrato
+              </Button>
+            )}
+            {(proposal as any).converted_to_contract && (proposal as any).contract_id && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(`/contratos/${(proposal as any).contract_id}`)}
+              >
+                <FileSignature className="w-4 h-4 mr-2" />
+                Ver Contrato
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} disabled={isLocked}>
               <Sparkles className="w-4 h-4 mr-2" />
               Gerar com IA
@@ -441,6 +497,30 @@ export default function ProposalDetailPage() {
             </p>
           </Card>
         )}
+
+      {/* Convert to Contract Confirmation Modal */}
+      <AlertDialog open={showConvertModal} onOpenChange={setShowConvertModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar contrato a partir desta proposta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Um contrato será criado automaticamente com os dados desta proposta 
+              (cliente, valor, escopo). A proposta será marcada como convertida e 
+              não poderá ser convertida novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={converting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConvertToContract}
+              disabled={converting}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {converting ? "Gerando..." : "Confirmar e gerar contrato"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
         <div className="grid grid-cols-3 gap-6">
           {/* Main Content */}
