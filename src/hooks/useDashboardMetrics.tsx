@@ -88,6 +88,7 @@ export function useDashboardMetrics() {
         health_score: number;
         contract_value: number;
         status: string;
+        logo_url: string | null;
       }>;
     }> => {
       const now = new Date();
@@ -308,6 +309,7 @@ export function useDashboardMetrics() {
           health_score: p.health_score,
           contract_value: p.contract_value,
           status: p.status,
+          logo_url: p.logo_url,
         }));
 
       return {
