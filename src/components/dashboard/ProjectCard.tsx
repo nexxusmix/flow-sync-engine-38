@@ -1,6 +1,7 @@
 import { Play, Clapperboard } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { useProjectMedia } from "@/hooks/useProjectMedia";
 
 interface ProjectCardProps {
   title: string;
@@ -9,52 +10,114 @@ interface ProjectCardProps {
   image?: string;
   date: string;
   index?: number;
+  projectId?: string;
 }
 
-export function ProjectCard({ title, client, status, image, date, index = 0 }: ProjectCardProps) {
-  const [imgError, setImgError] = useState(false);
-  const hasValidImage = image && !imgError;
+export function ProjectCard({ title, client, status, image, date, index = 0, projectId }: ProjectCardProps) {
+  const { data: mediaUrls } = useProjectMedia(projectId);
+
+  // Build the final slides list: fetched media → fallback image prop
+  const slides: string[] = mediaUrls && mediaUrls.length > 0
+    ? mediaUrls
+    : image
+      ? [image]
+      : [];
+
+  const [current, setCurrent] = useState(0);
+  const [imgErrors, setImgErrors] = useState<Set<number>>(new Set());
+
+  // Filter out errored slides
+  const validSlides = slides.filter((_, i) => !imgErrors.has(i));
+
+  const handleImgError = useCallback((slideIndex: number) => {
+    setImgErrors(prev => new Set(prev).add(slideIndex));
+  }, []);
+
+  // Reset state when slides change
+  useEffect(() => {
+    setCurrent(0);
+    setImgErrors(new Set());
+  }, [slides.length]);
+
+  // Autoplay
+  useEffect(() => {
+    if (validSlides.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrent(prev => (prev + 1) % validSlides.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [validSlides.length]);
+
+  const hasSlides = validSlides.length > 0;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
+      transition={{
         delay: index * 0.1,
         type: "spring",
         stiffness: 100,
         damping: 15,
       }}
-      whileHover={{ 
+      whileHover={{
         y: -12,
         scale: 1.02,
-        transition: { duration: 0.3 }
+        transition: { duration: 0.3 },
       }}
       whileTap={{ scale: 0.98 }}
       className="glass-card rounded-[2rem] overflow-hidden group cursor-pointer hover:border-primary/30 transition-all duration-500"
     >
       <div className="relative aspect-video overflow-hidden">
-        {hasValidImage ? (
-          <motion.img 
-            src={image} 
-            alt={title} 
-            className="w-full h-full object-cover"
-            whileHover={{ scale: 1.15 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            onError={() => setImgError(true)}
-          />
+        {hasSlides ? (
+          <>
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={current}
+                src={validSlides[current]}
+                alt={title}
+                className="w-full h-full object-cover absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+                onError={() => {
+                  // find original index
+                  const originalIndex = slides.indexOf(validSlides[current]);
+                  if (originalIndex !== -1) handleImgError(originalIndex);
+                }}
+              />
+            </AnimatePresence>
+
+            {/* Dots indicator */}
+            {validSlides.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {validSlides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                      i === current
+                        ? "bg-primary w-4"
+                        : "bg-white/50 hover:bg-white/80"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 via-muted to-muted/80 flex items-center justify-center">
             <Clapperboard className="w-12 h-12 text-primary/40" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-        <motion.button 
+        <motion.button
           className="absolute inset-0 flex items-center justify-center"
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 1 }}
         >
-          <motion.div 
+          <motion.div
             className="w-16 h-16 rounded-full bg-primary/90 backdrop-blur flex items-center justify-center shadow-[0_0_40px_rgba(0,163,211,0.5)]"
             initial={{ scale: 0.8, opacity: 0 }}
             whileHover={{ scale: 1, opacity: 1 }}
@@ -67,7 +130,7 @@ export function ProjectCard({ title, client, status, image, date, index = 0 }: P
       </div>
       <div className="p-6 space-y-3">
         <div className="flex items-center gap-2">
-          <motion.span 
+          <motion.span
             className="badge-info"
             whileHover={{ scale: 1.05 }}
           >
