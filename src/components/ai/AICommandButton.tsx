@@ -28,13 +28,9 @@ export function AICommandButton() {
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <motion.span 
-            className="material-symbols-outlined text-xl"
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          >
+          <span className="material-symbols-outlined text-xl">
             auto_awesome
-          </motion.span>
+          </span>
           <span className="hidden md:inline font-normal uppercase text-[10px] tracking-wider">IA</span>
         </motion.div>
       </motion.button>
