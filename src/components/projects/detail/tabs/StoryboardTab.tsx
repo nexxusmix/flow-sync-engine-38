@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { useProjectStoryboards, COLOR_GRADINGS, PRODUCTION_TYPES, StoryboardScene } from "@/hooks/useProjectStoryboards";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Sparkles, Loader2, Film, Camera, Sun, Palette, 
-  ChevronDown, Copy, Check, Trash2, Eye, Plus, Clapperboard
+  ChevronDown, Copy, Check, Trash2, Eye, Plus, Clapperboard,
+  Mic, Upload, FileAudio
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -107,6 +108,62 @@ function StoryboardForm({ project, onGenerate, onClose }: {
   const [title, setTitle] = useState("");
   const [colorGrading, setColorGrading] = useState("Original neutro");
   const [objective, setObjective] = useState("");
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [mediaFileName, setMediaFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTranscribe = async (file: File) => {
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 20MB.");
+      return;
+    }
+
+    setIsTranscribing(true);
+    setMediaFileName(file.name);
+    toast.info(`Transcrevendo "${file.name}"...`);
+
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const { data, error } = await supabase.functions.invoke("transcribe-media", {
+        body: {
+          audioBase64: base64,
+          mimeType: file.type,
+          fileName: file.name,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      const transcription = data?.transcription || "";
+      if (!transcription.trim()) {
+        toast.warning("Nenhum conteúdo detectado no áudio/vídeo.");
+        return;
+      }
+
+      setSourceText((prev) => prev ? `${prev}\n\n--- Transcrição de ${file.name} ---\n${transcription}` : transcription);
+      toast.success("Transcrição concluída!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao transcrever");
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleTranscribe(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = () => {
     if (!sourceText.trim()) {
@@ -151,6 +208,7 @@ function StoryboardForm({ project, onGenerate, onClose }: {
                 <SelectItem value="text">Colar texto</SelectItem>
                 <SelectItem value="script">Roteiro existente</SelectItem>
                 <SelectItem value="file">Arquivo do projeto</SelectItem>
+                <SelectItem value="transcription">Transcrição de áudio/vídeo</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -178,10 +236,51 @@ function StoryboardForm({ project, onGenerate, onClose }: {
           </div>
         </div>
 
+        {/* Transcription Upload */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Mic className="w-3.5 h-3.5" />
+            Transcrever Áudio / Vídeo
+          </Label>
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*,video/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isTranscribing}
+              className="gap-2"
+            >
+              {isTranscribing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Upload className="w-4 h-4" />
+              )}
+              {isTranscribing ? "Transcrevendo..." : "Enviar áudio/vídeo"}
+            </Button>
+            {mediaFileName && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <FileAudio className="w-3 h-3" />
+                {mediaFileName}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            MP3, MP4, WAV, M4A, WebM — máx 20MB. A transcrição será adicionada ao texto abaixo.
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label>Texto / Roteiro</Label>
           <Textarea 
-            placeholder="Cole aqui o roteiro, briefing ou texto que será transformado em storyboard..."
+            placeholder="Cole aqui o roteiro, briefing ou texto que será transformado em storyboard... Ou use o botão acima para transcrever um áudio/vídeo."
             value={sourceText}
             onChange={(e) => setSourceText(e.target.value)}
             className="min-h-[160px]"
@@ -193,7 +292,7 @@ function StoryboardForm({ project, onGenerate, onClose }: {
           <Button 
             size="sm" 
             onClick={handleSubmit} 
-            disabled={onGenerate.isPending}
+            disabled={onGenerate.isPending || isTranscribing}
             className="gap-2"
           >
             {onGenerate.isPending ? (
