@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.generate-storyboard-ai]
 verify_jwt = false
+
+[functions.transcribe-media]
+verify_jwt = false
