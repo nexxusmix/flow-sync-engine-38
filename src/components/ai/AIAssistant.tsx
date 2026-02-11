@@ -43,6 +43,13 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-select the most recent conversation on mount if none is active
+  useEffect(() => {
+    if (!activeConversationId && conversations.length > 0) {
+      selectConversation(conversations[0].id);
+    }
+  }, [conversations, activeConversationId, selectConversation]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
