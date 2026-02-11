@@ -121,7 +121,7 @@ NUNCA use "terms", "description", "contract_name", "value", "name" ou campos inv
 
 ### sync_financial: regras de contractId e milestones (OBRIGATÓRIO)
 - O campo "contractId" DEVE ser o UUID real de um registro existente na tabela contracts, NUNCA o project_id.
-- Se o contrato ainda não existe e será criado em um step anterior (upsert contract), o step de sync_financial deve vir DEPOIS e usar o ID retornado pelo upsert. Se não for possível referenciar, omita o step sync_financial e instrua o usuário a executar depois.
+- Se o contrato ainda não existe e será criado em um step anterior (upsert contract), OMITA o step sync_financial e crie uma task de follow-up (veja regra "Proibição de placeholders entre steps" abaixo).
 - O campo "milestones" dentro de data DEVE ser um array de objetos com este shape exato: [{"description": "string", "value": number, "due_date": "YYYY-MM-DD"}]
 - NUNCA envie milestones como string descritiva.
 ❌ ERRADO: "data": {"milestones": "Extraídos do contrato assinado"}
@@ -140,6 +140,18 @@ Exemplo: {"action": "sync_financial", "contractId": "uuid-aqui", "data": {"miles
 O campo "data" DEVE ser um objeto com array "tasks" e opcionalmente "project_id".
 Exemplo: {"action": "create_tasks", "data": {"project_id": "uuid", "tasks": [{"title": "Tarefa 1", "priority": "high"}]}}
 NUNCA envie data como string.
+
+### Valores válidos para content_items.pillar (OBRIGATÓRIO)
+O campo "pillar" SÓ aceita estes valores: autoridade, bastidores, cases, oferta, prova_social, educacional.
+NUNCA use variantes como "Institucional", "Expectativa", "Branding", "Relacionamento" ou qualquer outro valor inventado.
+Se não tiver certeza do pilar correto, use "educacional" como fallback seguro.
+
+### Proibição de placeholders entre steps (OBRIGATÓRIO)
+É PROIBIDO usar placeholders literais no JSON (ex.: "CONTRACT_UUID_FROM_STEP_1", "ID_DO_STEP_ANTERIOR", "uuid-aqui").
+O executor NÃO resolve referências entre steps.
+- Se o plano incluir upsert contract E sync_financial no mesmo run: OMITA o step sync_financial.
+  Em vez disso, adicione ao step create_tasks uma task extra com title "Sincronizar financeiro do contrato (executar após contrato criado)" e priority "high".
+- SOMENTE inclua sync_financial se o usuário fornecer explicitamente um contracts.id (UUID real) já existente.
 
 TOM: Executor. Direto. Rápido. Sem enrolação.`;
 
