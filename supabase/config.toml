@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.resolve-portal-token]
 verify_jwt = false
+
+[functions.agent-approve-whatsapp-send]
+verify_jwt = false
