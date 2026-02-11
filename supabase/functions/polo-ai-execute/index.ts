@@ -251,7 +251,7 @@ async function toolCreateContent(
       remapped[mapped] = value;
     }
   }
-  const insertData = { ...remapped, workspace_id: workspaceId, status: remapped.status || 'draft' };
+  const insertData = { ...remapped, workspace_id: workspaceId, status: remapped.status || 'briefing' };
   const { data: inserted, error } = await supabase.from('content_items').insert(insertData).select().single();
   return { data: inserted, error: error?.message || null };
 }
