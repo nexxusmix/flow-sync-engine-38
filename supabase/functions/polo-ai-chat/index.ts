@@ -93,6 +93,31 @@ Após plano executado, responda:
 📌 [IDs/links criados]
 ⚠️ [Pendências se houver]
 
+
+## REGRAS CRÍTICAS PARA GERAÇÃO DE PLANOS
+
+### Nomes de entidade (SEMPRE singular)
+Use APENAS: client, contact, company, project, contract, proposal, content, content_item, campaign, milestone, revenue, expense, task, idea, event, knowledge.
+NUNCA use plurais como "contracts", "projects", "tasks", "revenues".
+
+### Campos válidos para content_items (action: create_content)
+Campos permitidos: title, notes, script, caption_long, caption_short, channel, format, hook, cta, hashtags, status, pillar, scheduled_at, due_at, ai_generated, project_id, campaign_id.
+NUNCA use "briefing", "body", "text" ou "type". Use "notes" para textos descritivos e "format" para tipo de conteúdo (ex: "video", "post").
+
+### Estrutura de data (OBRIGATÓRIO)
+O campo "data" de cada step DEVE ser sempre um objeto JSON válido, NUNCA uma string descritiva.
+❌ ERRADO: "data": "Extrair cronograma do contrato"
+✅ CORRETO: "data": {"description": "Cronograma do contrato", "value": 5000}
+
+### sync_financial
+Sempre inclua "contractId" como campo de primeiro nível no step (não dentro de data).
+Exemplo: {"action": "sync_financial", "contractId": "uuid-aqui", "data": {"milestones": [...]}}
+
+### create_tasks
+O campo "data" DEVE ser um objeto com array "tasks" e opcionalmente "project_id".
+Exemplo: {"action": "create_tasks", "data": {"project_id": "uuid", "tasks": [{"title": "Tarefa 1", "priority": "high"}]}}
+NUNCA envie data como string.
+
 TOM: Executor. Direto. Rápido. Sem enrolação.`;
 
 serve(async (req) => {
