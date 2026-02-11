@@ -9,7 +9,7 @@ import {
 } from "@/types/contracts";
 import {
   FileSignature, Save, Eye, Link2, Plus, ArrowLeft, History, FileText,
-  Users, Calendar, DollarSign, AlertTriangle, Check, Upload
+  Users, Calendar, DollarSign, AlertTriangle, Check, Upload, Banknote, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,8 @@ export default function ContractDetailPage() {
   const [signatures, setSignatures] = useState<ContractSignature[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [contractRevenues, setContractRevenues] = useState<any[]>([]);
+  const [generatingMilestones, setGeneratingMilestones] = useState(false);
 
   const [variables, setVariables] = useState(DEFAULT_CONTRACT_VARIABLES);
   const [showAddendumModal, setShowAddendumModal] = useState(false);
@@ -53,8 +55,53 @@ export default function ContractDetailPage() {
     if (contractId) {
       fetchContract();
       fetchTemplates();
+      fetchContractRevenues();
     }
   }, [contractId]);
+
+  const fetchContractRevenues = async () => {
+    if (!contractId) return;
+    const { data } = await supabase
+      .from('revenues')
+      .select('*')
+      .eq('contract_id', contractId)
+      .order('due_date');
+    setContractRevenues(data || []);
+  };
+
+  const handleGenerateMilestones = async () => {
+    if (!contract) return;
+    setGeneratingMilestones(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-contract-milestones`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ contractId: contract.id }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || 'Erro ao gerar parcelas');
+        return;
+      }
+      if (result.created_count > 0) {
+        toast.success(`${result.created_count} parcela(s) gerada(s) com sucesso!`);
+      } else if (result.existing_count > 0) {
+        toast.info('Parcelas já existem para este contrato');
+      }
+      fetchContractRevenues();
+    } catch (error) {
+      toast.error('Erro ao gerar parcelas');
+    } finally {
+      setGeneratingMilestones(false);
+    }
+  };
 
   const fetchContract = async () => {
     setLoading(true);
@@ -309,6 +356,68 @@ export default function ContractDetailPage() {
             <p className="text-amber-500 text-sm">
               Este contrato foi assinado e não pode ser editado. Crie um aditivo para alterações.
             </p>
+          </Card>
+        )}
+
+        {/* Milestones / Parcelas Financeiras */}
+        {isLocked && (
+          <Card className="glass-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium text-foreground flex items-center gap-2">
+                <Banknote className="w-4 h-4 text-primary" />
+                Parcelas Financeiras
+              </h3>
+              {contractRevenues.length === 0 ? (
+                <Button
+                  size="sm"
+                  onClick={handleGenerateMilestones}
+                  disabled={generatingMilestones}
+                >
+                  {generatingMilestones ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
+                  Gerar parcelas do contrato
+                </Button>
+              ) : (
+                <Badge variant="outline" className="text-xs">
+                  {contractRevenues.length} parcela(s) gerada(s)
+                </Badge>
+              )}
+            </div>
+            {contractRevenues.length > 0 ? (
+              <div className="space-y-2">
+                {contractRevenues.map((rev, idx) => (
+                  <div
+                    key={rev.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">{rev.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Vencimento: {new Date(rev.due_date).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rev.amount)}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={cn("text-xs", rev.status === 'received' ? 'text-emerald-500 border-emerald-500' : 'text-amber-500 border-amber-500')}
+                      >
+                        {rev.status === 'received' ? 'Recebido' : 'Pendente'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma parcela gerada. Clique no botão acima para gerar automaticamente.
+              </p>
+            )}
           </Card>
         )}
 
