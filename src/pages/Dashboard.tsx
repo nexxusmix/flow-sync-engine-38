@@ -154,9 +154,6 @@ export default function Dashboard() {
           </motion.div>
         </motion.div>
 
-        {/* Projetos Ativos - Quick Access */}
-        <ProjectQuickAccessGrid projects={recentProjects} isLoading={isLoading} />
-
         {/* Section: Metrics */}
         <motion.div 
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
@@ -176,6 +173,27 @@ export default function Dashboard() {
             />
           ))}
         </motion.div>
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          {metricCards.map((metric, idx) => (
+            <MetricCard
+              key={idx}
+              label={metric.label}
+              value={metric.value}
+              trend={metric.trend}
+              trendUp={metric.trendUp}
+              icon={metric.icon}
+              index={idx}
+            />
+          ))}
+        </motion.div>
+
+        {/* Projetos Ativos - Quick Access */}
+        <ProjectQuickAccessGrid projects={recentProjects} isLoading={isLoading} />
 
         {/* Timeline Forecast 30D */}
         <TimelineForecast30D milestones={timelineMilestones} />
