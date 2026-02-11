@@ -911,17 +911,108 @@
     border-color: hsl(var(--primary));
   }
 
-  /* Interactive elements base */
+  /* Interactive elements base - 3D micro-feedback */
   .interactive {
     @apply transition-all duration-300 ease-out cursor-pointer;
+    transform-style: preserve-3d;
   }
 
   .interactive:hover {
     @apply scale-[1.01];
+    transform: perspective(800px) scale(1.01) translateZ(3px);
   }
 
   .interactive:active {
     @apply scale-[0.98];
+  }
+
+  /* ========================================
+     GLOBAL AUTO-ANIMATIONS
+     Automatically apply to common elements
+     ======================================== */
+
+  /* Dialogs / Modals - blur entry */
+  [data-state="open"][role="dialog"],
+  [data-state="open"][data-radix-popper-content-wrapper] {
+    animation: blurIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Dropdown/popover entries */
+  [data-state="open"][data-side] {
+    animation: depthIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Tooltip entries */
+  [role="tooltip"][data-state="delayed-open"],
+  [role="tooltip"][data-state="instant-open"] {
+    animation: blurIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Tab content transitions */
+  [data-state="active"][role="tabpanel"] {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Badge / pill auto-animation */
+  .badge-success, .badge-warning, .badge-danger, .badge-info, .badge-subtle {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
+  }
+
+  .badge-success:hover, .badge-warning:hover, .badge-danger:hover, .badge-info:hover {
+    transform: scale(1.05) translateZ(3px);
+  }
+
+  /* Section headers - text reveal */
+  .section-label {
+    animation: fadeInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* KPI cards auto 3D */
+  .kpi-card {
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+  }
+
+  .kpi-card:hover {
+    transform: perspective(800px) translateZ(8px) rotateX(-1deg);
+    box-shadow: 0 20px 50px -20px hsl(var(--primary) / 0.15);
+  }
+
+  /* Icon boxes - subtle bounce on entry */
+  .icon-box {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+    transform-style: preserve-3d;
+  }
+
+  .icon-box:hover {
+    transform: scale(1.1) translateZ(5px);
+    background: hsl(var(--primary) / 0.1);
+  }
+
+  /* Button actions - depth feedback */
+  .btn-primary, .btn-action, .btn-subtle {
+    transform-style: preserve-3d;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px) translateZ(5px);
+  }
+
+  .btn-action:hover {
+    transform: translateY(-1px) translateZ(3px);
+  }
+
+  /* Kanban stage cards */
+  .kanban-stage {
+    transform-style: preserve-3d;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .kanban-stage:hover {
+    transform: perspective(800px) translateZ(6px) rotateX(-1deg);
+    box-shadow: 0 12px 30px -15px hsl(var(--primary) / 0.15);
   }
 
   /* ========================================

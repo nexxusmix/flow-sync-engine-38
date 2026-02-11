@@ -132,9 +132,9 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
     <>
       <motion.header 
         className="sticky top-0 z-30 h-16 bg-background/60 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-4 md:px-6"
-        initial={{ y: -56, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 25 }}
+        initial={{ y: -56, opacity: 0, filter: "blur(10px)" }}
+        animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+        transition={{ type: "spring", stiffness: 150, damping: 22 }}
       >
         {/* Left: Version badge (subtle) */}
         <motion.div 
@@ -153,9 +153,10 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
         <motion.button
           onClick={onOpenSearch}
           className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all max-w-xs w-full md:w-72"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -10, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.02, y: -1 }}
         >
           <Search className="h-4 w-4 text-muted-foreground/70" />
           <span className="text-xs text-muted-foreground/70 flex-1 text-left">Buscar...</span>

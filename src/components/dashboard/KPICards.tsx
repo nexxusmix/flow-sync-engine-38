@@ -5,21 +5,22 @@ const container = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
+      staggerChildren: 0.1,
     },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 30, scale: 0.9 },
+  hidden: { opacity: 0, y: 30, scale: 0.9, filter: "blur(12px)" },
   show: { 
     opacity: 1, 
     y: 0, 
     scale: 1,
+    filter: "blur(0px)",
     transition: {
       type: "spring" as const,
-      stiffness: 100,
-      damping: 15,
+      stiffness: 80,
+      damping: 18,
     }
   },
 };
@@ -50,28 +51,47 @@ export function KPICards() {
             whileHover={{ 
               y: -8, 
               scale: 1.02,
-              boxShadow: "0 20px 40px -20px rgba(0, 163, 211, 0.3)",
+              boxShadow: "0 20px 50px -20px rgba(0, 163, 211, 0.3)",
               borderColor: "rgba(0, 163, 211, 0.3)",
+              rotateX: -2,
+              rotateY: 2,
             }}
             whileTap={{ scale: 0.98 }}
             className="glass-card p-8 rounded-[2rem] transition-colors duration-500 group cursor-pointer min-h-[160px] border border-transparent"
+            style={{ transformStyle: "preserve-3d", perspective: 800 }}
           >
             <div className="flex justify-between items-start mb-8">
               <motion.span 
                 className="material-symbols-outlined text-primary text-3xl"
-                whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
-                transition={{ duration: 0.4 }}
+                initial={{ opacity: 0, scale: 0, filter: "blur(10px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                transition={{ delay: 0.2 + index * 0.08, type: "spring", stiffness: 200 }}
+                whileHover={{ rotate: [0, -10, 10, 0], scale: 1.15 }}
               >
                 {kpi.icon}
               </motion.span>
-              <span className="text-[10px] text-muted-foreground font-light uppercase tracking-widest">{kpi.detail}</span>
+              <motion.span 
+                className="text-[10px] text-muted-foreground font-light uppercase tracking-widest"
+                initial={{ opacity: 0, x: 10, filter: "blur(6px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                transition={{ delay: 0.3 + index * 0.08 }}
+              >
+                {kpi.detail}
+              </motion.span>
             </div>
-            <h4 className="text-[11px] text-muted-foreground font-light uppercase tracking-[0.4em] mb-2">{kpi.label}</h4>
+            <motion.h4 
+              className="text-[11px] text-muted-foreground font-light uppercase tracking-[0.4em] mb-2"
+              initial={{ opacity: 0, y: 5, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.25 + index * 0.08 }}
+            >
+              {kpi.label}
+            </motion.h4>
             <motion.span 
               className="text-4xl font-normal text-foreground tracking-tighter block"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 + index * 0.08, type: "spring", stiffness: 100 }}
+              initial={{ opacity: 0, scale: 0.5, filter: "blur(15px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              transition={{ delay: 0.3 + index * 0.08, type: "spring", stiffness: 100 }}
             >
               {kpi.value}
             </motion.span>
