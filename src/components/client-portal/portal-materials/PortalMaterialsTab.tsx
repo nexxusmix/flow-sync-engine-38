@@ -39,6 +39,7 @@ interface PortalMaterialsTabProps {
   }) => void;
   onApprove: (data: { approvedByName: string; approvedByEmail?: string; notes?: string }) => void;
   onRequestRevision: (data: { 
+    deliverableId?: string;
     authorName: string; 
     authorEmail?: string; 
     content: string;
@@ -122,6 +123,7 @@ function PortalMaterialsTabComponent({
   }) => {
     // Use the existing onRequestRevision with the content as title + description
     onRequestRevision({
+      deliverableId: data.deliverableId,
       authorName: data.authorName,
       authorEmail: data.authorEmail,
       content: data.description ? `${data.title}\n\n${data.description}` : data.title,
