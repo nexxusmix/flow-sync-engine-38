@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, LogOut, ChevronDown, CreditCard, Menu } from "lucide-react";
+import { Search, LogOut, ChevronDown, CreditCard, Menu, Sun, Moon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
   const [selectedRole, setSelectedRole] = useState("dono");
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const { logout } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
   
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
@@ -253,6 +255,19 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
               )}
             </AnimatePresence>
           </div>
+
+          <button
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 md:w-9 md:h-9 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.08] flex items-center justify-center transition-colors"
+            aria-label="Alternar tema"
+            title={resolvedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+          >
+            {resolvedTheme === 'dark' ? (
+              <Sun className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
 
           <button
             onClick={async () => {
