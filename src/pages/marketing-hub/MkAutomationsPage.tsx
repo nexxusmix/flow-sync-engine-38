@@ -57,7 +57,7 @@ export default function MkAutomationsPage() {
       ) : (
         <div className="space-y-3 mb-10">
           {pending.map((s, i) => (
-            <motion.div key={s.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
+            <motion.div key={s.id} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ delay: i * 0.04 }}>
               <MkCard className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-[hsl(210,100%,55%)]/10 flex items-center justify-center shrink-0">
                   <Zap className="w-5 h-5 text-[hsl(210,100%,65%)]" />

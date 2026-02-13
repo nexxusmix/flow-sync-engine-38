@@ -104,7 +104,8 @@ function PortalHeaderPremiumComponent({
       ref={headerRef}
       className="space-y-0 relative py-8 md:py-12"
       initial="hidden"
-      animate="visible"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-60px" }}
       variants={containerVariants}
       style={{ y: springY, opacity, scale }}
     >

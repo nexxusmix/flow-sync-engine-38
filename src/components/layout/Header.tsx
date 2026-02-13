@@ -134,7 +134,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
     <>
       <motion.header 
         className="sticky top-0 z-30 h-14 md:h-16 bg-background/60 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-3 md:px-6"
-        initial={{ y: -56, opacity: 0, filter: "blur(10px)" }}
+        initial={{ y: -56, opacity: 0, filter: "blur(4px)" }}
         animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
         transition={{ type: "spring", stiffness: 150, damping: 22 }}
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
@@ -164,7 +164,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
         <motion.button
           onClick={onOpenSearch}
           className="flex items-center gap-3 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all max-w-xs w-full md:w-72"
-          initial={{ opacity: 0, y: -10, filter: "blur(8px)" }}
+          initial={{ opacity: 0, y: -10, filter: "blur(4px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ delay: 0.3 }}
           whileHover={{ scale: 1.02, y: -1 }}

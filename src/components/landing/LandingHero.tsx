@@ -11,7 +11,7 @@ export function LandingHero() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
   const wordVariants = {
-    hidden: { opacity: 0, y: 40, filter: "blur(10px)" },
+    hidden: { opacity: 0, y: 40, filter: "blur(4px)" },
     visible: (i: number) => ({
       opacity: 1, y: 0, filter: "blur(0px)",
       transition: { delay: 0.3 + i * 0.12, type: "spring" as const, damping: 12, stiffness: 100 },

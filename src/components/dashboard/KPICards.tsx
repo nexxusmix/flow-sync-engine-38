@@ -11,7 +11,7 @@ const container = {
 };
 
 const item = {
-  hidden: { opacity: 0, y: 30, scale: 0.9, filter: "blur(12px)" },
+  hidden: { opacity: 0, y: 30, scale: 0.9, filter: "blur(4px)" },
   show: { 
     opacity: 1, 
     y: 0, 
@@ -63,7 +63,7 @@ export function KPICards() {
             <div className="flex justify-between items-start mb-8">
               <motion.span 
                 className="material-symbols-outlined text-primary text-3xl"
-                initial={{ opacity: 0, scale: 0, filter: "blur(10px)" }}
+                initial={{ opacity: 0, scale: 0, filter: "blur(4px)" }}
                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                 transition={{ delay: 0.2 + index * 0.08, type: "spring", stiffness: 200 }}
                 whileHover={{ rotate: [0, -10, 10, 0], scale: 1.15 }}
@@ -72,7 +72,7 @@ export function KPICards() {
               </motion.span>
               <motion.span 
                 className="text-[10px] text-muted-foreground font-light uppercase tracking-widest"
-                initial={{ opacity: 0, x: 10, filter: "blur(6px)" }}
+                initial={{ opacity: 0, x: 10, filter: "blur(4px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.3 + index * 0.08 }}
               >
@@ -81,7 +81,7 @@ export function KPICards() {
             </div>
             <motion.h4 
               className="text-[11px] text-muted-foreground font-light uppercase tracking-[0.4em] mb-2"
-              initial={{ opacity: 0, y: 5, filter: "blur(4px)" }}
+              initial={{ opacity: 0, y: 5, filter: "blur(3px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ delay: 0.25 + index * 0.08 }}
             >
@@ -89,7 +89,7 @@ export function KPICards() {
             </motion.h4>
             <motion.span 
               className="text-4xl font-normal text-foreground tracking-tighter block"
-              initial={{ opacity: 0, scale: 0.5, filter: "blur(15px)" }}
+              initial={{ opacity: 0, scale: 0.5, filter: "blur(4px)" }}
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               transition={{ delay: 0.3 + index * 0.08, type: "spring", stiffness: 100 }}
             >

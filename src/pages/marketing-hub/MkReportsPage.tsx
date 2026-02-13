@@ -39,7 +39,7 @@ export default function MkReportsPage() {
           { label: "Campanhas Ativas", value: stats.activeCampaigns, icon: "campaign" },
           { label: "Ideias Backlog", value: stats.totalIdeas, icon: "lightbulb" },
         ].map((m, i) => (
-          <motion.div key={m.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+          <motion.div key={m.label} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ delay: i * 0.06 }}>
             <MkCard>
               <div className="flex items-center gap-2 mb-2">
                 <span className="material-symbols-outlined text-lg text-[hsl(210,100%,65%)]">{m.icon}</span>
