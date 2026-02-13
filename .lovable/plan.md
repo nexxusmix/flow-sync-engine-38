@@ -1,119 +1,114 @@
 
-# Corrigir Layouts Quebrados e Textos Cortados em Toda a Plataforma
+# Financeiro 100% Vinculado + Atualizado Automaticamente
 
-## Problema Identificado
-O container "Pipeline Total + Health" no dashboard de projetos (e areas similares) nao possui tratamento de overflow adequado. Valores monetarios longos como "R$ 15.590,00" sao cortados quando o espaco e insuficiente. Esse padrao se repete em multiplos locais da plataforma.
+## Problema Atual
 
----
+1. **"Total Pago" mostra R$ 0,00** -- As receitas (revenues) existem no banco mas a maioria nao tem `project_id` preenchido, entao o componente `ProjectPaymentsSummary` nao encontra dados. Tambem nao existem `payment_milestones` cadastrados.
+2. **Dados PIX hardcoded** -- `ReportAsidePanel` usa valores fixos (squadfilmeo@gmail.com, Matheus Filipe Alves, Nubank). Nao existem campos `pix_key`, `pix_bank`, `pix_holder` na tabela `contracts` ou `projects`.
+3. **Portal do Cliente usa mock** -- `PortalPaymentsAside` usa dados ficticios em vez de buscar do banco.
+4. **Sem realtime no financeiro do projeto** -- Alteracoes em receitas/parcelas nao atualizam a UI do projeto automaticamente.
+5. **Receitas orfas** -- 3 das 4 receitas no banco nao tem `project_id`, quebrando toda a logica de vinculacao.
 
-## Locais com Problemas e Correcoes
+## Solucao
 
-### 1. ProjectsDashboard.tsx -- Header Pipeline + Health (PRINCIPAL)
-**Linha 244**: O `glass-card` com Pipeline Total e RadialProgress nao tem `min-w-0`, `overflow-hidden` ou responsividade.
+### Fase 1: Schema -- Adicionar campos financeiros ao contrato
 
-**Correcao:**
-- Adicionar `min-w-0` no container do texto para permitir truncamento
-- Adicionar `truncate` no valor monetario
-- Garantir que o container flex tenha `flex-shrink-0` no RadialProgress
-- Tornar o layout responsivo: em telas pequenas, empilhar verticalmente
+Adicionar colunas na tabela `contracts`:
+- `pix_key` (text, nullable)
+- `pix_key_type` (text: email/phone/cpf/random)
+- `bank_name` (text, nullable)
+- `account_holder_name` (text, nullable)
 
-### 2. ProjectsDashboard.tsx -- Sidebar Metrics (linhas 350-389)
-Os 4 cards de metricas (Pipeline Ativo, Projetos Ativos, Health Medio, Margem Liquida) com `text-lg font-medium` podem ter valores cortados em colunas estreitas.
+Isso permite que cada contrato/projeto tenha suas proprias condicoes financeiras em vez de hardcoded.
 
-**Correcao:**
-- Adicionar `truncate` nos valores monetarios
-- Adicionar `min-w-0` nos containers pai
+### Fase 2: Corrigir dados orfaos
 
-### 3. ProjectsDashboard.tsx -- Visao de Contas cards (linhas 418-422)
-Valor formatado com `formatCurrency` pode exceder o espaco disponivel.
+Atualizar as 3 receitas que estao sem `project_id` para vincula-las ao projeto correto (PORTO 153 = `62f54f75-ca2f-4083-b10e-ec2c6bcb1534`), e tambem vincular o `contract_id` correto.
 
-**Correcao:**
-- Adicionar `truncate` no span do valor
+### Fase 3: Refatorar `ReportAsidePanel`
 
-### 4. Dashboard.tsx (Overview) -- Header date card (linha 142)
-O `glass-card` com data pode comprimir em telas menores.
+Em vez de props hardcoded, buscar `pix_key`, `bank_name`, `account_holder_name` do contrato vinculado ao projeto via `useFinancialStore.getContractByProject()`.
 
-**Correcao:**
-- Adicionar `flex-shrink-0` para evitar compressao
+### Fase 4: Refatorar `PortalPaymentsAside`
 
-### 5. Dashboard.tsx -- Visao de Contas grid (linhas 400-403)
-Valor "R$ Xk" em `text-[10px]` pode cortar em grid de 3 colunas estreitas.
+Remover mock data. Receber `projectId` como prop e buscar receitas reais do banco via `useFinancialStore`, mapeando status corretamente (`received` -> `paid`, overdue detection por data).
 
-**Correcao:**
-- Adicionar `truncate` nos textos de valor
+### Fase 5: Calculos corretos no `ProjectPaymentsSummary`
 
-### 6. ReportMetricsBar.tsx -- Valor Total (linha 82)
-Ja tem `truncate` -- OK, mas o `font-bold` viola a regra tipografica (deve ser `font-medium` max 500).
+Atualmente o componente calcula "Total Pago" a partir de milestones, mas se nao existem milestones, usa revenues como fallback. O problema e que revenues sem `project_id` nao aparecem. Com os dados corrigidos (Fase 2), isso se resolve automaticamente.
 
-**Correcao:**
-- Trocar `font-bold` por `font-medium` para seguir o padrao tipografico
+Ajustar tambem: se o contrato tem `total_value` e receitas tem `status=received`, calcular:
+- **Total Pago** = soma das receitas `received`
+- **Falta Pagar** = `contract.total_value - Total Pago` (minimo 0)
 
-### 7. ClientPortalPage.tsx -- Metric cards (linhas 231-251)
-Valor do contrato e health score em cards sem protecao de overflow.
+### Fase 6: Realtime para financeiro no contexto do projeto
 
-**Correcao:**
-- Adicionar `truncate` nos valores
+Adicionar `revenues` e `contracts` ao listener realtime (`useRealtimeSync`) para que mudancas financeiras invalidem os caches e atualizem a UI do projeto sem refresh.
 
-### 8. MetricCard.tsx -- kpi-value (linha 65)
-O valor KPI usa `text-4xl` sem `truncate`, pode estourar em telas pequenas.
+### Fase 7: Botoes de acao no card financeiro
 
-**Correcao:**
-- Adicionar `truncate` na classe `kpi-value` no index.css
+Adicionar ao `ProjectPaymentsSummary`:
+- **"Adicionar Parcela"** -- abre modal para criar receita vinculada ao projeto
+- **"Marcar como Pago"** -- ja existe, confirmar funcionamento
 
-### 9. ProjectsMetricsCharts.tsx -- Valores bold (linha 111)
-`text-2xl font-bold` viola padrao tipografico.
+### Fase 8: Badge de Saude Financeira
 
-**Correcao:**
-- Trocar `font-bold` por `font-medium`
+Exibir no card financeiro:
+- **OK** (verde): sem atrasos
+- **Atencao** (amarelo): 1 parcela vencida
+- **Critico** (vermelho): multiplas vencidas ou valor alto
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivos a editar
-
-| Arquivo | Tipo de correcao |
-|---|---|
-| `src/components/projects/dashboard/ProjectsDashboard.tsx` | Overflow no header Pipeline+Health, sidebar metrics, e Visao de Contas |
-| `src/pages/Dashboard.tsx` | Overflow no header date, Visao de Contas grid |
-| `src/components/projects/reporting/ReportMetricsBar.tsx` | font-bold -> font-medium |
-| `src/pages/ClientPortalPage.tsx` | truncate nos valores de metricas |
-| `src/index.css` | Adicionar truncate na classe .kpi-value |
-| `src/components/projects/dashboard/ProjectsMetricsCharts.tsx` | font-bold -> font-medium |
-
-### Padrao de correcao aplicado
-
-Para cada container com valor monetario ou numerico:
-1. Container pai: `min-w-0` (permite flex shrink)
-2. Elemento de texto: `truncate` (corta com ellipsis)
-3. Elementos fixos (icones, radiais): `flex-shrink-0`
-4. Em containers flex horizontais com texto longo: substituir por layout vertical em breakpoints menores
-
-### Correcao principal (ProjectsDashboard header):
-
-De:
-```text
-<div className="glass-card rounded-2xl p-4 flex items-center gap-4">
-  <div>
-    <p>Pipeline Total</p>
-    <p>{formatCurrency(totalPipeline)}</p>
-  </div>
-  <RadialProgress ... />
-</div>
+### Migracao SQL
+```sql
+ALTER TABLE contracts
+  ADD COLUMN pix_key text,
+  ADD COLUMN pix_key_type text DEFAULT 'email',
+  ADD COLUMN bank_name text,
+  ADD COLUMN account_holder_name text;
 ```
 
-Para:
-```text
-<div className="glass-card rounded-2xl p-4 flex items-center gap-4 max-w-xs">
-  <div className="min-w-0 flex-1">
-    <p>Pipeline Total</p>
-    <p className="truncate">{formatCurrency(totalPipeline)}</p>
-  </div>
-  <div className="flex-shrink-0">
-    <RadialProgress ... />
-  </div>
-</div>
+### Correcao de dados
+```sql
+UPDATE revenues SET project_id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534'
+WHERE description LIKE '%PORTO 153%' AND project_id IS NULL;
+
+UPDATE contracts SET pix_key = 'squadfilmeo@gmail.com',
+  pix_key_type = 'email', bank_name = 'Nubank',
+  account_holder_name = 'Matheus Filipe Alves'
+WHERE project_id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534' AND id = '29f6c64b-655a-4b97-bce4-2f6785d64ac4';
 ```
 
-### Regra tipografica aplicada
-Conforme o padrao da plataforma, `font-bold` sera substituido por `font-medium` (peso 500) em todos os valores de metricas encontrados.
+### Arquivos modificados
+1. **`src/components/projects/reporting/ReportAsidePanel.tsx`** -- Buscar dados do contrato em vez de props hardcoded
+2. **`src/components/projects/reporting/ProjectPaymentsSummary.tsx`** -- Incluir receitas no calculo de Total Pago/Falta Pagar mesmo sem milestones; adicionar badge de saude; botao "Adicionar Parcela"
+3. **`src/components/client-portal/PortalPaymentsAside.tsx`** -- Remover mocks, usar dados reais do banco via props ou store
+4. **`src/hooks/useRealtimeSync.tsx`** -- Adicionar `revenues` e `contracts` ao canal realtime (ja existem como tables no mapping mas precisam invalidar caches do financeiro)
+5. **`src/stores/financialStore.ts`** -- Adicionar campos `pix_key`, `bank_name`, `account_holder_name` ao tipo Contract e ao fetch
+
+### Fluxo de dados (SSOT)
+```text
+contracts (DB) --> useFinancialStore.fetchContracts()
+revenues  (DB) --> useFinancialStore.fetchRevenues()
+                        |
+          [Realtime: INSERT/UPDATE/DELETE]
+                        |
+                  invalidate cache
+                        |
+    ProjectPaymentsSummary  <--  ReportAsidePanel
+    (Total Pago, Parcelas)       (PIX, Banco, Titular)
+            |
+    PortalPaymentsAside (somente leitura, mesmos dados)
+```
+
+### Nao incluido nesta fase (escopo futuro)
+- Console de comandos texto/voz
+- Jobs de IA para classificacao/anomalias
+- Ledger de auditoria
+- Geracao de recibo PDF
+- Upload de comprovante
+
+Esses itens dependem de infraestrutura adicional (edge functions de IA, storage policies) e serao implementados em iteracoes futuras.
