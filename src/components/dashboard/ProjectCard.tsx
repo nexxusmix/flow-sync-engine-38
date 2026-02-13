@@ -2,6 +2,7 @@ import { Play, Clapperboard, X, Film, ImageIcon, Link2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { useProjectMedia, type MediaItem } from "@/hooks/useProjectMedia";
 import { useProjectMediaFeed, type ProjectMediaItem } from "@/hooks/useProjectMediaFeed";
 
@@ -117,6 +118,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ title, client, status, image, date, index = 0, projectId }: ProjectCardProps) {
+  const navigate = useNavigate();
   const { data: mediaItems } = useProjectMedia(projectId);
   const { data: feedItems } = useProjectMediaFeed(projectId);
   const [modalUrl, setModalUrl] = useState<string | null>(null);
@@ -199,6 +201,7 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
         whileHover={{ y: -12, scale: 1.02, transition: { duration: 0.3 } }}
         whileTap={{ scale: 0.98 }}
         className="glass-card rounded-[2rem] overflow-hidden group cursor-pointer hover:border-primary/30 transition-all duration-500"
+        onClick={() => projectId && navigate(`/projetos/${projectId}`)}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
