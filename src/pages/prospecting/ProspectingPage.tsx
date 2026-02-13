@@ -3,25 +3,20 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useProspectingStore } from "@/stores/prospectingStore";
 import { Link } from "react-router-dom";
 import { 
-  Users, Target, MessageSquare, TrendingUp, 
-  AlertTriangle, CheckCircle, Clock, ArrowRight,
-  Phone, Mail, Calendar
+  Users, Target, TrendingUp, 
+  AlertTriangle, CheckCircle, Clock, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OPPORTUNITY_STAGES, ACTIVITY_TYPES } from "@/types/prospecting";
+import { formatCurrencyBRL } from "@/utils/format";
+import { ProspectCampaignEngine } from "@/components/prospecting/ProspectCampaignEngine";
+import { ProspectInbox } from "@/components/prospecting/ProspectInbox";
+import { ProspectAutomations } from "@/components/prospecting/ProspectAutomations";
 
 function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
-  color = "text-primary" 
+  title, value, icon: Icon, trend, color = "text-primary" 
 }: { 
-  title: string; 
-  value: string | number; 
-  icon: React.ElementType; 
-  trend?: string;
-  color?: string;
+  title: string; value: string | number; icon: React.ElementType; trend?: string; color?: string;
 }) {
   return (
     <div className="glass-card rounded-2xl p-6">
@@ -41,13 +36,7 @@ function StatCard({
   );
 }
 
-function TodayActivityCard({ 
-  activity, 
-  onComplete 
-}: { 
-  activity: any; 
-  onComplete: () => void;
-}) {
+function TodayActivityCard({ activity, onComplete }: { activity: any; onComplete: () => void }) {
   const isOverdue = activity.due_at && new Date(activity.due_at) < new Date();
   const activityType = ACTIVITY_TYPES.find(t => t.type === activity.type);
   
@@ -68,21 +57,13 @@ function TodayActivityCard({
             {activity.due_at && (
               <p className={`text-[10px] mt-1 ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
                 {new Date(activity.due_at).toLocaleString('pt-BR', { 
-                  day: '2-digit', 
-                  month: '2-digit', 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
                 })}
               </p>
             )}
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0"
-          onClick={onComplete}
-        >
+        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={onComplete}>
           <CheckCircle className="w-4 h-4" />
         </Button>
       </div>
@@ -92,13 +73,8 @@ function TodayActivityCard({
 
 export default function ProspectingPage() {
   const { 
-    fetchProspects, 
-    fetchOpportunities, 
-    fetchActivities,
-    fetchTodayActivities,
-    completeActivity,
-    getStats,
-    activities,
+    fetchProspects, fetchOpportunities, fetchActivities,
+    completeActivity, getStats, activities, prospects, opportunities,
   } = useProspectingStore();
 
   useEffect(() => {
@@ -120,14 +96,6 @@ export default function ProspectingPage() {
     return new Date(a.due_at).getTime() - new Date(b.due_at).getTime();
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
   return (
     <DashboardLayout title="Prospecção">
       <div className="space-y-8">
@@ -138,7 +106,7 @@ export default function ProspectingPage() {
               Prospecção
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Gerencie targets, cadências e oportunidades
+              Motor de aquisição inteligente com IA
             </p>
           </div>
           <div className="flex gap-3">
@@ -174,7 +142,7 @@ export default function ProspectingPage() {
           />
           <StatCard
             title="Pipeline"
-            value={formatCurrency(stats.pipelineValue)}
+            value={formatCurrencyBRL(stats.pipelineValue)}
             icon={TrendingUp}
             color="text-amber-500"
           />
@@ -187,10 +155,13 @@ export default function ProspectingPage() {
           />
         </div>
 
-        {/* Main Content */}
+        {/* AI Campaign Engine */}
+        <ProspectCampaignEngine />
+
+        {/* Main Content: Activities + Inbox + Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Today's Activities */}
-          <div className="lg:col-span-2 glass-card rounded-2xl p-6">
+          <div className="glass-card rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-medium text-foreground">Atividades de Hoje</h2>
@@ -205,13 +176,12 @@ export default function ProspectingPage() {
                 </Link>
               </Button>
             </div>
-
             <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
               {todayActivities.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-sm">Nenhuma atividade pendente para hoje</p>
-                  <p className="text-[10px] mt-1">Crie novas atividades a partir de uma oportunidade</p>
+                  <p className="text-sm">Nenhuma atividade pendente</p>
+                  <p className="text-[10px] mt-1">Crie a partir de uma oportunidade</p>
                 </div>
               ) : (
                 todayActivities.map((activity) => (
@@ -225,9 +195,11 @@ export default function ProspectingPage() {
             </div>
           </div>
 
+          {/* Inbox */}
+          <ProspectInbox prospects={prospects} opportunities={opportunities} />
+
           {/* Quick Actions & Pipeline Summary */}
           <div className="space-y-6">
-            {/* Quick Actions */}
             <div className="glass-card rounded-2xl p-6">
               <h3 className="text-sm font-medium text-foreground mb-4">Ações Rápidas</h3>
               <div className="space-y-2">
@@ -239,7 +211,7 @@ export default function ProspectingPage() {
                 </Button>
                 <Button variant="outline" className="w-full justify-start" asChild>
                   <Link to="/prospeccao/cadencias">
-                    <MessageSquare className="w-4 h-4 mr-3" />
+                    <Target className="w-4 h-4 mr-3" />
                     Criar Cadência
                   </Link>
                 </Button>
@@ -252,7 +224,6 @@ export default function ProspectingPage() {
               </div>
             </div>
 
-            {/* Pipeline Summary */}
             <div className="glass-card rounded-2xl p-6">
               <h3 className="text-sm font-medium text-foreground mb-4">Pipeline por Estágio</h3>
               <div className="space-y-3">
@@ -272,6 +243,9 @@ export default function ProspectingPage() {
             </div>
           </div>
         </div>
+
+        {/* Automations */}
+        <ProspectAutomations />
       </div>
     </DashboardLayout>
   );
