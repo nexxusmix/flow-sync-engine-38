@@ -22,7 +22,8 @@ type TableName =
   | 'payment_milestones'
   | 'content_items'
   | 'content_ideas'
-  | 'tasks';
+  | 'tasks'
+  | 'panorama_snapshots';
 
 interface QueryKeyMapping {
   table: TableName;

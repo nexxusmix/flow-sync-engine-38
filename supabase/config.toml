@@ -140,3 +140,6 @@ verify_jwt = false
 
 [functions.prospect-tts]
 verify_jwt = false
+
+[functions.export-panorama-pdf]
+verify_jwt = false
