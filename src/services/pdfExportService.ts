@@ -6,7 +6,12 @@
  * - Error handling
  * - Toast notifications
  * - Signed URL management
- * - Auto-open in new tab with print dialog
+ * - Auto-open rendered HTML with print dialog (Save as PDF)
+ * 
+ * IMPORTANT: The edge function generates styled HTML that is stored in Supabase Storage.
+ * The HTML embeds an auto-print script (desktop) and a "Save as PDF" button (mobile).
+ * We ALWAYS open the HTML URL directly in a new tab so the browser renders it visually.
+ * We NEVER download the HTML as a blob/file - that would show raw code.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -34,12 +39,6 @@ export type ExportType =
   | "content";
 
 export interface ExportOptions {
-  /** Whether to automatically open the PDF in a new tab */
-  autoOpen?: boolean;
-  /** Whether to download the PDF directly instead of opening */
-  autoDownload?: boolean;
-  /** Custom filename for download */
-  fileName?: string;
   /** Show toast notifications */
   showToasts?: boolean;
   /** Custom loading message */
@@ -49,106 +48,14 @@ export interface ExportOptions {
 }
 
 const DEFAULT_OPTIONS: ExportOptions = {
-  autoOpen: true,
-  autoDownload: false,
   showToasts: true,
   loadingMessage: "Gerando relatório...",
-  successMessage: "Relatório gerado com sucesso!",
+  successMessage: "Relatório pronto! Use Imprimir > Salvar como PDF.",
 };
 
 /**
- * Downloads a file from URL directly to user's device.
- * Validates content-type to prevent downloading raw HTML as PDF.
- */
-async function downloadFile(url: string, fileName: string): Promise<void> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch file');
-    }
-    
-    const contentType = response.headers.get('content-type') || '';
-    
-    // If the response is HTML, open it rendered in a new window instead of downloading
-    if (contentType.includes('text/html')) {
-      console.warn('[pdfExportService] Server returned HTML instead of PDF, opening rendered view');
-      await openPrintableWindow(url);
-      return;
-    }
-    
-    const blob = await response.blob();
-    const downloadUrl = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Clean up the URL object
-    setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
-  } catch (error) {
-    console.error('[pdfExportService] Error downloading file:', error);
-    // Fallback: open in new tab (rendered)
-    window.open(url, '_blank');
-  }
-}
-
-/**
- * Opens the HTML report in a new window, renders it visually, and triggers print dialog.
- * Works on desktop and mobile (iOS Safari included).
- */
-async function openPrintableWindow(url: string): Promise<void> {
-  try {
-    // On mobile, just open the URL directly - the browser will render it
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      // Mobile: open URL directly in new tab - browser renders HTML visually
-      window.open(url, '_blank');
-      return;
-    }
-    
-    // Desktop: fetch HTML and write to a new window for print dialog
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch report');
-    }
-    
-    const htmlContent = await response.text();
-    
-    const printWindow = window.open('', '_blank', 'width=1100,height=900,scrollbars=yes,resizable=yes');
-    
-    if (!printWindow) {
-      // Popup blocked - fallback to direct open
-      window.open(url, '_blank');
-      return;
-    }
-    
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    
-    // Trigger print after content loads
-    const triggerPrint = () => {
-      if (printWindow && !printWindow.closed) {
-        printWindow.focus();
-        printWindow.print();
-      }
-    };
-    
-    printWindow.onload = () => setTimeout(triggerPrint, 500);
-    setTimeout(triggerPrint, 1500);
-    
-  } catch (error) {
-    console.error('[pdfExportService] Error opening printable window:', error);
-    window.open(url, '_blank');
-  }
-}
-
-/**
  * Core export function - calls the unified export-pdf Edge Function
+ * and opens the result in a new tab (rendered HTML with print dialog).
  */
 async function exportPdf(
   type: ExportType,
@@ -187,16 +94,12 @@ async function exportPdf(
     }
 
     const url = data.signed_url || data.public_url;
-    const fileName = data.file_name || opts.fileName || `relatorio-${type}-${Date.now()}`;
 
     if (url) {
-      if (opts.autoDownload) {
-        // Download the PDF directly
-        await downloadFile(url, fileName);
-      } else if (opts.autoOpen) {
-        // Open in a new window with print styles applied
-        await openPrintableWindow(url);
-      }
+      // ALWAYS open URL in a new tab - the HTML renders visually in the browser.
+      // The embedded script auto-triggers print dialog (desktop) 
+      // or shows a "Save as PDF" button (mobile).
+      window.open(url, '_blank');
     }
 
     if (opts.showToasts && toastId) {
@@ -221,93 +124,34 @@ async function exportPdf(
   }
 }
 
-/**
- * Export a single project as PDF
- */
-export async function exportProjectPDF(
-  projectId: string,
-  options?: ExportOptions
-): Promise<ExportResult> {
-  return exportPdf("project", { id: projectId }, {
-    successMessage: "Relatório do projeto gerado!",
-    ...options,
-  });
+// ─── Public export functions ───────────────────────────────────
+
+export async function exportProjectPDF(projectId: string, options?: ExportOptions): Promise<ExportResult> {
+  return exportPdf("project", { id: projectId }, { successMessage: "Relatório do projeto pronto!", ...options });
 }
 
-/**
- * Export Report 360 as PDF
- */
-export async function exportReport360PDF(
-  period: string = "3m",
-  options?: ExportOptions
-): Promise<ExportResult> {
-  return exportPdf("report_360", { period }, {
-    successMessage: "Relatório 360° gerado!",
-    ...options,
-  });
+export async function exportReport360PDF(period: string = "3m", options?: ExportOptions): Promise<ExportResult> {
+  return exportPdf("report_360", { period }, { successMessage: "Relatório 360° pronto!", ...options });
 }
 
-/**
- * Export Tasks/Workflow as PDF
- */
-export async function exportTasksPDF(
-  filters?: Record<string, unknown>,
-  options?: ExportOptions
-): Promise<ExportResult> {
-  return exportPdf("tasks", { filters }, {
-    successMessage: "Quadro de tarefas gerado!",
-    ...options,
-  });
+export async function exportTasksPDF(filters?: Record<string, unknown>, options?: ExportOptions): Promise<ExportResult> {
+  return exportPdf("tasks", { filters }, { successMessage: "Quadro de tarefas pronto!", ...options });
 }
 
-/**
- * Export Finance Report as PDF
- */
-export async function exportFinancePDF(
-  period: string = "6m",
-  options?: ExportOptions
-): Promise<ExportResult> {
-  return exportPdf("finance", { period }, {
-    successMessage: "Relatório financeiro gerado!",
-    ...options,
-  });
+export async function exportFinancePDF(period: string = "6m", options?: ExportOptions): Promise<ExportResult> {
+  return exportPdf("finance", { period }, { successMessage: "Relatório financeiro pronto!", ...options });
 }
 
-/**
- * Export Projects Overview as PDF
- */
-export async function exportOverviewPDF(
-  period: string = "3m",
-  options?: ExportOptions
-): Promise<ExportResult> {
-  return exportPdf("project_overview", { period }, {
-    successMessage: "Visão geral gerada!",
-    ...options,
-  });
+export async function exportOverviewPDF(period: string = "3m", options?: ExportOptions): Promise<ExportResult> {
+  return exportPdf("project_overview", { period }, { successMessage: "Visão geral pronta!", ...options });
 }
 
-/**
- * Export Portal Client PDF (via token - no auth required)
- */
-export async function exportPortalPDF(
-  token: string,
-  projectId?: string,
-  options?: ExportOptions
-): Promise<ExportResult> {
-  return exportPdf("portal", { token, id: projectId }, {
-    successMessage: "Relatório do portal gerado!",
-    ...options,
-  });
+export async function exportPortalPDF(token: string, projectId?: string, options?: ExportOptions): Promise<ExportResult> {
+  return exportPdf("portal", { token, id: projectId }, { successMessage: "Relatório do portal pronto!", ...options });
 }
 
-/**
- * Legacy export functions - redirect to unified edge function
- */
-export async function exportCreativePDF(
-  type: "studio_run" | "creative_package",
-  id: string,
-  options?: ExportOptions
-): Promise<ExportResult> {
+/** Legacy export functions - redirect to dedicated edge functions */
+export async function exportCreativePDF(type: "studio_run" | "creative_package", id: string, options?: ExportOptions): Promise<ExportResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const toastId = opts.showToasts ? toast.loading("Gerando PDF criativo...") : undefined;
 
@@ -315,22 +159,13 @@ export async function exportCreativePDF(
     const { data, error } = await supabase.functions.invoke<ExportResult>("export-creative-pdf", {
       body: { type, id },
     });
-
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
     const url = data.public_url || data.signed_url;
-    const fileName = data.file_name || opts.fileName || `criativo-${type}-${id}`;
-    
-    if (url) {
-      if (opts.autoDownload) {
-        await downloadFile(url, fileName);
-      } else if (opts.autoOpen) {
-        await openPrintableWindow(url);
-      }
-    }
+    if (url) window.open(url, '_blank');
 
-    if (toastId) toast.success("PDF criativo baixado!", { id: toastId });
+    if (toastId) toast.success("PDF criativo pronto!", { id: toastId });
     return data;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro ao exportar";
@@ -339,10 +174,7 @@ export async function exportCreativePDF(
   }
 }
 
-export async function exportCampaignPDF(
-  campaignId: string,
-  options?: ExportOptions
-): Promise<ExportResult> {
+export async function exportCampaignPDF(campaignId: string, options?: ExportOptions): Promise<ExportResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const toastId = opts.showToasts ? toast.loading("Gerando PDF da campanha...") : undefined;
 
@@ -350,22 +182,13 @@ export async function exportCampaignPDF(
     const { data, error } = await supabase.functions.invoke<ExportResult>("export-campaign-pdf", {
       body: { campaign_id: campaignId },
     });
-
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
     const url = data.public_url || data.signed_url;
-    const fileName = data.file_name || opts.fileName || `campanha-${campaignId}`;
-    
-    if (url) {
-      if (opts.autoDownload) {
-        await downloadFile(url, fileName);
-      } else if (opts.autoOpen) {
-        await openPrintableWindow(url);
-      }
-    }
+    if (url) window.open(url, '_blank');
 
-    if (toastId) toast.success("PDF da campanha baixado!", { id: toastId });
+    if (toastId) toast.success("PDF da campanha pronto!", { id: toastId });
     return data;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro ao exportar";
@@ -374,10 +197,7 @@ export async function exportCampaignPDF(
   }
 }
 
-export async function exportContentPDF(
-  contentItemId: string,
-  options?: ExportOptions
-): Promise<ExportResult> {
+export async function exportContentPDF(contentItemId: string, options?: ExportOptions): Promise<ExportResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const toastId = opts.showToasts ? toast.loading("Gerando PDF do conteúdo...") : undefined;
 
@@ -385,22 +205,13 @@ export async function exportContentPDF(
     const { data, error } = await supabase.functions.invoke<ExportResult>("export-content-pdf", {
       body: { content_item_id: contentItemId },
     });
-
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
     const url = data.public_url || data.signed_url;
-    const fileName = data.file_name || opts.fileName || `conteudo-${contentItemId}`;
-    
-    if (url) {
-      if (opts.autoDownload) {
-        await downloadFile(url, fileName);
-      } else if (opts.autoOpen) {
-        await openPrintableWindow(url);
-      }
-    }
+    if (url) window.open(url, '_blank');
 
-    if (toastId) toast.success("PDF do conteúdo baixado!", { id: toastId });
+    if (toastId) toast.success("PDF do conteúdo pronto!", { id: toastId });
     return data;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro ao exportar";
@@ -409,7 +220,7 @@ export async function exportContentPDF(
   }
 }
 
-// Default export for convenience
+// Default export
 const pdfExportService = {
   exportProjectPDF,
   exportReport360PDF,

@@ -470,10 +470,45 @@ function generatePDFHtml(params: {
       text-transform: uppercase;
       letter-spacing: 0.1em;
     }
+    /* Print button for mobile */
+    .print-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: ${COLORS.primary};
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .print-bar button {
+      padding: 8px 24px;
+      background: #fff;
+      color: ${COLORS.background};
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    @media print {
+      .print-bar { display: none !important; }
+    }
   </style>
 </head>
 <body>
-  <div class="pdf-container">
+  <div class="print-bar" id="printBar">
+    <span>Relatório pronto</span>
+    <button onclick="window.print()">📄 Salvar como PDF</button>
+  </div>
+  <div class="pdf-container" style="padding-top: 60px;">
     <header class="header">
       <div class="header-left">
         <h1>${escapeHtml(title)}</h1>
@@ -497,6 +532,15 @@ function generatePDFHtml(params: {
       </div>
     </footer>
   </div>
+  <script>
+    // Auto-trigger print on desktop after content loads
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) {
+      window.onload = function() {
+        setTimeout(function() { window.print(); }, 600);
+      };
+    }
+  </script>
 </body>
 </html>`;
 }

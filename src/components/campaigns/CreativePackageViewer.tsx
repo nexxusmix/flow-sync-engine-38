@@ -45,7 +45,7 @@ export function CreativePackageViewer({
   const [editedContent, setEditedContent] = useState<CreativePackageContent | null>(null);
   
   // Export PDF
-  const { isExporting, exportedUrl, exportCreativePackage, openPdf, copyLink, resetExport } = useExportPdf();
+  const { isExporting, exportCreativePackage } = useExportPdf();
 
   // Initialize edited content when package changes
   const content = editedContent || pkg?.package_json;
@@ -114,43 +114,20 @@ export function CreativePackageViewer({
                 Criar Conteúdo
               </Button>
               
-              {exportedUrl ? (
-                <>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2"
-                    onClick={openPdf}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Abrir PDF
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2"
-                    onClick={copyLink}
-                  >
-                    <Copy className="w-4 h-4" />
-                    Copiar Link
-                  </Button>
-                </>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => pkg && exportCreativePackage(pkg.id)}
-                  disabled={isExporting}
-                >
-                  {isExporting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                  {isExporting ? "Exportando..." : "Exportar PDF"}
-                </Button>
-              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => pkg && exportCreativePackage(pkg.id)}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {isExporting ? "Exportando..." : "Exportar PDF"}
+              </Button>
               
               {hasChanges && (
                 <Button 
