@@ -175,16 +175,27 @@ export default function TasksPage() {
 
   return (
     <DashboardLayout title="Tarefas">
-      <div className="space-y-6 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-medium text-foreground tracking-tight">Minhas Tarefas</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {tasks.filter(t => t.status !== 'done').length} pendentes • {tasks.filter(t => t.status === 'done').length} concluídas
-            </p>
+        <div className="flex flex-col gap-3 md:gap-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl md:text-2xl font-medium text-foreground tracking-tight">Minhas Tarefas</h1>
+              <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                {tasks.filter(t => t.status !== 'done').length} pendentes • {tasks.filter(t => t.status === 'done').length} concluídas
+              </p>
+            </div>
+            {/* Mobile: only show + button */}
+            <div className="flex items-center gap-2 md:hidden">
+              <Button size="sm" variant="outline" onClick={() => setIsAISheetOpen(true)}>
+                <Sparkles className="w-4 h-4" />
+              </Button>
+              <Button size="sm" onClick={() => setIsNewTaskOpen(true)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3 overflow-x-auto scrollbar-none">
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
               <TabsList>
                 <TabsTrigger value="dashboard" className="gap-1.5">
@@ -201,22 +212,24 @@ export default function TasksPage() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button variant="outline" size="sm" onClick={() => exportTasks()} disabled={isExporting}>
-              {isExporting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <FileDown className="w-4 h-4 mr-2" />
-              )}
-              Exportar PDF
-            </Button>
-            <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Criar com IA
-            </Button>
-            <Button onClick={() => setIsNewTaskOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Tarefa
-            </Button>
+            <div className="hidden md:flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => exportTasks()} disabled={isExporting}>
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <FileDown className="w-4 h-4 mr-2" />
+                )}
+                Exportar PDF
+              </Button>
+              <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Criar com IA
+              </Button>
+              <Button onClick={() => setIsNewTaskOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Tarefa
+              </Button>
+            </div>
           </div>
         </div>
 

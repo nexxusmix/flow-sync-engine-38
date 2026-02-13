@@ -117,6 +117,7 @@
     font-size: 100%; /* 16px base - improved readability */
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
   }
 
   body {
@@ -125,6 +126,37 @@
     font-weight: 400; /* Regular weight for better readability */
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Mobile: disable 3D transforms and heavy effects for performance */
+  @media (max-width: 767px) {
+    html {
+      perspective: none;
+    }
+    
+    .glass-card:hover,
+    .card-elevated:hover,
+    .hover-3d:hover,
+    .hover-lift:hover,
+    .hover-tilt:hover,
+    .kpi-card:hover,
+    .kanban-stage:hover {
+      transform: none !important;
+    }
+    
+    .blob {
+      display: none;
+    }
+    
+    /* Reduce padding on mobile */
+    .kpi-card {
+      @apply p-4 rounded-2xl;
+    }
+    
+    .card-elevated, .card-flat {
+      @apply p-4 rounded-xl;
+    }
   }
 
   /* Minimal scrollbar */

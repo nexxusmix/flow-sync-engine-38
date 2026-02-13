@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, LogOut, ChevronDown, CreditCard } from "lucide-react";
+import { Search, LogOut, ChevronDown, CreditCard, Menu } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { QuickActionsMenu } from "./QuickActionsMenu";
 interface HeaderProps {
   title: string;
   onOpenSearch: () => void;
+  onOpenMobileSidebar?: () => void;
 }
 
 const roles = [
@@ -31,18 +32,16 @@ const roles = [
   { id: "financeiro", label: "Financeiro" },
 ];
 
-export function Header({ title, onOpenSearch }: HeaderProps) {
+export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps) {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState("dono");
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const { logout } = useAuth();
   
-  // Modal states
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   
-  // Form states
   const [newLead, setNewLead] = useState({ title: "", company: "", value: "" });
   const [newProposal, setNewProposal] = useState({ title: "", client_name: "", client_email: "" });
 
@@ -66,7 +65,6 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
 
       if (error) throw error;
 
-      // If company provided, create contact
       if (newLead.company) {
         await supabase.from('crm_contacts').insert([{
           name: newLead.company,
@@ -131,69 +129,75 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
   return (
     <>
       <motion.header 
-        className="sticky top-0 z-30 h-16 bg-background/60 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-4 md:px-6"
+        className="sticky top-0 z-30 h-14 md:h-16 bg-background/60 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-3 md:px-6"
         initial={{ y: -56, opacity: 0, filter: "blur(10px)" }}
         animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
         transition={{ type: "spring", stiffness: 150, damping: 22 }}
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        {/* Left: Version badge (subtle) */}
+        {/* Left: Hamburger (mobile) + Version badge */}
         <motion.div 
-          className="flex items-center"
+          className="flex items-center gap-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
+          {onOpenMobileSidebar && (
+            <button
+              onClick={onOpenMobileSidebar}
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-foreground hover:bg-white/[0.06] transition-colors md:hidden"
+            >
+              <Menu className="w-5 h-5" strokeWidth={1.5} />
+            </button>
+          )}
           <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em]">
             <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-pulse" />
             <span>Alpha v2.4</span>
           </div>
         </motion.div>
 
-        {/* Center: Search (constrained width) */}
+        {/* Center: Search */}
         <motion.button
           onClick={onOpenSearch}
-          className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all max-w-xs w-full md:w-72"
+          className="flex items-center gap-3 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 hover:bg-white/[0.05] transition-all max-w-xs w-full md:w-72"
           initial={{ opacity: 0, y: -10, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ delay: 0.3 }}
           whileHover={{ scale: 1.02, y: -1 }}
         >
-          <Search className="h-4 w-4 text-muted-foreground/70" />
-          <span className="text-xs text-muted-foreground/70 flex-1 text-left">Buscar...</span>
+          <Search className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+          <span className="text-xs text-muted-foreground/70 flex-1 text-left truncate">Buscar...</span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/50 bg-white/[0.04] px-1.5 py-0.5 rounded">
             <span>⌘</span>
             <span>K</span>
           </kbd>
         </motion.button>
 
-        {/* Right: Actions + Role + Logout */}
+        {/* Right: Actions */}
         <motion.div 
-          className="flex items-center gap-2"
+          className="flex items-center gap-1.5 md:gap-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          {/* Quick Actions Menu (+ Novo) */}
           <QuickActionsMenu 
             onNewLead={() => setShowLeadModal(true)}
             onNewProposal={() => setShowProposalModal(true)}
           />
 
-          {/* Primary CTA: Pagamento */}
           <Button
             size="sm"
-            className="h-9 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+            className="h-8 md:h-9 gap-1.5 md:gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 px-2.5 md:px-3"
             onClick={handlePayment}
           >
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline text-xs uppercase tracking-wider font-light">Pagamento</span>
           </Button>
 
-          {/* Separator */}
           <div className="h-6 w-px bg-white/[0.06] mx-1 hidden md:block" />
 
-          {/* Role Switcher (compact) */}
-          <div className="relative">
+          {/* Role Switcher - hidden on small mobile */}
+          <div className="relative hidden sm:block">
             <button
               onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
@@ -250,13 +254,12 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
             </AnimatePresence>
           </div>
 
-          {/* Logout Button (icon only) */}
           <button
             onClick={async () => {
               await logout();
               window.location.href = '/';
             }}
-            className="w-9 h-9 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-destructive/20 hover:border-destructive/30 hover:text-destructive flex items-center justify-center transition-colors"
+            className="w-8 h-8 md:w-9 md:h-9 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-destructive/20 hover:border-destructive/30 hover:text-destructive flex items-center justify-center transition-colors"
             title="Sair"
           >
             <LogOut className="h-4 w-4" />
@@ -266,7 +269,7 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
 
       {/* New Lead Modal */}
       <Dialog open={showLeadModal} onOpenChange={setShowLeadModal}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Novo Lead</DialogTitle>
             <DialogDescription>
@@ -300,11 +303,11 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowLeadModal(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowLeadModal(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={handleCreateLead} disabled={isCreating}>
+            <Button onClick={handleCreateLead} disabled={isCreating} className="w-full sm:w-auto">
               {isCreating ? "Criando..." : "Criar Lead"}
             </Button>
           </DialogFooter>
@@ -313,7 +316,7 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
 
       {/* New Proposal Modal */}
       <Dialog open={showProposalModal} onOpenChange={setShowProposalModal}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Nova Proposta</DialogTitle>
             <DialogDescription>
@@ -347,11 +350,11 @@ export function Header({ title, onOpenSearch }: HeaderProps) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowProposalModal(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowProposalModal(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={handleCreateProposal} disabled={isCreating}>
+            <Button onClick={handleCreateProposal} disabled={isCreating} className="w-full sm:w-auto">
               {isCreating ? "Criando..." : "Criar Proposta"}
             </Button>
           </DialogFooter>
