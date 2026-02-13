@@ -6,8 +6,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, LogOut, ChevronDown, CreditCard, Menu, Sun, Moon } from "lucide-react";
+import { Search, ChevronDown, CreditCard, Menu, Sun, Moon } from "lucide-react";
 import { NotificationBell } from "../alerts/NotificationBell";
+import { UserAvatarMenu } from "./UserAvatarMenu";
 import {
   Dialog,
   DialogContent,
@@ -272,16 +273,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
             )}
           </button>
 
-          <button
-            onClick={async () => {
-              await logout();
-              window.location.href = '/';
-            }}
-            className="w-8 h-8 md:w-9 md:h-9 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-destructive/20 hover:border-destructive/30 hover:text-destructive flex items-center justify-center transition-colors"
-            title="Sair"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <UserAvatarMenu />
         </motion.div>
       </motion.header>
 
