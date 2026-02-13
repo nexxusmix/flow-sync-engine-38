@@ -230,6 +230,8 @@ interface TasksBoardProps {
   onMoveTask?: (taskId: string, newStatus: Task['status']) => void;
   onToggleComplete?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 export function TasksBoard({ tasks, onEditTask, onMoveTask, onToggleComplete, onDeleteTask }: TasksBoardProps) {

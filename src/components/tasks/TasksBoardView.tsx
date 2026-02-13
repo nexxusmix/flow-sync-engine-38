@@ -22,6 +22,8 @@ interface TasksBoardViewProps {
   onEditTask: (task: Task) => void;
   onToggleComplete?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask }: TasksBoardViewProps) {

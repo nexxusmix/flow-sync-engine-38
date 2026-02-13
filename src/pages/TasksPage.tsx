@@ -1,17 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTasksUnified, Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksBoardView } from "@/components/tasks/TasksBoardView";
 import { TasksDashboardBI } from "@/components/tasks/TasksDashboardBI";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
+import { TaskEditDrawer } from "@/components/tasks/TaskEditDrawer";
+import { TaskBulkActions } from "@/components/tasks/TaskBulkActions";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
-  Mic, Square as StopIcon
+  Mic, Square as StopIcon, CheckSquare
 } from "lucide-react";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -35,8 +38,10 @@ interface TaskFormData {
   description: string;
   status: Task['status'];
   category: Task['category'];
+  priority: string;
   tags: string;
   due_date: string;
+  start_date: string;
 }
 
 const defaultTaskForm: TaskFormData = {
@@ -44,8 +49,10 @@ const defaultTaskForm: TaskFormData = {
   description: '',
   status: 'backlog',
   category: 'operacao',
+  priority: 'normal',
   tags: '',
   due_date: '',
+  start_date: '',
 };
 
 type ViewMode = 'board' | 'kanban' | 'timeline' | 'dashboard';
@@ -62,10 +69,11 @@ export default function TasksPage() {
   useScrollPersistence('tasks');
 
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
-  const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [isAISheetOpen, setIsAISheetOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskForm, setTaskForm] = useState<TaskFormData>(defaultTaskForm);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [aiText, setAiText] = useState(() => {
     try { return localStorage.getItem('tasks-ai-text') || ''; } catch { return ''; }
   });
@@ -100,30 +108,41 @@ export default function TasksPage() {
     onError: (msg) => toast.error(msg),
   });
 
-  // Cancel recording when AI sheet closes
   const handleAISheetChange = useCallback((open: boolean) => {
-    if (!open) {
-      cancelRecording();
-    }
+    if (!open) cancelRecording();
     setIsAISheetOpen(open);
   }, [cancelRecording]);
 
-  // Cancel on ESC
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isRecording) {
-        cancelRecording();
-      }
+      if (e.key === 'Escape' && isRecording) cancelRecording();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isRecording, cancelRecording]);
 
-  const handleCreateTask = async () => {
-    if (!taskForm.title.trim()) {
-      toast.error('Título é obrigatório');
-      return;
+  // Selection
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    if (selectedIds.size === tasks.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(tasks.map(t => t.id)));
     }
+  }, [tasks, selectedIds.size]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  const handleCreateTask = async () => {
+    if (!taskForm.title.trim()) { toast.error('Título é obrigatório'); return; }
     try {
       await createTask({
         title: taskForm.title,
@@ -132,7 +151,9 @@ export default function TasksPage() {
         category: taskForm.category,
         tags: taskForm.tags ? taskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         due_date: taskForm.due_date || null,
-      });
+        priority: taskForm.priority,
+        start_date: taskForm.start_date || null,
+      } as any);
       toast.success('Tarefa criada!');
       setIsNewTaskOpen(false);
       setTaskForm(defaultTaskForm);
@@ -143,48 +164,18 @@ export default function TasksPage() {
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
-    setTaskForm({
-      title: task.title,
-      description: task.description || '',
-      status: task.status,
-      category: task.category,
-      tags: task.tags?.join(', ') || '',
-      due_date: task.due_date || '',
-    });
-    setIsEditTaskOpen(true);
-  };
-
-  const handleUpdateTask = async () => {
-    if (!editingTask || !taskForm.title.trim()) return;
-    updateTask(editingTask.id, {
-      title: taskForm.title,
-      description: taskForm.description || null,
-      status: taskForm.status,
-      category: taskForm.category,
-      tags: taskForm.tags ? taskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-      due_date: taskForm.due_date || null,
-    });
-    toast.success('Tarefa atualizada!');
-    setIsEditTaskOpen(false);
-    setEditingTask(null);
-    setTaskForm(defaultTaskForm);
+    setIsEditDrawerOpen(true);
   };
 
   const handleGenerateFromAI = async () => {
-    if (!aiText.trim()) {
-      toast.error('Cole ou digite o texto com as tarefas');
-      return;
-    }
+    if (!aiText.trim()) { toast.error('Cole ou digite o texto com as tarefas'); return; }
     setIsGeneratingLocal(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-tasks-from-text', {
         body: { rawText: aiText, defaultCategory: aiCategory, defaultColumn: aiColumn },
       });
       if (error) throw error;
-      if (!data?.tasks || data.tasks.length === 0) {
-        toast.error('Nenhuma tarefa identificada no texto');
-        return;
-      }
+      if (!data?.tasks || data.tasks.length === 0) { toast.error('Nenhuma tarefa identificada no texto'); return; }
       const newTasks = await createTasksFromAI(data.tasks);
       toast.success(`${newTasks.length} tarefas criadas!`);
       setIsAISheetOpen(false);
@@ -240,6 +231,13 @@ export default function TasksPage() {
               </TabsList>
             </Tabs>
             <div className="hidden md:flex items-center gap-3">
+              {/* Select All */}
+              {viewMode !== 'dashboard' && (
+                <Button variant="outline" size="sm" onClick={selectAll} className="gap-1.5">
+                  <CheckSquare className="w-4 h-4" />
+                  {selectedIds.size === tasks.length && tasks.length > 0 ? 'Desmarcar' : 'Selecionar Tudo'}
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => exportTasks()} disabled={isExporting}>
                 {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
                 Exportar PDF
@@ -262,14 +260,38 @@ export default function TasksPage() {
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : viewMode === 'board' ? (
-          <TasksBoardView tasks={tasks} onEditTask={handleEditTask} onToggleComplete={toggleComplete} onDeleteTask={deleteTask} />
+          <TasksBoardView
+            tasks={tasks}
+            onEditTask={handleEditTask}
+            onToggleComplete={toggleComplete}
+            onDeleteTask={deleteTask}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+          />
         ) : viewMode === 'dashboard' ? (
           <TasksDashboardBI tasks={tasks} stats={stats} />
         ) : viewMode === 'timeline' ? (
           <TasksTimeline tasks={tasks} onEditTask={handleEditTask} />
         ) : (
-          <TasksBoard tasks={tasks} onEditTask={handleEditTask} onMoveTask={moveTask} onToggleComplete={toggleComplete} onDeleteTask={deleteTask} />
+          <TasksBoard
+            tasks={tasks}
+            onEditTask={handleEditTask}
+            onMoveTask={moveTask}
+            onToggleComplete={toggleComplete}
+            onDeleteTask={deleteTask}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+          />
         )}
+
+        {/* Bulk Actions Bar */}
+        <TaskBulkActions
+          selectedIds={selectedIds}
+          tasks={tasks}
+          onClearSelection={clearSelection}
+          onUpdate={updateTask}
+          onDelete={deleteTask}
+        />
 
         {/* New Task Dialog */}
         <Dialog open={isNewTaskOpen} onOpenChange={setIsNewTaskOpen}>
@@ -286,7 +308,7 @@ export default function TasksPage() {
                 <Label>Descrição</Label>
                 <Textarea value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} placeholder="Detalhes adicionais..." rows={2} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label>Coluna</Label>
                   <Select value={taskForm.status} onValueChange={(v) => setTaskForm({ ...taskForm, status: v as Task['status'] })}>
@@ -301,16 +323,31 @@ export default function TasksPage() {
                     <SelectContent>{TASK_CATEGORIES.map((cat) => <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Prioridade</Label>
+                  <Select value={taskForm.priority} onValueChange={(v) => setTaskForm({ ...taskForm, priority: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
+                      <SelectItem value="urgente">Urgente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Data Início</Label>
+                  <Input type="date" value={taskForm.start_date} onChange={(e) => setTaskForm({ ...taskForm, start_date: e.target.value })} />
+                </div>
                 <div>
                   <Label>Data Limite</Label>
                   <Input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })} />
                 </div>
-                <div>
-                  <Label>Tags (vírgula)</Label>
-                  <Input value={taskForm.tags} onChange={(e) => setTaskForm({ ...taskForm, tags: e.target.value })} placeholder="urgente, cliente" />
-                </div>
+              </div>
+              <div>
+                <Label>Tags (vírgula)</Label>
+                <Input value={taskForm.tags} onChange={(e) => setTaskForm({ ...taskForm, tags: e.target.value })} placeholder="urgente, cliente" />
               </div>
             </div>
             <DialogFooter>
@@ -323,54 +360,17 @@ export default function TasksPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Edit Task Dialog */}
-        <Dialog open={isEditTaskOpen} onOpenChange={setIsEditTaskOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Editar Tarefa</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label>Título *</Label>
-                <Input value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} />
-              </div>
-              <div>
-                <Label>Descrição</Label>
-                <Textarea value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} rows={2} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Coluna</Label>
-                  <Select value={taskForm.status} onValueChange={(v) => setTaskForm({ ...taskForm, status: v as Task['status'] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{TASK_COLUMNS.map((col) => <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Categoria</Label>
-                  <Select value={taskForm.category} onValueChange={(v) => setTaskForm({ ...taskForm, category: v as Task['category'] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{TASK_CATEGORIES.map((cat) => <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Data Limite</Label>
-                  <Input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Tags (vírgula)</Label>
-                  <Input value={taskForm.tags} onChange={(e) => setTaskForm({ ...taskForm, tags: e.target.value })} />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditTaskOpen(false)}>Cancelar</Button>
-              <Button onClick={handleUpdateTask}>Salvar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Premium Edit Drawer */}
+        <TaskEditDrawer
+          task={editingTask}
+          open={isEditDrawerOpen}
+          onOpenChange={(open) => {
+            setIsEditDrawerOpen(open);
+            if (!open) setEditingTask(null);
+          }}
+          onUpdate={updateTask}
+          onDelete={deleteTask}
+        />
 
         {/* AI Sheet */}
         <Sheet open={isAISheetOpen} onOpenChange={handleAISheetChange}>
@@ -383,7 +383,7 @@ export default function TasksPage() {
             </SheetHeader>
             <div className="space-y-4 py-6">
               <p className="text-sm text-muted-foreground">
-                Cole uma lista de tarefas, um e-mail, ou qualquer texto — ou use o <strong>microfone</strong> para ditar. A IA vai transformar em tarefas estruturadas automaticamente.
+                Cole uma lista de tarefas, um e-mail, ou qualquer texto — ou use o <strong>microfone</strong> para ditar.
               </p>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -398,20 +398,11 @@ export default function TasksPage() {
                       disabled={isTranscribing}
                     >
                       {isTranscribing ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Transcrevendo…
-                        </>
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Transcrevendo…</>
                       ) : isRecording ? (
-                        <>
-                          <StopIcon className="w-3.5 h-3.5" />
-                          <span className="animate-pulse">Gravando…</span>
-                        </>
+                        <><StopIcon className="w-3.5 h-3.5" /><span className="animate-pulse">Gravando…</span></>
                       ) : (
-                        <>
-                          <Mic className="w-3.5 h-3.5" />
-                          Ditar
-                        </>
+                        <><Mic className="w-3.5 h-3.5" />Ditar</>
                       )}
                     </Button>
                   ) : (
