@@ -237,28 +237,75 @@ export function useCRM() {
     },
   });
 
-  // Close deal (won or lost)
+  // Close deal (won or lost) - with automation for won deals
   const closeDealMutation = useMutation({
-    mutationFn: async ({ dealId, won, projectId, lostReason }: { 
+    mutationFn: async ({ dealId, won, lostReason }: { 
       dealId: string; 
       won: boolean; 
-      projectId?: string;
       lostReason?: string;
     }) => {
-      const updates = won
-        ? { stage_key: 'fechado', project_id: projectId }
-        : { stage_key: 'lost', lost_reason: lostReason };
+      if (!won) {
+        const { error } = await supabase
+          .from('crm_deals')
+          .update({ stage_key: 'lost', lost_reason: lostReason })
+          .eq('id', dealId);
+        if (error) throw error;
+        return { won: false };
+      }
 
-      const { error } = await supabase
+      // Get deal details for project creation
+      const { data: deal, error: dealError } = await supabase
         .from('crm_deals')
-        .update(updates)
-        .eq('id', dealId);
+        .select('*, contact:crm_contacts(*)')
+        .eq('id', dealId)
+        .single();
+      if (dealError) throw dealError;
 
-      if (error) throw error;
+      // Create project from deal
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .insert({
+          name: deal.title,
+          client_name: deal.contact?.company || deal.contact?.name || 'Cliente',
+          contract_value: deal.value || 0,
+          status: 'active',
+          stage_current: 'briefing',
+        })
+        .select()
+        .single();
+      if (projectError) throw projectError;
+
+      // Create contract linked to project
+      const { error: contractError } = await supabase
+        .from('contracts')
+        .insert({
+          project_id: project.id,
+          title: `Contrato - ${deal.title}`,
+          total_value: deal.value || 0,
+          status: 'active',
+          start_date: new Date().toISOString().split('T')[0],
+        });
+      if (contractError) console.error('Error creating contract:', contractError);
+
+      // Update deal with project_id and stage
+      const { error: updateError } = await supabase
+        .from('crm_deals')
+        .update({ stage_key: 'fechado', project_id: project.id })
+        .eq('id', dealId);
+      if (updateError) throw updateError;
+
+      return { won: true, projectId: project.id, projectName: project.name };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['crm-deals'] });
-      toast.success(variables.won ? 'Deal fechado como ganho!' : 'Deal fechado como perdido');
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+      if (result.won) {
+        toast.success(`Deal fechado! Projeto "${result.projectName}" criado automaticamente.`);
+      } else {
+        toast.success('Deal fechado como perdido');
+      }
     },
   });
 
