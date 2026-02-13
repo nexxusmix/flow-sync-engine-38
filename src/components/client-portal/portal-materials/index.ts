@@ -9,4 +9,5 @@ export { AddVersionDialog } from './AddVersionDialog';
 export { VideoPlayerWithMarkers } from './VideoPlayerWithMarkers';
 export { AnnotationCanvas } from './AnnotationCanvas';
 export { RevisionForm } from './RevisionForm';
+export { MaterialLightbox } from './MaterialLightbox';
 export * from './types';
