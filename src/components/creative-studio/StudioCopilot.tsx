@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { AiPromptField } from '@/components/ai/AiPromptField';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { CreativeWork, CreativeBlock } from '@/types/creative-works';
@@ -16,6 +17,8 @@ interface StudioCopilotProps {
   previewResult?: Record<string, unknown> | null;
   onApplyPreview?: () => void;
   onDiscardPreview?: () => void;
+  onDuplicate?: () => void;
+  onArchive?: () => void;
 }
 
 export function StudioCopilot({
@@ -26,6 +29,8 @@ export function StudioCopilot({
   previewResult,
   onApplyPreview,
   onDiscardPreview,
+  onDuplicate,
+  onArchive,
 }: StudioCopilotProps) {
   const [instruction, setInstruction] = useState('');
   const [activeTab, setActiveTab] = useState<'copilot' | 'references' | 'actions'>('copilot');
@@ -214,12 +219,13 @@ export function StudioCopilot({
 
             <h4 className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-3">Gerenciar</h4>
             {[
-              { icon: 'content_copy', label: 'Duplicar Trabalho' },
-              { icon: 'download', label: 'Exportar PDF' },
-              { icon: 'archive', label: 'Arquivar', destructive: true },
+              { icon: 'content_copy', label: 'Duplicar Trabalho', onClick: onDuplicate },
+              { icon: 'download', label: 'Exportar PDF', onClick: () => toast.info('Export PDF em breve') },
+              { icon: 'archive', label: 'Arquivar', destructive: true, onClick: onArchive },
             ].map((a) => (
               <button
                 key={a.label}
+                onClick={a.onClick}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded border border-[rgba(0,156,202,0.08)] hover:border-[rgba(0,156,202,0.15)] transition-all text-[12px] ${
                   a.destructive ? 'text-red-400/40 hover:text-red-400/60' : 'text-white/35 hover:text-white/55'
                 }`}

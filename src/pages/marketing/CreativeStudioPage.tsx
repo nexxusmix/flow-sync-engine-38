@@ -1,25 +1,26 @@
 /**
- * CreativeStudioPage — SolaFlux Holographic Design
- * 3-panel layout: Sidebar (blocks+context) | Editor | Copilot
- * Space Grotesk, glass-projection, cyan glow
+ * CreativeStudioPage — SQUAD FILM / Liquid Glass
+ * 3-panel layout: Sidebar (blocks+context) | Editor | Copilot+Actions
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   StudioSidebar,
   StudioCopilot,
   NarrativeScriptEditor,
-  EmptyBlockPlaceholder,
+  BriefEditor,
+  ShotlistEditor,
+  CopyEditor,
+  GenericBlockEditor,
 } from '@/components/creative-studio';
 import { useCreativeWorks, useCreativeWork, useBlockVersions } from '@/hooks/useCreativeWorks';
 import { supabase } from '@/integrations/supabase/client';
-import type { CreativeBlockType, NarrativeScriptContent } from '@/types/creative-works';
+import type { CreativeBlockType, NarrativeScriptContent, BriefContent, ShotlistContent, CopyVariationsContent } from '@/types/creative-works';
 import type { StudioNavItem } from '@/components/creative-studio/StudioSidebar';
 import type { BrandKit } from '@/types/marketing';
 import { TemplateStudioPanel } from '@/components/studio/TemplateStudioPanel';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import '@/styles/mk-holographic.css';
 
 const BLOCK_LABELS: Record<CreativeBlockType, string> = {
   brief: 'Brief',
@@ -39,7 +40,7 @@ export default function CreativeStudioPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [activeBlock, setActiveBlock] = useState<StudioNavItem>('narrative_script');
+  const [activeBlock, setActiveBlock] = useState<StudioNavItem>('brief');
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewResult, setPreviewResult] = useState<Record<string, unknown> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -97,7 +98,15 @@ export default function CreativeStudioPage() {
         },
       });
       if (error) throw error;
-      if (data?.content) setPreviewResult(data.content);
+      if (data?.content) {
+        // Apply directly for non-narrative blocks
+        await upsertBlock.mutateAsync({
+          type: currentBlockType,
+          content: data.content,
+          source: 'ai', status: 'draft',
+        });
+        toast.success('Conteúdo gerado com IA!');
+      }
     } catch (err) {
       console.error('Generate error:', err);
       toast.error('Erro ao gerar conteúdo');
@@ -129,13 +138,14 @@ export default function CreativeStudioPage() {
 
   const handleRegenerate = async () => { await handleGenerate(); };
 
-  const handleSaveBlock = async (content: NarrativeScriptContent) => {
+  // Generic save handler for all block types
+  const handleSaveBlock = useCallback(async (content: Record<string, unknown>) => {
     await upsertBlock.mutateAsync({
       type: currentBlockType,
-      content: content as unknown as Record<string, unknown>,
+      content,
       source: 'manual', status: 'draft',
     });
-  };
+  }, [currentBlockType, upsertBlock]);
 
   const handleApplyPreview = async () => {
     if (!previewResult) return;
@@ -191,11 +201,53 @@ export default function CreativeStudioPage() {
     }
   };
 
+  // -- Actions --
+  const handleDuplicate = async () => {
+    if (!work) return;
+    try {
+      const newWork = await createWork.mutateAsync({
+        title: `${work.title} (cópia)`,
+        client_id: work.client_id,
+        project_id: work.project_id,
+        campaign_id: work.campaign_id,
+        brand_kit_id: work.brand_kit_id,
+      });
+      // Copy blocks
+      for (const block of blocks) {
+        await supabase.from('creative_blocks').insert({
+          work_id: newWork.id,
+          type: block.type,
+          content: block.content as any,
+          source: block.source,
+          title: block.title,
+          status: 'draft',
+          version: 1,
+          order_index: block.order_index,
+        });
+      }
+      toast.success('Trabalho duplicado!');
+      navigate(`/marketing/studio/${newWork.id}`);
+    } catch {
+      toast.error('Erro ao duplicar');
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!work) return;
+    try {
+      await updateWork.mutateAsync({ status: 'archived' } as any);
+      toast.success('Trabalho arquivado');
+      navigate('/marketing/studio');
+    } catch {
+      toast.error('Erro ao arquivar');
+    }
+  };
+
   if (isLoading || !workId) {
     return (
       <DashboardLayout title="Studio Criativo">
         <div className="h-full flex items-center justify-center">
-          <div className="text-white/30" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Carregando...</div>
+          <div className="text-muted-foreground">Carregando...</div>
         </div>
       </DashboardLayout>
     );
@@ -203,11 +255,20 @@ export default function CreativeStudioPage() {
 
   const renderBlockEditor = () => {
     switch (activeBlock) {
+      case 'brief':
+        return (
+          <BriefEditor
+            block={currentBlock || null}
+            onSave={(c) => handleSaveBlock(c as unknown as Record<string, unknown>)}
+            onGenerate={handleGenerate}
+            isGenerating={isGenerating}
+          />
+        );
       case 'narrative_script':
         return (
           <NarrativeScriptEditor
             block={currentBlock || null}
-            onSave={handleSaveBlock}
+            onSave={(c) => handleSaveBlock(c as unknown as Record<string, unknown>)}
             onGenerate={handleGenerate}
             onImprove={handleImprove}
             onRegenerate={handleRegenerate}
@@ -216,20 +277,47 @@ export default function CreativeStudioPage() {
             onRestoreVersion={handleRestoreVersion}
           />
         );
-      default:
+      case 'shotlist':
         return (
-          <EmptyBlockPlaceholder
-            blockType={currentBlockType}
-            blockLabel={BLOCK_LABELS[currentBlockType]}
+          <ShotlistEditor
+            block={currentBlock || null}
+            onSave={(c) => handleSaveBlock(c as unknown as Record<string, unknown>)}
             onGenerate={handleGenerate}
+            isGenerating={isGenerating}
           />
         );
+      case 'copy_variations':
+        return (
+          <CopyEditor
+            block={currentBlock || null}
+            onSave={(c) => handleSaveBlock(c as unknown as Record<string, unknown>)}
+            onGenerate={handleGenerate}
+            isGenerating={isGenerating}
+          />
+        );
+      case 'storyboard':
+      case 'storyboard_images':
+      case 'moodboard':
+      case 'visual_identity':
+      case 'motion_direction':
+      case 'lettering':
+        return (
+          <GenericBlockEditor
+            blockType={currentBlockType}
+            block={currentBlock || null}
+            onSave={handleSaveBlock}
+            onGenerate={handleGenerate}
+            isGenerating={isGenerating}
+          />
+        );
+      default:
+        return null;
     }
   };
 
   return (
     <DashboardLayout title="Studio Criativo">
-      <div className="h-[calc(100vh-4rem)] flex" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+      <div className="h-[calc(100vh-4rem)] flex">
         {/* Sidebar */}
         <StudioSidebar
           work={work || null}
@@ -241,9 +329,8 @@ export default function CreativeStudioPage() {
         />
 
         {/* Main Editor */}
-        <div className="flex-1 bg-[#000000] overflow-hidden relative">
-          {/* Subtle ambient glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[200px] bg-[radial-gradient(ellipse_at_50%_0%,rgba(0,156,202,0.04)_0%,transparent_70%)] pointer-events-none z-0" />
+        <div className="flex-1 bg-background overflow-hidden relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[200px] bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.04)_0%,transparent_70%)] pointer-events-none z-0" />
           <div className="relative z-10 h-full">
             {activeBlock === 'templates' ? (
               <div className="h-full p-4">
@@ -264,6 +351,8 @@ export default function CreativeStudioPage() {
           previewResult={previewResult}
           onApplyPreview={handleApplyPreview}
           onDiscardPreview={handleDiscardPreview}
+          onDuplicate={handleDuplicate}
+          onArchive={handleArchive}
         />
       </div>
     </DashboardLayout>
