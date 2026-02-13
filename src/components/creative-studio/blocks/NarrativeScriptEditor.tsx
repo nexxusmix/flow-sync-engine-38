@@ -2,7 +2,7 @@
  * NarrativeScriptEditor — SolaFlux Holographic Design
  * Glass-projection editor area with cyan accents
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { VoiceInputButton } from '@/components/ai/VoiceInputButton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -43,6 +43,7 @@ export function NarrativeScriptEditor({
 }: NarrativeScriptEditorProps) {
   const [content, setContent] = useState<NarrativeScriptContent>(emptyContent);
   const [hasChanges, setHasChanges] = useState(false);
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (block?.content) {
@@ -59,17 +60,26 @@ export function NarrativeScriptEditor({
     }
   }, [block]);
 
+  const debouncedSave = useCallback((c: NarrativeScriptContent) => {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => { onSave(c); setHasChanges(false); }, 2500);
+  }, [onSave]);
+
   const updateField = <K extends keyof NarrativeScriptContent>(field: K, value: NarrativeScriptContent[K]) => {
-    setContent((prev) => ({ ...prev, [field]: value }));
+    const next = { ...content, [field]: value };
+    setContent(next);
     setHasChanges(true);
+    debouncedSave(next);
   };
 
   const updateStructure = (act: 'act1' | 'act2' | 'act3', value: string) => {
-    setContent((prev) => ({ ...prev, structure: { ...prev.structure, [act]: value } }));
+    const next = { ...content, structure: { ...content.structure, [act]: value } };
+    setContent(next);
     setHasChanges(true);
+    debouncedSave(next);
   };
 
-  const handleSave = () => { onSave(content); setHasChanges(false); };
+  const handleSave = () => { if (saveTimeout.current) clearTimeout(saveTimeout.current); onSave(content); setHasChanges(false); };
   const isEmpty = !content.logline && !content.premise && !content.full_script;
   const statusLabel = block?.status === 'draft' ? 'Rascunho' : block?.status === 'ready' ? 'Pronto' : block?.status === 'approved' ? 'Aprovado' : 'Vazio';
 
