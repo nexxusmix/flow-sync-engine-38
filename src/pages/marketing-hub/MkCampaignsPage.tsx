@@ -4,7 +4,9 @@ import { MkCard, MkStatusBadge, MkEmptyState, MkSectionHeader } from "@/componen
 import { useMarketingStore } from "@/stores/marketingStore";
 import { Campaign, CampaignStatus } from "@/types/marketing";
 import { motion } from "framer-motion";
-import { Plus, Search, MoreVertical, Calendar, DollarSign, Target } from "lucide-react";
+import { Plus, Search, MoreVertical, Calendar, DollarSign, Target, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -143,28 +145,64 @@ export default function MkCampaignsPage() {
 }
 
 function CampaignCard({ campaign: c, onDelete }: { campaign: Campaign; onDelete: () => void }) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const s = statusMap[c.status] || statusMap.draft;
   return (
-    <MkCard hover>
-      <div className="flex items-start justify-between mb-3">
-        <MkStatusBadge label={s.label} variant={s.variant} />
-        <button onClick={e => { e.stopPropagation(); onDelete(); }} className="text-white/20 hover:text-white/60 transition-colors">
-          <MoreVertical className="w-4 h-4" />
-        </button>
-      </div>
-      <h3 className="text-base font-semibold text-white/85 mb-1 line-clamp-1">{c.name}</h3>
-      {c.objective && <p className="text-xs text-white/30 line-clamp-2 mb-3">{c.objective}</p>}
-      <div className="flex items-center gap-4 text-[11px] text-white/30 mt-auto pt-2 border-t border-white/[0.04]">
-        {c.start_date && (
-          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(c.start_date), "dd MMM", { locale: ptBR })}</span>
-        )}
-        {c.budget && (
-          <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />R$ {c.budget.toLocaleString("pt-BR")}</span>
-        )}
-        {c.audience && (
-          <span className="flex items-center gap-1 truncate"><Target className="w-3 h-3" />{c.audience}</span>
-        )}
-      </div>
-    </MkCard>
+    <>
+      <MkCard hover>
+        <div className="flex items-start justify-between mb-3">
+          <MkStatusBadge label={s.label} variant={s.variant} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button onClick={e => e.stopPropagation()} className="text-white/20 hover:text-white/60 transition-colors">
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <h3 className="text-base font-semibold text-white/85 mb-1 line-clamp-1">{c.name}</h3>
+        {c.objective && <p className="text-xs text-white/30 line-clamp-2 mb-3">{c.objective}</p>}
+        <div className="flex items-center gap-4 text-[11px] text-white/30 mt-auto pt-2 border-t border-white/[0.04]">
+          {c.start_date && (
+            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(c.start_date), "dd MMM", { locale: ptBR })}</span>
+          )}
+          {c.budget && (
+            <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />R$ {c.budget.toLocaleString("pt-BR")}</span>
+          )}
+          {c.audience && (
+            <span className="flex items-center gap-1 truncate"><Target className="w-3 h-3" />{c.audience}</span>
+          )}
+        </div>
+      </MkCard>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Campanha</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir "{c.name}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={onDelete}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -15,7 +15,7 @@ export default function CRMPage() {
   const [activeView, setActiveView] = useState<'kanban' | 'lista'>('kanban');
   
   const { isLoading: authLoading } = useAuth();
-  const { deals, metrics, isLoading: dataLoading, moveDealToStage } = useCRM();
+  const { deals, metrics, isLoading: dataLoading, moveDealToStage, deleteDeal } = useCRM();
   
   // Loading during auth check or data fetch (hooks handle user existence internally)
   const isLoading = authLoading || dataLoading;
@@ -147,6 +147,7 @@ export default function CRMPage() {
                   color={stage.color}
                   count={transformedDeals.filter(d => d.stage === stage.id).length}
                   deals={transformedDeals.filter(d => d.stage === stage.id)}
+                  onDeleteDeal={(id) => deleteDeal(id)}
                 />
               ))}
             </div>
