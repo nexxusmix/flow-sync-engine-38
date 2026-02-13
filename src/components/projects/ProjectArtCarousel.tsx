@@ -4,12 +4,16 @@ import { useProjectMedia, type MediaItem } from "@/hooks/useProjectMedia";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, Play, Download, ExternalLink, 
-  Film, ImageIcon, Sparkles, X, Maximize2, Link2, FileIcon
+  Film, ImageIcon, Sparkles, X, Maximize2, Link2, FileIcon,
+  MessageSquare, AlertTriangle, Send, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import { toast } from "sonner";
 
 interface ProjectArtCarouselProps {
   projectId: string;
@@ -66,12 +70,154 @@ function ExternalVideoEmbed({ url, className }: { url: string; className?: strin
   return null;
 }
 
-function FullscreenModal({ item, onClose }: { item: SlideItem; onClose: () => void }) {
+function QuickFeedbackForm({ projectId, itemTitle }: { projectId: string; itemTitle?: string }) {
+  const { profile } = useProfile();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [mode, setMode] = useState<'comment' | 'revision'>('comment');
+  const [text, setText] = useState('');
+  const [timecode, setTimecode] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const captureTimecode = () => {
+    // Try to find the video element in the modal
+    const video = document.querySelector('.fullscreen-modal-video') as HTMLVideoElement;
+    if (video && !isNaN(video.currentTime)) {
+      const t = video.currentTime;
+      const m = Math.floor(t / 60);
+      const s = Math.floor(t % 60);
+      setTimecode(`${m}:${s.toString().padStart(2, '0')}`);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+
+    try {
+      // Get portal_link for this project
+      const { data: portalLink } = await supabase
+        .from('portal_links')
+        .select('id')
+        .eq('project_id', projectId)
+        .limit(1)
+        .maybeSingle();
+
+      const authorName = profile?.full_name || 'Gestor';
+
+      if (mode === 'comment') {
+        // Use change_request as comment (portal_comments requires deliverable_id)
+        if (!portalLink?.id) {
+          toast.error('Portal não encontrado para este projeto');
+          setSending(false);
+          return;
+        }
+        const { error } = await supabase.from('portal_change_requests').insert({
+          portal_link_id: portalLink.id,
+          title: `Comentário: ${itemTitle || 'Material'}`,
+          description: `${timecode ? `[${timecode}] ` : ''}${text.trim()}`,
+          status: 'open',
+          priority: 'low',
+          author_name: authorName,
+          author_role: 'manager',
+        });
+        if (error) throw error;
+        toast.success('Comentário enviado!');
+      } else {
+        // Insert change_request
+        if (!portalLink?.id) {
+          toast.error('Portal não encontrado para este projeto');
+          setSending(false);
+          return;
+        }
+        const { error } = await supabase.from('portal_change_requests').insert({
+          portal_link_id: portalLink.id,
+          title: `Revisão: ${itemTitle || 'Material'}`,
+          description: `${timecode ? `[${timecode}] ` : ''}${text.trim()}`,
+          status: 'open',
+          priority: 'normal',
+          author_name: authorName,
+          author_role: 'manager',
+        });
+        if (error) throw error;
+        toast.success('Revisão solicitada!');
+      }
+
+      setText('');
+      setTimecode('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enviar');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="w-full mt-3 space-y-2">
+      {/* Mode tabs */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => setMode('comment')}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] transition-colors",
+            mode === 'comment'
+              ? "bg-primary/20 text-primary"
+              : "text-white/50 hover:text-white/80"
+          )}
+        >
+          <MessageSquare className="w-3 h-3" /> Comentário
+        </button>
+        <button
+          onClick={() => setMode('revision')}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] transition-colors",
+            mode === 'revision'
+              ? "bg-warning/20 text-warning"
+              : "text-white/50 hover:text-white/80"
+          )}
+        >
+          <AlertTriangle className="w-3 h-3" /> Revisão
+        </button>
+        <button
+          onClick={captureTimecode}
+          className="flex items-center gap-1 px-2 py-1.5 rounded-full text-[11px] text-white/40 hover:text-white/70 transition-colors ml-auto"
+          title="Capturar timecode do vídeo"
+        >
+          <Clock className="w-3 h-3" />
+          {timecode || 'Timecode'}
+        </button>
+      </div>
+
+      {/* Input */}
+      <div className="flex items-center gap-2">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
+          placeholder={mode === 'comment' ? 'Adicionar comentário...' : 'Descrever alteração necessária...'}
+          className="flex-1 bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-primary/40"
+        />
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={sending || !text.trim()}
+          className="h-9 w-9 p-0 rounded-xl"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function FullscreenModal({ item, onClose, projectId }: { item: SlideItem; onClose: () => void; projectId: string }) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
+
+  const isVideo = item.mediaType === "video" || item.mediaType === "external_video";
 
   return createPortal(
     <motion.div
@@ -84,7 +230,7 @@ function FullscreenModal({ item, onClose }: { item: SlideItem; onClose: () => vo
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative max-w-[90vw] max-h-[90vh]"
+        className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -94,14 +240,25 @@ function FullscreenModal({ item, onClose }: { item: SlideItem; onClose: () => vo
           <X className="w-4 h-4 text-foreground" />
         </button>
         {item.mediaType === "video" ? (
-          <video src={item.url} controls autoPlay className="max-w-[90vw] max-h-[85vh] rounded-2xl shadow-2xl" />
+          <video src={item.url} controls autoPlay className="fullscreen-modal-video max-w-[90vw] max-h-[70vh] rounded-2xl shadow-2xl" />
         ) : item.mediaType === "external_video" && item.externalUrl ? (
           <div className="w-[80vw] max-w-[900px] aspect-video rounded-2xl overflow-hidden shadow-2xl">
             <ExternalVideoEmbed url={item.externalUrl} className="w-full h-full" />
           </div>
         ) : (
-          <img src={item.url} alt={item.title || "Preview"} className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
+          <img src={item.url} alt={item.title || "Preview"} className="max-w-[90vw] max-h-[70vh] object-contain rounded-2xl shadow-2xl" />
         )}
+
+        {/* Title + info */}
+        <div className="w-full max-w-[900px] mt-2 px-1">
+          <p className="text-sm text-white/80 font-medium">{item.title}</p>
+          <p className="text-[10px] text-white/40">{item.sourceType}</p>
+        </div>
+
+        {/* Quick feedback form */}
+        <div className="w-full max-w-[900px] px-1">
+          <QuickFeedbackForm projectId={projectId} itemTitle={item.title} />
+        </div>
       </motion.div>
     </motion.div>,
     document.body,
@@ -364,7 +521,7 @@ export function ProjectArtCarousel({
 
       {/* Fullscreen modal */}
       <AnimatePresence>
-        {fullscreenItem && <FullscreenModal item={fullscreenItem} onClose={() => setFullscreenItem(null)} />}
+        {fullscreenItem && <FullscreenModal item={fullscreenItem} onClose={() => setFullscreenItem(null)} projectId={projectId} />}
       </AnimatePresence>
     </div>
   );
