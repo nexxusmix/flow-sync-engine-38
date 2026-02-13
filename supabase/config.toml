@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.scout-approve-send]
 verify_jwt = false
+
+[functions.process-asset]
+verify_jwt = false

@@ -16,12 +16,14 @@ import {
   ImagePlus,
   Pencil,
   Sparkles,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { ProjectBannerSection } from "./ProjectBannerSection";
 import { ProjectCommandCenter } from "@/components/projects/ProjectCommandCenter";
+import { UploadMaterialDialog } from "@/components/projects/UploadMaterialDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -35,6 +37,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const queryClient = useQueryClient();
   const { setSelectedProjectId, setEditProjectModalOpen } = useProjectsStore();
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const { portalLink, portalUrl, isLoading: portalLoading, createLink } = usePortalLink(project.id, {
     name: project.name,
     clientName: project.client_name || undefined,
@@ -221,6 +224,14 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
+                onClick={() => setUploadDialogOpen(true)}
+                className="h-9 hidden sm:flex gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Upload className="w-4 h-4" />
+                Enviar Material
+              </Button>
+              <Button
+                size="sm"
                 variant="outline"
                 onClick={() => setCommandCenterOpen(true)}
                 className="h-9 hidden sm:flex gap-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5"
@@ -345,6 +356,13 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           contractValue: project.contract_value || 0,
           healthScore: project.health_score || 0,
         }}
+      />
+
+      {/* Upload Material Dialog */}
+      <UploadMaterialDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        projectId={project.id}
       />
     </>
   );

@@ -396,6 +396,44 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_processing_jobs: {
+        Row: {
+          asset_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          job_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_processing_jobs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "project_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_rules: {
         Row: {
           config_json: Json | null
@@ -3662,6 +3700,137 @@ export type Database = {
           },
           {
             foreignKeyName: "project_action_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_assets: {
+        Row: {
+          ai_confidence: number | null
+          ai_entities: Json | null
+          ai_processed: boolean
+          ai_summary: string | null
+          ai_tags: string[] | null
+          ai_title: string | null
+          asset_type: string
+          category: string
+          created_at: string
+          deliverable_id: string | null
+          description: string | null
+          duration_seconds: number | null
+          embed_url: string | null
+          file_ext: string | null
+          file_name: string | null
+          file_size_bytes: number | null
+          height: number | null
+          id: string
+          mime_type: string | null
+          og_image_url: string | null
+          preview_url: string | null
+          project_id: string
+          provider: string | null
+          source_type: string
+          stage_key: string | null
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          tags: string[] | null
+          thumb_url: string | null
+          title: string
+          updated_at: string
+          uploaded_by_client_name: string | null
+          uploaded_by_user_id: string | null
+          url: string | null
+          visibility: string
+          width: number | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_entities?: Json | null
+          ai_processed?: boolean
+          ai_summary?: string | null
+          ai_tags?: string[] | null
+          ai_title?: string | null
+          asset_type?: string
+          category?: string
+          created_at?: string
+          deliverable_id?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          embed_url?: string | null
+          file_ext?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          og_image_url?: string | null
+          preview_url?: string | null
+          project_id: string
+          provider?: string | null
+          source_type?: string
+          stage_key?: string | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          thumb_url?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by_client_name?: string | null
+          uploaded_by_user_id?: string | null
+          url?: string | null
+          visibility?: string
+          width?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_entities?: Json | null
+          ai_processed?: boolean
+          ai_summary?: string | null
+          ai_tags?: string[] | null
+          ai_title?: string | null
+          asset_type?: string
+          category?: string
+          created_at?: string
+          deliverable_id?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          embed_url?: string | null
+          file_ext?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          og_image_url?: string | null
+          preview_url?: string | null
+          project_id?: string
+          provider?: string | null
+          source_type?: string
+          stage_key?: string | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          thumb_url?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by_client_name?: string | null
+          uploaded_by_user_id?: string | null
+          url?: string | null
+          visibility?: string
+          width?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_assets_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
