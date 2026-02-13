@@ -74,7 +74,10 @@ export function StudioSidebar({
   const { data: projects } = useQuery({
     queryKey: ['projects-select', work?.client_id],
     queryFn: async () => {
-      const { data } = await supabase.from('projects').select('id, name').order('name');
+      const q = work?.client_id
+        ? supabase.from('projects').select('id, name').eq('client_name', work.client_id).order('name')
+        : supabase.from('projects').select('id, name').order('name');
+      const { data } = await q;
       return (data || []) as Array<{ id: string; name: string }>;
     },
   });
