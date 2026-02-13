@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useRealtimeSync } from "./hooks/useRealtimeSync";
 import { ProductProvider } from "./hooks/useProductContext";
 import { UndoRedoProvider } from "./components/layout/UndoRedoProvider";
+import { BackgroundUploadIndicator } from "./components/ui/BackgroundUploadIndicator";
 import PlatformSelectorPage from "./pages/PlatformSelectorPage";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -236,6 +237,7 @@ const App = () => (
             <UndoRedoProvider>
               <Toaster />
               <Sonner />
+              <BackgroundUploadIndicator />
               <BrowserRouter>
                 <AppRoutes />
               </BrowserRouter>

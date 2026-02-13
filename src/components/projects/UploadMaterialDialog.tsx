@@ -12,6 +12,7 @@ import { useProjectAssets, type ProjectAsset } from "@/hooks/useProjectAssets";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AiProcessingOverlay } from "./AiProcessingOverlay";
+import { useBackgroundUploadStore } from "@/stores/useBackgroundUploadStore";
 
 interface UploadMaterialDialogProps {
   open: boolean;
@@ -149,34 +150,24 @@ export function UploadMaterialDialog({ open, onOpenChange, projectId }: UploadMa
 
   const handleUploadAll = async () => {
     if (queue.length === 0) return;
-    setIsUploading(true);
+    
+    // Hand off to background upload store
+    const bgItems = queue.filter(q => q.status !== 'done').map(item => ({
+      id: item.id,
+      fileName: item.file.name,
+      file: item.file,
+      projectId,
+      category,
+      visibility,
+      aiProcess,
+    }));
 
-    for (const item of queue) {
-      if (item.status === 'done') continue;
-      setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'uploading', progress: 30 } : q));
-      try {
-        await uploadAsset.mutateAsync({
-          file: item.file,
-          projectId,
-          category,
-          visibility,
-          aiProcess,
-        });
-        setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'done', progress: 100 } : q));
-      } catch {
-        setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'error', progress: 0 } : q));
-      }
-    }
+    useBackgroundUploadStore.getState().addItems(bgItems);
 
-    setIsUploading(false);
-    const allDone = queue.every(q => q.status === 'done');
-    if (allDone) {
-      toast.success(`${queue.length} material(is) enviado(s)!`);
-      setTimeout(() => {
-        setQueue([]);
-        onOpenChange(false);
-      }, 800);
-    }
+    // Close dialog immediately
+    toast.success(`${bgItems.length} material(is) sendo enviado(s) em segundo plano`);
+    setQueue([]);
+    onOpenChange(false);
   };
 
   const handleAddLink = async () => {
