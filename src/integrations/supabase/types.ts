@@ -3791,6 +3791,92 @@ export type Database = {
         }
         Relationships: []
       }
+      panorama_access_log: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          ip_address: string | null
+          snapshot_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          ip_address?: string | null
+          snapshot_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          ip_address?: string | null
+          snapshot_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "panorama_access_log_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "panorama_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      panorama_snapshots: {
+        Row: {
+          created_at: string
+          generated_by: string | null
+          id: string
+          metadata: Json | null
+          pdf_file_path: string | null
+          pdf_url: string | null
+          project_id: string
+          share_expires_at: string | null
+          share_token: string | null
+          text_content: string | null
+          tone: string | null
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json | null
+          pdf_file_path?: string | null
+          pdf_url?: string | null
+          project_id: string
+          share_expires_at?: string | null
+          share_token?: string | null
+          text_content?: string | null
+          tone?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json | null
+          pdf_file_path?: string | null
+          pdf_url?: string | null
+          project_id?: string
+          share_expires_at?: string | null
+          share_token?: string | null
+          text_content?: string | null
+          tone?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       payment_milestones: {
         Row: {
           amount: number
