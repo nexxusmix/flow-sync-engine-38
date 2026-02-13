@@ -119,3 +119,6 @@ verify_jwt = false
 
 [functions.process-asset]
 verify_jwt = false
+
+[functions.ai-fill-materials]
+verify_jwt = false
