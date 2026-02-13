@@ -524,6 +524,53 @@ export type Database = {
         }
         Relationships: []
       }
+      alert_actions: {
+        Row: {
+          action_item_id: string | null
+          action_type: string
+          alert_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          payload: Json | null
+          project_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action_item_id?: string | null
+          action_type: string
+          alert_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json | null
+          project_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          action_item_id?: string | null
+          action_type?: string
+          alert_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json | null
+          project_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_actions_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_events: {
         Row: {
           alert_id: string | null
