@@ -2340,6 +2340,50 @@ export type Database = {
         }
         Relationships: []
       }
+      deliverable_comments: {
+        Row: {
+          attachments: Json | null
+          author_id: string | null
+          author_name: string
+          author_type: string
+          content: string
+          created_at: string
+          deliverable_id: string
+          id: string
+          workspace_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          author_id?: string | null
+          author_name?: string
+          author_type?: string
+          content: string
+          created_at?: string
+          deliverable_id: string
+          id?: string
+          workspace_id?: string
+        }
+        Update: {
+          attachments?: Json | null
+          author_id?: string | null
+          author_name?: string
+          author_type?: string
+          content?: string
+          created_at?: string
+          deliverable_id?: string
+          id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_comments_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "project_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       do_not_contact: {
         Row: {
           blocked_by: string | null
@@ -3840,36 +3884,84 @@ export type Database = {
       }
       project_deliverables: {
         Row: {
+          assigned_to: string | null
           created_at: string
           created_by: string | null
           description: string | null
+          due_date: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
           id: string
+          is_archived: boolean
+          last_activity_at: string | null
+          link_provider: string | null
+          link_url: string | null
+          lock_reason: string | null
+          mime_type: string | null
           name: string
+          order_index: number
+          priority: string
           project_id: string
           status: string
+          thumbnail_url: string | null
+          type: string
           updated_at: string
+          version_number: number
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          due_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
           id?: string
+          is_archived?: boolean
+          last_activity_at?: string | null
+          link_provider?: string | null
+          link_url?: string | null
+          lock_reason?: string | null
+          mime_type?: string | null
           name: string
+          order_index?: number
+          priority?: string
           project_id: string
           status?: string
+          thumbnail_url?: string | null
+          type?: string
           updated_at?: string
+          version_number?: number
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          due_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
           id?: string
+          is_archived?: boolean
+          last_activity_at?: string | null
+          link_provider?: string | null
+          link_url?: string | null
+          lock_reason?: string | null
+          mime_type?: string | null
           name?: string
+          order_index?: number
+          priority?: string
           project_id?: string
           status?: string
+          thumbnail_url?: string | null
+          type?: string
           updated_at?: string
+          version_number?: number
           workspace_id?: string
         }
         Relationships: [
