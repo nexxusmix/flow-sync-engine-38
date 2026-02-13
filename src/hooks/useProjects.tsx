@@ -12,6 +12,14 @@ export interface ProjectWithStages extends DBProject {
   stages: DBProjectStage[];
 }
 
+export interface PaymentMilestoneInput {
+  title: string;
+  percentage?: number;
+  amount: number;
+  dueDate?: string;
+  trigger?: string;
+}
+
 export interface CreateProjectInput {
   name: string;
   client_name: string;
@@ -21,6 +29,9 @@ export interface CreateProjectInput {
   due_date?: string;
   contract_value?: number;
   has_payment_block?: boolean;
+  payment_milestones?: PaymentMilestoneInput[];
+  client_document?: string;
+  payment_terms?: string;
 }
 
 export type { DBProject, DBProjectStage };
@@ -171,40 +182,66 @@ export function useProjects() {
       // AUTO-CREATE CONTRACT AND REVENUES if contract_value > 0
       if ((input.contract_value || 0) > 0) {
         // Create contract
-        const { error: contractError } = await supabase
+        const { data: contractData, error: contractError } = await supabase
           .from('contracts')
           .insert({
             project_id: project.id,
             project_name: input.name,
             client_name: input.client_name,
+            client_document: input.client_document || null,
             total_value: input.contract_value,
-            payment_terms: '50/50',
+            payment_terms: input.payment_terms || '50/50',
             status: 'active',
             start_date: input.start_date || new Date().toISOString().split('T')[0],
-          });
+          })
+          .select('id')
+          .single();
 
         if (contractError) {
           console.error('Error creating contract:', contractError);
         } else {
-          // Create revenue for entry payment (50% - today)
-          const entryAmount = (input.contract_value || 0) * 0.5;
-          await supabase.from('revenues').insert({
-            project_id: project.id,
-            description: `${input.name} - Entrada (50%)`,
-            amount: entryAmount,
-            due_date: new Date().toISOString().split('T')[0],
-            status: 'pending',
-          });
+          const contractId = contractData?.id;
 
-          // Create revenue for delivery payment (50% - due date)
-          const deliveryAmount = (input.contract_value || 0) * 0.5;
-          const deliveryDate = input.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          await supabase.from('revenues').insert({
-            project_id: project.id,
-            description: `${input.name} - Entrega (50%)`,
-            amount: deliveryAmount,
-            due_date: deliveryDate,
-            status: 'pending',
+          // Use extracted milestones if available, otherwise default 50/50
+          if (input.payment_milestones && input.payment_milestones.length > 0) {
+            const revenueInserts = input.payment_milestones.map((m) => ({
+              project_id: project.id,
+              contract_id: contractId || null,
+              description: `${input.name} - ${m.title}`,
+              amount: m.amount || (m.percentage && input.contract_value ? Math.round((m.percentage / 100) * input.contract_value * 100) / 100 : 0),
+              due_date: m.dueDate || new Date().toISOString().split('T')[0],
+              status: 'pending' as const,
+            }));
+            await supabase.from('revenues').insert(revenueInserts);
+          } else {
+            // Default 50/50
+            const entryAmount = (input.contract_value || 0) * 0.5;
+            await supabase.from('revenues').insert([
+              {
+                project_id: project.id,
+                contract_id: contractId || null,
+                description: `${input.name} - Entrada (50%)`,
+                amount: entryAmount,
+                due_date: new Date().toISOString().split('T')[0],
+                status: 'pending',
+              },
+              {
+                project_id: project.id,
+                contract_id: contractId || null,
+                description: `${input.name} - Entrega (50%)`,
+                amount: (input.contract_value || 0) * 0.5,
+                due_date: input.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                status: 'pending',
+              },
+            ]);
+          }
+
+          // Log event
+          await supabase.from('event_logs').insert({
+            action: 'project_created_with_contract',
+            entity_type: 'project',
+            entity_id: project.id,
+            details: { contract_id: contractId, milestones_count: input.payment_milestones?.length || 2 },
           });
         }
       }
