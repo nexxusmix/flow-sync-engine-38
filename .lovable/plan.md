@@ -1,57 +1,68 @@
 
+# Quadro de Avisos -- Criar, Puxar e Vincular a Projetos
 
-# Perfil do Admin + Avatar Upload + Cores da Plataforma
+## Resumo
+O Quadro de Avisos atual so exibe alertas, mas nao permite criar novos nem gerar automaticamente a partir de projetos. Vamos adicionar:
 
-## O que sera feito
+1. **Botao "Novo Aviso"** com modal completo para criar alerta manual
+2. **Botao "Gerar Avisos"** que analisa os projetos e cria alertas automaticos (prazos vencidos, pagamentos pendentes, etc.)
+3. **Filtro por Projeto** para ver alertas de um projeto especifico
+4. **Link para o projeto** em cada alerta, clicavel
 
-### 1. Corrigir nome do admin para "Matheus Filipe"
-O perfil atual mostra `full_name: "Matheus"`. Sera atualizado para `"Matheus Filipe"` diretamente no banco.
+---
 
-### 2. Upload de foto/avatar do perfil
-Hoje nao existe nenhum bucket de storage nem UI para subir avatar. Sera criado:
+## O que sera implementado
 
-- **Bucket `avatars`** (publico) no storage com policy de upload autenticado
-- **Secao "Meu Perfil"** no Header (dropdown do usuario) ou uma pagina `/perfil` acessivel pelo clique no avatar
-- UI com preview circular + botao de upload que salva no storage e atualiza `profiles.avatar_url`
-- O avatar aparecera no Header ao lado do botao de logout (substituindo ou complementando o icone atual)
+### 1. Modal "Criar Aviso Manual"
+Um Dialog com formulario para criar qualquer tipo de alerta:
+- **Titulo** (obrigatorio)
+- **Mensagem** (descricao opcional)
+- **Tipo** (dropdown com os 16 tipos existentes: prazo proximo, pagamento vencido, lembrete, etc.)
+- **Severidade** (info, atencao, critico)
+- **Projeto vinculado** (dropdown com projetos ativos, opcional)
+- **Data limite** (date picker opcional)
+- Usa o `createAlert` que ja existe no hook `useAlerts`
 
-### 3. Personalizacao de cores da plataforma
-A pagina de Branding (`/configuracoes/branding`) ja tem campos de `primary_color` e `accent_color` salvos no banco, mas eles nao afetam o CSS real da plataforma. Sera implementado:
+### 2. Botao "Gerar Avisos dos Projetos"
+Funcao que faz um scan nos projetos e cria alertas automaticos:
+- Projetos com `due_date` vencido e status != concluido --> alerta `deadline_overdue` (critico)
+- Projetos com `due_date` nos proximos 7 dias --> alerta `deadline_due` (atencao)
+- Projetos com `has_payment_block = true` --> alerta `payment_overdue` (critico)
+- Projetos com `health_score < 50` --> alerta `risk_health_drop` (atencao)
+- Usa `idempotency_key` para evitar alertas duplicados (ex: `deadline_overdue_projectId`)
 
-- Um hook `useThemeColors` que le `branding_settings.primary_color` e `accent_color`
-- Aplicacao dinamica das cores como CSS variables (`--primary`, `--ring`, etc.) no `:root`
-- Preview em tempo real na pagina de Branding
-- Presets rapidos (ex: Azul SQUAD, Roxo, Verde, Laranja) para facilitar
+### 3. Filtro por Projeto
+- Novo dropdown no header de filtros que lista projetos
+- Filtra alertas por `project_id`
+
+### 4. Link do Projeto no Card do Alerta
+- Se o alerta tem `project_id`, mostrar nome do projeto clicavel que navega para `/projetos/{id}`
 
 ---
 
 ## Detalhes Tecnicos
 
-### DB
-- `UPDATE profiles SET full_name = 'Matheus Filipe' WHERE ...` (via insert tool)
-- Migration: criar bucket `avatars` com RLS policy de upload para usuarios autenticados
-
 ### Arquivos a criar/editar
 
 | Arquivo | Acao |
 |---|---|
-| `src/components/layout/UserAvatarMenu.tsx` | **NOVO** - Componente de avatar clicavel com dropdown (perfil, upload foto, sair) |
-| `src/hooks/useThemeColors.ts` | **NOVO** - Hook que le cores do branding_settings e aplica como CSS vars |
-| `src/components/layout/Header.tsx` | Substituir botao de logout por UserAvatarMenu + integrar useThemeColors |
-| `src/pages/settings/BrandingSettingsPage.tsx` | Adicionar presets de cores e preview ao vivo |
-| `src/App.tsx` | Integrar useThemeColors no nivel raiz |
+| `src/components/alerts/CreateAlertModal.tsx` | **NOVO** - Modal com formulario de criacao de alerta |
+| `src/components/alerts/GenerateAlertsButton.tsx` | **NOVO** - Botao que escaneia projetos e gera alertas |
+| `src/pages/AlertsBoardPage.tsx` | **EDITAR** - Adicionar botoes no header, filtro por projeto, link do projeto nos cards |
+| `src/hooks/useAlerts.ts` | **EDITAR** - Adicionar filtro por project_id na query |
 
-### Fluxo de Upload de Avatar
-1. Usuario clica no avatar no Header
-2. Dropdown abre com opcao "Alterar foto"
-3. Seleciona arquivo (imagem)
-4. Upload para bucket `avatars/{userId}.webp`
-5. URL publica salva em `profiles.avatar_url`
-6. Avatar atualiza em tempo real no Header
+### Fluxo de Criacao Manual
+1. Clica "Novo Aviso" no header
+2. Preenche titulo, tipo, severidade, projeto (opcional), data limite (opcional)
+3. Clica "Criar" --> insere na tabela `alerts` via `createAlert`
+4. Toast de sucesso, modal fecha, lista atualiza via Realtime
 
-### Fluxo de Cores
-1. Admin vai em Configuracoes > Branding
-2. Escolhe cor primaria (picker ou preset)
-3. CSS variables atualizam em tempo real (preview)
-4. Ao salvar, todas as sessoes carregam as novas cores do banco
+### Fluxo de Geracao Automatica
+1. Clica "Gerar dos Projetos"
+2. Busca todos projetos ativos
+3. Analisa prazos, pagamentos, saude
+4. Cria alertas com `idempotency_key` unica para evitar duplicatas
+5. Toast mostrando quantos alertas foram criados
 
+### Schema (sem migracao necessaria)
+A tabela `alerts` ja tem todos os campos necessarios: `project_id`, `type`, `severity`, `due_at`, `idempotency_key`. Nenhuma migracao de banco e necessaria.
