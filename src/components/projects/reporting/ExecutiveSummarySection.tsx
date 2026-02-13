@@ -8,6 +8,7 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { VoiceInputButton } from "@/components/ai/VoiceInputButton";
 import { AiGenerateButton } from "@/components/ai/AiGenerateButton";
 import { SaveIndicator, DraftIndicator } from "@/components/ui/save-indicator";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -191,13 +192,22 @@ export function ExecutiveSummarySection({
                     <DraftIndicator hasDraft={hasDraft} onDiscard={discardDraft} />
                     <SaveIndicator status={saveStatus} />
                   </div>
-                  <Textarea
-                    value={localDescription}
-                    onChange={(e) => setLocalDescription(e.target.value)}
-                    onBlur={saveNow}
-                    placeholder={`Use markdown para estruturar o conteúdo:\n\n## ENTREGAS\n- Item 1\n- Item 2\n\n## CONDIÇÕES FINANCEIRAS\n- Parcela 1: R$ 5.000 (2026-01-15) - Sinal\n\n## OBSERVAÇÕES\n- Observação importante`}
-                    className="min-h-[300px] bg-muted/20 border-border text-foreground font-mono text-sm leading-relaxed"
-                  />
+                  <div className="relative">
+                    <Textarea
+                      value={localDescription}
+                      onChange={(e) => setLocalDescription(e.target.value)}
+                      onBlur={saveNow}
+                      placeholder={`Use markdown para estruturar o conteúdo:\n\n## ENTREGAS\n- Item 1\n- Item 2\n\n## CONDIÇÕES FINANCEIRAS\n- Parcela 1: R$ 5.000 (2026-01-15) - Sinal\n\n## OBSERVAÇÕES\n- Observação importante`}
+                      className="min-h-[300px] bg-muted/20 border-border text-foreground font-mono text-sm leading-relaxed pr-12"
+                    />
+                    <div className="absolute right-2 top-2">
+                      <VoiceInputButton
+                        onTranscript={(text) => setLocalDescription(localDescription ? localDescription + '\n' + text : text)}
+                        mode="append"
+                        className="h-7 w-7"
+                      />
+                    </div>
+                  </div>
                   <div className="flex gap-2 justify-end">
                     <Button 
                       variant="ghost" 

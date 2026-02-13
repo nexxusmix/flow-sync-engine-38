@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Loader2, Save, History, RotateCcw } from 'lucide-react';
+import { VoiceInputButton } from '@/components/ai/VoiceInputButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -346,13 +347,20 @@ export function NarrativeScriptEditor({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Roteiro Completo</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="relative">
                   <Textarea
                     value={content.full_script || ''}
                     onChange={(e) => updateField('full_script', e.target.value)}
                     placeholder="Escreva o roteiro completo aqui, com diálogos e ações..."
-                    className="min-h-[300px] font-mono text-sm"
+                    className="min-h-[300px] font-mono text-sm pr-12"
                   />
+                  <div className="absolute right-6 top-6">
+                    <VoiceInputButton
+                      onTranscript={(text) => updateField('full_script', (content.full_script || '') + '\n' + text)}
+                      mode="append"
+                      className="h-7 w-7"
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </>

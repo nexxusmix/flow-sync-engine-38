@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Wand2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
+import { AiPromptField } from "@/components/ai/AiPromptField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -183,13 +184,13 @@ export function StudioBriefForm({ brandKits, isGenerating, progress, onGenerate 
         {/* Briefing */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium">Briefing</Label>
-          <Textarea
+          <AiPromptField
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={setInputText}
             placeholder="Descreva o projeto: objetivo, público-alvo, tom de voz, restrições, referências..."
             rows={5}
             disabled={isGenerating}
-            className="resize-none"
+            featureId="studio-brief"
           />
         </div>
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Sparkles, Wand2, Expand, Shrink, Palette, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { AiPromptField } from '@/components/ai/AiPromptField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -123,12 +123,14 @@ export function StudioCopilot({
                 <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Instrução Personalizada
                 </h4>
-                <Textarea
+                <AiPromptField
                   value={instruction}
-                  onChange={(e) => setInstruction(e.target.value)}
+                  onChange={setInstruction}
                   placeholder="Ex: deixe mais emocional, adicione mais detalhes visuais..."
-                  className="min-h-[80px] text-sm resize-none"
+                  rows={3}
                   disabled={isProcessing}
+                  featureId="copilot-instruction"
+                  showCounter={false}
                 />
                 <Button
                   size="sm"
