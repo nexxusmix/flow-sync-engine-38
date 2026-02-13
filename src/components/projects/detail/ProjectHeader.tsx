@@ -162,77 +162,9 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
         />
 
         <div className="p-4 md:p-6">
-          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-            {/* Left - Project Info */}
-            <div className="flex-1 min-w-0">
-              {/* Badges */}
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className={`text-[10px] md:text-xs px-2 py-1 rounded border font-medium ${statusConfig?.color || 'text-muted-foreground'}`}>
-                  {statusConfig?.label || project.status}
-                </span>
-                <span className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                  {project.template || 'Projeto'}
-                </span>
-                <span className="text-[10px] md:text-xs text-primary bg-primary/10 px-2 py-1 rounded font-medium">
-                  {stageInfo?.name || project.stage_current}
-                </span>
-              </div>
-
-              {/* Title with Logo */}
-              <div className="flex items-center gap-3">
-                {/* Clickable Logo Square */}
-                <div className="relative group flex-shrink-0">
-                  <input 
-                    type="file" 
-                    ref={logoInputRef} 
-                    hidden 
-                    accept="image/*"
-                    onChange={handleLogoUpload} 
-                  />
-                  
-                  <button 
-                    onClick={() => logoInputRef.current?.click()}
-                    disabled={isUploadingLogo}
-                    className="w-14 h-14 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center transition-all overflow-hidden bg-muted/30"
-                  >
-                    {isUploadingLogo ? (
-                      <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
-                    ) : logoUrl ? (
-                      <>
-                        <img 
-                          src={logoUrl} 
-                          alt="Logo do projeto" 
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition-opacity">
-                          <Pencil className="w-4 h-4 text-white" />
-                        </div>
-                      </>
-                    ) : (
-                      <ImagePlus className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    )}
-                  </button>
-                </div>
-
-                <div className="min-w-0">
-                  <h1 className="text-xl md:text-2xl font-normal text-foreground mb-1">{project.name}</h1>
-                  <p className="text-sm text-muted-foreground">
-                    {project.client_name || 'Sem cliente'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right - Quick Actions */}
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={() => setSendToClientOpen(true)}
-                className="h-9 hidden sm:flex gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <Send className="w-4 h-4" />
-                Enviar ao Cliente
-              </Button>
+          <div className="flex flex-col gap-4">
+            {/* Top row - Actions */}
+            <div className="flex items-center justify-end gap-2 flex-wrap">
               <Button
                 size="sm"
                 onClick={() => setUploadDialogOpen(true)}
@@ -257,11 +189,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 disabled={isExporting}
                 className="h-9 hidden sm:flex"
               >
-                {isExporting ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <FileDown className="w-4 h-4 mr-2" />
-                )}
+                {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
                 Exportar PDF
               </Button>
               <Button 
@@ -271,12 +199,16 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 disabled={createLink.isPending}
                 className="h-9 hidden sm:flex"
               >
-                {createLink.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Copy className="w-4 h-4 mr-2" />
-                )}
-                {portalLink ? 'Copiar Link' : 'Gerar Link'}
+                {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+                Copiar Link
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setSendToClientOpen(true)}
+                className="h-9 hidden sm:flex gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Send className="w-4 h-4" />
+                Enviar ao Cliente
               </Button>
               <Button 
                 size="sm" 
@@ -284,17 +216,55 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 disabled={createLink.isPending}
                 className="h-9 hidden sm:flex"
               >
-                {createLink.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                )}
+                {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ExternalLink className="w-4 h-4 mr-2" />}
                 Portal do Cliente
               </Button>
-              <ProjectActionsMenu
-                project={project}
-                showOpenOption={false}
-              />
+              <ProjectActionsMenu project={project} showOpenOption={false} />
+            </div>
+
+            {/* Bottom row - Project info */}
+            <div className="flex items-center gap-3">
+              {/* Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`text-[10px] md:text-xs px-2 py-1 rounded border font-medium ${statusConfig?.color || 'text-muted-foreground'}`}>
+                  {statusConfig?.label || project.status}
+                </span>
+                <span className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                  {project.template || 'Projeto'}
+                </span>
+                <span className="text-[10px] md:text-xs text-primary bg-primary/10 px-2 py-1 rounded font-medium">
+                  {stageInfo?.name || project.stage_current}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Logo */}
+              <div className="relative group flex-shrink-0">
+                <input type="file" ref={logoInputRef} hidden accept="image/*" onChange={handleLogoUpload} />
+                <button 
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={isUploadingLogo}
+                  className="w-14 h-14 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center transition-all overflow-hidden bg-muted/30"
+                >
+                  {isUploadingLogo ? (
+                    <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                  ) : logoUrl ? (
+                    <>
+                      <img src={logoUrl} alt="Logo do projeto" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition-opacity">
+                        <Pencil className="w-4 h-4 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <ImagePlus className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  )}
+                </button>
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl md:text-2xl font-normal text-foreground mb-1">{project.name}</h1>
+                <p className="text-sm text-muted-foreground">{project.client_name || 'Sem cliente'}</p>
+              </div>
             </div>
           </div>
 
