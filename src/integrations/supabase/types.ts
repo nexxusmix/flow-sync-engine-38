@@ -5207,6 +5207,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_project_health_score: {
+        Args: { p_project_id: string }
+        Returns: number
+      }
       has_app_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

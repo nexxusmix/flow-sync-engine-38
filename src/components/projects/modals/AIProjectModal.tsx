@@ -389,6 +389,37 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
 
     const clientName = formData.clientName || formData.clientCompany || "Cliente não identificado";
     
+    // Auto-create CRM contact if we have client data
+    if (autoCreateClient && (formData.clientName || formData.clientCompany)) {
+      try {
+        // Check if contact already exists
+        const { data: existingContact } = await supabase
+          .from('crm_contacts')
+          .select('id')
+          .or(`name.ilike.%${formData.clientName}%,company.ilike.%${formData.clientCompany}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (!existingContact) {
+          await supabase.from('crm_contacts').insert({
+            name: formData.clientName || formData.clientCompany || 'Cliente',
+            company: formData.clientCompany || null,
+            email: formData.clientEmail || null,
+            phone: formData.clientPhone || null,
+            tags: ['importado-ia'],
+          });
+          
+          await supabase.from('event_logs').insert({
+            action: 'crm_contact_auto_created',
+            entity_type: 'crm_contact',
+            details: { source: 'ai_project_import', client_name: formData.clientName },
+          });
+        }
+      } catch (err) {
+        console.error('Error auto-creating CRM contact:', err);
+      }
+    }
+
     const projectData: CreateProjectInput = {
       name: formData.title,
       client_name: clientName,
@@ -398,6 +429,17 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
       due_date: formData.deliveryDate || undefined,
       contract_value: formData.contractValue || undefined,
       has_payment_block: formData.has_payment_block,
+      client_document: formData.clientDocument || undefined,
+      payment_terms: formData.paymentTerms || undefined,
+      payment_milestones: formData.paymentMilestones.length > 0
+        ? formData.paymentMilestones.map(m => ({
+            title: m.title,
+            percentage: m.percentage,
+            amount: m.amount,
+            dueDate: m.dueDate,
+            trigger: m.trigger,
+          }))
+        : undefined,
     };
 
     createProject(projectData);

@@ -21,7 +21,8 @@ type TableName =
   | 'contracts'
   | 'payment_milestones'
   | 'content_items'
-  | 'content_ideas';
+  | 'content_ideas'
+  | 'tasks';
 
 interface QueryKeyMapping {
   table: TableName;
@@ -142,6 +143,13 @@ const TABLE_QUERY_MAPPINGS: QueryKeyMapping[] = [
     table: 'content_ideas',
     queryKeys: [
       ['content-ideas'],
+    ],
+  },
+  {
+    table: 'tasks',
+    queryKeys: [
+      ['tasks'],
+      ['dashboard-metrics'],
     ],
   },
 ];
