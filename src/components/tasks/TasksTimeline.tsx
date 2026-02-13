@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Task } from '@/stores/tasksStore';
+import { Task } from '@/hooks/useTasksUnified';
 import { Card } from '@/components/ui/card';
 import { Calendar, AlertTriangle, CheckCircle2, User, Briefcase, FolderKanban } from 'lucide-react';
 import { format, parseISO, isToday, isPast, addDays, startOfDay, isSameDay } from 'date-fns';
