@@ -1,34 +1,36 @@
 /**
- * PortalPaymentsAside - Próximos pagamentos sidebar
- * Estilo exato do HTML de referência
+ * PortalPaymentsAside - Próximos pagamentos sidebar (Portal do Cliente)
+ * Somente leitura - dados reais do banco
  */
 
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-interface Payment {
-  id: string;
-  amount: number;
-  dueDate: string;
-  status: 'pending' | 'overdue' | 'paid';
-  description?: string;
-}
+import { useFinancialStore } from "@/stores/financialStore";
+import { isPast, isToday } from "date-fns";
 
 interface PortalPaymentsAsideProps {
-  payments?: Payment[];
+  projectId: string;
   hasPaymentBlock?: boolean;
 }
 
-// Mock payments for demonstration
-const mockPayments: Payment[] = [
-  { id: '1', amount: 7795, dueDate: '2026-01-15', status: 'overdue', description: 'Parcela 01' },
-  { id: '2', amount: 3897.50, dueDate: '2026-02-05', status: 'pending', description: 'Parcela 02' },
-];
-
-function PortalPaymentsAsideComponent({ payments = mockPayments, hasPaymentBlock }: PortalPaymentsAsideProps) {
+function PortalPaymentsAsideComponent({ projectId, hasPaymentBlock }: PortalPaymentsAsideProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { revenues, contracts, fetchRevenues, fetchContracts, getRevenuesByProject, getContractByProject } = useFinancialStore();
+
+  useEffect(() => {
+    if (revenues.length === 0) fetchRevenues();
+    if (contracts.length === 0) fetchContracts();
+  }, []);
+
+  const projectRevenues = getRevenuesByProject(projectId);
+  const contract = getContractByProject(projectId);
+
+  // Filter to show only pending/overdue (not cancelled, not received)
+  const pendingPayments = projectRevenues.filter(r =>
+    r.status !== 'received' && r.status !== 'cancelled'
+  );
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -47,60 +49,70 @@ function PortalPaymentsAsideComponent({ payments = mockPayments, hasPaymentBlock
     }
   };
 
+  const isOverdue = (r: { status: string; due_date: string }) => {
+    return r.status === 'overdue' || (r.status === 'pending' && isPast(new Date(r.due_date)) && !isToday(new Date(r.due_date)));
+  };
+
   const handleCopyPix = (paymentId: string) => {
-    // Mock PIX code
-    navigator.clipboard.writeText('00020126580014br.gov.bcb.pix0136...');
+    const pixKey = contract?.pix_key;
+    if (!pixKey) return;
+    navigator.clipboard.writeText(pixKey);
     setCopiedId(paymentId);
     toast.success('Código PIX copiado!');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  if (pendingPayments.length === 0) return null;
+
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-light text-white">Próximos Pagamentos</h3>
-      
+
       <div className="space-y-3">
-        {payments.map((payment) => (
-          <div 
-            key={payment.id}
-            className={cn(
-              "bg-[#0a0a0a] border rounded-2xl p-4",
-              payment.status === 'overdue' 
-                ? "border-red-500/30 bg-red-500/5" 
-                : "border-[#1a1a1a]"
-            )}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                {payment.status === 'overdue' && (
-                  <span className="text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold bg-red-500/20 text-red-400 inline-block mb-2">
-                    Atrasado
-                  </span>
+        {pendingPayments.map((payment) => {
+          const overdue = isOverdue(payment);
+          return (
+            <div
+              key={payment.id}
+              className={cn(
+                "bg-[#0a0a0a] border rounded-2xl p-4",
+                overdue
+                  ? "border-red-500/30 bg-red-500/5"
+                  : "border-[#1a1a1a]"
+              )}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  {overdue && (
+                    <span className="text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold bg-red-500/20 text-red-400 inline-block mb-2">
+                      Atrasado
+                    </span>
+                  )}
+                  <p className="text-xs text-gray-500">{formatDate(payment.due_date)}</p>
+                </div>
+                {overdue && contract?.pix_key && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopyPix(payment.id)}
+                    className="text-cyan-400 hover:text-cyan-300 text-xs h-auto p-0"
+                  >
+                    {copiedId === payment.id ? 'Copiado!' : 'Copiar Pix'}
+                  </Button>
                 )}
-                <p className="text-xs text-gray-500">{formatDate(payment.dueDate)}</p>
               </div>
-              {payment.status === 'overdue' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => handleCopyPix(payment.id)}
-                  className="text-cyan-400 hover:text-cyan-300 text-xs h-auto p-0"
-                >
-                  {copiedId === payment.id ? 'Copiado!' : 'Copiar Pix'}
-                </Button>
+              <p className={cn(
+                "text-lg font-semibold",
+                overdue ? "text-red-400" : "text-white"
+              )}>
+                {formatCurrency(Number(payment.amount))}
+              </p>
+              {payment.description && (
+                <p className="text-xs text-gray-500 mt-1">{payment.description}</p>
               )}
             </div>
-            <p className={cn(
-              "text-lg font-semibold",
-              payment.status === 'overdue' ? "text-red-400" : "text-white"
-            )}>
-              {formatCurrency(payment.amount)}
-            </p>
-            {payment.description && (
-              <p className="text-xs text-gray-500 mt-1">{payment.description}</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
