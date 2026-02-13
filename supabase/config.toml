@@ -122,3 +122,6 @@ verify_jwt = false
 
 [functions.ai-fill-materials]
 verify_jwt = false
+
+[functions.portal-upload-material]
+verify_jwt = false

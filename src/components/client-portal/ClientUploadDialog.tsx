@@ -1,6 +1,6 @@
 /**
  * ClientUploadDialog - Dialog para cliente enviar materiais
- * Suporta múltiplos arquivos simultâneos com preenchimento IA
+ * Upload resiliente com progresso, retry, status por item
  */
 
 import { memo, useState, useRef, useCallback } from "react";
@@ -19,6 +19,8 @@ import {
   Film,
   FileText,
   File as FileIcon,
+  RotateCcw,
+  AlertCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -29,11 +31,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type UploadType = 'youtube' | 'link' | 'file';
+type ItemStatus = 'queued' | 'uploading' | 'success' | 'error';
 
 export interface QueuedItem {
   id: string;
@@ -43,6 +47,8 @@ export interface QueuedItem {
   url: string;
   file?: File;
   preview?: string;
+  status: ItemStatus;
+  error?: string;
 }
 
 interface ClientUploadDialogProps {
@@ -86,6 +92,8 @@ function getFileIcon(file?: File) {
   return FileIcon;
 }
 
+const MAX_RETRIES = 2;
+
 function ClientUploadDialogComponent({
   open,
   onOpenChange,
@@ -100,7 +108,9 @@ function ClientUploadDialogComponent({
   const [sending, setSending] = useState(false);
   const [sentCount, setSentCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isFillingAI, setIsFillingAI] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const submittingRef = useRef(false); // idempotency guard
 
   const resetForm = () => {
     setQueue([]);
@@ -111,6 +121,7 @@ function ClientUploadDialogComponent({
     setSending(false);
     setSentCount(0);
     setError(null);
+    submittingRef.current = false;
   };
 
   const handleClose = () => {
@@ -135,6 +146,7 @@ function ClientUploadDialogComponent({
         url: '',
         file,
         preview,
+        status: 'queued' as ItemStatus,
       };
     });
     setQueue(prev => [...prev, ...newItems]);
@@ -150,6 +162,7 @@ function ClientUploadDialogComponent({
       title,
       description: linkDesc,
       url: linkUrl.trim(),
+      status: 'queued' as ItemStatus,
     }]);
     setLinkUrl('');
     setLinkTitle('');
@@ -170,56 +183,168 @@ function ClientUploadDialogComponent({
     setQueue(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
   };
 
-  const fillAllWithAI = () => {
-    setQueue(prev => prev.map(item => {
-      if (item.file) {
-        return {
+  const setItemStatus = (id: string, status: ItemStatus, errorMsg?: string) => {
+    setQueue(prev => prev.map(i => i.id === id ? { ...i, status, error: errorMsg } : i));
+  };
+
+  const fillAllWithAI = async () => {
+    const fileItems = queue.filter(i => i.file);
+    if (fileItems.length === 0) {
+      // Fallback for links
+      setQueue(prev => prev.map(item => {
+        if (item.type === 'youtube') {
+          return { ...item, title: item.title || 'Referência YouTube', description: item.description || 'Vídeo de referência para a equipe de produção' };
+        }
+        return { ...item, title: item.title || 'Link de referência', description: item.description || 'Material externo compartilhado pelo cliente' };
+      }));
+      return;
+    }
+
+    setIsFillingAI(true);
+    try {
+      const filesPayload = fileItems.map(i => ({
+        fileName: i.file!.name,
+        mimeType: i.file!.type,
+        fileSize: `${(i.file!.size / (1024 * 1024)).toFixed(1)} MB`,
+      }));
+
+      const { data, error: fnError } = await supabase.functions.invoke('ai-fill-materials', {
+        body: { files: filesPayload },
+      });
+
+      if (fnError || !data?.results) {
+        console.warn('[AI Fill] Failed:', fnError || data?.error);
+        // Fallback to guess
+        setQueue(prev => prev.map(item => ({
           ...item,
-          title: item.title || guessTitle(item.file),
-          description: item.description || guessDescription(item.file),
-        };
+          title: item.title || (item.file ? guessTitle(item.file) : item.title),
+          description: item.description || (item.file ? guessDescription(item.file) : item.description),
+        })));
+        return;
       }
-      if (item.type === 'youtube') {
-        return { ...item, title: item.title || 'Referência YouTube', description: item.description || 'Vídeo de referência para a equipe de produção' };
+
+      const results = data.results as { title: string; description: string }[];
+      setQueue(prev => {
+        const updated = [...prev];
+        let aiIdx = 0;
+        for (let i = 0; i < updated.length; i++) {
+          if (updated[i].file && results[aiIdx]) {
+            updated[i] = {
+              ...updated[i],
+              title: results[aiIdx].title || updated[i].title,
+              description: results[aiIdx].description || updated[i].description,
+            };
+            aiIdx++;
+          }
+        }
+        return updated;
+      });
+
+      toast.success('Títulos e descrições preenchidos com IA!');
+    } catch (err) {
+      console.error('[AI Fill] Error:', err);
+      toast.error('Erro ao preencher com IA');
+    } finally {
+      setIsFillingAI(false);
+    }
+  };
+
+  const uploadSingleItem = async (item: QueuedItem, retryCount = 0): Promise<boolean> => {
+    setItemStatus(item.id, 'uploading');
+    try {
+      console.log(`[Upload] Sending item: "${item.title}" (type=${item.type}, retry=${retryCount})`);
+      await onUpload({
+        type: item.type,
+        title: item.title.trim(),
+        description: item.description.trim() || undefined,
+        url: item.url.trim() || undefined,
+        file: item.file,
+      });
+      setItemStatus(item.id, 'success');
+      console.log(`[Upload] Success: "${item.title}"`);
+      return true;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Erro desconhecido';
+      console.error(`[Upload] Failed: "${item.title}" (retry=${retryCount}):`, errorMsg);
+      
+      // Auto-retry for transient errors
+      if (retryCount < MAX_RETRIES) {
+        console.log(`[Upload] Retrying "${item.title}" (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(r => setTimeout(r, 1000 * (retryCount + 1)));
+        return uploadSingleItem(item, retryCount + 1);
       }
-      return { ...item, title: item.title || 'Link de referência', description: item.description || 'Material externo compartilhado pelo cliente' };
-    }));
+      
+      setItemStatus(item.id, 'error', errorMsg);
+      return false;
+    }
   };
 
   const handleSubmitAll = async () => {
-    if (queue.length === 0) { setError('Adicione pelo menos um material'); return; }
-    const missing = queue.find(i => !i.title.trim());
+    const pendingItems = queue.filter(i => i.status === 'queued' || i.status === 'error');
+    if (pendingItems.length === 0) { setError('Adicione pelo menos um material'); return; }
+    const missing = pendingItems.find(i => !i.title.trim());
     if (missing) { setError('Todos os itens precisam de título'); return; }
+    
+    // Idempotency guard
+    if (submittingRef.current) {
+      console.log('[Upload] Double-click blocked');
+      return;
+    }
+    submittingRef.current = true;
+
     setError(null);
     setSending(true);
     setSentCount(0);
 
-    for (let i = 0; i < queue.length; i++) {
-      const item = queue[i];
-      try {
-        await onUpload({
-          type: item.type,
-          title: item.title.trim(),
-          description: item.description.trim() || undefined,
-          url: item.url.trim() || undefined,
-          file: item.file,
-        });
-        setSentCount(i + 1);
-      } catch {
-        setError(`Erro ao enviar "${item.title}"`);
-        setSending(false);
-        return;
-      }
+    console.log(`[Upload] Starting batch upload: ${pendingItems.length} items`);
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < pendingItems.length; i++) {
+      const success = await uploadSingleItem(pendingItems[i]);
+      if (success) successCount++;
+      else failCount++;
+      setSentCount(i + 1);
     }
 
+    console.log(`[Upload] Batch complete: ${successCount} success, ${failCount} failed`);
+
     setSending(false);
-    handleClose();
+    submittingRef.current = false;
+
+    if (failCount === 0) {
+      toast.success(`${successCount} ${successCount === 1 ? 'material enviado' : 'materiais enviados'} com sucesso!`);
+      handleClose();
+    } else {
+      setError(`${failCount} ${failCount === 1 ? 'item falhou' : 'itens falharam'} — clique para reenviar`);
+      toast.error(`${failCount} ${failCount === 1 ? 'item falhou' : 'itens falharam'}. Tente novamente.`);
+    }
+  };
+
+  const retryFailedItem = async (itemId: string) => {
+    const item = queue.find(i => i.id === itemId);
+    if (!item) return;
+    setSending(true);
+    await uploadSingleItem(item);
+    setSending(false);
+    
+    // Check if all done
+    const remaining = queue.filter(i => i.status === 'error');
+    if (remaining.length === 0) {
+      toast.success('Todos os materiais enviados com sucesso!');
+      handleClose();
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     addFiles(e.dataTransfer.files);
   };
+
+  const pendingCount = queue.filter(i => i.status === 'queued' || i.status === 'error').length;
+  const successCount = queue.filter(i => i.status === 'success').length;
+  const failedCount = queue.filter(i => i.status === 'error').length;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -234,82 +359,159 @@ function ClientUploadDialogComponent({
         </DialogHeader>
 
         <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
-          {/* Drop zone */}
-          <div
-            onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-cyan-500'); }}
-            onDragLeave={e => e.currentTarget.classList.remove('border-cyan-500')}
-            onDrop={e => { e.currentTarget.classList.remove('border-cyan-500'); handleDrop(e); }}
-            onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-[#1a1a1a] hover:border-gray-600 rounded-lg p-6 text-center cursor-pointer transition-colors"
-          >
-            <Upload className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">Arraste arquivos aqui ou clique para selecionar</p>
-            <p className="text-[10px] text-gray-600 mt-1">Imagens, vídeos, PDFs, documentos, ZIPs...</p>
-          </div>
-          <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} accept="image/*,video/*,.pdf,.doc,.docx,.zip,.rar,.psd,.ai,.eps,.svg" />
+          {/* Drop zone - hide during upload */}
+          {!sending && (
+            <>
+              <div
+                onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-cyan-500'); }}
+                onDragLeave={e => e.currentTarget.classList.remove('border-cyan-500')}
+                onDrop={e => { e.currentTarget.classList.remove('border-cyan-500'); handleDrop(e); }}
+                onClick={() => fileRef.current?.click()}
+                className="border-2 border-dashed border-[#1a1a1a] hover:border-gray-600 rounded-lg p-6 text-center cursor-pointer transition-colors"
+              >
+                <Upload className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">Arraste arquivos aqui ou clique para selecionar</p>
+                <p className="text-[10px] text-gray-600 mt-1">Imagens, vídeos, PDFs, documentos, ZIPs...</p>
+              </div>
+              <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} accept="image/*,video/*,.pdf,.doc,.docx,.zip,.rar,.psd,.ai,.eps,.svg" />
 
-          {/* Add link buttons */}
-          <div className="flex gap-2">
-            <button onClick={() => setLinkMode('youtube')}
-              className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
-                linkMode === 'youtube' ? "border-red-500/40 bg-red-500/10 text-red-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
-              <Youtube className="w-3.5 h-3.5" /> YouTube
-            </button>
-            <button onClick={() => setLinkMode('link')}
-              className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
-                linkMode === 'link' ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
-              <Link2 className="w-3.5 h-3.5" /> Link
-            </button>
-          </div>
+              {/* Add link buttons */}
+              <div className="flex gap-2">
+                <button onClick={() => setLinkMode('youtube')}
+                  className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
+                    linkMode === 'youtube' ? "border-red-500/40 bg-red-500/10 text-red-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
+                  <Youtube className="w-3.5 h-3.5" /> YouTube
+                </button>
+                <button onClick={() => setLinkMode('link')}
+                  className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
+                    linkMode === 'link' ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
+                  <Link2 className="w-3.5 h-3.5" /> Link
+                </button>
+              </div>
 
-          {/* Link form */}
-          <AnimatePresence>
-            {linkMode && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder={linkMode === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://drive.google.com/...'} className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500" />
-                <div className="flex gap-2">
-                  <Input value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Título (opcional)" className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500 flex-1" />
-                  <Button size="sm" onClick={addLink} className="bg-cyan-500 hover:bg-cyan-600 text-black rounded-none shrink-0">
-                    Adicionar
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {/* Link form */}
+              <AnimatePresence>
+                {linkMode && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
+                    <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder={linkMode === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://drive.google.com/...'} className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500" />
+                    <div className="flex gap-2">
+                      <Input value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Título (opcional)" className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500 flex-1" />
+                      <Button size="sm" onClick={addLink} className="bg-cyan-500 hover:bg-cyan-600 text-black rounded-none shrink-0">
+                        Adicionar
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
 
           {/* Queue items */}
           {queue.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider">{queue.length} {queue.length === 1 ? 'item' : 'itens'} na fila</span>
-                <button onClick={fillAllWithAI} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-[10px] uppercase tracking-wider font-medium hover:bg-purple-500/20 transition-colors">
-                  <Sparkles className="w-3 h-3" /> Preencher com IA
-                </button>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                  {queue.length} {queue.length === 1 ? 'item' : 'itens'} na fila
+                  {successCount > 0 && <span className="text-emerald-500 ml-1">• {successCount} enviados</span>}
+                  {failedCount > 0 && <span className="text-red-500 ml-1">• {failedCount} falharam</span>}
+                </span>
+                {!sending && (
+                  <button 
+                    onClick={fillAllWithAI} 
+                    disabled={isFillingAI}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-[10px] uppercase tracking-wider font-medium hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+                  >
+                    {isFillingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    {isFillingAI ? 'Preenchendo...' : 'Preencher com IA'}
+                  </button>
+                )}
               </div>
 
               {queue.map((item, i) => {
                 const Icon = item.file ? getFileIcon(item.file) : item.type === 'youtube' ? Youtube : Link2;
+                const isItemSending = item.status === 'uploading';
+                const isItemDone = item.status === 'success';
+                const isItemFailed = item.status === 'error';
+
                 return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="border border-[#1a1a1a] p-3 space-y-2">
+                  <motion.div 
+                    key={item.id} 
+                    initial={{ opacity: 0, y: 8 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: i * 0.03 }} 
+                    className={cn(
+                      "border p-3 space-y-2 transition-colors",
+                      isItemDone ? "border-emerald-500/20 bg-emerald-500/[0.03]" :
+                      isItemFailed ? "border-red-500/20 bg-red-500/[0.03]" :
+                      isItemSending ? "border-cyan-500/20 bg-cyan-500/[0.03]" :
+                      "border-[#1a1a1a]"
+                    )}
+                  >
                     <div className="flex items-start gap-3">
                       {/* Preview or icon */}
-                      <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center shrink-0 overflow-hidden">
+                      <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center shrink-0 overflow-hidden relative">
                         {item.preview ? (
                           <img src={item.preview} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-red-500' : item.type === 'link' ? 'text-cyan-500' : 'text-purple-500')} />
                         )}
+                        {/* Status overlay */}
+                        {isItemSending && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                          </div>
+                        )}
+                        {isItemDone && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          </div>
+                        )}
+                        {isItemFailed && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <AlertCircle className="w-5 h-5 text-red-400" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0 space-y-1.5">
-                        <Input value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} placeholder="Título *" className="bg-transparent border-[#1a1a1a] rounded-none focus:border-cyan-500 h-8 text-sm px-2" />
-                        <Input value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Descrição (opcional)" className="bg-transparent border-[#1a1a1a] rounded-none focus:border-cyan-500 h-8 text-xs text-gray-400 px-2" />
+                        {!sending ? (
+                          <>
+                            <Input value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} placeholder="Título *" className="bg-transparent border-[#1a1a1a] rounded-none focus:border-cyan-500 h-8 text-sm px-2" />
+                            <Input value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Descrição (opcional)" className="bg-transparent border-[#1a1a1a] rounded-none focus:border-cyan-500 h-8 text-xs text-gray-400 px-2" />
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-white truncate">{item.title}</p>
+                            <p className="text-xs text-gray-500 truncate">{item.description}</p>
+                          </>
+                        )}
                       </div>
-                      <button onClick={() => removeItem(item.id)} className="text-gray-600 hover:text-red-400 transition-colors shrink-0 mt-1">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="shrink-0 mt-1 flex items-center gap-1">
+                        {isItemFailed && (
+                          <button 
+                            onClick={() => retryFailedItem(item.id)} 
+                            className="text-amber-400 hover:text-amber-300 transition-colors"
+                            title="Tentar novamente"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        )}
+                        {!sending && !isItemDone && (
+                          <button onClick={() => removeItem(item.id)} className="text-gray-600 hover:text-red-400 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {item.file && (
-                      <p className="text-[10px] text-gray-600 pl-[60px]">{item.file.name} • {(item.file.size / (1024 * 1024)).toFixed(1)} MB</p>
+                      <div className="flex items-center gap-2 pl-[60px]">
+                        <p className="text-[10px] text-gray-600">{item.file.name} • {(item.file.size / (1024 * 1024)).toFixed(1)} MB</p>
+                        {isItemFailed && item.error && (
+                          <p className="text-[10px] text-red-500">— {item.error}</p>
+                        )}
+                      </div>
+                    )}
+                    {!item.file && isItemFailed && item.error && (
+                      <p className="text-[10px] text-red-500 pl-[60px]">{item.error}</p>
                     )}
                   </motion.div>
                 );
@@ -328,17 +530,26 @@ function ClientUploadDialogComponent({
         {/* Footer */}
         <div className="p-6 pt-4 border-t border-[#1a1a1a] flex items-center justify-between shrink-0">
           <span className="text-[10px] text-gray-600">
-            {sending ? `Enviando ${sentCount + 1} de ${queue.length}...` : `${queue.length} ${queue.length === 1 ? 'material' : 'materiais'}`}
+            {sending 
+              ? `Enviando ${sentCount} de ${queue.filter(i => i.status !== 'success').length}...` 
+              : `${queue.length} ${queue.length === 1 ? 'material' : 'materiais'}`
+            }
           </span>
           <div className="flex gap-3">
             <Button variant="ghost" onClick={handleClose} disabled={sending} className="text-gray-400 hover:text-white">
               Cancelar
             </Button>
-            <Button onClick={handleSubmitAll} disabled={sending || queue.length === 0} className="bg-cyan-500 hover:bg-cyan-600 text-black font-medium rounded-none">
+            <Button 
+              onClick={handleSubmitAll} 
+              disabled={sending || pendingCount === 0} 
+              className="bg-cyan-500 hover:bg-cyan-600 text-black font-medium rounded-none"
+            >
               {sending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando {sentCount + 1}/{queue.length}</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando {sentCount}/{queue.filter(i => i.status !== 'success').length}</>
+              ) : failedCount > 0 ? (
+                <><RotateCcw className="w-4 h-4 mr-2" /> Reenviar ({failedCount})</>
               ) : (
-                <><Upload className="w-4 h-4 mr-2" /> Enviar {queue.length > 0 ? `(${queue.length})` : ''}</>
+                <><Upload className="w-4 h-4 mr-2" /> Enviar {pendingCount > 0 ? `(${pendingCount})` : ''}</>
               )}
             </Button>
           </div>

@@ -5,6 +5,7 @@
 
 import { useParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
 import { Loader2, Lock, AlertTriangle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -99,6 +100,7 @@ function BackgroundParticles() {
 
 export default function ClientPortalPage() {
   const { shareToken } = useParams();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -235,42 +237,55 @@ export default function ClientPortalPage() {
     url?: string;
     file?: File;
   }) => {
-    if (!portal?.id) {
+    if (!portal?.id || !shareToken) {
       toast.error("Portal não carregado");
       return;
     }
 
     try {
-      let fileUrl = uploadData.url;
+      console.log('[Portal Upload] Starting upload:', { type: uploadData.type, title: uploadData.title, hasFile: !!uploadData.file });
 
-      if (uploadData.type === 'file' && uploadData.file) {
-        const fileName = `${Date.now()}-${uploadData.file.name}`;
-        const { data: uploadResult, error: uploadError } = await supabase.storage
-          .from('project-files')
-          .upload(`portal-uploads/${portal.id}/${fileName}`, uploadData.file);
+      const formData = new FormData();
+      formData.append('shareToken', shareToken);
+      formData.append('title', uploadData.title);
+      formData.append('type', uploadData.type);
+      formData.append('clientName', 'Cliente');
+      formData.append('requestId', `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+      
+      if (uploadData.description) formData.append('description', uploadData.description);
+      if (uploadData.url) formData.append('url', uploadData.url);
+      if (uploadData.file) formData.append('file', uploadData.file, uploadData.file.name);
 
-        if (uploadError) throw uploadError;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portal-upload-material`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: formData,
+        }
+      );
 
-        const { data: publicUrl } = supabase.storage
-          .from('project-files')
-          .getPublicUrl(uploadResult.path);
-
-        fileUrl = publicUrl.publicUrl;
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+        console.error('[Portal Upload] Server error:', errData);
+        throw new Error(errData.error || `Upload failed (${response.status})`);
       }
 
-      await uploadClientMaterial({
-        portalLinkId: portal.id,
-        title: uploadData.title,
-        description: uploadData.description,
-        type: uploadData.type,
-        url: fileUrl,
-        clientName: 'Cliente',
-      });
+      const result = await response.json();
+      console.log('[Portal Upload] Success:', result);
 
+      if (!result.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      // Refresh portal data
+      queryClient.invalidateQueries({ queryKey: ['client-portal', shareToken] });
       toast.success("Material enviado com sucesso!");
     } catch (err) {
-      console.error('Upload error:', err);
-      toast.error("Erro ao enviar material");
+      console.error('[Portal Upload] Error:', err);
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar material");
       throw err;
     }
   };
