@@ -33,6 +33,18 @@ import {
   Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const DEFAULT_CATEGORIES = [
+  { value: 'deliverable', label: 'Entrega' },
+  { value: 'moodboard', label: 'Moodboard' },
+  { value: 'render', label: 'Render' },
+  { value: 'video', label: 'Vídeo' },
+  { value: 'photo', label: 'Foto' },
+  { value: 'reference', label: 'Referência' },
+  { value: 'document', label: 'Documento' },
+  { value: 'audio', label: 'Áudio' },
+];
 
 type MaterialType = 'file' | 'youtube' | 'link';
 
@@ -58,6 +70,8 @@ export function AddMaterialDialog({
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [category, setCategory] = useState('deliverable');
+  const [customCategory, setCustomCategory] = useState('');
 
   const resetForm = () => {
     setMaterialType('file');
@@ -66,6 +80,8 @@ export function AddMaterialDialog({
     setYoutubeUrl('');
     setExternalUrl('');
     setSelectedFile(null);
+    setCategory('deliverable');
+    setCustomCategory('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -93,6 +109,8 @@ export function AddMaterialDialog({
         fileType = selectedFile.type;
       }
 
+      const finalCategory = category === 'custom' ? customCategory.trim().toLowerCase() : category;
+
       // Insert deliverable
       const { data, error } = await supabase
         .from('portal_deliverables')
@@ -108,6 +126,7 @@ export function AddMaterialDialog({
           awaiting_approval: true,
           status: 'pending',
           current_version: 1,
+          material_category: finalCategory || 'deliverable',
         })
         .select()
         .single();
@@ -213,6 +232,30 @@ export function AddMaterialDialog({
               placeholder="Descreva o material..."
               rows={2}
             />
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label>Categoria</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEFAULT_CATEGORIES.map(c => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+                <SelectItem value="custom">+ Personalizada</SelectItem>
+              </SelectContent>
+            </Select>
+            {category === 'custom' && (
+              <Input
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Ex: storyboard, briefing..."
+                className="mt-2"
+              />
+            )}
           </div>
 
           {/* Conditional Fields based on type */}
