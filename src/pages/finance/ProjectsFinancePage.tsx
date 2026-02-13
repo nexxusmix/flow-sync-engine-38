@@ -99,7 +99,7 @@ export default function ProjectsFinancePage() {
 
   return (
     <DashboardLayout title="Financeiro por Projeto">
-      <div className="space-y-6">
+      <div className="space-y-6" style={{ fontFamily: "'Google Sans', 'Host Grotesk', sans-serif" }}>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

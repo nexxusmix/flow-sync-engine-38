@@ -1,3 +1,19 @@
+/* Google Sans font-face declarations */
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/googlesans/v62/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrwEIJllpyk.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/googlesans/v62/4Ua_rENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iqcsih3SAyH6cAwhX9RFD48TE63OOYKtrw2IJllpyk.woff2) format('woff2');
+}
+
 /**
  * SQUAD Hub — Holographic Design System (Universal)
  * 
@@ -36,6 +52,7 @@
   --holo-primary-h: 193;
   --holo-primary-s: 100%;
   --holo-primary-l: 41%;
+  font-family: 'Google Sans', 'Product Sans', 'Inter', sans-serif;
 }
 
 .holo[data-platform="portal"] {
