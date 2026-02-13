@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
+import { useExecutionPlans } from "@/hooks/useExecutionPlans";
+import { ExecutionPlanBadge } from "@/components/tasks/ExecutionPlanBadge";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, ArrowUpDown, Search, ArrowRight, Plus,
@@ -69,6 +71,7 @@ const COLUMN_CONFIG: Record<string, {
 };
 
 export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask }: TasksBoardViewProps) {
+  const { getPlanForTask } = useExecutionPlans();
   const toggleComplete = onToggleComplete || (() => {});
   const deleteTask = onDeleteTask || (() => {});
   const [expandedColumn, setExpandedColumn] = useState<Task["status"] | null>(null);
@@ -365,15 +368,16 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                       </p>
                     </motion.div>
                   ) : (
-                    expandedTasks.map((task) => (
-                      <ExpandedTaskRow
-                        key={task.id}
-                        task={task}
-                        onEdit={() => onEditTask(task)}
-                        onToggle={() => toggleComplete(task.id)}
-                        onDelete={() => deleteTask(task.id)}
-                      />
-                    ))
+                     expandedTasks.map((task) => (
+                        <ExpandedTaskRow
+                          key={task.id}
+                          task={task}
+                          plan={getPlanForTask(task.id)}
+                          onEdit={() => onEditTask(task)}
+                          onToggle={() => toggleComplete(task.id)}
+                          onDelete={() => deleteTask(task.id)}
+                        />
+                      ))
                   )}
                 </AnimatePresence>
               </div>
@@ -388,12 +392,13 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
 // ─── Expanded task row ────────────────────────────────────
 interface ExpandedTaskRowProps {
   task: Task;
+  plan: import("@/hooks/useExecutionPlans").ExecutionPlan | null;
   onEdit: () => void;
   onToggle: () => void;
   onDelete: () => void;
 }
 
-function ExpandedTaskRow({ task, onEdit, onToggle, onDelete }: ExpandedTaskRowProps) {
+function ExpandedTaskRow({ task, plan, onEdit, onToggle, onDelete }: ExpandedTaskRowProps) {
   const isCompleted = task.status === "done";
   const categoryInfo = TASK_CATEGORIES.find((c) => c.key === task.category);
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !isCompleted;
@@ -435,6 +440,7 @@ function ExpandedTaskRow({ task, onEdit, onToggle, onDelete }: ExpandedTaskRowPr
             {task.description}
           </p>
         )}
+        {plan && <ExecutionPlanBadge plan={plan} compact />}
       </div>
 
       {/* Meta */}
