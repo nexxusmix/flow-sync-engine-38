@@ -1,17 +1,55 @@
 import { Plus } from "lucide-react";
 import { KanbanCard, Deal } from "./KanbanCard";
+import { useState, DragEvent } from "react";
 
 interface KanbanColumnProps {
   title: string;
   count: number;
   deals: Deal[];
   color: string;
+  stageKey: string;
   onDeleteDeal?: (id: string) => void;
+  onMoveDeal?: (dealId: string, toStage: string) => void;
 }
 
-export function KanbanColumn({ title, count, deals, color, onDeleteDeal }: KanbanColumnProps) {
+export function KanbanColumn({ title, count, deals, color, stageKey, onDeleteDeal, onMoveDeal }: KanbanColumnProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    // Only set false if we're actually leaving the column, not entering a child
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (data.dealId && data.fromStage !== stageKey) {
+        onMoveDeal?.(data.dealId, stageKey);
+      }
+    } catch {
+      // ignore invalid data
+    }
+  };
+
   return (
-    <div className="flex flex-col min-w-[300px] max-w-[300px]">
+    <div
+      className={`flex flex-col min-w-[300px] max-w-[300px] rounded-2xl p-2 transition-all duration-200 ${
+        isDragOver ? 'bg-primary/5 ring-2 ring-primary/20 ring-inset' : ''
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Column Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-3">
