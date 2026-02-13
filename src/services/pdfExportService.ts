@@ -5,10 +5,10 @@
  * - Loading states
  * - Error handling
  * - Toast notifications
- * - Signed URL management
+ * - Blob download for Safari/iOS compatibility
  * 
  * The edge functions generate real PDF binary files using pdf-lib.
- * The signed URL opens directly in the browser's native PDF viewer.
+ * The file is downloaded as a real .pdf via blob fetch.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,8 @@ export interface ExportOptions {
   loadingMessage?: string;
   /** Custom success message */
   successMessage?: string;
+  /** Override the download filename */
+  fileName?: string;
 }
 
 const DEFAULT_OPTIONS: ExportOptions = {
@@ -50,9 +52,82 @@ const DEFAULT_OPTIONS: ExportOptions = {
   successMessage: "PDF gerado com sucesso!",
 };
 
+// ─── Naming helpers ──────────────────────────────────────────
+
+function formatDateForFilename(): string {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = now.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+function generateWeekRef(): string {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `WF-${now.getFullYear()}-WK${weekNum}`;
+}
+
+function buildFileName(type: ExportType, entityName?: string): string {
+  const dateStr = formatDateForFilename();
+  const slugify = (s: string) =>
+    s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+  switch (type) {
+    case "tasks":
+      return `WORKFLOW_DE_TAREFAS_${dateStr}_${generateWeekRef()}.pdf`;
+    case "project":
+      return `RELATORIO_PROJETO_${slugify(entityName || "PROJETO")}_${dateStr}.pdf`;
+    case "report_360":
+      return `RELATORIO_360_${dateStr}.pdf`;
+    case "finance":
+      return `RELATORIO_FINANCEIRO_${dateStr}.pdf`;
+    case "project_overview":
+      return `VISAO_GERAL_PROJETOS_${dateStr}.pdf`;
+    case "portal":
+      return `PORTAL_CLIENTE_${slugify(entityName || "PORTAL")}_${dateStr}.pdf`;
+    case "campaign":
+      return `CAMPANHA_${slugify(entityName || "CAMPANHA")}_${dateStr}.pdf`;
+    case "content":
+      return `CONTEUDO_${slugify(entityName || "CONTEUDO")}_${dateStr}.pdf`;
+    case "creative":
+      return `CRIATIVO_${slugify(entityName || "CRIATIVO")}_${dateStr}.pdf`;
+    default:
+      return `SQUAD_HUB_EXPORT_${dateStr}.pdf`;
+  }
+}
+
+// ─── Blob download (Safari/iOS compatible) ────────────────────
+
+async function downloadPdfFromUrl(url: string, fileName: string): Promise<void> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Falha ao baixar PDF");
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = fileName;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup after a short delay (Safari needs time)
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    }, 250);
+  } catch {
+    // Fallback: open in new tab
+    window.open(url, "_blank");
+  }
+}
+
 /**
  * Core export function - calls the unified export-pdf Edge Function
- * and opens the result in a new tab (rendered HTML with print dialog).
+ * and downloads the result as a real PDF file.
  */
 async function exportPdf(
   type: ExportType,
@@ -61,6 +136,7 @@ async function exportPdf(
     period?: string;
     token?: string;
     filters?: Record<string, unknown>;
+    entityName?: string;
   } = {},
   options: ExportOptions = {}
 ): Promise<ExportResult> {
@@ -78,7 +154,10 @@ async function exportPdf(
     const { data, error } = await supabase.functions.invoke<ExportResult>("export-pdf", {
       body: {
         type,
-        ...params,
+        id: params.id,
+        period: params.period,
+        token: params.token,
+        filters: params.filters,
       },
     });
 
@@ -93,8 +172,8 @@ async function exportPdf(
     const url = data.signed_url || data.public_url;
 
     if (url) {
-      // Open real PDF in new tab - browser's native PDF viewer handles it
-      window.open(url, '_blank');
+      const fileName = opts.fileName || buildFileName(type, params.entityName);
+      await downloadPdfFromUrl(url, fileName);
     }
 
     if (opts.showToasts && toastId) {
@@ -146,73 +225,47 @@ export async function exportPortalPDF(token: string, projectId?: string, options
 }
 
 /** Legacy export functions - redirect to dedicated edge functions */
-export async function exportCreativePDF(type: "studio_run" | "creative_package", id: string, options?: ExportOptions): Promise<ExportResult> {
+async function invokeAndDownload(
+  fnName: string,
+  body: Record<string, unknown>,
+  type: ExportType,
+  entityName: string,
+  toastMsg: string,
+  options?: ExportOptions
+): Promise<ExportResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  const toastId = opts.showToasts ? toast.loading("Gerando PDF criativo...") : undefined;
+  const toastId = opts.showToasts ? toast.loading("Gerando PDF...") : undefined;
 
   try {
-    const { data, error } = await supabase.functions.invoke<ExportResult>("export-creative-pdf", {
-      body: { type, id },
-    });
+    const { data, error } = await supabase.functions.invoke<ExportResult>(fnName, { body });
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.error || "Falha na exportação");
 
     const url = data.public_url || data.signed_url;
-    if (url) window.open(url, '_blank');
+    if (url) {
+      const fileName = buildFileName(type, entityName);
+      await downloadPdfFromUrl(url, fileName);
+    }
 
-    if (toastId) toast.success("PDF criativo pronto!", { id: toastId });
+    if (toastId) toast.success(toastMsg, { id: toastId });
     return data;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro ao exportar";
     if (toastId) toast.error(msg, { id: toastId });
     return { success: false, error: msg };
   }
+}
+
+export async function exportCreativePDF(type: "studio_run" | "creative_package", id: string, options?: ExportOptions): Promise<ExportResult> {
+  return invokeAndDownload("export-creative-pdf", { type, id }, "creative", type, "PDF criativo pronto!", options);
 }
 
 export async function exportCampaignPDF(campaignId: string, options?: ExportOptions): Promise<ExportResult> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
-  const toastId = opts.showToasts ? toast.loading("Gerando PDF da campanha...") : undefined;
-
-  try {
-    const { data, error } = await supabase.functions.invoke<ExportResult>("export-campaign-pdf", {
-      body: { campaign_id: campaignId },
-    });
-    if (error) throw new Error(error.message);
-    if (!data?.success) throw new Error(data?.error || "Falha na exportação");
-
-    const url = data.public_url || data.signed_url;
-    if (url) window.open(url, '_blank');
-
-    if (toastId) toast.success("PDF da campanha pronto!", { id: toastId });
-    return data;
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : "Erro ao exportar";
-    if (toastId) toast.error(msg, { id: toastId });
-    return { success: false, error: msg };
-  }
+  return invokeAndDownload("export-campaign-pdf", { campaign_id: campaignId }, "campaign", "", "PDF da campanha pronto!", options);
 }
 
 export async function exportContentPDF(contentItemId: string, options?: ExportOptions): Promise<ExportResult> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
-  const toastId = opts.showToasts ? toast.loading("Gerando PDF do conteúdo...") : undefined;
-
-  try {
-    const { data, error } = await supabase.functions.invoke<ExportResult>("export-content-pdf", {
-      body: { content_item_id: contentItemId },
-    });
-    if (error) throw new Error(error.message);
-    if (!data?.success) throw new Error(data?.error || "Falha na exportação");
-
-    const url = data.public_url || data.signed_url;
-    if (url) window.open(url, '_blank');
-
-    if (toastId) toast.success("PDF do conteúdo pronto!", { id: toastId });
-    return data;
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : "Erro ao exportar";
-    if (toastId) toast.error(msg, { id: toastId });
-    return { success: false, error: msg };
-  }
+  return invokeAndDownload("export-content-pdf", { content_item_id: contentItemId }, "content", "", "PDF do conteúdo pronto!", options);
 }
 
 // Default export
