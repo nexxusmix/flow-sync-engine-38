@@ -36,6 +36,7 @@ export interface Alert {
 export function useAlerts(filters?: {
   status?: string;
   severity?: string;
+  projectId?: string;
   limit?: number;
 }) {
   const queryClient = useQueryClient();
@@ -54,6 +55,9 @@ export function useAlerts(filters?: {
       }
       if (filters?.severity) {
         query = query.eq('severity', filters.severity as any);
+      }
+      if (filters?.projectId) {
+        query = query.eq('project_id', filters.projectId);
       }
       if (filters?.limit) {
         query = query.limit(filters.limit);
