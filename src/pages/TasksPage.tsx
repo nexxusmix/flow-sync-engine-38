@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTasksUnified, Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
@@ -10,8 +10,10 @@ import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
-  Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List
+  Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
+  Mic, Square as StopIcon
 } from "lucide-react";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -64,10 +66,58 @@ export default function TasksPage() {
   const [isAISheetOpen, setIsAISheetOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskForm, setTaskForm] = useState<TaskFormData>(defaultTaskForm);
-  const [aiText, setAiText] = useState('');
+  const [aiText, setAiText] = useState(() => {
+    try { return localStorage.getItem('tasks-ai-text') || ''; } catch { return ''; }
+  });
   const [aiCategory, setAiCategory] = useState<Task['category']>('operacao');
   const [aiColumn, setAiColumn] = useState<Task['status']>('backlog');
   const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
+
+  // Persist AI text to localStorage
+  useEffect(() => {
+    try { localStorage.setItem('tasks-ai-text', aiText); } catch {}
+  }, [aiText]);
+
+  // Speech-to-text hook
+  const handleSpeechResult = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal && text) {
+      setAiText(prev => prev ? prev + '\n' + text : text);
+    }
+  }, []);
+
+  const {
+    isSupported: isMicSupported,
+    isRecording,
+    isTranscribing,
+    error: speechError,
+    start: startRecording,
+    stop: stopRecording,
+    cancel: cancelRecording,
+  } = useSpeechToText({
+    lang: 'pt-BR',
+    continuous: true,
+    onResult: handleSpeechResult,
+    onError: (msg) => toast.error(msg),
+  });
+
+  // Cancel recording when AI sheet closes
+  const handleAISheetChange = useCallback((open: boolean) => {
+    if (!open) {
+      cancelRecording();
+    }
+    setIsAISheetOpen(open);
+  }, [cancelRecording]);
+
+  // Cancel on ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isRecording) {
+        cancelRecording();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRecording, cancelRecording]);
 
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) {
@@ -323,7 +373,7 @@ export default function TasksPage() {
         </Dialog>
 
         {/* AI Sheet */}
-        <Sheet open={isAISheetOpen} onOpenChange={setIsAISheetOpen}>
+        <Sheet open={isAISheetOpen} onOpenChange={handleAISheetChange}>
           <SheetContent className="sm:max-w-lg">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
@@ -333,11 +383,64 @@ export default function TasksPage() {
             </SheetHeader>
             <div className="space-y-4 py-6">
               <p className="text-sm text-muted-foreground">
-                Cole uma lista de tarefas, um e-mail, ou qualquer texto. A IA vai transformar em tarefas estruturadas automaticamente.
+                Cole uma lista de tarefas, um e-mail, ou qualquer texto — ou use o <strong>microfone</strong> para ditar. A IA vai transformar em tarefas estruturadas automaticamente.
               </p>
               <div>
-                <Label>Texto com tarefas</Label>
-                <Textarea value={aiText} onChange={(e) => setAiText(e.target.value)} placeholder={`Exemplo:\n- Revisar contrato do cliente X\n- Ligar para contador sobre impostos`} rows={8} className="font-mono text-sm" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label>Texto com tarefas</Label>
+                  {isMicSupported ? (
+                    <Button
+                      type="button"
+                      variant={isRecording ? "destructive" : "outline"}
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={isTranscribing}
+                    >
+                      {isTranscribing ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Transcrevendo…
+                        </>
+                      ) : isRecording ? (
+                        <>
+                          <StopIcon className="w-3.5 h-3.5" />
+                          <span className="animate-pulse">Gravando…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-3.5 h-3.5" />
+                          Ditar
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground">Microfone não suportado</span>
+                  )}
+                </div>
+                <div className="relative">
+                  <Textarea
+                    value={aiText}
+                    onChange={(e) => setAiText(e.target.value)}
+                    placeholder={`Exemplo:\n- Revisar contrato do cliente X\n- Ligar para contador sobre impostos`}
+                    rows={8}
+                    className="font-mono text-sm"
+                  />
+                  {isRecording && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-medium">
+                      <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                      REC
+                    </div>
+                  )}
+                </div>
+                {speechError && (
+                  <div className="flex items-center justify-between mt-1.5 p-2 rounded-md bg-destructive/10 text-destructive text-xs">
+                    <span>{speechError}</span>
+                    <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={startRecording}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -357,8 +460,8 @@ export default function TasksPage() {
               </div>
             </div>
             <SheetFooter>
-              <Button variant="outline" onClick={() => setIsAISheetOpen(false)}>Cancelar</Button>
-              <Button onClick={handleGenerateFromAI} disabled={isGeneratingLocal || !aiText.trim()}>
+              <Button variant="outline" onClick={() => handleAISheetChange(false)}>Cancelar</Button>
+              <Button onClick={handleGenerateFromAI} disabled={isGeneratingLocal || isRecording || !aiText.trim()}>
                 {isGeneratingLocal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                 Gerar Tarefas
               </Button>
