@@ -1,230 +1,129 @@
 
-# SQUAD HUB v2.4 — Plano de Execucao Faseado
+# Corrigir Prospeccao 100% — Audio + Automacao + WhatsApp
 
-## Diagnostico do Estado Atual
+## Diagnostico
 
-A plataforma ja possui boa parte da infraestrutura mencionada no comando:
-- **Design tokens SQUAD Film** ja existem em `index.css` (dark theme com #000000, #009CCA, glass-card, holographic-card, data-glow, grid-dots)
-- **Google Sans Flex** ja e a fonte principal
-- **Sidebar + DashboardLayout** ja seguem o padrao SQUAD Film
-- **Quadro de Avisos** ja existe (`AlertsBoardPage`) com filtros, severidade, agrupamento por vencimento
-- **WhatsApp com IA** ja funciona (`WhatsAppMessageModal` + edge function `generate-alert-whatsapp`)
-- **Realtime sync** ja esta configurado (`useRealtimeSync`) para tabelas principais
-- **Edge functions de IA** ja existem (30+ funcoes: gerar mensagem, panorama, propostas, alertas, etc.)
-- **PDF export** ja existe para financeiro, panorama, campanhas, etc.
-- **Componentes MK-UI** existem mas separados (`MkCard`, `MkStatusBadge`, etc.)
+### O que ja existe e funciona:
+- **ProspectMessageGenerator**: gera 3 variantes de mensagem WhatsApp com IA (Lovable AI), copiar, enviar via wa.me com deteccao mobile/desktop
+- **ProspectAutomations**: motor de regras com toggle, kill switch, aprovacao manual, timeline, notificacoes
+- **ProspectCampaignEngine**: planejamento de campanha com IA (cadencia, abordagens A/B/C, risco de spam)
+- **ProspectInbox**: lista de leads com dialog para gerar mensagens
+- **Edge functions**: `prospect-ai-generate` (Lovable AI) e `prospect-tts` (ElevenLabs)
+- **Tabelas**: `prospects`, `prospect_opportunities`, `prospect_activities`, `prospect_lists`, `cadences`, `cadence_steps`, `automation_rules`, `automation_suggestions`, `alerts`, `agent_scout_outputs`, `event_logs`
 
-O que falta e principalmente: **unificar componentes duplicados**, **corrigir inconsistencias visuais entre modulos**, e **garantir que botoes/acoes realmente funcionem end-to-end**.
+### Problemas reais encontrados:
 
----
+1. **Audio ElevenLabs falhando**: o log mostra `401 missing_permissions — text_to_speech`. A API key configurada no secret `ELEVENLABS_API_KEY` nao tem permissao de TTS. Isso e um problema de configuracao da key, nao de codigo.
 
-## Estrategia: 6 Sprints Sequenciais
+2. **Audio nao persiste**: o audio e gerado como blob em memoria e perdido ao fechar. Nao salva no storage nem no banco.
 
-Dado o tamanho do escopo, vou dividir em sprints menores que podem ser aprovados e implementados um por vez. Cada sprint entrega valor funcional completo.
+3. **Sem tabela `prospect_audio`**: nao existe historico de audios gerados. Precisa criar.
 
----
+4. **Automacoes sao "locais"**: os toggles de regras (first_contact, silence_followup, etc.) sao hardcoded no frontend (`LOCAL_RULES`) e nao persistem configs como `approveFirst`, `autoSend`, `dailyLimit` no banco.
 
-## Sprint 1: Design System Unificado (Base Global)
+5. **Timeline incompleta**: mostra apenas `automation_suggestions`, nao inclui atividades, envios WhatsApp, audios gerados.
 
-**Objetivo:** Criar um kit de componentes `squad-ui` que substitua duplicatas e garanta consistencia.
-
-### Tarefas:
-1. **Criar `src/components/squad-ui/`** com componentes padronizados:
-   - `GlassCard` (substituir `glass-card`, `MkCard`, `card-elevated` por um unico componente)
-   - `GlassModal` (wrapper padrao para Dialog com blur + glass)
-   - `StatusBadge` (unificar `MkStatusBadge` + badges inline)
-   - `SectionHeader` (unificar `MkSectionHeader` + section-label)
-   - `ActionButton` (CTA azul com glow + estados loading/success/error)
-   - `AIButton` (icone sparkles + "Gerar com IA" + loading state obrigatorio)
-   - `DataGlow` (wrapper para numeros com text-shadow)
-   - `ProjectedTable` (tabela com hover azul, headers mono, borda glass)
-
-2. **Consolidar tokens CSS** em `index.css`:
-   - Garantir que `--glass-border`, `--glass-surface`, `--glow` estejam disponiveis no dark theme (ja estao)
-   - Adicionar tokens faltantes: `--shadow-deep`, `--glass-blur`
-
-3. **Migrar modulos existentes** para usar `squad-ui`:
-   - Dashboard (ja usa glass-card -- manter)
-   - Marketing Hub (migrar de `MkCard` para `GlassCard`)
-   - Financeiro (ja consistente -- manter)
-   - Prospeccao (verificar e migrar)
-
-### Arquivos criados:
-- `src/components/squad-ui/GlassCard.tsx`
-- `src/components/squad-ui/GlassModal.tsx`
-- `src/components/squad-ui/StatusBadge.tsx`
-- `src/components/squad-ui/SectionHeader.tsx`
-- `src/components/squad-ui/ActionButton.tsx`
-- `src/components/squad-ui/AIButton.tsx`
-- `src/components/squad-ui/ProjectedTable.tsx`
-- `src/components/squad-ui/index.ts`
-
-### Arquivos modificados:
-- `src/index.css` (tokens adicionais)
-- Componentes do Marketing Hub que usam `MkCard`
+6. **WhatsApp funciona mas nao registra**: o botao abre wa.me corretamente mas nao grava evento em `event_logs` nem cria follow-up automatico.
 
 ---
 
-## Sprint 2: Quadro de Avisos + Acoes Inteligentes (Overview)
+## Plano de Implementacao
 
-**Objetivo:** Expandir o sistema de alertas existente com card no Dashboard e carrossel de acoes inteligentes.
+### Fase 1: Corrigir ElevenLabs + Persistencia de Audio
 
-### Tarefas:
-1. **Card "Avisos & Proximas Acoes" no Dashboard**
-   - Mostrar top 5 alertas abertos (vencidos primeiro)
-   - Botoes rapidos: Resolver, Gerar Msg, WhatsApp
-   - Link para `/avisos`
+**1.1 Reconectar ElevenLabs**
+- A API key atual nao tem permissao `text_to_speech`. O usuario precisara reconectar com uma key que tenha essa permissao via o conector ElevenLabs.
 
-2. **Carrossel "Acoes Inteligentes"** abaixo de Projetos Ativos
-   - Cards horizontais: follow-up recomendado, prazo vencendo, revisao pendente, cobranca
-   - Cada card com: Gerar Mensagem, Copiar, Enviar WhatsApp, Marcar como feito
-   - Dados vindos dos alertas existentes + revenues vencidas + revisoes pendentes
+**1.2 Criar tabela `prospect_audio`**
+- Colunas: `id`, `prospect_id`, `opportunity_id`, `campaign_id`, `script_text`, `voice_id`, `audio_url`, `duration_seconds`, `status` (processing/ready/error), `trace_id`, `error_message`, `idempotency_key`, `created_at`, `updated_at`
+- RLS: usuario autenticado pode ler/inserir/atualizar
 
-3. **Card de Avisos dentro de cada Projeto**
-   - Na pagina de detalhe do projeto, seção "Avisos do Projeto"
-   - Filtrar alertas por `project_id`
+**1.3 Refatorar `prospect-tts` edge function**
+- Apos gerar o audio com ElevenLabs, salvar o MP3 no bucket `scout-audio`
+- Inserir registro em `prospect_audio` com `audio_url` e `status: ready`
+- Retornar JSON `{ audio_url, duration, trace_id }` em vez de binary
+- Adicionar `idempotency_key` para evitar duplicatas
 
-### Arquivos criados:
-- `src/components/dashboard/AlertsQuickCard.tsx`
-- `src/components/dashboard/SmartActionsRail.tsx`
-- `src/components/projects/ProjectAlertsSection.tsx`
+**1.4 Refatorar `ProspectMessageGenerator` (audio section)**
+- Gerar `idempotency_key` por clique (prospect_id + timestamp)
+- Mostrar estados: idle -> gerando -> pronto/erro
+- Ao receber `audio_url`, usar a URL publica do storage (nao blob)
+- Historico de audios: listar audios anteriores do prospect
+- Botao "Tentar Novamente" com retry real
+- Botao "Baixar MP3" usa a URL do storage
 
-### Arquivos modificados:
-- `src/pages/Dashboard.tsx` (adicionar AlertsQuickCard + SmartActionsRail)
-- Pagina de detalhe do projeto (adicionar ProjectAlertsSection)
+### Fase 2: Automacao Persistente + Timeline Unificada
 
----
+**2.1 Persistir configs de automacao**
+- Salvar `approveFirst`, `autoSend`, `dailyLimit` na tabela `prospecting_settings` (ja existe)
+- Carregar configs ao montar `ProspectAutomations`
 
-## Sprint 3: "Enviar ao Cliente" -- Modal Completo + PDF SQUAD Film
+**2.2 Timeline unificada**
+- Criar query que une:
+  - `prospect_activities` (atividades manuais)
+  - `automation_suggestions` (acoes IA)
+  - `event_logs` (envios, erros)
+  - `prospect_audio` (audios gerados)
+- Ordenar por data, mostrar com icones por tipo
+- Filtros: Todas | Atividades | IA | Envios | Audios
 
-**Objetivo:** Refatorar o modal SendToClientModal para incluir geracao de PDF fiel ao layout e envio WhatsApp completo.
+**2.3 Notificacoes de prospeccao**
+- Ao completar `runAutomations`, criar alertas em `alerts` para:
+  - Follow-up vencido
+  - Lead sem contato ha X dias
+  - Mensagem pendente de aprovacao
+- Badge no sidebar ja conectado ao sistema de alertas existente
 
-### Tarefas:
-1. **Refatorar `SendToClientModal`**
-   - Tab "Mensagem": gerar texto WhatsApp com IA (ja existe parcialmente em `MessageTab`)
-   - Tab "Material": enviar material individual com link do portal
-   - Tab "Panorama": gerar resumo completo do projeto com IA
-   - Historico: ja existe
+### Fase 3: WhatsApp com Registro + Follow-up Automatico
 
-2. **Botoes obrigatorios em cada tab:**
-   - "Gerar com IA" (loading + resultado editavel)
-   - "Copiar" (clipboard)
-   - "Enviar WhatsApp" (wa.me com deteccao mobile/desktop)
-   - "Gerar PDF" (chamar edge function `export-panorama-pdf`)
+**3.1 Registrar envio no `event_logs`**
+- Ao clicar "Enviar WhatsApp", antes de abrir wa.me:
+  - Inserir `event_logs` com action: `whatsapp.sent`, entity_type: `prospect`, entity_id
+  - Toast confirmando registro
 
-3. **PDF SQUAD Film**
-   - Refatorar `export-panorama-pdf` para usar design tokens: fundo preto, texto branco, accent azul, cards glass simulados
-   - Conteudo: projeto, cliente, etapa, saude, proximos passos, prazos, itens pendentes, links
-   - QR code opcional para abrir portal
+**3.2 Follow-up automatico**
+- Apos registrar envio WhatsApp, criar `prospect_activity` tipo `followup`:
+  - `due_at`: +3 dias
+  - `title`: "Follow-up: [prospect_name]"
+  - `description`: "Verificar resposta apos mensagem WhatsApp"
 
-4. **WhatsApp inteligente:**
-   - Detectar desktop vs mobile para URL correta
-   - Buscar telefone do cliente via `crm_contacts`
-   - Registrar envio em `event_logs`
+**3.3 Melhorar deteccao de dispositivo**
+- Manter logica atual (ja funciona bem):
+  - Mobile: `whatsapp://send?phone=...` com fallback `wa.me`
+  - Desktop: `wa.me` (abre WhatsApp Web/Desktop)
+- Adicionar botao "Copiar" sempre visivel como fallback principal
 
-### Arquivos modificados:
-- `src/components/projects/send-to-client/MessageTab.tsx`
-- `src/components/projects/send-to-client/PanoramaTab.tsx`
-- `supabase/functions/export-panorama-pdf/index.ts`
-- `src/components/projects/SendToClientModal.tsx`
+### Fase 4: Telemetria e Debug
 
----
+**4.1 trace_id em tudo**
+- Gerar `crypto.randomUUID()` no frontend antes de cada chamada
+- Passar como header `X-Trace-Id` para edge functions
+- Logar no backend com o trace_id
+- Mostrar trace_id no toast de erro (copiavel)
 
-## Sprint 4: Realtime Completo Projeto <-> Portal Cliente
-
-**Objetivo:** Garantir que materiais, revisoes, entregas e financeiro estejam 100% sincronizados.
-
-### Tarefas:
-1. **Verificar/adicionar tabelas ao realtime:**
-   - `portal_deliverables`, `portal_comments`, `portal_approvals`, `portal_change_requests` (ja no realtime conforme memory)
-   - `revenues`, `contracts` (adicionados recentemente)
-   - `portal_deliverable_versions`
-
-2. **Portal Cliente: remover dados mock restantes**
-   - Auditar todos componentes em `src/components/client-portal/`
-   - Garantir que `PortalMaterialsSection`, `PortalDeliverables`, `PortalChangeRequests` buscam dados reais
-
-3. **Nome do responsavel: full_name**
-   - Substituir exibicao de `username` por `full_name` em todos os componentes
-   - Implementar fallback: `full_name` -> `first_name + last_name` -> `username`
-
-4. **Portal: exibir apenas avisos relevantes ao cliente**
-   - Filtrar alertas por `visibility = 'client'` ou tipo relevante (prazo, material, pagamento)
-
-### Arquivos modificados:
-- `src/hooks/useRealtimeSync.tsx`
-- Componentes do Portal Cliente que usam mocks
-- Componentes que exibem username em vez de full_name
+**4.2 Estados de botao obrigatorios**
+- Todo botao de acao tera: `disabled` quando loading, spinner + label, try/catch + toast erro
 
 ---
 
-## Sprint 5: Prospeccao -- Campanhas + Cadencia + IA
+## Arquivos a criar:
+- (nenhum novo componente — refatorar os existentes)
 
-**Objetivo:** IA gera estrategia por target, mensagens prontas, e cadencia automatizada.
+## Arquivos a modificar:
+- `supabase/functions/prospect-tts/index.ts` — salvar no storage + retornar JSON
+- `src/components/prospecting/ProspectMessageGenerator.tsx` — audio persistente + registro WhatsApp + follow-up
+- `src/components/prospecting/ProspectAutomations.tsx` — persistir configs + timeline unificada
+- `src/hooks/useProspectAI.ts` — ajustar `generateAudio` para novo formato de resposta
+- `src/index.css` — nenhuma mudanca
 
-### Tarefas:
-1. **Pipeline inteligente:**
-   - IA sugere proxima acao por lead/target
-   - Gerar mensagem pronta (texto WhatsApp) com contexto do pipeline
+## Migracao SQL:
+- Criar tabela `prospect_audio`
+- Habilitar RLS
 
-2. **Campanhas por cliente:**
-   - Objetivo: contato / fechamento / retarget / relacionamento
-   - Tom: WhatsApp do Matheus (instrucoes fixas no prompt)
-   - Cadencia: dias/horarios configuráveis
+## Pre-requisito critico:
+- **Reconectar ElevenLabs**: a API key atual retorna 401 `missing_permissions` para `text_to_speech`. O usuario precisa gerar uma nova key com permissao TTS no painel ElevenLabs e reconectar.
 
-3. **Audio opcional (ElevenLabs):**
-   - Botao "Gerar Audio" gera texto primeiro, depois oferece conversao
-   - Usar edge function `prospect-tts` existente
-   - Player inline no card
-
-### Arquivos modificados:
-- Paginas de prospeccao
-- Edge functions de prospeccao existentes
-
----
-
-## Sprint 6: Editor Criativo -- Layout SQUAD Film + Export
-
-**Objetivo:** Padronizar o editor criativo com o mesmo DNA visual do financeiro.
-
-### Tarefas:
-1. **Layout do editor igual ao financeiro**
-   - Header com section label
-   - Cards/areas com glass
-   - Painel direito "Copiloto" com estetica SQUAD Film
-
-2. **Funcionalidades:**
-   - Vincular cliente/projeto/campanha obrigatoriamente
-   - Preview thumbnails (templates Figma)
-   - IA multiformato (feed, story, carrossel)
-   - Export PNG/JPG/ZIP
-
-### Arquivos modificados:
-- Componentes em `src/components/creative-studio/`
-- Componentes em `src/components/studio/`
-
----
-
-## Ordem de Prioridade (conforme solicitado)
-
-1. Sprint 1 (Design System) -- base para tudo
-2. Sprint 4 (Realtime Projeto <-> Portal) -- prioridade #1 do usuario
-3. Sprint 2 (Quadro de Avisos + WhatsApp) -- prioridade #2
-4. Sprint 3 (PDF + Enviar ao Cliente) -- prioridade #3
-5. Sprint 5 (Prospeccao/IA/Automacao) -- prioridade #4
-6. Sprint 6 (Editor Criativo) -- ultimo
-
----
-
-## Observacoes Tecnicas
-
-- **Nao sera criado Event Bus custom** -- o Supabase Realtime ja funciona como event bus (INSERT/UPDATE/DELETE em tabelas). Adicionar uma camada extra seria over-engineering.
-- **WhatsApp Cloud API** requer conta Meta Business verificada + numero empresarial. O sistema mantera `wa.me` como padrao e a integracao via n8n como complemento.
-- **QR/Session WhatsApp Web** nao sera implementado (instavel + viola politicas Meta). O fluxo sera sempre: gerar texto -> copiar/abrir wa.me.
-- **Cada sprint sera implementado e testado antes de iniciar o proximo**, para evitar regressoes.
-
----
-
-## Proximo Passo
-
-Aprovar este plano para iniciar pelo **Sprint 1 (Design System Unificado)**. Cada sprint subsequente sera apresentado como continuacao apos o anterior estar completo.
+## Sobre WhatsApp Web QR / API Oficial:
+- **WhatsApp Cloud API** requer conta Meta Business verificada + numero empresarial dedicado. Isso esta fora do escopo de implementacao aqui (requer configuracao externa no Meta Business Suite).
+- **QR/Session WhatsApp Web** nao sera implementado (instavel, viola ToS Meta, e o proprio usuario reconheceu preferir API oficial).
+- O sistema usara **wa.me deep links** (funciona 100% em PC e mobile) + **botao Copiar** como fallback universal. O envio via n8n (ja configurado com `agent-approve-whatsapp-send`) continua disponivel para envios via API quando o webhook estiver ativo.
