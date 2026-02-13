@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { useEffect } from "react";
 import { useClientPortal } from "@/hooks/useClientPortal";
 import { 
   AlertTriangle, 
@@ -93,6 +94,18 @@ export default function ClientPortalPage() {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [commentForm, setCommentForm] = useState({ name: '', email: '', content: '' });
   const [youtubeUrl, setYoutubeUrl] = useState('');
+
+  // Dynamic document title for portal
+  useEffect(() => {
+    if (data?.portal) {
+      const projectName = data.portal.project_name || 'Projeto';
+      const clientName = data.portal.client_name || '';
+      document.title = clientName
+        ? `${projectName} — ${clientName} | SQUAD HUB`
+        : `${projectName} | SQUAD HUB`;
+    }
+    return () => { document.title = 'Hub v2.4 | Gestão Criativa & Audiovisual'; };
+  }, [data?.portal]);
 
   // Loading
   if (isLoading) {
