@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Task, TASK_COLUMNS, TASK_CATEGORIES, useTasksStore } from "@/stores/tasksStore";
+import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, Tag, ArrowUpDown, Search
@@ -20,10 +20,13 @@ type SortKey = "created" | "due_date" | "title";
 interface TasksBoardViewProps {
   tasks: Task[];
   onEditTask: (task: Task) => void;
+  onToggleComplete?: (id: string) => void;
+  onDeleteTask?: (id: string) => void;
 }
 
-export function TasksBoardView({ tasks, onEditTask }: TasksBoardViewProps) {
-  const { toggleComplete, deleteTask } = useTasksStore();
+export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask }: TasksBoardViewProps) {
+  const toggleComplete = onToggleComplete || (() => {});
+  const deleteTask = onDeleteTask || (() => {});
   const [activeStatus, setActiveStatus] = useState<Task["status"]>("today");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("created");

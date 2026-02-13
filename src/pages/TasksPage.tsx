@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Task, TASK_COLUMNS, TASK_CATEGORIES, useTasksStore } from "@/stores/tasksStore";
+import { useTasksUnified, Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksBoardView } from "@/components/tasks/TasksBoardView";
-import { TasksDashboard } from "@/components/tasks/TasksDashboard";
+import { TasksDashboardBI } from "@/components/tasks/TasksDashboardBI";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
-import { usePersistedState, useScrollPersistence } from "@/hooks/usePersistedState";
-import { 
+import { useScrollPersistence } from "@/hooks/usePersistedState";
+import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,25 +18,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 
@@ -61,15 +49,16 @@ const defaultTaskForm: TaskFormData = {
 type ViewMode = 'board' | 'kanban' | 'timeline' | 'dashboard';
 
 export default function TasksPage() {
-  const { tasks, isLoading, isCreating, isGenerating, fetchTasks, createTask, updateTask, createTasksFromAI } = useTasksStore();
+  const {
+    tasks, isLoading, isCreating, isGenerating, stats,
+    createTask, updateTask, toggleComplete, deleteTask, moveTask,
+    createTasksFromAI, timelineItems,
+  } = useTasksUnified();
+
   const { isExporting, exportTasks } = useExportPdf();
-  
-  // URL-persisted view mode
   const [viewMode, setViewMode] = useUrlState('view', 'board') as [ViewMode, (v: ViewMode) => void];
-  
-  // Scroll persistence
   useScrollPersistence('tasks');
-  
+
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
   const [isAISheetOpen, setIsAISheetOpen] = useState(false);
@@ -80,30 +69,24 @@ export default function TasksPage() {
   const [aiColumn, setAiColumn] = useState<Task['status']>('backlog');
   const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) {
       toast.error('Título é obrigatório');
       return;
     }
-
-    const newTask = await createTask({
-      title: taskForm.title,
-      description: taskForm.description || null,
-      status: taskForm.status,
-      category: taskForm.category,
-      tags: taskForm.tags ? taskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-      due_date: taskForm.due_date || null,
-    });
-
-    if (newTask) {
+    try {
+      await createTask({
+        title: taskForm.title,
+        description: taskForm.description || null,
+        status: taskForm.status,
+        category: taskForm.category,
+        tags: taskForm.tags ? taskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        due_date: taskForm.due_date || null,
+      });
       toast.success('Tarefa criada!');
       setIsNewTaskOpen(false);
       setTaskForm(defaultTaskForm);
-    } else {
+    } catch {
       toast.error('Erro ao criar tarefa');
     }
   };
@@ -123,8 +106,7 @@ export default function TasksPage() {
 
   const handleUpdateTask = async () => {
     if (!editingTask || !taskForm.title.trim()) return;
-
-    await updateTask(editingTask.id, {
+    updateTask(editingTask.id, {
       title: taskForm.title,
       description: taskForm.description || null,
       status: taskForm.status,
@@ -132,7 +114,6 @@ export default function TasksPage() {
       tags: taskForm.tags ? taskForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       due_date: taskForm.due_date || null,
     });
-
     toast.success('Tarefa atualizada!');
     setIsEditTaskOpen(false);
     setEditingTask(null);
@@ -144,26 +125,18 @@ export default function TasksPage() {
       toast.error('Cole ou digite o texto com as tarefas');
       return;
     }
-
     setIsGeneratingLocal(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-tasks-from-text', {
-        body: {
-          rawText: aiText,
-          defaultCategory: aiCategory,
-          defaultColumn: aiColumn,
-        }
+        body: { rawText: aiText, defaultCategory: aiCategory, defaultColumn: aiColumn },
       });
-
       if (error) throw error;
-
       if (!data?.tasks || data.tasks.length === 0) {
         toast.error('Nenhuma tarefa identificada no texto');
         return;
       }
-
-      const count = await createTasksFromAI(data.tasks);
-      toast.success(`${count} tarefas criadas!`);
+      const newTasks = await createTasksFromAI(data.tasks);
+      toast.success(`${newTasks.length} tarefas criadas!`);
       setIsAISheetOpen(false);
       setAiText('');
     } catch (err: any) {
@@ -186,7 +159,6 @@ export default function TasksPage() {
                 {tasks.filter(t => t.status !== 'done').length} pendentes • {tasks.filter(t => t.status === 'done').length} concluídas
               </p>
             </div>
-            {/* Mobile: only show + button */}
             <div className="flex items-center gap-2 md:hidden">
               <Button size="sm" variant="outline" onClick={() => setIsAISheetOpen(true)}>
                 <Sparkles className="w-4 h-4" />
@@ -219,11 +191,7 @@ export default function TasksPage() {
             </Tabs>
             <div className="hidden md:flex items-center gap-3">
               <Button variant="outline" size="sm" onClick={() => exportTasks()} disabled={isExporting}>
-                {isExporting ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <FileDown className="w-4 h-4 mr-2" />
-                )}
+                {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
                 Exportar PDF
               </Button>
               <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
@@ -244,13 +212,13 @@ export default function TasksPage() {
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : viewMode === 'board' ? (
-          <TasksBoardView tasks={tasks} onEditTask={handleEditTask} />
+          <TasksBoardView tasks={tasks} onEditTask={handleEditTask} onToggleComplete={toggleComplete} onDeleteTask={deleteTask} />
         ) : viewMode === 'dashboard' ? (
-          <TasksDashboard tasks={tasks} />
+          <TasksDashboardBI tasks={tasks} stats={stats} />
         ) : viewMode === 'timeline' ? (
           <TasksTimeline tasks={tasks} onEditTask={handleEditTask} />
         ) : (
-          <TasksBoard tasks={tasks} onEditTask={handleEditTask} />
+          <TasksBoard tasks={tasks} onEditTask={handleEditTask} onMoveTask={moveTask} onToggleComplete={toggleComplete} onDeleteTask={deleteTask} />
         )}
 
         {/* New Task Dialog */}
@@ -262,76 +230,36 @@ export default function TasksPage() {
             <div className="space-y-4 py-4">
               <div>
                 <Label>Título *</Label>
-                <Input
-                  value={taskForm.title}
-                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                  placeholder="O que precisa ser feito?"
-                />
+                <Input value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="O que precisa ser feito?" />
               </div>
-
               <div>
                 <Label>Descrição</Label>
-                <Textarea
-                  value={taskForm.description}
-                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-                  placeholder="Detalhes adicionais..."
-                  rows={2}
-                />
+                <Textarea value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} placeholder="Detalhes adicionais..." rows={2} />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Coluna</Label>
-                  <Select 
-                    value={taskForm.status} 
-                    onValueChange={(v) => setTaskForm({ ...taskForm, status: v as Task['status'] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TASK_COLUMNS.map((col) => (
-                        <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>
-                      ))}
-                    </SelectContent>
+                  <Select value={taskForm.status} onValueChange={(v) => setTaskForm({ ...taskForm, status: v as Task['status'] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{TASK_COLUMNS.map((col) => <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <Label>Categoria</Label>
-                  <Select 
-                    value={taskForm.category} 
-                    onValueChange={(v) => setTaskForm({ ...taskForm, category: v as Task['category'] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TASK_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
+                  <Select value={taskForm.category} onValueChange={(v) => setTaskForm({ ...taskForm, category: v as Task['category'] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{TASK_CATEGORIES.map((cat) => <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Data Limite</Label>
-                  <Input
-                    type="date"
-                    value={taskForm.due_date}
-                    onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                  />
+                  <Input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })} />
                 </div>
-
                 <div>
                   <Label>Tags (vírgula)</Label>
-                  <Input
-                    value={taskForm.tags}
-                    onChange={(e) => setTaskForm({ ...taskForm, tags: e.target.value })}
-                    placeholder="urgente, cliente"
-                  />
+                  <Input value={taskForm.tags} onChange={(e) => setTaskForm({ ...taskForm, tags: e.target.value })} placeholder="urgente, cliente" />
                 </div>
               </div>
             </div>
@@ -354,73 +282,36 @@ export default function TasksPage() {
             <div className="space-y-4 py-4">
               <div>
                 <Label>Título *</Label>
-                <Input
-                  value={taskForm.title}
-                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                />
+                <Input value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} />
               </div>
-
               <div>
                 <Label>Descrição</Label>
-                <Textarea
-                  value={taskForm.description}
-                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-                  rows={2}
-                />
+                <Textarea value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} rows={2} />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Coluna</Label>
-                  <Select 
-                    value={taskForm.status} 
-                    onValueChange={(v) => setTaskForm({ ...taskForm, status: v as Task['status'] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TASK_COLUMNS.map((col) => (
-                        <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>
-                      ))}
-                    </SelectContent>
+                  <Select value={taskForm.status} onValueChange={(v) => setTaskForm({ ...taskForm, status: v as Task['status'] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{TASK_COLUMNS.map((col) => <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <Label>Categoria</Label>
-                  <Select 
-                    value={taskForm.category} 
-                    onValueChange={(v) => setTaskForm({ ...taskForm, category: v as Task['category'] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TASK_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
+                  <Select value={taskForm.category} onValueChange={(v) => setTaskForm({ ...taskForm, category: v as Task['category'] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{TASK_CATEGORIES.map((cat) => <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Data Limite</Label>
-                  <Input
-                    type="date"
-                    value={taskForm.due_date}
-                    onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                  />
+                  <Input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })} />
                 </div>
-
                 <div>
                   <Label>Tags (vírgula)</Label>
-                  <Input
-                    value={taskForm.tags}
-                    onChange={(e) => setTaskForm({ ...taskForm, tags: e.target.value })}
-                  />
+                  <Input value={taskForm.tags} onChange={(e) => setTaskForm({ ...taskForm, tags: e.target.value })} />
                 </div>
               </div>
             </div>
@@ -444,44 +335,23 @@ export default function TasksPage() {
               <p className="text-sm text-muted-foreground">
                 Cole uma lista de tarefas, um e-mail, ou qualquer texto. A IA vai transformar em tarefas estruturadas automaticamente.
               </p>
-
               <div>
                 <Label>Texto com tarefas</Label>
-                <Textarea
-                  value={aiText}
-                  onChange={(e) => setAiText(e.target.value)}
-                  placeholder={`Exemplo:\n- Revisar contrato do cliente X\n- Ligar para contador sobre impostos\n- Comprar presente de aniversário\n- Reunião com equipe às 15h`}
-                  rows={8}
-                  className="font-mono text-sm"
-                />
+                <Textarea value={aiText} onChange={(e) => setAiText(e.target.value)} placeholder={`Exemplo:\n- Revisar contrato do cliente X\n- Ligar para contador sobre impostos`} rows={8} className="font-mono text-sm" />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Categoria padrão</Label>
                   <Select value={aiCategory} onValueChange={(v) => setAiCategory(v as Task['category'])}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TASK_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{TASK_CATEGORIES.map((cat) => <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <Label>Coluna padrão</Label>
                   <Select value={aiColumn} onValueChange={(v) => setAiColumn(v as Task['status'])}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TASK_COLUMNS.filter(c => c.key !== 'done').map((col) => (
-                        <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{TASK_COLUMNS.filter(c => c.key !== 'done').map((col) => <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
@@ -489,11 +359,7 @@ export default function TasksPage() {
             <SheetFooter>
               <Button variant="outline" onClick={() => setIsAISheetOpen(false)}>Cancelar</Button>
               <Button onClick={handleGenerateFromAI} disabled={isGeneratingLocal || !aiText.trim()}>
-                {isGeneratingLocal ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 mr-2" />
-                )}
+                {isGeneratingLocal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                 Gerar Tarefas
               </Button>
             </SheetFooter>

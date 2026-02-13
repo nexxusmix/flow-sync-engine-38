@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Task, TASK_COLUMNS, TASK_CATEGORIES, useTasksStore } from "@/stores/tasksStore";
+import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { 
   CheckSquare, Square, MoreHorizontal, Trash2, 
   Edit, Calendar, GripVertical, Tag
@@ -20,11 +20,12 @@ import { ptBR } from "date-fns/locale";
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
   isDragging?: boolean;
 }
 
-function TaskCard({ task, onEdit, isDragging }: TaskCardProps) {
-  const { toggleComplete, deleteTask } = useTasksStore();
+function TaskCard({ task, onEdit, onToggle, onDelete, isDragging }: TaskCardProps) {
   const isCompleted = task.status === 'done';
   
   const categoryInfo = TASK_CATEGORIES.find(c => c.key === task.category);
@@ -56,7 +57,7 @@ function TaskCard({ task, onEdit, isDragging }: TaskCardProps) {
 
         {/* Checkbox */}
         <button
-          onClick={() => toggleComplete(task.id)}
+          onClick={() => onToggle(task.id)}
           className="flex-shrink-0 mt-0.5"
         >
           {isCompleted ? (
@@ -139,7 +140,7 @@ function TaskCard({ task, onEdit, isDragging }: TaskCardProps) {
               Editar
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => deleteTask(task.id)}
+              onClick={() => onDelete(task.id)}
               className="text-destructive"
             >
               <Trash2 className="w-4 h-4 mr-2" />
@@ -156,10 +157,12 @@ interface TaskColumnComponentProps {
   column: typeof TASK_COLUMNS[number];
   tasks: Task[];
   onEditTask: (task: Task) => void;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
   onDrop: (taskId: string, newStatus: Task['status']) => void;
 }
 
-function TaskColumnComponent({ column, tasks, onEditTask, onDrop }: TaskColumnComponentProps) {
+function TaskColumnComponent({ column, tasks, onEditTask, onToggle, onDelete, onDrop }: TaskColumnComponentProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -191,7 +194,6 @@ function TaskColumnComponent({ column, tasks, onEditTask, onDrop }: TaskColumnCo
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Column Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium text-foreground">{column.title}</h3>
@@ -201,7 +203,6 @@ function TaskColumnComponent({ column, tasks, onEditTask, onDrop }: TaskColumnCo
         </div>
       </div>
 
-      {/* Tasks */}
       <div className="flex flex-col gap-2 flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
         {tasks.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -213,6 +214,8 @@ function TaskColumnComponent({ column, tasks, onEditTask, onDrop }: TaskColumnCo
               key={task.id}
               task={task}
               onEdit={onEditTask}
+              onToggle={onToggle}
+              onDelete={onDelete}
             />
           ))
         )}
@@ -224,13 +227,14 @@ function TaskColumnComponent({ column, tasks, onEditTask, onDrop }: TaskColumnCo
 interface TasksBoardProps {
   tasks: Task[];
   onEditTask: (task: Task) => void;
+  onMoveTask?: (taskId: string, newStatus: Task['status']) => void;
+  onToggleComplete?: (id: string) => void;
+  onDeleteTask?: (id: string) => void;
 }
 
-export function TasksBoard({ tasks, onEditTask }: TasksBoardProps) {
-  const { moveTask } = useTasksStore();
-
-  const handleDrop = async (taskId: string, newStatus: Task['status']) => {
-    await moveTask(taskId, newStatus);
+export function TasksBoard({ tasks, onEditTask, onMoveTask, onToggleComplete, onDeleteTask }: TasksBoardProps) {
+  const handleDrop = (taskId: string, newStatus: Task['status']) => {
+    onMoveTask?.(taskId, newStatus);
   };
 
   const getTasksByStatus = (status: Task['status']) => {
@@ -245,6 +249,8 @@ export function TasksBoard({ tasks, onEditTask }: TasksBoardProps) {
           column={column}
           tasks={getTasksByStatus(column.key)}
           onEditTask={onEditTask}
+          onToggle={onToggleComplete || (() => {})}
+          onDelete={onDeleteTask || (() => {})}
           onDrop={handleDrop}
         />
       ))}
