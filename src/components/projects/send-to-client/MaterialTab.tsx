@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Copy, Sparkles, ExternalLink, Loader2, Video, Image, FileText } from 'lucide-react';
+import { Copy, Sparkles, ExternalLink, Loader2, Video, Image, FileText, Link2 } from 'lucide-react';
 import { useClientMessages } from '@/hooks/useClientMessages';
+import { usePortalLink } from '@/hooks/usePortalLink';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ export function MaterialTab({ project }: MaterialTabProps) {
     nextStep: true,
   });
   const { logQuickCopy } = useClientMessages(project.id);
+  const { portalUrl } = usePortalLink(project.id);
 
   // Fetch materials from portal_deliverables
   const { data: materials = [], isLoading } = useQuery({
@@ -169,11 +171,32 @@ export function MaterialTab({ project }: MaterialTabProps) {
       {/* Selected material actions */}
       {selectedMaterial && (
         <>
-          {/* Link */}
+          {/* Material Link */}
           {getMaterialLink(selectedMaterial) && (
             <div className="p-2 bg-muted/30 rounded-lg">
               <Label className="text-[10px] text-muted-foreground">Link do material</Label>
               <p className="text-xs text-primary break-all mt-0.5">{getMaterialLink(selectedMaterial)}</p>
+            </div>
+          )}
+
+          {/* Portal Link */}
+          {portalUrl && (
+            <div className="p-2 bg-muted/30 rounded-lg">
+              <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Link2 className="w-3 h-3" /> Link do Portal do Cliente
+              </Label>
+              <p className="text-xs text-primary break-all mt-0.5">{portalUrl}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[10px] px-2 mt-1 gap-1"
+                onClick={() => {
+                  navigator.clipboard.writeText(portalUrl);
+                  toast.success('Link do portal copiado!');
+                }}
+              >
+                <Copy className="w-3 h-3" /> Copiar link
+              </Button>
             </div>
           )}
 

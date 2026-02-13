@@ -11,6 +11,7 @@ import { MessageSquare, Package, LayoutDashboard, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
+import { usePortalLink } from '@/hooks/usePortalLink';
 
 interface SendToClientModalProps {
   open: boolean;
@@ -20,7 +21,10 @@ interface SendToClientModalProps {
 
 export function SendToClientModal({ open, onOpenChange, project }: SendToClientModalProps) {
   const [showHistory, setShowHistory] = useState(false);
-
+  const { portalUrl, portalLink, createLink } = usePortalLink(project.id, {
+    name: project.name,
+    clientName: project.client_name,
+  });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col p-0">
@@ -84,7 +88,7 @@ export function SendToClientModal({ open, onOpenChange, project }: SendToClientM
 
             {/* Context Sidebar - hidden on mobile */}
             <div className="hidden lg:block w-64 border-l border-border/50 overflow-y-auto">
-              <ContextSidebar project={project} />
+              <ContextSidebar project={project} portalUrl={portalUrl} portalLink={portalLink} onCreatePortalLink={() => createLink.mutate()} />
             </div>
           </div>
         )}
