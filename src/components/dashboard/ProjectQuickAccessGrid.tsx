@@ -15,6 +15,8 @@ interface ProjectQuickItem {
   stage_current: string;
   health_score: number;
   updated_at?: string;
+  logo_url?: string;
+  cover_image_url?: string;
 }
 
 interface ProjectQuickAccessGridProps {
@@ -129,18 +131,32 @@ export function ProjectQuickAccessGrid({ projects, isLoading }: ProjectQuickAcce
               >
                 <Link to={`/projetos/${project.id}`}>
                   <Card className="p-4 bg-muted/20 border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all cursor-pointer group hover:shadow-[0_15px_40px_-15px_rgba(0,163,211,0.15)]">
-                    <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-start gap-3 mb-2">
+                      {/* Project Logo */}
+                      {(project.logo_url || project.cover_image_url) ? (
+                        <img 
+                          src={project.logo_url || project.cover_image_url} 
+                          alt={project.name}
+                          className="w-10 h-10 rounded-lg object-cover border border-border/50 flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-border/50 flex items-center justify-center flex-shrink-0">
+                          <Clapperboard className="w-4 h-4 text-primary/60" />
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                          {project.name}
-                        </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                            {project.name}
+                          </p>
+                          <span className={`text-[8px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${st.className}`}>
+                            {st.label}
+                          </span>
+                        </div>
                         {project.client_name && (
                           <p className="text-[10px] text-muted-foreground truncate">{project.client_name}</p>
                         )}
                       </div>
-                      <span className={`text-[8px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${st.className}`}>
-                        {st.label}
-                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] text-muted-foreground">{stageName}</span>
