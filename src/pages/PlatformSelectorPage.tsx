@@ -17,8 +17,8 @@ const modules: { id: ProductModule; title: string; description: string; icon: st
     title: 'Marketing & Social Media',
     description: 'Calendário editorial, campanhas, design, branding e métricas.',
     icon: 'perm_media',
-    route: '/marketing',
-    gradient: 'from-orange-500/20 to-pink-500/20',
+    route: '/m',
+    gradient: 'from-sky-500/20 to-blue-600/20',
   },
   {
     id: 'full',

@@ -91,6 +91,10 @@ import TranscribePage from "./pages/marketing/TranscribePage";
 import UnifiedCalendarPage from "./pages/CalendarPage";
 import TasksPage from "./pages/TasksPage";
 
+// Marketing Hub Pages
+import MkDashboardPage from "./pages/marketing-hub/MkDashboardPage";
+import MkPlaceholderPage from "./pages/marketing-hub/MkPlaceholderPage";
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -198,6 +202,17 @@ function AppRoutes() {
       <Route path="/plataforma" element={<ProtectedRoute><PlatformSelectorPage /></ProtectedRoute>} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />
       <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
+      {/* Marketing Hub — /m/* */}
+      <Route path="/m" element={<ProtectedRoute><MkDashboardPage /></ProtectedRoute>} />
+      <Route path="/m/campanhas" element={<ProtectedRoute><MkPlaceholderPage title="Campanhas" /></ProtectedRoute>} />
+      <Route path="/m/conteudos" element={<ProtectedRoute><MkPlaceholderPage title="Conteúdos" /></ProtectedRoute>} />
+      <Route path="/m/calendario" element={<ProtectedRoute><MkPlaceholderPage title="Calendário Editorial" /></ProtectedRoute>} />
+      <Route path="/m/branding" element={<ProtectedRoute><MkPlaceholderPage title="Branding Studio" /></ProtectedRoute>} />
+      <Route path="/m/assets" element={<ProtectedRoute><MkPlaceholderPage title="Assets & Mídia" /></ProtectedRoute>} />
+      <Route path="/m/aprovacoes" element={<ProtectedRoute><MkPlaceholderPage title="Aprovações" /></ProtectedRoute>} />
+      <Route path="/m/relatorios" element={<ProtectedRoute><MkPlaceholderPage title="Relatórios" /></ProtectedRoute>} />
+      <Route path="/m/automacoes" element={<ProtectedRoute><MkPlaceholderPage title="Automações" /></ProtectedRoute>} />
+      <Route path="/m/configuracoes" element={<ProtectedRoute><MkPlaceholderPage title="Configurações" /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
