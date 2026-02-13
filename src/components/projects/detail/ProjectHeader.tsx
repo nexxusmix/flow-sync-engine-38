@@ -212,7 +212,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 </div>
 
                 <div className="min-w-0">
-                  <h1 className="text-xl md:text-2xl font-normal text-foreground mb-1 truncate">{project.name}</h1>
+                  <h1 className="text-xl md:text-2xl font-normal text-foreground mb-1">{project.name}</h1>
                   <p className="text-sm text-muted-foreground">
                     {project.client_name || 'Sem cliente'}
                   </p>
