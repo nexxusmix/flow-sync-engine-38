@@ -1,0 +1,482 @@
+/**
+ * SQUAD Hub — Holographic Design System (Universal)
+ * 
+ * Reusable skin for any platform. Apply via:
+ *   <div data-platform="financeiro" className="holo">
+ * 
+ * Platforms: financeiro, portal, marketing, filmhub
+ * Just wrap your page root and all holo-* classes become active.
+ */
+
+/* ================================================
+   1. UNIVERSAL TOKENS
+   ================================================ */
+.holo {
+  --holo-primary-h: 193;
+  --holo-primary-s: 100%;
+  --holo-primary-l: 41%;
+  --holo-primary: var(--holo-primary-h) var(--holo-primary-s) var(--holo-primary-l);
+  --holo-bg: 0 0% 0%;
+  --holo-surface: rgba(255, 255, 255, 0.01);
+  --holo-glass-border: rgba(0, 156, 202, 0.12);
+  --holo-glass-border-hover: rgba(0, 156, 202, 0.45);
+  --holo-text: #ffffff;
+  --holo-text-muted: rgba(255, 255, 255, 0.45);
+  --holo-text-dim: rgba(255, 255, 255, 0.25);
+  --holo-shadow-deep: 0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(0, 156, 202, 0.02);
+  --holo-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --holo-font: 'Space Grotesk', 'Host Grotesk', system-ui, sans-serif;
+  --holo-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ================================================
+   2. PLATFORM THEMES (color overrides)
+   ================================================ */
+.holo[data-platform="financeiro"] {
+  --holo-primary-h: 193;
+  --holo-primary-s: 100%;
+  --holo-primary-l: 41%;
+}
+
+.holo[data-platform="portal"] {
+  --holo-primary-h: 193;
+  --holo-primary-s: 100%;
+  --holo-primary-l: 46%;
+}
+
+.holo[data-platform="marketing"] {
+  --holo-primary-h: 210;
+  --holo-primary-s: 100%;
+  --holo-primary-l: 58%;
+}
+
+.holo[data-platform="filmhub"] {
+  --holo-primary-h: 187;
+  --holo-primary-s: 100%;
+  --holo-primary-l: 50%;
+}
+
+/* ================================================
+   3. WORLD STAGE (3D context)
+   ================================================ */
+.holo .world-stage {
+  perspective: 2500px;
+  transform-style: preserve-3d;
+}
+
+/* ================================================
+   4. GLASS PROJECTION PANEL
+   ================================================ */
+.holo .holo-glass {
+  background: var(--holo-surface);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 0.5px solid var(--holo-glass-border);
+  box-shadow: var(--holo-shadow-deep);
+}
+
+/* ================================================
+   5. HOLOGRAPHIC CARD
+   ================================================ */
+.holo .holo-card {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.00) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 0.5px solid var(--holo-glass-border);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+  transform-style: preserve-3d;
+  transition: 
+    transform 600ms var(--holo-ease),
+    border-color 600ms var(--holo-ease),
+    box-shadow 600ms var(--holo-ease);
+}
+
+.holo .holo-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    45deg,
+    transparent 48%,
+    hsl(var(--holo-primary) / 0.04) 50%,
+    transparent 52%
+  );
+}
+
+.holo .holo-card:hover {
+  transform: translateZ(20px) rotateX(-2deg) rotateY(5deg);
+  border-color: var(--holo-glass-border-hover);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7);
+}
+
+/* ================================================
+   6. DOF (Depth of Field)
+   ================================================ */
+.holo .dof-blur {
+  filter: blur(12px) brightness(0.7) saturate(0.9) scale(0.98);
+  pointer-events: none;
+  transition: filter 800ms ease;
+}
+
+.holo .dof-sharp {
+  filter: none;
+  transition: filter 800ms ease;
+}
+
+/* ================================================
+   7. DATA GLOW EFFECTS
+   ================================================ */
+.holo .data-glow {
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+.holo .data-glow-primary {
+  text-shadow: 0 0 12px hsl(var(--holo-primary) / 0.6);
+}
+
+.holo .data-glow-strong {
+  text-shadow: 
+    0 0 8px hsl(var(--holo-primary) / 0.5),
+    0 0 24px hsl(var(--holo-primary) / 0.3),
+    0 0 48px hsl(var(--holo-primary) / 0.15);
+}
+
+/* ================================================
+   8. SCANLINE EFFECT
+   ================================================ */
+.holo .scan-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo .scan-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: hsl(var(--holo-primary) / 0.3);
+  box-shadow: 0 0 20px hsl(var(--holo-primary) / 0.6);
+  animation: holo-scanline 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes holo-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(3000%); }
+}
+
+/* ================================================
+   9. SECTION LABELS (Terminal style)
+   ================================================ */
+.holo .holo-section-label {
+  font-family: var(--holo-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--holo-text-dim);
+}
+
+.holo .holo-section-title {
+  font-family: var(--holo-font);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--holo-text);
+}
+
+.holo .holo-section-title em,
+.holo .holo-section-title .highlight {
+  font-style: normal;
+  color: hsl(var(--holo-primary));
+}
+
+/* ================================================
+   10. STATUS BADGES
+   ================================================ */
+.holo .holo-badge {
+  font-family: var(--holo-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.holo .holo-badge-verified {
+  border: 1px solid hsl(var(--holo-primary) / 0.4);
+  color: hsl(var(--holo-primary));
+  background: hsl(var(--holo-primary) / 0.06);
+}
+
+.holo .holo-badge-active {
+  border: 1px solid hsl(142 70% 45% / 0.4);
+  color: hsl(142 70% 45%);
+  background: hsl(142 70% 45% / 0.06);
+}
+
+.holo .holo-badge-queued {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.holo .holo-badge-warning {
+  border: 1px solid hsl(38 92% 50% / 0.4);
+  color: hsl(38 92% 50%);
+  background: hsl(38 92% 50% / 0.06);
+}
+
+.holo .holo-badge-danger {
+  border: 1px solid hsl(0 70% 50% / 0.4);
+  color: hsl(0 70% 50%);
+  background: hsl(0 70% 50% / 0.06);
+}
+
+/* ================================================
+   11. HOLO KPI CARD
+   ================================================ */
+.holo .holo-kpi {
+  position: relative;
+  padding: 2rem;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.00) 100%
+  );
+  border: 0.5px solid var(--holo-glass-border);
+  transform-style: preserve-3d;
+  transition: all 600ms var(--holo-ease);
+}
+
+.holo .holo-kpi:hover {
+  transform: translateZ(15px) rotateX(-1deg) rotateY(3deg);
+  border-color: var(--holo-glass-border-hover);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+}
+
+.holo .holo-kpi-label {
+  font-family: var(--holo-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--holo-text-dim);
+}
+
+.holo .holo-kpi-value {
+  font-family: var(--holo-font);
+  font-weight: 300;
+  font-size: 2.5rem;
+  letter-spacing: -0.03em;
+  color: var(--holo-text);
+  line-height: 1.1;
+}
+
+.holo .holo-kpi-value .decimals {
+  font-size: 0.5em;
+  color: var(--holo-text-muted);
+  font-weight: 300;
+}
+
+.holo .holo-kpi-accent {
+  width: 40px;
+  height: 2px;
+  background: hsl(var(--holo-primary));
+  margin-top: 1rem;
+  box-shadow: 0 0 8px hsl(var(--holo-primary) / 0.5);
+}
+
+/* ================================================
+   12. HOLO TABLE
+   ================================================ */
+.holo .holo-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.holo .holo-table th {
+  font-family: var(--holo-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--holo-text-dim);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.holo .holo-table td {
+  font-family: var(--holo-font);
+  font-size: 13px;
+  color: var(--holo-text-muted);
+  padding: 0.75rem 1rem;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.03);
+  transition: all 300ms ease;
+}
+
+.holo .holo-table tr:hover td {
+  color: var(--holo-text);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ================================================
+   13. AMBIENT GLOW BACKGROUND
+   ================================================ */
+.holo .holo-ambient {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 500px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    hsl(var(--holo-primary) / 0.06) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ================================================
+   14. HOLO FOOTER
+   ================================================ */
+.holo .holo-footer {
+  border-top: 0.5px solid var(--holo-glass-border);
+  color: var(--holo-text-dim);
+  font-family: var(--holo-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 1rem 0;
+}
+
+/* ================================================
+   15. TIMELINE REF (date display)
+   ================================================ */
+.holo .holo-timeline-ref {
+  font-family: var(--holo-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--holo-text-dim);
+  text-align: right;
+}
+
+.holo .holo-timeline-ref strong {
+  color: var(--holo-text);
+  font-weight: 500;
+}
+
+/* ================================================
+   16. CURRENCY DISPLAY
+   ================================================ */
+.holo .holo-currency {
+  font-family: var(--holo-font);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.holo .holo-currency-prefix {
+  font-size: 0.5em;
+  color: var(--holo-text-muted);
+  margin-right: 0.15em;
+}
+
+/* ================================================
+   17. ENTRY ANIMATIONS
+   ================================================ */
+.holo .holo-appear {
+  animation: holoAppear 0.8s var(--holo-ease) both;
+}
+
+.holo .holo-appear-delay-1 { animation-delay: 0.1s; }
+.holo .holo-appear-delay-2 { animation-delay: 0.2s; }
+.holo .holo-appear-delay-3 { animation-delay: 0.3s; }
+.holo .holo-appear-delay-4 { animation-delay: 0.4s; }
+.holo .holo-appear-delay-5 { animation-delay: 0.5s; }
+
+@keyframes holoAppear {
+  from {
+    opacity: 0;
+    filter: blur(16px);
+    transform: scale(1.05) translateZ(-40px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1) translateZ(0);
+  }
+}
+
+.holo .holo-slide-up {
+  animation: holoSlideUp 0.7s var(--holo-ease) both;
+}
+
+@keyframes holoSlideUp {
+  from {
+    opacity: 0;
+    filter: blur(12px);
+    transform: translateY(40px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ================================================
+   18. TREND INDICATORS
+   ================================================ */
+.holo .holo-trend-up {
+  font-family: var(--holo-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid hsl(142 70% 45% / 0.3);
+  color: hsl(142 70% 45%);
+  background: hsl(142 70% 45% / 0.06);
+}
+
+.holo .holo-trend-down {
+  font-family: var(--holo-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid hsl(0 70% 50% / 0.3);
+  color: hsl(0 70% 50%);
+  background: hsl(0 70% 50% / 0.06);
+}
+
+/* ================================================
+   19. LINK / ACTION BUTTONS (holo style)
+   ================================================ */
+.holo .holo-link {
+  font-family: var(--holo-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: hsl(var(--holo-primary));
+  cursor: pointer;
+  transition: all 300ms ease;
+  text-decoration: none;
+}
+
+.holo .holo-link:hover {
+  text-shadow: 0 0 12px hsl(var(--holo-primary) / 0.5);
+}
