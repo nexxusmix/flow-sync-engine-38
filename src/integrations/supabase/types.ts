@@ -351,6 +351,74 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_outbox: {
+        Row: {
+          alert_id: string | null
+          attachments: Json | null
+          channel: string
+          client_id: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          project_id: string | null
+          provider_message_id: string | null
+          recipient: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["outbox_status"]
+          subject: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          alert_id?: string | null
+          attachments?: Json | null
+          channel?: string
+          client_id?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          project_id?: string | null
+          provider_message_id?: string | null
+          recipient?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["outbox_status"]
+          subject?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          alert_id?: string | null
+          attachments?: Json | null
+          channel?: string
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          project_id?: string | null
+          provider_message_id?: string | null
+          recipient?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["outbox_status"]
+          subject?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_outbox_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_runs: {
         Row: {
           action_key: string
@@ -393,6 +461,170 @@ export type Database = {
           status?: string
           user_id?: string
           workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      alert_events: {
+        Row: {
+          alert_id: string | null
+          created_at: string
+          error: string | null
+          event: string
+          id: string
+          payload: Json | null
+        }
+        Insert: {
+          alert_id?: string | null
+          created_at?: string
+          error?: string | null
+          event: string
+          id?: string
+          payload?: Json | null
+        }
+        Update: {
+          alert_id?: string | null
+          created_at?: string
+          error?: string | null
+          event?: string
+          id?: string
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alert_rules: {
+        Row: {
+          channels: Json
+          created_at: string
+          enabled: boolean
+          id: string
+          params: Json
+          rule_type: string
+          scope: Database["public"]["Enums"]["alert_scope"]
+          severity: Database["public"]["Enums"]["alert_severity"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          channels?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          params?: Json
+          rule_type: string
+          scope?: Database["public"]["Enums"]["alert_scope"]
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          channels?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          params?: Json
+          rule_type?: string
+          scope?: Database["public"]["Enums"]["alert_scope"]
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      alerts: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          ai_assist_enabled: boolean
+          ai_context: Json | null
+          assigned_to: string | null
+          channels: Json
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          idempotency_key: string | null
+          message: string | null
+          meta: Json | null
+          project_id: string | null
+          read_at: string | null
+          scope: Database["public"]["Enums"]["alert_scope"]
+          severity: Database["public"]["Enums"]["alert_severity"]
+          snoozed_until: string | null
+          status: Database["public"]["Enums"]["alert_status"]
+          title: string
+          trigger_at: string
+          type: Database["public"]["Enums"]["alert_type"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          ai_assist_enabled?: boolean
+          ai_context?: Json | null
+          assigned_to?: string | null
+          channels?: Json
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          idempotency_key?: string | null
+          message?: string | null
+          meta?: Json | null
+          project_id?: string | null
+          read_at?: string | null
+          scope?: Database["public"]["Enums"]["alert_scope"]
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          snoozed_until?: string | null
+          status?: Database["public"]["Enums"]["alert_status"]
+          title: string
+          trigger_at?: string
+          type: Database["public"]["Enums"]["alert_type"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          ai_assist_enabled?: boolean
+          ai_context?: Json | null
+          assigned_to?: string | null
+          channels?: Json
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          idempotency_key?: string | null
+          message?: string | null
+          meta?: Json | null
+          project_id?: string | null
+          read_at?: string | null
+          scope?: Database["public"]["Enums"]["alert_scope"]
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          snoozed_until?: string | null
+          status?: Database["public"]["Enums"]["alert_status"]
+          title?: string
+          trigger_at?: string
+          type?: Database["public"]["Enums"]["alert_type"]
+          updated_at?: string
+          workspace_id?: string
         }
         Relationships: []
       }
@@ -6000,6 +6232,26 @@ export type Database = {
       }
     }
     Enums: {
+      alert_scope: "hub" | "portal" | "both"
+      alert_severity: "info" | "warning" | "critical"
+      alert_status: "open" | "snoozed" | "resolved" | "dismissed"
+      alert_type:
+        | "deadline_due"
+        | "deadline_overdue"
+        | "delivery_due"
+        | "delivery_overdue"
+        | "no_client_contact"
+        | "client_waiting_reply"
+        | "internal_waiting_reply"
+        | "meeting_upcoming"
+        | "meeting_followup"
+        | "payment_due"
+        | "payment_overdue"
+        | "production_stalled"
+        | "risk_health_drop"
+        | "materials_missing"
+        | "review_pending"
+        | "custom_reminder"
       app_role: "admin" | "comercial" | "operacao" | "financeiro"
       creative_block_status: "empty" | "draft" | "ready" | "approved"
       creative_block_type:
@@ -6036,6 +6288,13 @@ export type Database = {
       inbox_channel: "instagram" | "whatsapp" | "email"
       inbox_direction: "in" | "out"
       inbox_status: "open" | "pending" | "closed"
+      outbox_status:
+        | "draft"
+        | "queued"
+        | "sending"
+        | "sent"
+        | "failed"
+        | "canceled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6163,6 +6422,27 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_scope: ["hub", "portal", "both"],
+      alert_severity: ["info", "warning", "critical"],
+      alert_status: ["open", "snoozed", "resolved", "dismissed"],
+      alert_type: [
+        "deadline_due",
+        "deadline_overdue",
+        "delivery_due",
+        "delivery_overdue",
+        "no_client_contact",
+        "client_waiting_reply",
+        "internal_waiting_reply",
+        "meeting_upcoming",
+        "meeting_followup",
+        "payment_due",
+        "payment_overdue",
+        "production_stalled",
+        "risk_health_drop",
+        "materials_missing",
+        "review_pending",
+        "custom_reminder",
+      ],
       app_role: ["admin", "comercial", "operacao", "financeiro"],
       creative_block_status: ["empty", "draft", "ready", "approved"],
       creative_block_type: [
@@ -6203,6 +6483,14 @@ export const Constants = {
       inbox_channel: ["instagram", "whatsapp", "email"],
       inbox_direction: ["in", "out"],
       inbox_status: ["open", "pending", "closed"],
+      outbox_status: [
+        "draft",
+        "queued",
+        "sending",
+        "sent",
+        "failed",
+        "canceled",
+      ],
     },
   },
 } as const
