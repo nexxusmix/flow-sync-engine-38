@@ -1,111 +1,113 @@
 
-# Pipeline Comercial 100% Integrado e em Tempo Real
+# Diagnostico Completo: Exportacao de PDFs na Plataforma
 
-## Problema Atual
+## Resumo dos Achados
 
-O Pipeline Comercial (CRM) esta desconectado do resto da plataforma em varios pontos criticos:
-
-1. **Dashboard lendo tabela errada**: O `useDashboardMetrics` busca dados de CRM da tabela legada `prospect_opportunities` em vez de `crm_deals` (a fonte de verdade real)
-2. **PipelineSection nao conectada**: O componente do dashboard usa arrays vazios hardcoded, sem buscar dados reais
-3. **Sem realtime no CRM**: As tabelas `crm_deals`, `crm_contacts` e `crm_stages` nao estao no sistema de sincronizacao em tempo real
-4. **Botao "Novo Deal" nao funciona**: Na CRMPage, o botao nao abre nenhum formulario
-5. **Kanban filtra por stage errado**: O CRMPage filtra deals por `stage.id` (UUID) em vez de `stage.key` (string como 'lead', 'qualificacao')
-6. **Sem dialog de criar deal no CRM**: So existe criacao de lead pelo Header global
-7. **Deal fechado nao gera projeto/contrato**: O `closeDeal` ja existe no hook mas sem UI nem automacao financeira
+Foram identificados **7 edge functions** de exportacao PDF e **1 servico frontend** centralizador. Apos testes reais e analise do codigo, foram encontrados os seguintes problemas:
 
 ---
 
-## Plano de Implementacao
+## PROBLEMAS ENCONTRADOS
 
-### 1. Corrigir fonte de dados do Dashboard
+### 1. CRITICO: `export-universal-pdf` gera HTML, nao PDF
+- **Funcao**: `supabase/functions/export-universal-pdf/index.ts` (1843 linhas)
+- **Problema**: Gera conteudo HTML puro e salva como `.html` no storage (linha 1781: `report_${type}_${Date.now()}.html`). Nao usa `pdf-lib`. O arquivo nao e um PDF real.
+- **Onde e usado**: `ClientPortalPageNew.tsx` (portal do cliente) chama essa funcao para exportar PDF do portal
+- **Impacto**: O portal do cliente abre um arquivo HTML em nova aba em vez de baixar um PDF
 
-**Arquivo**: `src/hooks/useDashboardMetrics.tsx`
+### 2. CRITICO: Bucket `exports` e PRIVADO mas varias funcoes usam `getPublicUrl`
+- **Funcoes afetadas**:
+  - `export-creative-pdf` (linha 296: `getPublicUrl`)
+  - `export-campaign-pdf` (linha 310: `getPublicUrl`)
+  - `export-content-pdf` (linha 235: `getPublicUrl`)
+  - `export-finance-pdf` (linha 220: `getPublicUrl`)
+  - `export-panorama-pdf` (linha 216: `getPublicUrl`)
+- **Problema**: O bucket `exports` e privado (`Is Public: No`). URLs publicas retornadas por `getPublicUrl` vao dar **403 Forbidden** ao tentar baixar o PDF
+- **Funcao correta**: Somente `export-pdf` usa `createSignedUrl` com fallback para `getPublicUrl`
 
-- Substituir a query `prospect_opportunities` por `crm_deals` com join em `crm_contacts`
-- Ajustar calculo de `totalPipelineValue`, `forecast` e `dealsByStage` para usar `crm_deals.value`, `crm_deals.score` e `crm_deals.stage_key`
-- Manter os nomes dos stages alinhados com `crm_stages` (lead, qualificacao, diagnostico, proposta, negociacao, fechado, onboarding, pos_venda)
+### 3. MEDIO: Resposta inconsistente entre funcoes
+- `export-pdf` retorna: `{ success, signed_url, public_url, storage_path, file_name, expires_at }`
+- `export-campaign-pdf` retorna: `{ success, file_path, public_url }` (sem `signed_url`)
+- `export-content-pdf` retorna: `{ success, file_path, public_url }` (sem `signed_url`)
+- `export-finance-pdf` retorna: `{ success, public_url, file_path }` (sem `signed_url`)
+- `export-panorama-pdf` retorna: `{ success, public_url, file_path, share_token, ... }` (sem `signed_url`)
+- **Impacto**: O `pdfExportService.ts` no frontend trata `signed_url || public_url`, mas as funcoes dedicadas nunca retornam `signed_url`, e a `public_url` e inacessivel por ser bucket privado
 
-### 2. Conectar PipelineSection ao banco
+### 4. MEDIO: `export-campaign-pdf` retorna `{ error }` em vez de `{ success: false, error }` no catch
+- Linha 320: `JSON.stringify({ error: ... })` sem `success: false`
+- O `pdfExportService.ts` verifica `data?.success` e nao vai detectar o erro corretamente
 
-**Arquivo**: `src/components/dashboard/PipelineSection.tsx`
+### 5. MEDIO: `export-content-pdf` mesmo problema de resposta de erro
+- Linha 244: `JSON.stringify({ error: ... })` sem `success: false`
 
-- Importar `useCRM` para buscar deals e metrics reais
-- Gerar `pipelineSummary` dinamicamente a partir dos dados de `crm_deals` agrupados por stage
-- Mostrar os 8 stages reais do banco (nao apenas 5)
-- Exibir lista de deals "parados" (sem atividade ha 3+ dias) quando houver deals
+### 6. BAIXO: `FinanceReportPage.tsx` e `ClientPortalPageNew.tsx` usam `window.open` em vez do download por blob
+- O servico centralizado `pdfExportService.ts` faz download via blob (compativel com Safari/iOS), mas essas paginas chamam as funcoes diretamente e abrem em nova aba
+- Isso pode nao funcionar em Safari/iOS e nao dispara download automatico
 
-### 3. Adicionar CRM ao Realtime Sync
+### 7. BAIXO: `export-universal-pdf` e redundante
+- Todas as funcionalidades ja estao cobertas por `export-pdf` (que gera PDF real com pdf-lib)
+- Manter essa funcao causa confusao e o portal do cliente a usa incorretamente
 
-**Arquivo**: `src/hooks/useRealtimeSync.tsx`
+---
 
-- Adicionar `crm_deals`, `crm_contacts` e `crm_stages` ao `TableName` type
-- Adicionar mapeamentos em `TABLE_QUERY_MAPPINGS`:
-  - `crm_deals` -> invalida `['crm-deals']`, `['dashboard-metrics']`
-  - `crm_contacts` -> invalida `['crm-contacts']`
-  - `crm_stages` -> invalida `['crm-stages']`
+## FUNCOES QUE FUNCIONAM CORRETAMENTE
 
-**Migracao SQL**: Habilitar realtime nas 3 tabelas CRM:
-```text
-ALTER PUBLICATION supabase_realtime ADD TABLE public.crm_deals;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.crm_contacts;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.crm_stages;
-```
+| Funcao | Formato | Assinatura URL | Status |
+|--------|---------|----------------|--------|
+| `export-pdf` (project, report_360, tasks, finance, overview, portal) | pdf-lib real | `createSignedUrl` com fallback | OK |
+| `export-creative-pdf` | pdf-lib real | `getPublicUrl` (FALHA - bucket privado) | PARCIAL |
+| `export-campaign-pdf` | pdf-lib real | `getPublicUrl` (FALHA - bucket privado) | PARCIAL |
+| `export-content-pdf` | pdf-lib real | `getPublicUrl` (FALHA - bucket privado) | PARCIAL |
+| `export-finance-pdf` | pdf-lib real | `getPublicUrl` (FALHA - bucket privado) | PARCIAL |
+| `export-panorama-pdf` | pdf-lib real | `getPublicUrl` (FALHA - bucket privado) | PARCIAL |
+| `export-universal-pdf` | HTML (nao PDF!) | `getPublicUrl` (FALHA) | QUEBRADO |
 
-### 4. Dialog "Novo Deal" na CRMPage
+---
 
-**Arquivo**: `src/pages/CRMPage.tsx`
+## PLANO DE CORRECAO
 
-- Criar dialog inline com formulario: Titulo, Contato (select de `crm_contacts` existentes ou criar novo), Valor, Temperatura, Origem
-- Conectar ao `createDeal` do hook `useCRM`
-- O botao "Novo Deal" e o botao "Criar Primeiro Deal" (empty state) ambos abrem o dialog
-- Botao "Adicionar" nas colunas Kanban cria deal ja no stage correspondente
+### Passo 1: Corrigir todas as funcoes dedicadas para usar `createSignedUrl`
+Atualizar `export-creative-pdf`, `export-campaign-pdf`, `export-content-pdf`, `export-finance-pdf` e `export-panorama-pdf` para usar `createSignedUrl` (30 min de expiracao) com fallback para `getPublicUrl`, igual ao `export-pdf`.
 
-### 5. Corrigir filtro de stage no Kanban
+### Passo 2: Padronizar resposta de erro
+Atualizar `export-campaign-pdf` e `export-content-pdf` para retornar `{ success: false, error }` em vez de apenas `{ error }`.
 
-**Arquivo**: `src/pages/CRMPage.tsx`
+### Passo 3: Corrigir o Portal do Cliente
+Alterar `ClientPortalPageNew.tsx` para usar `export-pdf` (tipo `portal`) em vez de `export-universal-pdf`, e usar download por blob em vez de `window.open`.
 
-- Usar `stage.key` em vez de `stage.id` ao filtrar deals nas colunas
-- Usar `stages` retornados pelo hook (do banco) em vez do fallback `CRM_STAGES`
+### Passo 4: Corrigir `FinanceReportPage.tsx`
+Alterar para usar o hook `useExportPdf` centralizado (que ja usa blob download) em vez de chamar `export-finance-pdf` diretamente.
 
-### 6. Automacao: Deal Fechado gera Projeto + Contrato
-
-**Arquivo**: `src/hooks/useCRM.tsx`
-
-- No `closeDealMutation` com `won = true`, apos mover para 'fechado':
-  - Criar projeto em `projects` com dados do deal (titulo, valor, contato)
-  - Criar contrato em `contracts` vinculado ao projeto
-  - Atualizar o deal com `project_id` do projeto criado
-  - Toast com link para o projeto criado
+### Passo 5: Remover `export-universal-pdf`
+Deletar a funcao `export-universal-pdf` que gera HTML e nao e mais necessaria.
 
 ---
 
 ## Detalhes Tecnicos
 
-### Tabelas envolvidas
-- `crm_deals` (stage_key, value, score, contact_id, project_id) - fonte unica de verdade
-- `crm_contacts` (name, company, phone, email)
-- `crm_stages` (key, title, color, order_index)
-- `projects` (destino ao fechar deal)
-- `contracts` (criado automaticamente)
+### Arquivos a modificar:
+1. `supabase/functions/export-creative-pdf/index.ts` - trocar `getPublicUrl` por `createSignedUrl`
+2. `supabase/functions/export-campaign-pdf/index.ts` - trocar `getPublicUrl` por `createSignedUrl` + corrigir resposta de erro
+3. `supabase/functions/export-content-pdf/index.ts` - trocar `getPublicUrl` por `createSignedUrl` + corrigir resposta de erro
+4. `supabase/functions/export-finance-pdf/index.ts` - trocar `getPublicUrl` por `createSignedUrl`
+5. `supabase/functions/export-panorama-pdf/index.ts` - trocar `getPublicUrl` por `createSignedUrl`
+6. `src/pages/ClientPortalPageNew.tsx` - usar `export-pdf` com tipo `portal`
+7. `src/pages/reports/FinanceReportPage.tsx` - usar `useExportPdf` hook
+8. Deletar `supabase/functions/export-universal-pdf/`
 
-### Queries React Query invalidadas em tempo real
-- `crm-deals` -> qualquer mudanca em `crm_deals`
-- `crm-contacts` -> qualquer mudanca em `crm_contacts`
-- `dashboard-metrics` -> mudancas em `crm_deals` (pipeline, forecast, total deals)
+### Padrao de URL assinada (a ser aplicado em todas as funcoes):
+```typescript
+const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+  .from("exports").createSignedUrl(filePath, 1800);
+const url = signedUrlError
+  ? supabase.storage.from("exports").getPublicUrl(filePath).data.publicUrl
+  : signedUrlData.signedUrl;
 
-### Fluxo de dados integrado
-```text
-crm_deals (realtime) 
-  -> useCRM (React Query) 
-  -> CRMPage (Kanban)
-  -> useDashboardMetrics (metricas)
-  -> Dashboard (cards, pipeline)
+return new Response(JSON.stringify({
+  success: true,
+  signed_url: url,
+  public_url: url,
+  storage_path: filePath,
+  file_name: fileName,
+}), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 ```
-
-### Arquivos a modificar
-1. `src/hooks/useDashboardMetrics.tsx` - trocar prospect_opportunities por crm_deals
-2. `src/components/dashboard/PipelineSection.tsx` - conectar a dados reais
-3. `src/hooks/useRealtimeSync.tsx` - adicionar tabelas CRM
-4. `src/pages/CRMPage.tsx` - dialog novo deal + corrigir filtro stages
-5. `src/hooks/useCRM.tsx` - automacao deal fechado -> projeto + contrato
-6. Migracao SQL - habilitar realtime nas tabelas CRM
