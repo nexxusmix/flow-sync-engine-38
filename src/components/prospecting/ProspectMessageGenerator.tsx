@@ -2,18 +2,19 @@
  * ProspectMessageGenerator — WhatsApp message generator with AI
  * 3 variants + copy + deeplink + audio generation (ElevenLabs)
  * WhatsApp send works on PC (wa.me) and Mobile (whatsapp://) with device detection
+ * Now: persists audio in storage, registers WhatsApp sends in event_logs, auto follow-up
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Copy, Send, Sparkles, Loader2, Volume2, Play, Pause, 
+  Copy, Send, Sparkles, Loader2, Play, Pause, 
   MessageSquare, Zap, Shield, Check, Mic, Download,
-  Smartphone, Monitor, AlertCircle, RefreshCw
+  Smartphone, Monitor, AlertCircle, RefreshCw, History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useProspectAI, MessageVariants } from '@/hooks/useProspectAI';
+import { useProspectAI, MessageVariants, AudioResult } from '@/hooks/useProspectAI';
 import type { Prospect, ProspectOpportunity } from '@/types/prospecting';
 
 interface Props {
@@ -28,12 +29,10 @@ const VARIANT_META = [
   { key: 'variant_firme' as const, label: 'Firme com Prazo', icon: Shield, desc: '3-5 linhas' },
 ];
 
-// Detect mobile device
 function isMobileDevice(): boolean {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-// Format phone to E.164 (Brazil default)
 function formatPhoneE164(phone: string): string {
   const digits = phone.replace(/\D/g, '');
   if (digits.startsWith('55')) return digits;
@@ -42,18 +41,36 @@ function formatPhoneE164(phone: string): string {
 }
 
 export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Props) {
-  const { generateMessages, isGenerating } = useProspectAI();
+  const { generateMessages, generateAudio, isGenerating } = useProspectAI();
   const [variants, setVariants] = useState<MessageVariants | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<number>(0);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioResult, setAudioResult] = useState<AudioResult | null>(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
+  const [audioHistory, setAudioHistory] = useState<Array<{ id: string; audio_url: string; created_at: string; duration_seconds: number | null }>>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isMobile = isMobileDevice();
+
+  // Load audio history for this prospect
+  useEffect(() => {
+    if (!prospect?.id) return;
+    supabase
+      .from('prospect_audio' as any)
+      .select('id, audio_url, created_at, duration_seconds')
+      .eq('prospect_id', prospect.id)
+      .eq('status', 'ready')
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        if (data) setAudioHistory(data as any);
+      });
+  }, [prospect?.id, audioResult]);
 
   // Audio progress tracking
   useEffect(() => {
@@ -72,14 +89,14 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
       audio.removeEventListener('loadedmetadata', onLoaded);
       audio.removeEventListener('ended', onEnded);
     };
-  }, [audioUrl]);
+  }, [audioResult?.audio_url]);
 
   const handleGenerate = async () => {
     const result = await generateMessages(prospect?.id, opportunity?.id);
     if (result) {
       setVariants(result);
       setSelectedVariant(0);
-      setAudioUrl(null);
+      setAudioResult(null);
       setAudioError(null);
     }
   };
@@ -98,39 +115,84 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
     setTimeout(() => setCopiedIdx(null), 2000);
   };
 
-  const handleWhatsApp = useCallback((idx: number) => {
+  // Register WhatsApp send in event_logs + create follow-up activity
+  const registerWhatsAppSend = async (messageText: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Log event
+      await supabase.from('event_logs').insert({
+        action: 'whatsapp.sent',
+        entity_type: 'prospect',
+        entity_id: prospect?.id || '',
+        actor_id: user?.id,
+        actor_name: user?.email?.split('@')[0] || 'sistema',
+        payload: {
+          prospect_name: prospect?.company_name,
+          phone: prospect?.phone,
+          message_preview: messageText.substring(0, 100),
+          variant: VARIANT_META[selectedVariant].label,
+          opportunity_id: opportunity?.id,
+        } as any,
+      });
+
+      // Create follow-up activity if opportunity exists
+      if (opportunity?.id) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 3);
+
+        await supabase.from('prospect_activities').insert({
+          opportunity_id: opportunity.id,
+          type: 'followup',
+          title: `Follow-up: ${prospect?.company_name || 'Prospect'}`,
+          description: 'Verificar resposta após mensagem WhatsApp',
+          due_at: dueDate.toISOString(),
+          channel: 'whatsapp',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to register WhatsApp send:', err);
+      // Don't block sending on registration failure
+    }
+  };
+
+  const handleWhatsApp = useCallback(async (idx: number) => {
     const text = getVariantText(idx);
     if (!text) {
       toast.error('Nenhuma mensagem para enviar');
       return;
     }
 
-    const phone = prospect?.phone ? formatPhoneE164(prospect.phone) : '';
-    const encoded = encodeURIComponent(text);
+    setIsSendingWhatsApp(true);
 
-    if (!phone) {
-      // No phone — copy and open wa.me
-      navigator.clipboard.writeText(text);
-      toast.info('Mensagem copiada! Sem telefone cadastrado — cole no WhatsApp.');
-      window.open(`https://wa.me/?text=${encoded}`, '_blank');
-      return;
-    }
+    try {
+      // Register the send
+      await registerWhatsAppSend(text);
 
-    if (isMobile) {
-      // Mobile: try whatsapp:// protocol first, fallback to wa.me
-      const waUrl = `whatsapp://send?phone=${phone}&text=${encoded}`;
-      window.location.href = waUrl;
-      // Fallback after 500ms if app didn't open
-      setTimeout(() => {
+      const phone = prospect?.phone ? formatPhoneE164(prospect.phone) : '';
+      const encoded = encodeURIComponent(text);
+
+      if (!phone) {
+        navigator.clipboard.writeText(text);
+        toast.info('Mensagem copiada! Sem telefone cadastrado — cole no WhatsApp.');
+        window.open(`https://wa.me/?text=${encoded}`, '_blank');
+      } else if (isMobile) {
+        const waUrl = `whatsapp://send?phone=${phone}&text=${encoded}`;
+        window.location.href = waUrl;
+        setTimeout(() => {
+          window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+        }, 500);
+      } else {
         window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
-      }, 500);
-    } else {
-      // Desktop: wa.me opens WhatsApp Web/Desktop
-      window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
-    }
+      }
 
-    toast.success('WhatsApp aberto!');
-  }, [prospect, variants, selectedVariant, isMobile]);
+      toast.success('WhatsApp aberto! Envio registrado ✓');
+    } catch (err) {
+      toast.error('Erro ao registrar envio');
+    } finally {
+      setIsSendingWhatsApp(false);
+    }
+  }, [prospect, variants, selectedVariant, isMobile, opportunity]);
 
   const handleGenerateAudio = async () => {
     const script = variants?.audio_script || getVariantText(selectedVariant);
@@ -141,54 +203,33 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
 
     setIsGeneratingAudio(true);
     setAudioError(null);
-    setAudioUrl(null);
+    setAudioResult(null);
+
+    const traceId = crypto.randomUUID();
+    const idempotencyKey = `${prospect?.id || 'no-prospect'}_${Date.now()}`;
 
     try {
-      // Use supabase.functions.invoke — handles auth automatically
-      // But we need binary response, so use fetch directly
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('Sessão expirada. Faça login novamente.');
-      }
+      const result = await generateAudio(script, undefined, {
+        prospect_id: prospect?.id,
+        opportunity_id: opportunity?.id,
+        idempotency_key: idempotencyKey,
+        trace_id: traceId,
+      });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prospect-tts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ text: script }),
+      if (result) {
+        setAudioResult(result);
+        if (result.cached) {
+          toast.success('Áudio recuperado do cache!');
+        } else {
+          toast.success('Áudio gerado com sucesso!');
         }
-      );
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-        throw new Error(errData.error || `Erro ${response.status}`);
+      } else {
+        setAudioError('Falha ao gerar áudio. Verifique a conexão ElevenLabs.');
       }
-
-      const contentType = response.headers.get('content-type');
-      if (contentType?.includes('application/json')) {
-        // Edge function returned JSON error
-        const errData = await response.json();
-        throw new Error(errData.error || 'Erro desconhecido');
-      }
-
-      const audioBlob = await response.blob();
-      if (audioBlob.size < 100) {
-        throw new Error('Áudio gerado é muito pequeno — verifique o texto.');
-      }
-
-      const url = URL.createObjectURL(audioBlob);
-      setAudioUrl(url);
-      toast.success('Áudio gerado com sucesso!');
     } catch (err: any) {
       console.error('Audio generation error:', err);
       const msg = err?.message || 'Falha ao gerar áudio';
-      setAudioError(msg);
-      toast.error(msg);
+      setAudioError(`${msg} (trace: ${traceId.slice(0, 8)})`);
     } finally {
       setIsGeneratingAudio(false);
     }
@@ -205,10 +246,11 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
   };
 
   const handleDownloadAudio = () => {
-    if (!audioUrl) return;
+    if (!audioResult?.audio_url) return;
     const a = document.createElement('a');
-    a.href = audioUrl;
+    a.href = audioResult.audio_url;
     a.download = `audio-${prospect?.company_name || 'prospect'}-${Date.now()}.mp3`;
+    a.target = '_blank';
     a.click();
     toast.success('Download iniciado');
   };
@@ -217,6 +259,11 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const playHistoryAudio = (url: string) => {
+    setAudioResult({ audio_url: url, duration: 0, trace_id: '' });
+    setAudioError(null);
   };
 
   return (
@@ -300,10 +347,17 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
                 size="sm"
                 className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
                 onClick={() => handleWhatsApp(selectedVariant)}
+                disabled={isSendingWhatsApp}
               >
-                {isMobile ? <Smartphone className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
+                {isSendingWhatsApp ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isMobile ? (
+                  <Smartphone className="w-3.5 h-3.5" />
+                ) : (
+                  <Monitor className="w-3.5 h-3.5" />
+                )}
                 <Send className="w-3.5 h-3.5" />
-                Enviar WhatsApp
+                {isSendingWhatsApp ? 'Registrando...' : 'Enviar WhatsApp'}
               </Button>
             </div>
 
@@ -311,36 +365,50 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
             <p className="text-[9px] text-muted-foreground/60 text-center">
               {isMobile ? '📱 Abrirá o app WhatsApp' : '🖥️ Abrirá o WhatsApp Web/Desktop'}
               {!prospect?.phone && ' • ⚠️ Sem telefone cadastrado'}
+              {' • Envio será registrado automaticamente'}
             </p>
 
             {/* Audio Section */}
             <div className="border border-white/[0.05] rounded-xl p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Áudio ElevenLabs</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs"
-                  onClick={handleGenerateAudio}
-                  disabled={isGeneratingAudio}
-                >
-                  {isGeneratingAudio ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : audioError ? (
-                    <>
-                      <RefreshCw className="w-3 h-3" />
-                      Tentar Novamente
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-3 h-3" />
-                      {audioUrl ? 'Regerar' : 'Gerar Áudio'}
-                    </>
+                <div className="flex items-center gap-1">
+                  {audioHistory.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 text-xs text-muted-foreground"
+                      onClick={() => setShowHistory(!showHistory)}
+                    >
+                      <History className="w-3 h-3" />
+                      {audioHistory.length}
+                    </Button>
                   )}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={handleGenerateAudio}
+                    disabled={isGeneratingAudio}
+                  >
+                    {isGeneratingAudio ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : audioError ? (
+                      <>
+                        <RefreshCw className="w-3 h-3" />
+                        Tentar Novamente
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-3 h-3" />
+                        {audioResult ? 'Regerar' : 'Gerar Áudio'}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* Processing indicator */}
@@ -353,14 +421,16 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
 
               {/* Error state */}
               {audioError && !isGeneratingAudio && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/5 border border-destructive/10">
-                  <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0" />
-                  <span className="text-[10px] text-destructive">{audioError}</span>
+                <div className="flex items-start gap-2 p-2 rounded-lg bg-destructive/5 border border-destructive/10">
+                  <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-[10px] text-destructive block">{audioError}</span>
+                  </div>
                 </div>
               )}
 
               {/* Audio player */}
-              {audioUrl && !isGeneratingAudio && (
+              {audioResult?.audio_url && !isGeneratingAudio && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <button
@@ -397,12 +467,37 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
                         handleWhatsApp(selectedVariant);
                         toast.info('Envie o áudio manualmente após abrir o WhatsApp');
                       }}
+                      disabled={isSendingWhatsApp}
                     >
                       <Send className="w-3 h-3" />
                       WhatsApp + Áudio
                     </Button>
                   </div>
-                  <audio ref={audioRef} src={audioUrl} preload="metadata" />
+                  <audio ref={audioRef} src={audioResult.audio_url} preload="metadata" />
+                </div>
+              )}
+
+              {/* Audio History */}
+              {showHistory && audioHistory.length > 0 && (
+                <div className="border-t border-white/[0.05] pt-2 space-y-1">
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Histórico</span>
+                  {audioHistory.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => playHistoryAudio(item.audio_url)}
+                      className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-white/[0.03] transition-colors text-left"
+                    >
+                      <Play className="w-3 h-3 text-primary shrink-0" />
+                      <span className="text-[10px] text-foreground flex-1">
+                        {new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {item.duration_seconds && (
+                        <span className="text-[9px] text-muted-foreground font-mono">
+                          {formatDuration(Number(item.duration_seconds))}
+                        </span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

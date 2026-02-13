@@ -5566,6 +5566,75 @@ export type Database = {
           },
         ]
       }
+      prospect_audio: {
+        Row: {
+          audio_url: string | null
+          campaign_id: string | null
+          created_at: string
+          duration_seconds: number | null
+          error_message: string | null
+          id: string
+          idempotency_key: string | null
+          opportunity_id: string | null
+          prospect_id: string | null
+          script_text: string
+          status: string
+          trace_id: string | null
+          updated_at: string
+          voice_id: string
+          workspace_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string | null
+          opportunity_id?: string | null
+          prospect_id?: string | null
+          script_text: string
+          status?: string
+          trace_id?: string | null
+          updated_at?: string
+          voice_id?: string
+          workspace_id?: string
+        }
+        Update: {
+          audio_url?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string | null
+          opportunity_id?: string | null
+          prospect_id?: string | null
+          script_text?: string
+          status?: string
+          trace_id?: string | null
+          updated_at?: string
+          voice_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_audio_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_audio_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_lists: {
         Row: {
           created_at: string
@@ -5679,9 +5748,12 @@ export type Database = {
       prospecting_settings: {
         Row: {
           allowed_channels: Json | null
+          approve_first: boolean | null
+          auto_send: boolean | null
           blacklist_rules: Json | null
           created_at: string
           daily_activity_limit: number | null
+          global_enabled: boolean | null
           id: string
           min_followup_delay_hours: number | null
           optout_text: string | null
@@ -5690,9 +5762,12 @@ export type Database = {
         }
         Insert: {
           allowed_channels?: Json | null
+          approve_first?: boolean | null
+          auto_send?: boolean | null
           blacklist_rules?: Json | null
           created_at?: string
           daily_activity_limit?: number | null
+          global_enabled?: boolean | null
           id?: string
           min_followup_delay_hours?: number | null
           optout_text?: string | null
@@ -5701,9 +5776,12 @@ export type Database = {
         }
         Update: {
           allowed_channels?: Json | null
+          approve_first?: boolean | null
+          auto_send?: boolean | null
           blacklist_rules?: Json | null
           created_at?: string
           daily_activity_limit?: number | null
+          global_enabled?: boolean | null
           id?: string
           min_followup_delay_hours?: number | null
           optout_text?: string | null
