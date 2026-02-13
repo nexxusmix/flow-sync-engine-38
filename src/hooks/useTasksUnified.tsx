@@ -2,6 +2,7 @@ import { useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 import {
   startOfDay, parseISO, isToday, isPast, addDays, isSameDay,
   isWithinInterval, differenceInDays, subDays, format, getDay, getHours
@@ -58,6 +59,7 @@ async function fetchTasks(): Promise<Task[]> {
 // ─── Hook ───────────────────────────────────────────────
 export function useTasksUnified() {
   const qc = useQueryClient();
+  const { logAction } = useUndoRedo();
 
   // Single query for all tasks
   const { data: tasks = [], isLoading } = useQuery({
@@ -125,22 +127,47 @@ export function useTasksUnified() {
       qc.setQueryData<Task[]>(['tasks'], (old) =>
         old ? [newTask, ...old] : [newTask]
       );
+      logAction({
+        entityType: 'task',
+        entityId: newTask.id,
+        actionType: 'CREATE',
+        before: null,
+        after: newTask as any,
+        description: `Tarefa "${newTask.title}" criada`,
+        tableName: 'tasks',
+        queryKeys: [['tasks']],
+      });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Task> }) => {
+    mutationFn: async ({ id, updates, before }: { id: string; updates: Partial<Task>; before?: Record<string, any> }) => {
       const { error } = await supabase.from('tasks').update(updates).eq('id', id);
       if (error) throw error;
-      return { id, updates };
+      return { id, updates, before };
     },
     onMutate: async ({ id, updates }) => {
       await qc.cancelQueries({ queryKey: ['tasks'] });
       const prev = qc.getQueryData<Task[]>(['tasks']);
+      const oldTask = prev?.find(t => t.id === id);
       qc.setQueryData<Task[]>(['tasks'], (old) =>
         old ? old.map(t => t.id === id ? { ...t, ...updates } : t) : old
       );
-      return { prev };
+      return { prev, oldTask };
+    },
+    onSuccess: (_data, vars, ctx) => {
+      if (ctx?.oldTask) {
+        logAction({
+          entityType: 'task',
+          entityId: vars.id,
+          actionType: 'UPDATE',
+          before: ctx.oldTask as any,
+          after: { ...ctx.oldTask, ...vars.updates } as any,
+          description: `Tarefa atualizada`,
+          tableName: 'tasks',
+          queryKeys: [['tasks']],
+        });
+      }
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(['tasks'], ctx.prev);
@@ -157,10 +184,25 @@ export function useTasksUnified() {
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ['tasks'] });
       const prev = qc.getQueryData<Task[]>(['tasks']);
+      const deletedTask = prev?.find(t => t.id === id);
       qc.setQueryData<Task[]>(['tasks'], (old) =>
         old ? old.filter(t => t.id !== id) : old
       );
-      return { prev };
+      return { prev, deletedTask };
+    },
+    onSuccess: (_data, id, ctx) => {
+      if (ctx?.deletedTask) {
+        logAction({
+          entityType: 'task',
+          entityId: id,
+          actionType: 'DELETE',
+          before: ctx.deletedTask as any,
+          after: null,
+          description: `Tarefa "${ctx.deletedTask.title}" excluída`,
+          tableName: 'tasks',
+          queryKeys: [['tasks']],
+        });
+      }
     },
     onError: (_err, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(['tasks'], ctx.prev);

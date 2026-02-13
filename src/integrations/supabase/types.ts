@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_log: {
+        Row: {
+          action_type: string
+          after_snapshot: Json | null
+          before_snapshot: Json | null
+          client_request_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          group_id: string | null
+          id: string
+          undone_at: string | null
+          undone_by: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          action_type: string
+          after_snapshot?: Json | null
+          before_snapshot?: Json | null
+          client_request_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          group_id?: string | null
+          id?: string
+          undone_at?: string | null
+          undone_by?: string | null
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          action_type?: string
+          after_snapshot?: Json | null
+          before_snapshot?: Json | null
+          client_request_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          group_id?: string | null
+          id?: string
+          undone_at?: string | null
+          undone_by?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       agent_actions: {
         Row: {
           action_type: string

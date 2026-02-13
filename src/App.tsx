@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useRealtimeSync } from "./hooks/useRealtimeSync";
 import { ProductProvider } from "./hooks/useProductContext";
+import { UndoRedoProvider } from "./components/layout/UndoRedoProvider";
 import PlatformSelectorPage from "./pages/PlatformSelectorPage";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -205,11 +206,13 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <ProductProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
+          <UndoRedoProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </UndoRedoProvider>
         </ProductProvider>
       </AuthProvider>
     </TooltipProvider>
