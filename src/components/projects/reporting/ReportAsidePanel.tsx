@@ -6,9 +6,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Copy, Check, Settings, CreditCard } from "lucide-react";
 import { ProjectArtCarousel } from "@/components/projects/ProjectArtCarousel";
+import { ProjectPaymentsSummary } from "./ProjectPaymentsSummary";
 
 interface ReportAsidePanelProps {
   projectId: string;
@@ -96,6 +98,10 @@ export function ReportAsidePanel({
             </p>
           </div>
         </div>
+
+        {/* Payments / Installments */}
+        <Separator className="my-4" />
+        <ProjectPaymentsSummary projectId={projectId} />
       </div>
 
       {/* Configurações */}
