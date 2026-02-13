@@ -1,12 +1,11 @@
+/**
+ * StudioCopilot — SolaFlux Holographic Design
+ * Right panel with quick actions, custom instruction, tips
+ */
 import { useState } from 'react';
-import { Sparkles, Wand2, Expand, Shrink, Palette, Send, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { AiPromptField } from '@/components/ai/AiPromptField';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import type { CreativeWork, CreativeBlock } from '@/types/creative-works';
 
 interface StudioCopilotProps {
@@ -29,6 +28,7 @@ export function StudioCopilot({
   onDiscardPreview,
 }: StudioCopilotProps) {
   const [instruction, setInstruction] = useState('');
+  const [activeTab, setActiveTab] = useState<'copilot' | 'references' | 'actions'>('copilot');
 
   const handleSendInstruction = async () => {
     if (!instruction.trim()) return;
@@ -37,92 +37,101 @@ export function StudioCopilot({
   };
 
   const quickActions = [
-    { id: 'summarize', label: 'Resumir', icon: Shrink },
-    { id: 'expand', label: 'Expandir', icon: Expand },
-    { id: 'adjust_tone', label: 'Ajustar Tom', icon: Wand2 },
-    { id: 'adapt_brand', label: 'Adaptar ao Brand Kit', icon: Palette },
+    { id: 'summarize', label: 'Resumir', icon: 'compress' },
+    { id: 'expand', label: 'Expandir', icon: 'expand' },
+    { id: 'adjust_tone', label: 'Ajustar Tom', icon: 'tune' },
+    { id: 'adapt_brand', label: 'Adaptar ao Brand Kit', icon: 'palette' },
+  ];
+
+  const tabs = [
+    { key: 'copilot' as const, label: 'Copiloto' },
+    { key: 'references' as const, label: 'Referências' },
+    { key: 'actions' as const, label: 'Ações' },
   ];
 
   return (
-    <div className="w-80 border-l bg-card flex flex-col h-full">
-      <Tabs defaultValue="copilot" className="flex flex-col h-full">
-        <div className="border-b px-4 py-2">
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="copilot" className="text-xs">Copiloto</TabsTrigger>
-            <TabsTrigger value="references" className="text-xs">Referências</TabsTrigger>
-            <TabsTrigger value="actions" className="text-xs">Ações</TabsTrigger>
-          </TabsList>
-        </div>
+    <div
+      className="w-[320px] border-l border-[rgba(0,156,202,0.08)] bg-[#050507] flex flex-col h-full shrink-0"
+      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+    >
+      {/* Tab switcher */}
+      <div className="flex border-b border-[rgba(0,156,202,0.08)]">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 py-3 text-[11px] tracking-[0.08em] transition-colors ${
+              activeTab === tab.key
+                ? 'text-white/80 border-b border-[hsl(195,100%,50%)]'
+                : 'text-white/25 hover:text-white/40'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Copilot Tab */}
-        <TabsContent value="copilot" className="flex-1 flex flex-col m-0 overflow-hidden">
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
-              {/* Preview Result */}
-              {previewResult && (
-                <Card className="border-primary/50">
-                  <CardHeader className="py-3 px-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        Resultado IA
-                      </CardTitle>
-                      <Badge variant="secondary" className="text-xs">Preview</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4 space-y-3">
-                    <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md max-h-40 overflow-y-auto">
-                      <pre className="whitespace-pre-wrap">
-                        {JSON.stringify(previewResult, null, 2)}
-                      </pre>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={onApplyPreview}
-                      >
-                        Aplicar
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={onDiscardPreview}
-                      >
-                        Descartar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Quick Actions */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Ações Rápidas
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {quickActions.map((action) => (
-                    <Button
-                      key={action.id}
-                      variant="outline"
-                      size="sm"
-                      className="justify-start text-xs h-8"
-                      onClick={() => onQuickAction(action.id)}
-                      disabled={isProcessing || !currentBlock}
-                    >
-                      <action.icon className="w-3 h-3 mr-1.5" />
-                      {action.label}
-                    </Button>
-                  ))}
+      <ScrollArea className="flex-1">
+        {activeTab === 'copilot' && (
+          <div className="p-5 space-y-5">
+            {/* Preview Result */}
+            {previewResult && (
+              <div className="border border-[rgba(0,156,202,0.2)] rounded-lg overflow-hidden">
+                <div className="px-4 py-3 flex items-center justify-between border-b border-[rgba(0,156,202,0.1)]">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm text-[hsl(195,100%,55%)]" style={{ fontVariationSettings: "'wght' 200" }}>auto_awesome</span>
+                    <span className="text-xs text-white/60">Resultado IA</span>
+                  </div>
+                  <span className="text-[9px] uppercase tracking-wider text-white/25 border border-white/10 px-1.5 py-0.5 rounded">Preview</span>
+                </div>
+                <div className="p-3">
+                  <pre className="text-[10px] text-white/30 whitespace-pre-wrap max-h-32 overflow-y-auto font-mono">
+                    {JSON.stringify(previewResult, null, 2)}
+                  </pre>
+                </div>
+                <div className="flex gap-2 px-3 pb-3">
+                  <button
+                    onClick={onApplyPreview}
+                    className="flex-1 py-2 rounded text-xs bg-[hsl(195,100%,40%)] text-white hover:bg-[hsl(195,100%,45%)] transition-colors"
+                  >
+                    Aplicar
+                  </button>
+                  <button
+                    onClick={onDiscardPreview}
+                    className="py-2 px-4 rounded text-xs border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
+                  >
+                    Descartar
+                  </button>
                 </div>
               </div>
+            )}
 
-              {/* Custom Instruction */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Instrução Personalizada
-                </h4>
+            {/* Quick Actions */}
+            <div className="space-y-3">
+              <h4 className="text-[10px] text-white/25 uppercase tracking-[0.12em]">
+                Ações Rápidas
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {quickActions.map((action) => (
+                  <button
+                    key={action.id}
+                    onClick={() => onQuickAction(action.id)}
+                    disabled={isProcessing || !currentBlock}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded border border-[rgba(0,156,202,0.1)] text-white/40 hover:text-white/60 hover:border-[rgba(0,156,202,0.2)] hover:bg-white/[0.02] transition-all text-[11px] disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-sm text-[hsl(195,100%,50%)]" style={{ fontVariationSettings: "'wght' 200" }}>{action.icon}</span>
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Instruction */}
+            <div className="space-y-3">
+              <h4 className="text-[10px] text-white/25 uppercase tracking-[0.12em]">
+                Instrução Personalizada
+              </h4>
+              <div className="relative">
                 <AiPromptField
                   value={instruction}
                   onChange={setInstruction}
@@ -132,93 +141,104 @@ export function StudioCopilot({
                   featureId="copilot-instruction"
                   showCounter={false}
                 />
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={handleSendInstruction}
-                  disabled={isProcessing || !instruction.trim() || !currentBlock}
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3 h-3 mr-1.5" />
-                      Enviar Instrução
-                    </>
-                  )}
-                </Button>
               </div>
 
-              {/* Tips */}
-              <div className="space-y-2 pt-2">
-                <Separator />
-                <div className="text-xs text-muted-foreground space-y-1.5 pt-2">
-                  <p className="font-medium">💡 Dicas:</p>
-                  <ul className="space-y-1 pl-4 list-disc">
-                    <li>Use "Gerar com IA" no editor para criar do zero</li>
-                    <li>Use ações rápidas para ajustar conteúdo existente</li>
-                    <li>Vincule cliente e projeto para contexto melhor</li>
-                  </ul>
-                </div>
+              <div className="flex items-center gap-2 text-[10px] text-white/20">
+                <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'wght' 200" }}>swap_horiz</span>
+                Substituir
               </div>
-            </div>
-          </ScrollArea>
-        </TabsContent>
 
-        {/* References Tab */}
-        <TabsContent value="references" className="flex-1 flex flex-col m-0 overflow-hidden">
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
-              <div className="text-center py-8">
-                <div className="text-muted-foreground text-sm">
-                  Nenhuma referência vinculada
-                </div>
-                <Button variant="outline" size="sm" className="mt-3">
-                  Adicionar Referência
-                </Button>
+              <button
+                onClick={handleSendInstruction}
+                disabled={isProcessing || !instruction.trim() || !currentBlock}
+                className="w-full py-3 rounded bg-[hsl(195,100%,40%)] text-white text-sm hover:bg-[hsl(195,100%,45%)] transition-colors flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'wght' 200" }}>send</span>
+                    Enviar Instrução
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Tips */}
+            <div className="pt-3 border-t border-[rgba(0,156,202,0.06)] space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm text-[hsl(195,100%,50%)]" style={{ fontVariationSettings: "'wght' 200" }}>lightbulb</span>
+                <span className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Dicas</span>
               </div>
+              <ul className="space-y-1.5 text-[11px] text-white/20 pl-1">
+                <li>Use "Gerar com IA" no editor para criar do zero</li>
+                <li>Use ações rápidas para ajustar conteúdo existente</li>
+                <li>Vincule cliente e projeto para contexto melhor</li>
+              </ul>
             </div>
-          </ScrollArea>
-        </TabsContent>
+          </div>
+        )}
 
-        {/* Actions Tab */}
-        <TabsContent value="actions" className="flex-1 flex flex-col m-0 overflow-hidden">
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                Aplicar em
-              </h4>
-              <Button variant="outline" size="sm" className="w-full justify-start" disabled={!work?.project_id}>
-                📄 Criar Conteúdo no Pipeline
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start" disabled={!work?.campaign_id}>
-                📢 Vincular à Campanha
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                📅 Agendar no Calendário
-              </Button>
-              
-              <Separator className="my-3" />
-              
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                Gerenciar
-              </h4>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                📋 Duplicar Trabalho
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                📥 Exportar PDF
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start text-destructive">
-                🗑️ Arquivar
-              </Button>
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+        {activeTab === 'references' && (
+          <div className="p-5 flex flex-col items-center justify-center py-16 text-center">
+            <span className="material-symbols-outlined text-3xl text-white/10 mb-3" style={{ fontVariationSettings: "'wght' 200" }}>link</span>
+            <p className="text-sm text-white/25 mb-4">Nenhuma referência vinculada</p>
+            <button className="px-4 py-2 rounded border border-[rgba(0,156,202,0.15)] text-[11px] text-white/30 hover:text-white/50 hover:border-[rgba(0,156,202,0.25)] transition-colors">
+              Adicionar Referência
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'actions' && (
+          <div className="p-5 space-y-2">
+            <h4 className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-3">Aplicar em</h4>
+            {[
+              { icon: 'article', label: 'Criar Conteúdo no Pipeline', disabled: !work?.project_id },
+              { icon: 'campaign', label: 'Vincular à Campanha', disabled: !work?.campaign_id },
+              { icon: 'calendar_month', label: 'Agendar no Calendário', disabled: false },
+            ].map((a) => (
+              <button
+                key={a.label}
+                disabled={a.disabled}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded border border-[rgba(0,156,202,0.08)] text-white/35 hover:text-white/55 hover:border-[rgba(0,156,202,0.15)] transition-all text-[12px] disabled:opacity-30"
+              >
+                <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'wght' 200" }}>{a.icon}</span>
+                {a.label}
+              </button>
+            ))}
+
+            <div className="my-4 border-t border-[rgba(0,156,202,0.06)]" />
+
+            <h4 className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-3">Gerenciar</h4>
+            {[
+              { icon: 'content_copy', label: 'Duplicar Trabalho' },
+              { icon: 'download', label: 'Exportar PDF' },
+              { icon: 'archive', label: 'Arquivar', destructive: true },
+            ].map((a) => (
+              <button
+                key={a.label}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded border border-[rgba(0,156,202,0.08)] hover:border-[rgba(0,156,202,0.15)] transition-all text-[12px] ${
+                  a.destructive ? 'text-red-400/40 hover:text-red-400/60' : 'text-white/35 hover:text-white/55'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'wght' 200" }}>{a.icon}</span>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="px-5 py-3 border-t border-[rgba(0,156,202,0.06)] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-white/15 tracking-wider">powered by</span>
+          <span className="text-[10px] text-[hsl(195,100%,50%)] tracking-wider font-medium">SQUAD///FILM</span>
+        </div>
+      </div>
     </div>
   );
 }
