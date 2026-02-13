@@ -109,6 +109,8 @@
     --glass-border: 195 100% 40%;
     --glass-surface: 0 0% 100%;
     --glow: 195 100% 40%;
+    --shadow-deep: 0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 10px hsl(195 100% 40% / 0.02);
+    --glass-blur: 8px;
   }
 }
 
