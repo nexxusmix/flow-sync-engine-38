@@ -1,3 +1,8 @@
+/**
+ * export-content-pdf — Premium PDF for Content Item exports
+ * Uses pdf-lib with dark premium design matching HUB v2.4
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
@@ -7,430 +12,237 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-interface ExportContentRequest {
-  content_item_id: string;
+const BG      = rgb(0.043, 0.059, 0.078);
+const SURFACE = rgb(0.067, 0.078, 0.098);
+const BORDER  = rgb(0.118, 0.133, 0.157);
+const WHITE   = rgb(1, 1, 1);
+const OFF_WHITE = rgb(0.88, 0.89, 0.91);
+const MUTED   = rgb(0.45, 0.47, 0.50);
+const DIM     = rgb(0.30, 0.32, 0.35);
+const ACCENT  = rgb(0.976, 0.651, 0.086);
+const SUCCESS = rgb(0.133, 0.773, 0.369);
+
+const PAGE_W = 595.28;
+const PAGE_H = 841.89;
+const MARGIN = 48;
+const CONTENT_W = PAGE_W - MARGIN * 2;
+
+function sanitize(str: string | null | undefined): string {
+  if (!str) return "";
+  return String(str).replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2026/g, "...").replace(/[\u2013\u2014]/g, "-").replace(/\u2022/g, "*").replace(/[^\x00-\xFF]/g, "");
+}
+
+function formatDateShort(): string {
+  const n = new Date();
+  return `${String(n.getDate()).padStart(2, "0")}-${String(n.getMonth() + 1).padStart(2, "0")}-${n.getFullYear()}`;
+}
+
+function formatDateBR(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  try { return new Date(dateStr).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }); } catch { return "—"; }
+}
+
+function generateRefCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "HB";
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { content_item_id }: ExportContentRequest = await req.json();
-
-    if (!content_item_id) {
-      throw new Error('Missing required field: content_item_id');
-    }
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { content_item_id } = await req.json();
+    if (!content_item_id) throw new Error('Missing required field: content_item_id');
 
     console.log(`[export-content-pdf] Exporting content: ${content_item_id}`);
 
-    // Fetch content item
-    const { data: content, error: contentError } = await supabase
-      .from('content_items')
-      .select('*')
-      .eq('id', content_item_id)
-      .single();
+    const [{ data: content, error: contentError }, { data: checklist }, { data: comments }] = await Promise.all([
+      supabase.from('content_items').select('*').eq('id', content_item_id).single(),
+      supabase.from('content_checklist').select('*').eq('content_item_id', content_item_id).order('created_at'),
+      supabase.from('content_comments').select('*').eq('content_item_id', content_item_id).order('created_at', { ascending: false }).limit(20),
+    ]);
 
-    if (contentError || !content) {
-      throw new Error(`Content not found: ${contentError?.message || 'Unknown error'}`);
+    if (contentError || !content) throw new Error(`Content not found: ${contentError?.message}`);
+
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const refCode = generateRefCode();
+
+    let page: ReturnType<typeof pdfDoc.addPage>;
+    let y = PAGE_H - MARGIN;
+
+    function wrapText(text: string, fontSize: number, maxWidth: number): string[] {
+      const words = text.split(" "); const lines: string[] = []; let current = "";
+      for (const word of words) {
+        const test = current ? `${current} ${word}` : word;
+        if (font.widthOfTextAtSize(test, fontSize) > maxWidth && current) { lines.push(current); current = word; }
+        else { current = test; }
+      }
+      if (current) lines.push(current);
+      return lines;
     }
 
-    // Fetch checklist
-    const { data: checklist } = await supabase
-      .from('content_checklist')
-      .select('*')
-      .eq('content_item_id', content_item_id)
-      .order('created_at');
+    function newPage() {
+      page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: BG });
+      page.drawRectangle({ x: 0, y: PAGE_H - 2, width: PAGE_W, height: 2, color: ACCENT });
+      y = PAGE_H - MARGIN;
+    }
 
-    // Fetch comments
-    const { data: comments } = await supabase
-      .from('content_comments')
-      .select('*')
-      .eq('content_item_id', content_item_id)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    function ensureSpace(needed: number) { if (y < MARGIN + 40 + needed) newPage(); }
 
-    console.log(`[export-content-pdf] Found ${checklist?.length || 0} checklist items, ${comments?.length || 0} comments`);
-
-    // Create PDF
-    const pdfDoc = await PDFDocument.create();
-    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    
-    const pageWidth = 595.28; // A4
-    const pageHeight = 841.89;
-    const margin = 50;
-    const contentWidth = pageWidth - (margin * 2);
-    
-    // Colors
-    const primaryColor = rgb(0.1, 0.1, 0.1);
-    const secondaryColor = rgb(0.4, 0.4, 0.4);
-    const accentColor = rgb(0.2, 0.4, 0.8);
-    const greenColor = rgb(0.2, 0.6, 0.3);
-    const grayColor = rgb(0.6, 0.6, 0.6);
-
-    // Helper function to add text with word wrap
-    const addText = (page: ReturnType<typeof pdfDoc.addPage>, text: string, x: number, y: number, options: {
-      font?: typeof helvetica;
-      size?: number;
-      color?: ReturnType<typeof rgb>;
-      maxWidth?: number;
-    } = {}) => {
-      const { font = helvetica, size = 10, color = primaryColor, maxWidth = contentWidth } = options;
-      
-      if (!text) return y;
-      
-      const words = text.split(' ');
-      let line = '';
-      let currentY = y;
-      const lineHeight = size * 1.4;
-      
-      for (const word of words) {
-        const testLine = line + (line ? ' ' : '') + word;
-        const testWidth = font.widthOfTextAtSize(testLine, size);
-        
-        if (testWidth > maxWidth && line) {
-          page.drawText(line, { x, y: currentY, size, font, color });
-          line = word;
-          currentY -= lineHeight;
-        } else {
-          line = testLine;
-        }
+    function drawText(str: string, opts: { x?: number; size?: number; color?: any; bold?: boolean; maxWidth?: number } = {}) {
+      const { x = MARGIN, size = 10, color = OFF_WHITE, bold = false, maxWidth = CONTENT_W } = opts;
+      const f = bold ? fontBold : font;
+      const clean = sanitize(str);
+      if (!clean) return;
+      for (const line of wrapText(clean, size, maxWidth)) {
+        ensureSpace(size * 1.5);
+        page.drawText(line, { x, y, size, font: f, color });
+        y -= size * 1.5;
       }
-      
-      if (line) {
-        page.drawText(line, { x, y: currentY, size, font, color });
-        currentY -= lineHeight;
-      }
-      
-      return currentY;
-    };
+    }
 
-    const addNewPage = () => pdfDoc.addPage([pageWidth, pageHeight]);
+    let sectionCounter = 0;
+    function sectionHeader(title: string) {
+      sectionCounter++;
+      const num = String(sectionCounter).padStart(2, "0");
+      ensureSpace(40); y -= 16;
+      page.drawRectangle({ x: MARGIN, y: y - 1, width: 3, height: 16, color: ACCENT });
+      page.drawText(sanitize(`${num} — ${title.toUpperCase()}`), { x: MARGIN + 12, y, size: 10, font: fontBold, color: ACCENT });
+      y -= 8;
+      page.drawRectangle({ x: MARGIN, y: y - 4, width: CONTENT_W, height: 0.5, color: BORDER });
+      y -= 16;
+    }
 
-    // === PAGE 1: COVER ===
-    let page = addNewPage();
-    let y = pageHeight - 100;
+    // ── Cover Page ────────────────────────────────────────
+    page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: BG });
+    page.drawRectangle({ x: 0, y: PAGE_H - 4, width: PAGE_W, height: 4, color: ACCENT });
+    page.drawRectangle({ x: 0, y: PAGE_H - 200, width: PAGE_W, height: 200, color: rgb(0.976 * 0.08, 0.651 * 0.08, 0.086 * 0.08) });
 
-    // Title
-    page.drawText((content.title || 'Conteúdo').toUpperCase(), {
-      x: margin,
-      y,
-      size: 24,
-      font: helveticaBold,
-      color: primaryColor,
-    });
-    y -= 35;
+    page.drawText("HUB SOCIAL", { x: MARGIN, y: PAGE_H - 60, size: 10, font: fontBold, color: ACCENT });
 
-    // Status badge
-    const statusLabels: Record<string, string> = {
-      idea: 'Ideia',
-      scripting: 'Roteiro',
-      recording: 'Gravação',
-      editing: 'Edição',
-      review: 'Revisão',
-      scheduled: 'Agendado',
-      published: 'Publicado',
-    };
-    const statusLabel = statusLabels[content.status] || content.status || 'Rascunho';
-    page.drawText(`Status: ${statusLabel}`, {
-      x: margin,
-      y,
-      size: 12,
-      font: helvetica,
-      color: accentColor,
-    });
-    y -= 25;
+    const titleLines = wrapText(sanitize(content.title || "Conteudo"), 28, CONTENT_W);
+    let ty = PAGE_H - 120;
+    for (const line of titleLines) {
+      page.drawText(line, { x: MARGIN, y: ty, size: 28, font: fontBold, color: WHITE });
+      ty -= 36;
+    }
+    ty -= 8;
+    page.drawText("Ficha de Conteudo", { x: MARGIN, y: ty, size: 12, font, color: MUTED });
+    ty -= 30;
+    page.drawRectangle({ x: MARGIN, y: ty, width: 60, height: 2, color: ACCENT });
+    ty -= 40;
 
-    // Channel / Format / Pillar
-    const details = [];
-    if (content.channel) details.push(`Canal: ${content.channel}`);
-    if (content.format) details.push(`Formato: ${content.format}`);
-    if (content.pillar) details.push(`Pilar: ${content.pillar}`);
-    
-    if (details.length > 0) {
-      page.drawText(details.join('  •  '), {
-        x: margin,
-        y,
-        size: 10,
-        font: helvetica,
-        color: secondaryColor,
-      });
-      y -= 20;
+    const statusLabels: Record<string, string> = { idea: "Ideia", scripting: "Roteiro", recording: "Gravacao", editing: "Edicao", review: "Revisao", scheduled: "Agendado", published: "Publicado" };
+    const meta = [
+      { label: "STATUS", value: (statusLabels[content.status] || content.status || "Rascunho").toUpperCase() },
+      { label: "CANAL", value: (content.channel || "—").toUpperCase() },
+      { label: "FORMATO", value: (content.format || "—").toUpperCase() },
+      { label: "DATA DE EMISSAO", value: formatDateShort() },
+      { label: "CODIGO", value: refCode },
+    ];
+    for (const m of meta) {
+      page.drawText(sanitize(m.label), { x: MARGIN, y: ty, size: 7, font: fontBold, color: DIM });
+      page.drawText(sanitize(m.value), { x: MARGIN + 130, y: ty, size: 9, font, color: OFF_WHITE });
+      ty -= 18;
+    }
+    page.drawRectangle({ x: MARGIN, y: 50, width: CONTENT_W, height: 0.5, color: BORDER });
+    page.drawText("HUB v2.4", { x: MARGIN, y: 32, size: 8, font: fontBold, color: MUTED });
+
+    // ── Copy & Roteiro ────────────────────────────────────
+    newPage();
+    sectionHeader("Copy e Roteiro");
+
+    if (content.hook) { drawText("HOOK / GANCHO:", { size: 8, bold: true, color: ACCENT }); drawText(content.hook, { size: 11 }); y -= 10; }
+    if (content.caption_short) { drawText("CAPTION CURTA:", { size: 8, bold: true, color: ACCENT }); drawText(content.caption_short); y -= 10; }
+    if (content.caption_long) { drawText("CAPTION LONGA:", { size: 8, bold: true, color: ACCENT }); drawText(content.caption_long); y -= 10; }
+    if (content.cta) { drawText("CTA:", { size: 8, bold: true, color: ACCENT }); drawText(content.cta); y -= 10; }
+    if (content.hashtags) { drawText("HASHTAGS:", { size: 8, bold: true, color: ACCENT }); drawText(content.hashtags, { size: 9, color: ACCENT }); y -= 10; }
+    if (content.script) { drawText("ROTEIRO:", { size: 8, bold: true, color: ACCENT }); drawText(content.script); y -= 10; }
+
+    // Briefing
+    if (content.notes) {
+      sectionHeader("Briefing");
+      drawText(content.notes, { color: MUTED });
     }
 
     // Dates
-    const formatDate = (dateStr: string | null) => {
-      if (!dateStr) return null;
-      return new Date(dateStr).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-    };
-
     const dates = [];
-    if (content.due_at) dates.push(`Prazo: ${formatDate(content.due_at)}`);
-    if (content.scheduled_at) dates.push(`Agendado: ${formatDate(content.scheduled_at)}`);
-    if (content.published_at) dates.push(`Publicado: ${formatDate(content.published_at)}`);
+    if (content.due_at) dates.push(`Prazo: ${formatDateBR(content.due_at)}`);
+    if (content.scheduled_at) dates.push(`Agendado: ${formatDateBR(content.scheduled_at)}`);
+    if (content.published_at) dates.push(`Publicado: ${formatDateBR(content.published_at)}`);
+    if (dates.length > 0) { y -= 10; drawText(dates.join("  |  "), { size: 9, color: MUTED }); }
 
-    if (dates.length > 0) {
-      page.drawText(dates.join('  •  '), {
-        x: margin,
-        y,
-        size: 10,
-        font: helvetica,
-        color: secondaryColor,
-      });
-      y -= 30;
-    }
-
-    // Separator
-    page.drawLine({
-      start: { x: margin, y },
-      end: { x: pageWidth - margin, y },
-      thickness: 1,
-      color: rgb(0.9, 0.9, 0.9),
-    });
-    y -= 30;
-
-    // === BRIEFING SECTION ===
-    if (content.notes) {
-      page.drawText('BRIEFING', {
-        x: margin,
-        y,
-        size: 12,
-        font: helveticaBold,
-        color: accentColor,
-      });
-      y -= 20;
-      y = addText(page, content.notes, margin, y, { size: 10, color: secondaryColor });
-      y -= 30;
-    }
-
-    // === PAGE 2: COPY & ROTEIRO ===
-    page = addNewPage();
-    y = pageHeight - 80;
-
-    page.drawText('COPY & ROTEIRO', {
-      x: margin,
-      y,
-      size: 16,
-      font: helveticaBold,
-      color: accentColor,
-    });
-    y -= 35;
-
-    // Hook
-    if (content.hook) {
-      page.drawText('Hook / Gancho', { x: margin, y, size: 10, font: helveticaBold, color: secondaryColor });
-      y -= 15;
-      y = addText(page, content.hook, margin, y, { size: 11 });
-      y -= 20;
-    }
-
-    // Caption Short
-    if (content.caption_short) {
-      page.drawText('Caption Curta', { x: margin, y, size: 10, font: helveticaBold, color: secondaryColor });
-      y -= 15;
-      y = addText(page, content.caption_short, margin, y);
-      y -= 20;
-    }
-
-    // Caption Long
-    if (content.caption_long) {
-      page.drawText('Caption Longa', { x: margin, y, size: 10, font: helveticaBold, color: secondaryColor });
-      y -= 15;
-      y = addText(page, content.caption_long, margin, y);
-      y -= 20;
-    }
-
-    // CTA
-    if (content.cta) {
-      page.drawText('CTA', { x: margin, y, size: 10, font: helveticaBold, color: secondaryColor });
-      y -= 15;
-      y = addText(page, content.cta, margin, y);
-      y -= 20;
-    }
-
-    // Hashtags
-    if (content.hashtags) {
-      page.drawText('Hashtags', { x: margin, y, size: 10, font: helveticaBold, color: secondaryColor });
-      y -= 15;
-      y = addText(page, content.hashtags, margin, y, { size: 9, color: accentColor });
-      y -= 20;
-    }
-
-    // Script
-    if (content.script) {
-      if (y < 200) {
-        page = addNewPage();
-        y = pageHeight - 80;
-      }
-      page.drawText('Roteiro', { x: margin, y, size: 10, font: helveticaBold, color: secondaryColor });
-      y -= 15;
-      y = addText(page, content.script, margin, y);
-    }
-
-    // === PAGE 3: CHECKLIST ===
+    // Checklist
     if (checklist && checklist.length > 0) {
-      page = addNewPage();
-      y = pageHeight - 80;
-
-      page.drawText('CHECKLIST', {
-        x: margin,
-        y,
-        size: 16,
-        font: helveticaBold,
-        color: accentColor,
-      });
-      y -= 30;
-
+      sectionHeader("Checklist");
       for (const item of checklist) {
-        if (y < 80) {
-          page = addNewPage();
-          y = pageHeight - 80;
-        }
-
-        const isDone = item.status === 'done';
-        const checkMark = isDone ? '✓' : '○';
-        const itemColor = isDone ? greenColor : grayColor;
-
-        page.drawText(checkMark, {
-          x: margin,
-          y,
-          size: 12,
-          font: helveticaBold,
-          color: itemColor,
-        });
-
-        page.drawText(item.title, {
-          x: margin + 20,
-          y,
-          size: 10,
-          font: isDone ? helvetica : helveticaBold,
-          color: isDone ? grayColor : primaryColor,
-        });
-        y -= 18;
+        ensureSpace(20);
+        const isDone = item.status === "done";
+        const mark = isDone ? "[x]" : "[ ]";
+        const color = isDone ? SUCCESS : MUTED;
+        drawText(`${mark} ${item.title}`, { color, bold: !isDone });
       }
     }
 
-    // === PAGE 4: COMMENTS ===
+    // Comments
     if (comments && comments.length > 0) {
-      page = addNewPage();
-      y = pageHeight - 80;
-
-      page.drawText('COMENTÁRIOS DE REVISÃO', {
-        x: margin,
-        y,
-        size: 16,
-        font: helveticaBold,
-        color: accentColor,
-      });
-      y -= 30;
-
-      for (const comment of comments) {
-        if (y < 120) {
-          page = addNewPage();
-          y = pageHeight - 80;
-        }
-
-        // Author and date
-        const authorName = comment.author_name || 'Usuário';
-        const commentDate = new Date(comment.created_at).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-
-        page.drawText(`${authorName} • ${commentDate}`, {
-          x: margin,
-          y,
-          size: 9,
-          font: helveticaBold,
-          color: secondaryColor,
-        });
-        y -= 15;
-
-        y = addText(page, comment.text, margin, y, { size: 10 });
-        y -= 20;
+      sectionHeader("Comentarios de Revisao");
+      for (const c of comments) {
+        ensureSpace(40);
+        const author = c.author_name || "Usuario";
+        const date = formatDateBR(c.created_at);
+        drawText(`${author} - ${date}`, { size: 9, bold: true, color: DIM });
+        drawText(c.text, { color: OFF_WHITE });
+        y -= 8;
       }
     }
 
-    // === PAGE 5: PUBLICATION ===
+    // Publication
     if (content.post_url) {
-      if (y < 150) {
-        page = addNewPage();
-        y = pageHeight - 80;
-      } else {
-        y -= 30;
-      }
-
-      page.drawText('PUBLICAÇÃO', {
-        x: margin,
-        y,
-        size: 14,
-        font: helveticaBold,
-        color: accentColor,
-      });
-      y -= 25;
-
-      page.drawText('Link do Post:', {
-        x: margin,
-        y,
-        size: 10,
-        font: helveticaBold,
-        color: secondaryColor,
-      });
-      y -= 15;
-
-      y = addText(page, content.post_url, margin, y, { size: 9, color: accentColor });
+      sectionHeader("Publicacao");
+      drawText("Link do Post:", { size: 8, bold: true, color: ACCENT });
+      drawText(content.post_url, { size: 9, color: ACCENT });
     }
 
-    // Generate PDF bytes
-    const pdfBytes = await pdfDoc.save();
+    // ── Footers ────────────────────────────────────────────
+    const pages = pdfDoc.getPages();
+    pages.forEach((p, idx) => {
+      p.drawLine({ start: { x: MARGIN, y: 42 }, end: { x: PAGE_W - MARGIN, y: 42 }, thickness: 0.5, color: BORDER });
+      p.drawText("HUB v2.4", { x: MARGIN, y: 28, size: 7, font: fontBold, color: MUTED });
+      if (idx > 0) {
+        const ps = `Pagina ${idx} de ${pages.length - 1}`;
+        const pw = font.widthOfTextAtSize(ps, 7);
+        p.drawText(ps, { x: PAGE_W / 2 - pw / 2, y: 28, size: 7, font, color: DIM });
+      }
+      const rw = font.widthOfTextAtSize(refCode, 7);
+      p.drawText(refCode, { x: PAGE_W - MARGIN - rw, y: 28, size: 7, font: fontBold, color: ACCENT });
+    });
 
-    // Save to storage
+    const pdfBytes = await pdfDoc.save();
     const timestamp = Date.now();
     const filePath = `exports/content/${content_item_id}/${timestamp}.pdf`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('exports')
-      .upload(filePath, pdfBytes, {
-        contentType: 'application/pdf',
-        upsert: true,
-      });
 
-    if (uploadError) {
-      throw new Error(`Upload failed: ${uploadError.message}`);
-    }
+    const { error: uploadError } = await supabase.storage.from('exports').upload(filePath, pdfBytes, { contentType: 'application/pdf', upsert: true });
+    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('exports')
-      .getPublicUrl(filePath);
-
-    console.log(`[export-content-pdf] PDF generated and saved: ${filePath}`);
+    const { data: urlData } = supabase.storage.from('exports').getPublicUrl(filePath);
+    console.log(`[export-content-pdf] PDF generated: ${filePath}`);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        file_path: filePath,
-        public_url: urlData.publicUrl,
-      }),
+      JSON.stringify({ success: true, file_path: filePath, public_url: urlData.publicUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('[export-content-pdf] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to export PDF' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Failed to export PDF' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
