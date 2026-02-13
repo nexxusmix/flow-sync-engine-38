@@ -213,7 +213,10 @@ serve(async (req) => {
 
     if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-    const { data: pubUrl } = supabase.storage.from("exports").getPublicUrl(filePath);
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from("exports").createSignedUrl(filePath, 1800);
+    const url = signedUrlError
+      ? supabase.storage.from("exports").getPublicUrl(filePath).data.publicUrl
+      : signedUrlData.signedUrl;
 
     // Save snapshot
     const snapshotVersion = await supabase.from("panorama_snapshots").select("version").eq("project_id", projectId).order("version", { ascending: false }).limit(1);
@@ -222,7 +225,7 @@ serve(async (req) => {
     const { data: snapshot } = await supabase.from("panorama_snapshots").insert({
       project_id: projectId,
       generated_by: userId || null,
-      pdf_url: pubUrl.publicUrl,
+      pdf_url: url,
       pdf_file_path: filePath,
       version: nextVersion,
       metadata: {
@@ -237,15 +240,17 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      public_url: pubUrl.publicUrl,
-      file_path: filePath,
+      signed_url: url,
+      public_url: url,
+      storage_path: filePath,
+      file_name: fileName,
       share_token: snapshot?.share_token,
       snapshot_id: snapshot?.id,
       version: nextVersion,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("export-panorama-pdf error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

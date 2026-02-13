@@ -293,11 +293,14 @@ serve(async (req) => {
     const { error: uploadError } = await supabase.storage.from('exports').upload(storagePath, pdfBytes, { contentType: 'application/pdf', upsert: true });
     if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-    const { data: { publicUrl } } = supabase.storage.from('exports').getPublicUrl(storagePath);
-    console.log(`[export-creative-pdf] PDF generated: ${publicUrl}`);
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('exports').createSignedUrl(storagePath, 1800);
+    const url = signedUrlError
+      ? supabase.storage.from('exports').getPublicUrl(storagePath).data.publicUrl
+      : signedUrlData.signedUrl;
+    console.log(`[export-creative-pdf] PDF generated: ${storagePath}`);
 
     return new Response(
-      JSON.stringify({ success: true, file_path: storagePath, public_url: publicUrl, file_name: fileName }),
+      JSON.stringify({ success: true, signed_url: url, public_url: url, storage_path: storagePath, file_name: fileName }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

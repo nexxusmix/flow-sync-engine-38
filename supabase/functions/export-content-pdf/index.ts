@@ -232,17 +232,20 @@ serve(async (req) => {
     const { error: uploadError } = await supabase.storage.from('exports').upload(filePath, pdfBytes, { contentType: 'application/pdf', upsert: true });
     if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-    const { data: urlData } = supabase.storage.from('exports').getPublicUrl(filePath);
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('exports').createSignedUrl(filePath, 1800);
+    const url = signedUrlError
+      ? supabase.storage.from('exports').getPublicUrl(filePath).data.publicUrl
+      : signedUrlData.signedUrl;
     console.log(`[export-content-pdf] PDF generated: ${filePath}`);
 
     return new Response(
-      JSON.stringify({ success: true, file_path: filePath, public_url: urlData.publicUrl }),
+      JSON.stringify({ success: true, signed_url: url, public_url: url, storage_path: filePath, file_name: `content_${content_item_id}_${timestamp}.pdf` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('[export-content-pdf] Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Failed to export PDF' }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed to export PDF' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
