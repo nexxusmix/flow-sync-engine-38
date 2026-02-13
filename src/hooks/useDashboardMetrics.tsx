@@ -110,7 +110,7 @@ export function useDashboardMetrics() {
       ] = await Promise.all([
         supabase.from('projects').select('*').neq('status', 'archived'),
         supabase.from('project_stages').select('*'),
-        supabase.from('prospect_opportunities').select('*'),
+        supabase.from('crm_deals').select('*, contact:crm_contacts(name, company)'),
         supabase.from('calendar_events')
           .select('*')
           .gte('start_at', now.toISOString())
@@ -160,21 +160,21 @@ export function useDashboardMetrics() {
         });
       });
 
-      // === CRM METRICS ===
-      const dealStages = ['lead', 'qualificacao', 'diagnostico', 'proposta', 'negociacao', 'fechado', 'onboarding', 'posvenda'];
+      // === CRM METRICS (using crm_deals as SSOT) ===
+      const dealStages = ['lead', 'qualificacao', 'diagnostico', 'proposta', 'negociacao', 'fechado', 'onboarding', 'pos_venda'];
       const dealsByStage = dealStages.reduce((acc, stage) => {
-        const stageDeals = deals.filter(d => d.stage === stage);
+        const stageDeals = deals.filter((d: any) => d.stage_key === stage);
         acc[stage] = {
           count: stageDeals.length,
-          value: stageDeals.reduce((sum, d) => sum + (d.estimated_value || 0), 0),
+          value: stageDeals.reduce((sum: number, d: any) => sum + (d.value || 0), 0),
         };
         return acc;
       }, {} as Record<string, { count: number; value: number }>);
 
-      const totalPipelineValue = deals.reduce((acc, d) => acc + (d.estimated_value || 0), 0);
+      const totalPipelineValue = deals.reduce((acc: number, d: any) => acc + (d.value || 0), 0);
       const forecast = deals
-        .filter(d => d.stage !== 'lost' && d.probability)
-        .reduce((acc, d) => acc + ((d.estimated_value || 0) * (d.probability || 0) / 100), 0);
+        .filter((d: any) => d.stage_key !== 'lost' && d.score)
+        .reduce((acc: number, d: any) => acc + ((d.value || 0) * (d.score || 0) / 100), 0);
 
       // === FINANCIAL METRICS (aligned with financialStore.getStats) ===
       // Apply auto-overdue logic to pending revenues (same as financialStore)

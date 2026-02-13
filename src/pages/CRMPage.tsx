@@ -7,6 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Filter, ChevronDown, Plus, Sparkles, Users, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CRMPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -14,12 +18,23 @@ export default function CRMPage() {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [activeView, setActiveView] = useState<'kanban' | 'lista'>('kanban');
+  const [showNewDealDialog, setShowNewDealDialog] = useState(false);
+  const [newDealStage, setNewDealStage] = useState('lead');
+  
+  // New deal form state
+  const [newDealTitle, setNewDealTitle] = useState('');
+  const [newDealValue, setNewDealValue] = useState('');
+  const [newDealContactId, setNewDealContactId] = useState('');
+  const [newDealTemperature, setNewDealTemperature] = useState('warm');
+  const [newDealSource, setNewDealSource] = useState('');
   
   const { isLoading: authLoading } = useAuth();
-  const { deals, metrics, isLoading: dataLoading, moveDealToStage, deleteDeal } = useCRM();
+  const { deals, contacts, stages, metrics, isLoading: dataLoading, moveDealToStage, deleteDeal, createDeal, isCreatingDeal } = useCRM();
   
-  // Loading during auth check or data fetch (hooks handle user existence internally)
   const isLoading = authLoading || dataLoading;
+  
+  // Use stages from DB (with fallback to CRM_STAGES)
+  const activeStages = stages.length > 0 ? stages : CRM_STAGES;
 
   const handleMouseDown = (e: MouseEvent) => {
     if (!scrollRef.current) return;
@@ -39,14 +54,14 @@ export default function CRMPage() {
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  // Transform deals for KanbanColumn format
+  // Transform deals for KanbanColumn format - filter by stage.key
   const transformedDeals = deals.map(deal => ({
     id: deal.id,
     title: deal.title,
     company: deal.company,
     value: deal.value,
     probability: deal.score || 50,
-    stage: deal.stage,
+    stage: deal.stage, // This is stage_key from useCRM
     initials: deal.contactName?.split(' ').map(n => n[0]).slice(0, 2) || ['?'],
     daysInStage: 0,
     nextAction: deal.nextAction,
@@ -57,6 +72,29 @@ export default function CRMPage() {
   }));
 
   const hasDeals = deals.length > 0;
+  
+  const openNewDealDialog = (stage?: string) => {
+    setNewDealStage(stage || 'lead');
+    setNewDealTitle('');
+    setNewDealValue('');
+    setNewDealContactId('');
+    setNewDealTemperature('warm');
+    setNewDealSource('');
+    setShowNewDealDialog(true);
+  };
+
+  const handleCreateDeal = () => {
+    if (!newDealTitle.trim()) return;
+    createDeal({
+      title: newDealTitle,
+      stage: newDealStage,
+      value: parseFloat(newDealValue) || 0,
+      contactId: newDealContactId || undefined,
+      temperature: newDealTemperature,
+      source: newDealSource || undefined,
+    });
+    setShowNewDealDialog(false);
+  };
 
   if (isLoading) {
     return (
@@ -123,7 +161,7 @@ export default function CRMPage() {
             </div>
 
             {/* New Deal Button */}
-            <button className="btn-primary">
+            <button className="btn-primary" onClick={() => openNewDealDialog()}>
               <Plus className="w-4 h-4" />
               Novo Deal
             </button>
@@ -141,13 +179,13 @@ export default function CRMPage() {
             onMouseMove={handleMouseMove}
           >
             <div className="flex gap-4 min-w-max p-1">
-              {CRM_STAGES.map(stage => (
+              {activeStages.map(stage => (
                 <KanbanColumn
-                  key={stage.id}
+                  key={stage.key}
                   title={stage.title}
                   color={stage.color}
-                  count={transformedDeals.filter(d => d.stage === stage.id).length}
-                  deals={transformedDeals.filter(d => d.stage === stage.id)}
+                  count={transformedDeals.filter(d => d.stage === stage.key).length}
+                  deals={transformedDeals.filter(d => d.stage === stage.key)}
                   onDeleteDeal={(id) => deleteDeal(id)}
                 />
               ))}
@@ -161,13 +199,105 @@ export default function CRMPage() {
               title="Nenhum deal no CRM"
               description="Comece adicionando seu primeiro deal para acompanhar o pipeline comercial"
             />
-            <Button className="mt-6" size="lg">
+            <Button className="mt-6" size="lg" onClick={() => openNewDealDialog()}>
               <Plus className="w-4 h-4 mr-2" />
               Criar Primeiro Deal
             </Button>
           </div>
         )}
       </div>
+
+      {/* New Deal Dialog */}
+      <Dialog open={showNewDealDialog} onOpenChange={setShowNewDealDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Deal</DialogTitle>
+            <DialogDescription>Adicione uma nova oportunidade ao pipeline</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="deal-title">Título *</Label>
+              <Input 
+                id="deal-title"
+                placeholder="Ex: Vídeo institucional - Empresa X" 
+                value={newDealTitle}
+                onChange={(e) => setNewDealTitle(e.target.value)}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="deal-value">Valor (R$)</Label>
+                <Input 
+                  id="deal-value"
+                  type="number"
+                  placeholder="0"
+                  value={newDealValue}
+                  onChange={(e) => setNewDealValue(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Temperatura</Label>
+                <Select value={newDealTemperature} onValueChange={setNewDealTemperature}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cold">Frio</SelectItem>
+                    <SelectItem value="warm">Morno</SelectItem>
+                    <SelectItem value="hot">Quente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Contato</Label>
+              <Select value={newDealContactId} onValueChange={setNewDealContactId}>
+                <SelectTrigger><SelectValue placeholder="Selecionar contato" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {contacts.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}{c.company ? ` (${c.company})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Stage</Label>
+                <Select value={newDealStage} onValueChange={setNewDealStage}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {activeStages.map(s => (
+                      <SelectItem key={s.key} value={s.key}>{s.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deal-source">Origem</Label>
+                <Input 
+                  id="deal-source"
+                  placeholder="Ex: Instagram, Indicação"
+                  value={newDealSource}
+                  onChange={(e) => setNewDealSource(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <Button 
+              className="w-full" 
+              onClick={handleCreateDeal}
+              disabled={!newDealTitle.trim() || isCreatingDeal}
+            >
+              {isCreatingDeal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              Criar Deal
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

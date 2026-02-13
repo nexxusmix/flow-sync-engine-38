@@ -20,6 +20,9 @@ type TableName =
   | 'prospect_opportunities'
   | 'proposals'
   | 'contracts'
+  | 'crm_deals'
+  | 'crm_contacts'
+  | 'crm_stages'
   | 'payment_milestones'
   | 'content_items'
   | 'content_ideas'
@@ -150,6 +153,25 @@ const TABLE_QUERY_MAPPINGS: QueryKeyMapping[] = [
     table: 'content_ideas',
     queryKeys: [
       ['content-ideas'],
+    ],
+  },
+  {
+    table: 'crm_deals',
+    queryKeys: [
+      ['crm-deals'],
+      ['dashboard-metrics'],
+    ],
+  },
+  {
+    table: 'crm_contacts',
+    queryKeys: [
+      ['crm-contacts'],
+    ],
+  },
+  {
+    table: 'crm_stages',
+    queryKeys: [
+      ['crm-stages'],
     ],
   },
   {
