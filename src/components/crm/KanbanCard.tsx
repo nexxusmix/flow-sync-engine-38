@@ -1,5 +1,5 @@
-import { MoreVertical, Clock, Sparkles, Trash2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { MoreVertical, Clock, Sparkles, Trash2, Pencil, GripVertical } from "lucide-react";
+import { useState, DragEvent } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,7 @@ interface KanbanCardProps {
 
 export function KanbanCard({ deal, onDelete }: KanbanCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const getScoreColor = (score: number) => {
     if (score > 80) return { text: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/20' };
@@ -45,9 +46,31 @@ export function KanbanCard({ deal, onDelete }: KanbanCardProps) {
 
   const scoreStyle = getScoreColor(deal.score);
 
+  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData('application/json', JSON.stringify({ dealId: deal.id, fromStage: deal.stage }));
+    e.dataTransfer.effectAllowed = 'move';
+    setIsDragging(true);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
     <>
-      <div className="glass-card rounded-2xl p-4 space-y-3 group cursor-grab active:cursor-grabbing hover:border-primary/30 transition-all duration-300 relative overflow-hidden">
+      <div
+        draggable
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        className={`glass-card rounded-2xl p-4 space-y-3 group cursor-grab active:cursor-grabbing hover:border-primary/30 transition-all duration-300 relative overflow-hidden ${
+          isDragging ? 'opacity-40 scale-95 ring-2 ring-primary/30' : ''
+        }`}
+      >
+        {/* Drag Handle */}
+        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-50 transition-opacity">
+          <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+        </div>
+
         {/* Hover Glow Effect */}
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 

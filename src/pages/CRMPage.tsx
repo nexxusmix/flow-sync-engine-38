@@ -184,9 +184,11 @@ export default function CRMPage() {
                   key={stage.key}
                   title={stage.title}
                   color={stage.color}
+                  stageKey={stage.key}
                   count={transformedDeals.filter(d => d.stage === stage.key).length}
                   deals={transformedDeals.filter(d => d.stage === stage.key)}
                   onDeleteDeal={(id) => deleteDeal(id)}
+                  onMoveDeal={(dealId, toStage) => moveDealToStage({ dealId, stage: toStage })}
                 />
               ))}
             </div>
