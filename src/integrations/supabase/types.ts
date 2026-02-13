@@ -2038,6 +2038,50 @@ export type Database = {
           },
         ]
       }
+      crm_activities: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          payload: Json | null
+          title: string | null
+          type: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json | null
+          title?: string | null
+          type: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json | null
+          title?: string | null
+          type?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_contacts: {
         Row: {
           company: string | null
@@ -4974,6 +5018,161 @@ export type Database = {
           },
         ]
       }
+      scout_audio_assets: {
+        Row: {
+          content_hash: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          message_id: string
+          opportunity_id: string
+          public_url: string | null
+          storage_path: string
+          voice_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          content_hash?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          message_id: string
+          opportunity_id: string
+          public_url?: string | null
+          storage_path: string
+          voice_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          content_hash?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          message_id?: string
+          opportunity_id?: string
+          public_url?: string | null
+          storage_path?: string
+          voice_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_audio_assets_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "scout_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_audio_assets_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "scout_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scout_messages: {
+        Row: {
+          audio_script: string | null
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          language: string
+          opportunity_id: string
+          text_message: string | null
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          audio_script?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          opportunity_id: string
+          text_message?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Update: {
+          audio_script?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          opportunity_id?: string
+          text_message?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_messages_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "scout_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scout_opportunities: {
+        Row: {
+          company_name: string
+          contact_name: string | null
+          contact_phone_e164: string | null
+          contact_role: string | null
+          context: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          source: string
+          source_ref: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          company_name: string
+          contact_name?: string | null
+          contact_phone_e164?: string | null
+          contact_role?: string | null
+          context?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          source?: string
+          source_ref?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          company_name?: string
+          contact_name?: string | null
+          contact_phone_e164?: string | null
+          contact_role?: string | null
+          context?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          source?: string
+          source_ref?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       storyboard_frames: {
         Row: {
           block_id: string | null
@@ -5302,6 +5501,94 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      whatsapp_outbox: {
+        Row: {
+          attempts: number
+          audio_asset_id: string | null
+          client_request_id: string
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          message_id: string | null
+          next_retry_at: string | null
+          opportunity_id: string | null
+          payload: Json | null
+          provider: string
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          to_phone_e164: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          audio_asset_id?: string | null
+          client_request_id: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          next_retry_at?: string | null
+          opportunity_id?: string | null
+          payload?: Json | null
+          provider?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          to_phone_e164: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          attempts?: number
+          audio_asset_id?: string | null
+          client_request_id?: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          next_retry_at?: string | null
+          opportunity_id?: string | null
+          payload?: Json | null
+          provider?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          to_phone_e164?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_outbox_audio_asset_id_fkey"
+            columns: ["audio_asset_id"]
+            isOneToOne: false
+            referencedRelation: "scout_audio_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_outbox_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "scout_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_outbox_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "scout_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_settings: {
         Row: {
