@@ -1,114 +1,230 @@
 
-# Financeiro 100% Vinculado + Atualizado Automaticamente
+# SQUAD HUB v2.4 — Plano de Execucao Faseado
 
-## Problema Atual
+## Diagnostico do Estado Atual
 
-1. **"Total Pago" mostra R$ 0,00** -- As receitas (revenues) existem no banco mas a maioria nao tem `project_id` preenchido, entao o componente `ProjectPaymentsSummary` nao encontra dados. Tambem nao existem `payment_milestones` cadastrados.
-2. **Dados PIX hardcoded** -- `ReportAsidePanel` usa valores fixos (squadfilmeo@gmail.com, Matheus Filipe Alves, Nubank). Nao existem campos `pix_key`, `pix_bank`, `pix_holder` na tabela `contracts` ou `projects`.
-3. **Portal do Cliente usa mock** -- `PortalPaymentsAside` usa dados ficticios em vez de buscar do banco.
-4. **Sem realtime no financeiro do projeto** -- Alteracoes em receitas/parcelas nao atualizam a UI do projeto automaticamente.
-5. **Receitas orfas** -- 3 das 4 receitas no banco nao tem `project_id`, quebrando toda a logica de vinculacao.
+A plataforma ja possui boa parte da infraestrutura mencionada no comando:
+- **Design tokens SQUAD Film** ja existem em `index.css` (dark theme com #000000, #009CCA, glass-card, holographic-card, data-glow, grid-dots)
+- **Google Sans Flex** ja e a fonte principal
+- **Sidebar + DashboardLayout** ja seguem o padrao SQUAD Film
+- **Quadro de Avisos** ja existe (`AlertsBoardPage`) com filtros, severidade, agrupamento por vencimento
+- **WhatsApp com IA** ja funciona (`WhatsAppMessageModal` + edge function `generate-alert-whatsapp`)
+- **Realtime sync** ja esta configurado (`useRealtimeSync`) para tabelas principais
+- **Edge functions de IA** ja existem (30+ funcoes: gerar mensagem, panorama, propostas, alertas, etc.)
+- **PDF export** ja existe para financeiro, panorama, campanhas, etc.
+- **Componentes MK-UI** existem mas separados (`MkCard`, `MkStatusBadge`, etc.)
 
-## Solucao
-
-### Fase 1: Schema -- Adicionar campos financeiros ao contrato
-
-Adicionar colunas na tabela `contracts`:
-- `pix_key` (text, nullable)
-- `pix_key_type` (text: email/phone/cpf/random)
-- `bank_name` (text, nullable)
-- `account_holder_name` (text, nullable)
-
-Isso permite que cada contrato/projeto tenha suas proprias condicoes financeiras em vez de hardcoded.
-
-### Fase 2: Corrigir dados orfaos
-
-Atualizar as 3 receitas que estao sem `project_id` para vincula-las ao projeto correto (PORTO 153 = `62f54f75-ca2f-4083-b10e-ec2c6bcb1534`), e tambem vincular o `contract_id` correto.
-
-### Fase 3: Refatorar `ReportAsidePanel`
-
-Em vez de props hardcoded, buscar `pix_key`, `bank_name`, `account_holder_name` do contrato vinculado ao projeto via `useFinancialStore.getContractByProject()`.
-
-### Fase 4: Refatorar `PortalPaymentsAside`
-
-Remover mock data. Receber `projectId` como prop e buscar receitas reais do banco via `useFinancialStore`, mapeando status corretamente (`received` -> `paid`, overdue detection por data).
-
-### Fase 5: Calculos corretos no `ProjectPaymentsSummary`
-
-Atualmente o componente calcula "Total Pago" a partir de milestones, mas se nao existem milestones, usa revenues como fallback. O problema e que revenues sem `project_id` nao aparecem. Com os dados corrigidos (Fase 2), isso se resolve automaticamente.
-
-Ajustar tambem: se o contrato tem `total_value` e receitas tem `status=received`, calcular:
-- **Total Pago** = soma das receitas `received`
-- **Falta Pagar** = `contract.total_value - Total Pago` (minimo 0)
-
-### Fase 6: Realtime para financeiro no contexto do projeto
-
-Adicionar `revenues` e `contracts` ao listener realtime (`useRealtimeSync`) para que mudancas financeiras invalidem os caches e atualizem a UI do projeto sem refresh.
-
-### Fase 7: Botoes de acao no card financeiro
-
-Adicionar ao `ProjectPaymentsSummary`:
-- **"Adicionar Parcela"** -- abre modal para criar receita vinculada ao projeto
-- **"Marcar como Pago"** -- ja existe, confirmar funcionamento
-
-### Fase 8: Badge de Saude Financeira
-
-Exibir no card financeiro:
-- **OK** (verde): sem atrasos
-- **Atencao** (amarelo): 1 parcela vencida
-- **Critico** (vermelho): multiplas vencidas ou valor alto
+O que falta e principalmente: **unificar componentes duplicados**, **corrigir inconsistencias visuais entre modulos**, e **garantir que botoes/acoes realmente funcionem end-to-end**.
 
 ---
 
-## Detalhes Tecnicos
+## Estrategia: 6 Sprints Sequenciais
 
-### Migracao SQL
-```sql
-ALTER TABLE contracts
-  ADD COLUMN pix_key text,
-  ADD COLUMN pix_key_type text DEFAULT 'email',
-  ADD COLUMN bank_name text,
-  ADD COLUMN account_holder_name text;
-```
+Dado o tamanho do escopo, vou dividir em sprints menores que podem ser aprovados e implementados um por vez. Cada sprint entrega valor funcional completo.
 
-### Correcao de dados
-```sql
-UPDATE revenues SET project_id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534'
-WHERE description LIKE '%PORTO 153%' AND project_id IS NULL;
+---
 
-UPDATE contracts SET pix_key = 'squadfilmeo@gmail.com',
-  pix_key_type = 'email', bank_name = 'Nubank',
-  account_holder_name = 'Matheus Filipe Alves'
-WHERE project_id = '62f54f75-ca2f-4083-b10e-ec2c6bcb1534' AND id = '29f6c64b-655a-4b97-bce4-2f6785d64ac4';
-```
+## Sprint 1: Design System Unificado (Base Global)
 
-### Arquivos modificados
-1. **`src/components/projects/reporting/ReportAsidePanel.tsx`** -- Buscar dados do contrato em vez de props hardcoded
-2. **`src/components/projects/reporting/ProjectPaymentsSummary.tsx`** -- Incluir receitas no calculo de Total Pago/Falta Pagar mesmo sem milestones; adicionar badge de saude; botao "Adicionar Parcela"
-3. **`src/components/client-portal/PortalPaymentsAside.tsx`** -- Remover mocks, usar dados reais do banco via props ou store
-4. **`src/hooks/useRealtimeSync.tsx`** -- Adicionar `revenues` e `contracts` ao canal realtime (ja existem como tables no mapping mas precisam invalidar caches do financeiro)
-5. **`src/stores/financialStore.ts`** -- Adicionar campos `pix_key`, `bank_name`, `account_holder_name` ao tipo Contract e ao fetch
+**Objetivo:** Criar um kit de componentes `squad-ui` que substitua duplicatas e garanta consistencia.
 
-### Fluxo de dados (SSOT)
-```text
-contracts (DB) --> useFinancialStore.fetchContracts()
-revenues  (DB) --> useFinancialStore.fetchRevenues()
-                        |
-          [Realtime: INSERT/UPDATE/DELETE]
-                        |
-                  invalidate cache
-                        |
-    ProjectPaymentsSummary  <--  ReportAsidePanel
-    (Total Pago, Parcelas)       (PIX, Banco, Titular)
-            |
-    PortalPaymentsAside (somente leitura, mesmos dados)
-```
+### Tarefas:
+1. **Criar `src/components/squad-ui/`** com componentes padronizados:
+   - `GlassCard` (substituir `glass-card`, `MkCard`, `card-elevated` por um unico componente)
+   - `GlassModal` (wrapper padrao para Dialog com blur + glass)
+   - `StatusBadge` (unificar `MkStatusBadge` + badges inline)
+   - `SectionHeader` (unificar `MkSectionHeader` + section-label)
+   - `ActionButton` (CTA azul com glow + estados loading/success/error)
+   - `AIButton` (icone sparkles + "Gerar com IA" + loading state obrigatorio)
+   - `DataGlow` (wrapper para numeros com text-shadow)
+   - `ProjectedTable` (tabela com hover azul, headers mono, borda glass)
 
-### Nao incluido nesta fase (escopo futuro)
-- Console de comandos texto/voz
-- Jobs de IA para classificacao/anomalias
-- Ledger de auditoria
-- Geracao de recibo PDF
-- Upload de comprovante
+2. **Consolidar tokens CSS** em `index.css`:
+   - Garantir que `--glass-border`, `--glass-surface`, `--glow` estejam disponiveis no dark theme (ja estao)
+   - Adicionar tokens faltantes: `--shadow-deep`, `--glass-blur`
 
-Esses itens dependem de infraestrutura adicional (edge functions de IA, storage policies) e serao implementados em iteracoes futuras.
+3. **Migrar modulos existentes** para usar `squad-ui`:
+   - Dashboard (ja usa glass-card -- manter)
+   - Marketing Hub (migrar de `MkCard` para `GlassCard`)
+   - Financeiro (ja consistente -- manter)
+   - Prospeccao (verificar e migrar)
+
+### Arquivos criados:
+- `src/components/squad-ui/GlassCard.tsx`
+- `src/components/squad-ui/GlassModal.tsx`
+- `src/components/squad-ui/StatusBadge.tsx`
+- `src/components/squad-ui/SectionHeader.tsx`
+- `src/components/squad-ui/ActionButton.tsx`
+- `src/components/squad-ui/AIButton.tsx`
+- `src/components/squad-ui/ProjectedTable.tsx`
+- `src/components/squad-ui/index.ts`
+
+### Arquivos modificados:
+- `src/index.css` (tokens adicionais)
+- Componentes do Marketing Hub que usam `MkCard`
+
+---
+
+## Sprint 2: Quadro de Avisos + Acoes Inteligentes (Overview)
+
+**Objetivo:** Expandir o sistema de alertas existente com card no Dashboard e carrossel de acoes inteligentes.
+
+### Tarefas:
+1. **Card "Avisos & Proximas Acoes" no Dashboard**
+   - Mostrar top 5 alertas abertos (vencidos primeiro)
+   - Botoes rapidos: Resolver, Gerar Msg, WhatsApp
+   - Link para `/avisos`
+
+2. **Carrossel "Acoes Inteligentes"** abaixo de Projetos Ativos
+   - Cards horizontais: follow-up recomendado, prazo vencendo, revisao pendente, cobranca
+   - Cada card com: Gerar Mensagem, Copiar, Enviar WhatsApp, Marcar como feito
+   - Dados vindos dos alertas existentes + revenues vencidas + revisoes pendentes
+
+3. **Card de Avisos dentro de cada Projeto**
+   - Na pagina de detalhe do projeto, seção "Avisos do Projeto"
+   - Filtrar alertas por `project_id`
+
+### Arquivos criados:
+- `src/components/dashboard/AlertsQuickCard.tsx`
+- `src/components/dashboard/SmartActionsRail.tsx`
+- `src/components/projects/ProjectAlertsSection.tsx`
+
+### Arquivos modificados:
+- `src/pages/Dashboard.tsx` (adicionar AlertsQuickCard + SmartActionsRail)
+- Pagina de detalhe do projeto (adicionar ProjectAlertsSection)
+
+---
+
+## Sprint 3: "Enviar ao Cliente" -- Modal Completo + PDF SQUAD Film
+
+**Objetivo:** Refatorar o modal SendToClientModal para incluir geracao de PDF fiel ao layout e envio WhatsApp completo.
+
+### Tarefas:
+1. **Refatorar `SendToClientModal`**
+   - Tab "Mensagem": gerar texto WhatsApp com IA (ja existe parcialmente em `MessageTab`)
+   - Tab "Material": enviar material individual com link do portal
+   - Tab "Panorama": gerar resumo completo do projeto com IA
+   - Historico: ja existe
+
+2. **Botoes obrigatorios em cada tab:**
+   - "Gerar com IA" (loading + resultado editavel)
+   - "Copiar" (clipboard)
+   - "Enviar WhatsApp" (wa.me com deteccao mobile/desktop)
+   - "Gerar PDF" (chamar edge function `export-panorama-pdf`)
+
+3. **PDF SQUAD Film**
+   - Refatorar `export-panorama-pdf` para usar design tokens: fundo preto, texto branco, accent azul, cards glass simulados
+   - Conteudo: projeto, cliente, etapa, saude, proximos passos, prazos, itens pendentes, links
+   - QR code opcional para abrir portal
+
+4. **WhatsApp inteligente:**
+   - Detectar desktop vs mobile para URL correta
+   - Buscar telefone do cliente via `crm_contacts`
+   - Registrar envio em `event_logs`
+
+### Arquivos modificados:
+- `src/components/projects/send-to-client/MessageTab.tsx`
+- `src/components/projects/send-to-client/PanoramaTab.tsx`
+- `supabase/functions/export-panorama-pdf/index.ts`
+- `src/components/projects/SendToClientModal.tsx`
+
+---
+
+## Sprint 4: Realtime Completo Projeto <-> Portal Cliente
+
+**Objetivo:** Garantir que materiais, revisoes, entregas e financeiro estejam 100% sincronizados.
+
+### Tarefas:
+1. **Verificar/adicionar tabelas ao realtime:**
+   - `portal_deliverables`, `portal_comments`, `portal_approvals`, `portal_change_requests` (ja no realtime conforme memory)
+   - `revenues`, `contracts` (adicionados recentemente)
+   - `portal_deliverable_versions`
+
+2. **Portal Cliente: remover dados mock restantes**
+   - Auditar todos componentes em `src/components/client-portal/`
+   - Garantir que `PortalMaterialsSection`, `PortalDeliverables`, `PortalChangeRequests` buscam dados reais
+
+3. **Nome do responsavel: full_name**
+   - Substituir exibicao de `username` por `full_name` em todos os componentes
+   - Implementar fallback: `full_name` -> `first_name + last_name` -> `username`
+
+4. **Portal: exibir apenas avisos relevantes ao cliente**
+   - Filtrar alertas por `visibility = 'client'` ou tipo relevante (prazo, material, pagamento)
+
+### Arquivos modificados:
+- `src/hooks/useRealtimeSync.tsx`
+- Componentes do Portal Cliente que usam mocks
+- Componentes que exibem username em vez de full_name
+
+---
+
+## Sprint 5: Prospeccao -- Campanhas + Cadencia + IA
+
+**Objetivo:** IA gera estrategia por target, mensagens prontas, e cadencia automatizada.
+
+### Tarefas:
+1. **Pipeline inteligente:**
+   - IA sugere proxima acao por lead/target
+   - Gerar mensagem pronta (texto WhatsApp) com contexto do pipeline
+
+2. **Campanhas por cliente:**
+   - Objetivo: contato / fechamento / retarget / relacionamento
+   - Tom: WhatsApp do Matheus (instrucoes fixas no prompt)
+   - Cadencia: dias/horarios configuráveis
+
+3. **Audio opcional (ElevenLabs):**
+   - Botao "Gerar Audio" gera texto primeiro, depois oferece conversao
+   - Usar edge function `prospect-tts` existente
+   - Player inline no card
+
+### Arquivos modificados:
+- Paginas de prospeccao
+- Edge functions de prospeccao existentes
+
+---
+
+## Sprint 6: Editor Criativo -- Layout SQUAD Film + Export
+
+**Objetivo:** Padronizar o editor criativo com o mesmo DNA visual do financeiro.
+
+### Tarefas:
+1. **Layout do editor igual ao financeiro**
+   - Header com section label
+   - Cards/areas com glass
+   - Painel direito "Copiloto" com estetica SQUAD Film
+
+2. **Funcionalidades:**
+   - Vincular cliente/projeto/campanha obrigatoriamente
+   - Preview thumbnails (templates Figma)
+   - IA multiformato (feed, story, carrossel)
+   - Export PNG/JPG/ZIP
+
+### Arquivos modificados:
+- Componentes em `src/components/creative-studio/`
+- Componentes em `src/components/studio/`
+
+---
+
+## Ordem de Prioridade (conforme solicitado)
+
+1. Sprint 1 (Design System) -- base para tudo
+2. Sprint 4 (Realtime Projeto <-> Portal) -- prioridade #1 do usuario
+3. Sprint 2 (Quadro de Avisos + WhatsApp) -- prioridade #2
+4. Sprint 3 (PDF + Enviar ao Cliente) -- prioridade #3
+5. Sprint 5 (Prospeccao/IA/Automacao) -- prioridade #4
+6. Sprint 6 (Editor Criativo) -- ultimo
+
+---
+
+## Observacoes Tecnicas
+
+- **Nao sera criado Event Bus custom** -- o Supabase Realtime ja funciona como event bus (INSERT/UPDATE/DELETE em tabelas). Adicionar uma camada extra seria over-engineering.
+- **WhatsApp Cloud API** requer conta Meta Business verificada + numero empresarial. O sistema mantera `wa.me` como padrao e a integracao via n8n como complemento.
+- **QR/Session WhatsApp Web** nao sera implementado (instavel + viola politicas Meta). O fluxo sera sempre: gerar texto -> copiar/abrir wa.me.
+- **Cada sprint sera implementado e testado antes de iniciar o proximo**, para evitar regressoes.
+
+---
+
+## Proximo Passo
+
+Aprovar este plano para iniciar pelo **Sprint 1 (Design System Unificado)**. Cada sprint subsequente sera apresentado como continuacao apos o anterior estar completo.
