@@ -1,8 +1,8 @@
-import { Play, Clapperboard, X } from "lucide-react";
+import { Play, Clapperboard, X, Film, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useProjectMedia } from "@/hooks/useProjectMedia";
+import { useProjectMedia, type MediaItem } from "@/hooks/useProjectMedia";
 
 const VIDEO_RE = /\.(mp4|webm|mov|avi|mkv)(\?|$)/i;
 function isVideo(url: string) { return VIDEO_RE.test(url); }
@@ -63,6 +63,40 @@ function MediaModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
+// ── Inline Video Slide (muted autoplay loop) ──
+function InlineVideo({ src, className }: { src: string; className?: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [canPlay, setCanPlay] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    v.play().catch(() => setShowFallback(true));
+  }, [src]);
+
+  return (
+    <>
+      <video
+        ref={ref}
+        src={src}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        onCanPlay={() => setCanPlay(true)}
+        onError={() => setShowFallback(true)}
+        className={`${className} ${canPlay && !showFallback ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+      />
+      {showFallback && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+          <Film className="w-8 h-8 text-primary/40" />
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── ProjectCard ──
 
 interface ProjectCardProps {
@@ -76,18 +110,19 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ title, client, status, image, date, index = 0, projectId }: ProjectCardProps) {
-  const { data: mediaUrls } = useProjectMedia(projectId);
+  const { data: mediaItems } = useProjectMedia(projectId);
   const [modalUrl, setModalUrl] = useState<string | null>(null);
 
   // Build the final slides list: fetched media → fallback image prop
-  const slides: string[] = mediaUrls && mediaUrls.length > 0
-    ? mediaUrls
+  const slides: MediaItem[] = mediaItems && mediaItems.length > 0
+    ? mediaItems
     : image
-      ? [image]
+      ? [{ url: image, type: "image" as const }]
       : [];
 
   const [current, setCurrent] = useState(0);
   const [imgErrors, setImgErrors] = useState<Set<number>>(new Set());
+  const [isPaused, setIsPaused] = useState(false);
 
   // Filter out errored slides
   const validSlides = slides.filter((_, i) => !imgErrors.has(i));
@@ -102,21 +137,24 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
     setImgErrors(new Set());
   }, [slides.length]);
 
-  // Autoplay
+  // Autoplay - different timings for video vs image
   useEffect(() => {
-    if (validSlides.length <= 1) return;
+    if (validSlides.length <= 1 || isPaused) return;
+    const currentSlide = validSlides[current];
+    const delay = currentSlide?.type === "video" ? 8000 : 4000;
     const timer = setInterval(() => {
       setCurrent(prev => (prev + 1) % validSlides.length);
-    }, 4000);
+    }, delay);
     return () => clearInterval(timer);
-  }, [validSlides.length]);
+  }, [validSlides.length, current, isPaused]);
 
   const hasSlides = validSlides.length > 0;
+  const currentSlide = hasSlides ? validSlides[current] : null;
 
   const handleSlideClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (hasSlides && validSlides[current]) {
-      setModalUrl(validSlides[current]);
+    if (currentSlide) {
+      setModalUrl(currentSlide.url);
     }
   };
 
@@ -138,26 +176,57 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
         }}
         whileTap={{ scale: 0.98 }}
         className="glass-card rounded-[2rem] overflow-hidden group cursor-pointer hover:border-primary/30 transition-all duration-500"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
       >
         <div className="relative aspect-video overflow-hidden">
           {hasSlides ? (
             <>
               <AnimatePresence mode="wait">
-                <motion.img
-                  key={current}
-                  src={validSlides[current]}
-                  alt={title}
-                  className="w-full h-full object-cover absolute inset-0"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.6, ease: "easeInOut" }}
-                  onError={() => {
-                    const originalIndex = slides.indexOf(validSlides[current]);
-                    if (originalIndex !== -1) handleImgError(originalIndex);
-                  }}
-                />
+                {currentSlide?.type === "video" ? (
+                  <motion.div
+                    key={`video-${current}`}
+                    className="absolute inset-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <InlineVideo src={currentSlide.url} className="w-full h-full object-cover absolute inset-0" />
+                  </motion.div>
+                ) : (
+                  <motion.img
+                    key={`img-${current}`}
+                    src={currentSlide?.url}
+                    alt={title}
+                    className="w-full h-full object-cover absolute inset-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    onError={() => {
+                      const originalIndex = slides.indexOf(validSlides[current]);
+                      if (originalIndex !== -1) handleImgError(originalIndex);
+                    }}
+                  />
+                )}
               </AnimatePresence>
+
+              {/* Media type badge */}
+              {currentSlide && (
+                <div className="absolute top-3 left-3 z-10">
+                  <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full">
+                    {currentSlide.type === "video" ? (
+                      <Film className="w-3 h-3 text-white/80" />
+                    ) : (
+                      <ImageIcon className="w-3 h-3 text-white/80" />
+                    )}
+                    {validSlides.length > 1 && (
+                      <span className="text-[9px] text-white/70 font-light">{current + 1}/{validSlides.length}</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Dots indicator */}
               {validSlides.length > 1 && (
