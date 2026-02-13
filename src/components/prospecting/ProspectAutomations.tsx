@@ -37,6 +37,20 @@ export function ProspectAutomations() {
     setActiveRules(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const allRulesActive = AUTOMATION_RULES.every(r => activeRules[r.id]);
+
+  const toggleAllRules = () => {
+    if (allRulesActive) {
+      setActiveRules({});
+      toast.info('Todas as regras desativadas');
+    } else {
+      const all: Record<string, boolean> = {};
+      AUTOMATION_RULES.forEach(r => { all[r.id] = true; });
+      setActiveRules(all);
+      toast.success('Todas as regras ativadas');
+    }
+  };
+
   return (
     <div className="glass-card rounded-2xl p-6 space-y-5">
       {/* Header */}
@@ -98,6 +112,20 @@ export function ProspectAutomations() {
                 <span className="text-[10px] text-muted-foreground">envios</span>
               </div>
             </div>
+          </div>
+
+          {/* Rules Header with Toggle All */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Regras</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`h-6 text-[10px] gap-1.5 ${allRulesActive ? 'border-destructive/30 text-destructive hover:bg-destructive/10' : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'}`}
+              onClick={toggleAllRules}
+            >
+              {allRulesActive ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              {allRulesActive ? 'Desligar Tudo' : 'Ativar Tudo'}
+            </Button>
           </div>
 
           {/* Rules List */}
