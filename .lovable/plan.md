@@ -1,145 +1,93 @@
 
+# Adicionar "Excluir" em Toda a Plataforma
 
-# Marketing Hub -- Full Implementation Plan
+## Mapeamento Completo
 
-## Current State
+Auditei todo o codebase. Abaixo, a lista de **todos os locais que precisam de delete** e o status atual:
 
-The Marketing Hub already exists with:
-- `MkAppShell` (layout shell with blue accent, Inter font, ambient glow)
-- `MkSidebar` (navigation with all menu items, "Switch Hub" to Film)
-- `MkHeader` (search bar, logout)
-- `MkDashboardPage` (working dashboard with metric cards, pipeline, quick actions)
-- Routes `/m/*` registered in `App.tsx` -- most pointing to `MkPlaceholderPage`
+### JA TEM Delete (OK)
+- Projetos (ProjectActionsMenu) -- OK
+- Tarefas (TaskEditDrawer, TasksBoard, TasksBoardView) -- OK
+- Parcelas financeiras (MilestonesList) -- OK
+- Receitas (RevenuesPage) -- OK
+- Despesas (ExpensesPage) -- OK
+- Contratos financeiros (ContractsPage) -- OK
+- Templates de contrato (ContractTemplatesPage) -- OK
+- Pacotes criativos (CreativePackagesList) -- OK
+- Referencias Instagram (ReferencesPage/ReferenceCard) -- OK
+- Library/Assets marketing (LibraryPage) -- OK
+- Artigos Knowledge Base (ArticleView) -- OK
+- Entregas de proposta (ProposalDetailPage) -- OK
+- Entregas do projeto (DeliverablesTab) -- OK
+- Cadencia steps (CadencesPage) -- OK
 
-Existing marketing data layer (under `/marketing/*`) has functional hooks and stores (`marketingStore.ts`, content types, campaigns, brand kits, content items, etc.) that can be reused.
+### FALTA Delete (vai ser adicionado)
 
-## Implementation Sequence
-
-### Phase 1 -- Reusable MK Components Library
-
-Create `src/components/marketing-hub/mk-ui/` with SolaFlux-styled primitives:
-- `MkCard` -- glass panel with blue accent hover
-- `MkMetricCard` -- large number + sparkline + trend
-- `MkStatusBadge` -- blue/amber/emerald/purple pill badges
-- `MkEmptyState` -- empty state with icon and CTA
-- `MkSectionHeader` -- `// Section` label with tracking-widest
-- `MkQuickAction` -- action card (already in dashboard, extract to shared)
-
-All using the existing blue HSL palette (`hsl(210,100%,55%)`) and Inter font from `MkAppShell`.
-
-### Phase 2 -- Campanhas (Campaigns) Page `/m/campanhas`
-
-Create `src/pages/marketing-hub/MkCampaignsPage.tsx`:
-- Reuse existing `Campaign` type from `src/types/marketing.ts`
-- Reuse existing Supabase tables (`campaigns` table already exists)
-- Grid of campaign cards with status badges, date range, budget
-- "Nova Campanha" dialog with AI generation option (uses existing `generate-ideas` edge function)
-- Link to content items within campaign
-
-### Phase 3 -- Conteudos (Content Pipeline) Page `/m/conteudos`
-
-Create `src/pages/marketing-hub/MkContentsPage.tsx`:
-- Kanban board view using `CONTENT_ITEM_STAGES` from `src/types/marketing.ts`
-- Reuse existing `content_items` table and `marketingStore`
-- Cards show: title, channel icon, format, assigned owner, due date
-- Quick status change via drag or dropdown
-- Filter bar: channel, pillar, format, campaign
-
-### Phase 4 -- Calendario Editorial `/m/calendario`
-
-Create `src/pages/marketing-hub/MkCalendarPage.tsx`:
-- Monthly calendar grid showing content items by `scheduled_at`
-- Day cells with colored dots per channel
-- Click day to see items + quick create
-- Reuse existing `useCalendarEvents` hook adapted for content items
-
-### Phase 5 -- Branding Studio `/m/branding`
-
-Create `src/pages/marketing-hub/MkBrandingPage.tsx`:
-- Reuse existing `brand_kits` table and `BrandKit` type
-- Display: logo, color swatches (visual), fonts, tone of voice, do/don't lists
-- Edit inline with auto-save
-- Reference links section
-- "Gerar Guidelines com IA" button (invokes Lovable AI via existing action system)
-
-### Phase 6 -- Assets & Midia `/m/assets`
-
-Create `src/pages/marketing-hub/MkAssetsPage.tsx`:
-- Grid gallery of `marketing_assets` (already exists in DB)
-- Upload to `marketing-assets` bucket (already public)
-- Filter by type (logo, template, photo, video, font, LUT)
-- Preview modal with metadata
-- Drag-and-drop upload zone
-
-### Phase 7 -- Aprovacoes (Approvals) `/m/aprovacoes`
-
-Create `src/pages/marketing-hub/MkApprovalsPage.tsx`:
-- List content items in `review` or `approved` status
-- Show preview + comments thread
-- Approve / Request Changes actions
-- Shareable client link (reuse portal token pattern)
-
-### Phase 8 -- Relatorios (Reports) `/m/relatorios`
-
-Create `src/pages/marketing-hub/MkReportsPage.tsx`:
-- Marketing metrics overview (reach, engagement, published count)
-- Charts using Recharts (already installed)
-- Export PDF button (uses existing `export-content-pdf` edge function)
-
-### Phase 9 -- Automacoes `/m/automacoes`
-
-Create `src/pages/marketing-hub/MkAutomationsPage.tsx`:
-- Reuse existing `automation_rules` and `automation_suggestions` tables
-- Show AI suggestions feed
-- "Apply" button per suggestion
-- Create new automation rules
-
-### Phase 10 -- Configuracoes `/m/configuracoes`
-
-Create `src/pages/marketing-hub/MkSettingsPage.tsx`:
-- Redirect to or embed existing `MarketingSettingsPage` content within `MkAppShell`
-- Pillars, channels, formats, tone, frequency
-
-### Phase 11 -- Wire Up Routes in App.tsx
-
-Replace all `MkPlaceholderPage` references with the new functional pages.
+| # | Modulo | Componente | Entidade | Hook/Store ja tem funcao? |
+|---|--------|-----------|----------|--------------------------|
+| 1 | Portal Cliente (Admin) | PortalTab.tsx | portal_deliverables (materiais do portal) | Nao -- precisa criar |
+| 2 | Portal Cliente (Publico) | PortalMaterialsSection.tsx / PortalDeliverablesPremium.tsx | Materiais (visao do cliente -- nao aplicavel, cliente nao exclui) | N/A |
+| 3 | CRM | KanbanCard.tsx | Deals | Sim (useCRM.deleteDeal) -- falta conectar no UI |
+| 4 | Calendario | ProjectsCalendar.tsx | Eventos | Sim (useCalendar.deleteEvent) -- falta conectar no UI |
+| 5 | Marketing Hub - Conteudos | MkContentsPage.tsx / ContentCard | Content Items | Sim (marketingStore.deleteContentItem) -- falta no UI |
+| 6 | Marketing Hub - Assets | MkAssetsPage.tsx | Marketing Assets | Nao -- precisa criar |
+| 7 | Marketing Hub - Campanhas | MkCampaignsPage.tsx | Campanhas | Tem delete mas sem confirmacao (AlertDialog) |
+| 8 | Portal Admin - Arquivos visiveis | PortalTab.tsx (secao arquivos) | project_files visibilidade | Ja pode tirar visibilidade, delete real nao aplicavel |
 
 ---
 
-## Technical Details
+## Plano de Implementacao (autonomo, um por um)
 
-### Design Tokens (no changes to Film Hub)
-All Marketing Hub styling is scoped to `MkAppShell` which applies:
-- `fontFamily: 'Inter'`
-- `bg-[#060608]` background
-- `hsl(210,100%,55%)` blue accent
-- Glass panels with `bg-white/[0.03] border border-white/[0.06]`
+### 1. Portal Cliente Admin -- Excluir Material (PortalTab.tsx)
+- Adicionar botao "Excluir" nos cards de materiais/entregas do portal (secao "Arquivos Visiveis")
+- Na secao "Adicionar Material", o material ja adicionado precisa ter opcao de excluir
+- Criar funcao `deletePortalDeliverable` que remove de `portal_deliverables` via Supabase
+- Adicionar AlertDialog de confirmacao
 
-The Film Hub remains completely untouched -- different layout components, different routes.
+### 2. CRM -- Excluir Deal (KanbanCard.tsx)
+- O botao `MoreVertical` ja existe mas nao abre menu
+- Criar DropdownMenu no KanbanCard com opcoes: Editar, Excluir
+- Receber `onDelete` prop do KanbanColumn que chama `deleteDeal` do hook useCRM
+- Propagar props desde CRMPage -> KanbanColumn -> KanbanCard
+- AlertDialog de confirmacao antes de excluir
 
-### Data Layer
-Reuse existing tables and hooks:
-- `campaigns`, `content_items`, `content_ideas`, `brand_kits`, `marketing_assets`
-- `marketingStore.ts` (Zustand store)
-- `useContentMetrics`, `useAutomation` hooks
-- Edge functions: `generate-ideas`, `generate-captions`, `generate-script`, `creative-studio`
+### 3. Calendario -- Excluir Evento (ProjectsCalendar.tsx)
+- Na visualizacao lateral de eventos do dia selecionado, adicionar botao Excluir
+- Usar `deleteEvent` do hook useCalendar (ja existe)
+- AlertDialog de confirmacao
 
-### AI Integration
-- Uses existing Lovable AI via edge functions already deployed
-- "Gerar com IA" buttons invoke `generate-ideas`, `generate-captions`, or `generate-script`
-- Speech-to-text available via existing ElevenLabs connector
+### 4. Marketing Hub: Conteudos -- Excluir (MkContentsPage.tsx)
+- Adicionar DropdownMenu no ContentCard com "Excluir"
+- Usar `deleteContentItem` do marketingStore (ja existe)
+- AlertDialog de confirmacao
 
-### No DB Changes Required
-All required tables already exist. No migration needed for Phase 1-10.
+### 5. Marketing Hub: Assets -- Excluir (MkAssetsPage.tsx)
+- Adicionar DropdownMenu nos cards de assets com "Excluir"
+- Criar handler que deleta do storage + tabela `marketing_assets`
+- AlertDialog de confirmacao
 
-### Files to Create (per phase)
-- ~10 new page files in `src/pages/marketing-hub/`
-- ~6 shared MK UI components in `src/components/marketing-hub/mk-ui/`
-- 1 edit to `src/App.tsx` (replace placeholder routes)
+### 6. Marketing Hub: Campanhas -- Melhorar UX (MkCampaignsPage.tsx)
+- O botao `MoreVertical` ja chama `onDelete` direto sem confirmacao
+- Substituir por DropdownMenu com AlertDialog de confirmacao
 
-### What Does NOT Change
-- Film Hub layout, routes, styling -- zero changes
-- Existing `/marketing/*` routes remain functional
-- Supabase schema -- no migrations
-- Auth, billing, workspace -- shared as-is
+---
 
+## Detalhes Tecnicos
+
+### Padrao consistente para todos os deletes
+Cada componente seguira o mesmo padrao ja usado na plataforma:
+1. Icone `Trash2` do lucide-react
+2. Texto "Excluir" em vermelho (`text-destructive`)
+3. `AlertDialog` com titulo, descricao, botoes Cancelar/Excluir
+4. Toast de sucesso apos exclusao
+5. Invalidacao de query/refresh do estado
+
+### Arquivos que serao editados
+1. `src/components/projects/detail/tabs/PortalTab.tsx` -- adicionar delete nos materiais do portal
+2. `src/components/crm/KanbanCard.tsx` -- adicionar DropdownMenu com delete
+3. `src/components/crm/KanbanColumn.tsx` -- propagar onDelete
+4. `src/pages/CRMPage.tsx` -- passar deleteDeal para o Kanban
+5. `src/components/calendar/ProjectsCalendar.tsx` -- adicionar delete nos eventos
+6. `src/pages/marketing-hub/MkContentsPage.tsx` -- adicionar delete no ContentCard
+7. `src/pages/marketing-hub/MkAssetsPage.tsx` -- adicionar delete nos asset cards
+8. `src/pages/marketing-hub/MkCampaignsPage.tsx` -- melhorar com AlertDialog de confirmacao
