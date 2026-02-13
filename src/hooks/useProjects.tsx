@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useProductContext } from './useProductContext';
 import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 
@@ -51,15 +52,31 @@ const DEFAULT_STAGES = [
 export function useProjects() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Get active module for filtering
+  let activeModule: 'production' | 'marketing' | 'full' = 'full';
+  try {
+    const ctx = useProductContext();
+    activeModule = ctx.activeModule;
+  } catch {
+    // If not wrapped in ProductProvider, default to full
+  }
 
   // Fetch all projects with their stages
   const { data: projects = [], isLoading: queryLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['projects'],
+    queryKey: ['projects', activeModule],
     queryFn: async () => {
-      const { data: projectsData, error: projectsError } = await supabase
+      let query = supabase
         .from('projects')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Filter by product_type based on active module
+      if (activeModule !== 'full') {
+        query = query.eq('product_type', activeModule);
+      }
+
+      const { data: projectsData, error: projectsError } = await query;
 
       if (projectsError) {
         console.error('Error fetching projects:', projectsError);
@@ -129,6 +146,9 @@ export function useProjects() {
   const createProjectMutation = useMutation({
     mutationFn: async (input: CreateProjectInput & { banner_style?: string }) => {
       // Create the project without FK references to avoid constraint errors
+      // Auto-set product_type based on active module
+      const productType = activeModule === 'full' ? (input as any).product_type || 'production' : activeModule;
+
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .insert({
@@ -144,7 +164,8 @@ export function useProjects() {
           stage_current: 'briefing',
           status: 'active',
           health_score: 100,
-        })
+          product_type: productType,
+        } as any)
         .select()
         .single();
 
