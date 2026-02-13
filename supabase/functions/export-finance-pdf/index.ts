@@ -195,8 +195,8 @@ serve(async (req) => {
 
     // Footer
     page.drawLine({ start: { x: MARGIN, y: MARGIN - 8 }, end: { x: PAGE_W - MARGIN, y: MARGIN - 8 }, thickness: 0.5, color: C.border });
-    page.drawText("SQUAD Hub", { x: MARGIN, y: MARGIN - 20, size: 7, font, color: C.muted });
-    page.drawText("SQUAD INTELLIGENCE", { x: PAGE_W - MARGIN - font.widthOfTextAtSize("SQUAD INTELLIGENCE", 7), y: MARGIN - 20, size: 7, font, color: C.primary });
+    page.drawText("HUB v2.4", { x: MARGIN, y: MARGIN - 20, size: 7, font, color: C.muted });
+    page.drawText("HUB FINANCEIRO", { x: PAGE_W - MARGIN - font.widthOfTextAtSize("HUB FINANCEIRO", 7), y: MARGIN - 20, size: 7, font, color: C.primary });
 
     const pdfBytes = await pdfDoc.save();
 
