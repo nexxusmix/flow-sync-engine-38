@@ -60,6 +60,10 @@ export interface Contract {
   end_date?: string;
   status: ContractStatus;
   notes?: string;
+  pix_key?: string;
+  pix_key_type?: string;
+  bank_name?: string;
+  account_holder_name?: string;
   created_at: string;
   updated_at: string;
   // Relations
