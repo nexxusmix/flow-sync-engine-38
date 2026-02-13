@@ -1,129 +1,98 @@
 
-# Corrigir Prospeccao 100% — Audio + Automacao + WhatsApp
+# Corrigir Animacoes de Blur + Motion por Scroll na Plataforma Toda
 
-## Diagnostico
+## Problema Diagnosticado
 
-### O que ja existe e funciona:
-- **ProspectMessageGenerator**: gera 3 variantes de mensagem WhatsApp com IA (Lovable AI), copiar, enviar via wa.me com deteccao mobile/desktop
-- **ProspectAutomations**: motor de regras com toggle, kill switch, aprovacao manual, timeline, notificacoes
-- **ProspectCampaignEngine**: planejamento de campanha com IA (cadencia, abordagens A/B/C, risco de spam)
-- **ProspectInbox**: lista de leads com dialog para gerar mensagens
-- **Edge functions**: `prospect-ai-generate` (Lovable AI) e `prospect-tts` (ElevenLabs)
-- **Tabelas**: `prospects`, `prospect_opportunities`, `prospect_activities`, `prospect_lists`, `cadences`, `cadence_steps`, `automation_rules`, `automation_suggestions`, `alerts`, `agent_scout_outputs`, `event_logs`
+Foram encontradas **261 ocorrencias** de `filter: "blur(Xpx)"` em animacoes `initial/animate` em **14 arquivos**. O problema:
 
-### Problemas reais encontrados:
+1. **Animacoes com `animate` disparam no mount** -- elementos fora da viewport animam antes de serem vistos. Quando o usuario faz scroll, a animacao ja terminou (ou pior, o browser nao completa o `filter: blur(0px)` corretamente por questoes de compositing)
+2. **Blur pesado (15px-25px) causa stuttering** no scroll em GPUs fracas
+3. **Nao ha scroll-triggered animations** -- tudo anima de uma vez no carregamento da pagina
 
-1. **Audio ElevenLabs falhando**: o log mostra `401 missing_permissions — text_to_speech`. A API key configurada no secret `ELEVENLABS_API_KEY` nao tem permissao de TTS. Isso e um problema de configuracao da key, nao de codigo.
+## Solucao
 
-2. **Audio nao persiste**: o audio e gerado como blob em memoria e perdido ao fechar. Nao salva no storage nem no banco.
+### 1. Criar componente utilitario `ScrollMotion` (reutilizavel)
 
-3. **Sem tabela `prospect_audio`**: nao existe historico de audios gerados. Precisa criar.
+Criar `src/components/squad-ui/ScrollMotion.tsx` com variantes pre-definidas:
 
-4. **Automacoes sao "locais"**: os toggles de regras (first_contact, silence_followup, etc.) sao hardcoded no frontend (`LOCAL_RULES`) e nao persistem configs como `approveFirst`, `autoSend`, `dailyLimit` no banco.
+```
+ScrollMotion         -- wrapper generico (fade + slide + optional blur leve)
+ScrollMotionWord     -- anima palavra por palavra (split text)
+ScrollMotionStagger  -- container com stagger para grids/listas de cards
+ScrollMotionItem     -- item filho do stagger
+```
 
-5. **Timeline incompleta**: mostra apenas `automation_suggestions`, nao inclui atividades, envios WhatsApp, audios gerados.
+Regras:
+- Usar `whileInView` com `viewport={{ once: true, margin: "-80px" }}`
+- **Blur maximo: 4px** (nao 15-25px que trava)
+- Duracao curta: 0.4-0.6s (nao 0.8-1s)
+- `will-change: "opacity, transform"` (NUNCA `filter` -- blur via transform e opacity)
+- `once: true` sempre -- anima 1x e para
 
-6. **WhatsApp funciona mas nao registra**: o botao abre wa.me corretamente mas nao grava evento em `event_logs` nem cria follow-up automatico.
+### 2. Arquivos a modificar (14 arquivos, ~261 ocorrencias)
 
----
+| Arquivo | O que mudar |
+|---------|-------------|
+| `src/pages/Dashboard.tsx` | Trocar `initial/animate` blur por `ScrollMotion` em secoes, `whileInView` nos cards abaixo do fold |
+| `src/components/dashboard/MetricCard.tsx` | Manter `animate` (esta acima do fold) mas reduzir blur de 12-15px para 4px |
+| `src/components/dashboard/KPICards.tsx` | Idem -- reduzir blur, manter animate por estar no topo |
+| `src/components/layout/DashboardLayout.tsx` | Blobs decorativos -- manter blur alto (e decorativo, nao afeta UX). Content wrapper: reduzir de 12px para 4px |
+| `src/components/layout/Header.tsx` | Header e fixo -- manter `animate` mas reduzir blur de 10px para 4px |
+| `src/components/marketing-hub/MkAppShell.tsx` | Reduzir blur de 8px para 4px no content wrapper |
+| `src/components/landing/LandingHero.tsx` | Manter word-by-word com `animate` (hero e a primeira coisa visivel) -- reduzir blur de 10px para 6px |
+| `src/components/landing/NeonTitle.tsx` | Idem -- reduzir blur |
+| `src/components/landing/AnimatedGradientOrbs.tsx` | Orbs decorativos -- manter (blur e o efeito visual desejado, nao e animacao de entrada) |
+| `src/components/client-portal/animations/PortalAnimations.tsx` | TextReveal ja usa `useInView` -- OK. Demais componentes ja corretos |
+| `src/components/client-portal/PortalAnimatedSection.tsx` | Ja usa `useReducedMotion` -- OK, sem blur |
+| `src/components/client-portal/PortalHeaderPremium.tsx` | Parallax scroll -- manter. Badges: trocar `animate` por `whileInView` |
+| Paginas do Marketing Hub (5 arquivos) | Trocar `animate` nos grids de cards por `ScrollMotionStagger` |
 
-## Plano de Implementacao
+### 3. Regras globais aplicadas
 
-### Fase 1: Corrigir ElevenLabs + Persistencia de Audio
+**Blur reduzido globalmente:**
+- Animacoes de entrada: maximo 4px (era 8-25px)
+- Blobs/decorativos: manter blur alto (e o proposito)
+- `defocus-idle` no CSS: manter 1px (e hover, nao entrada)
 
-**1.1 Reconectar ElevenLabs**
-- A API key atual nao tem permissao `text_to_speech`. O usuario precisara reconectar com uma key que tenha essa permissao via o conector ElevenLabs.
+**Scroll-triggered para tudo abaixo do fold:**
+- Secoes do Dashboard (Visual Board, Key Metrics, Action Hub): `whileInView`
+- Grids de cards em todas as paginas: `ScrollMotionStagger` + `ScrollMotionItem`
+- Titulos de secao: `ScrollMotion` com word split opcional
 
-**1.2 Criar tabela `prospect_audio`**
-- Colunas: `id`, `prospect_id`, `opportunity_id`, `campaign_id`, `script_text`, `voice_id`, `audio_url`, `duration_seconds`, `status` (processing/ready/error), `trace_id`, `error_message`, `idempotency_key`, `created_at`, `updated_at`
-- RLS: usuario autenticado pode ler/inserir/atualizar
+**Motion individual:**
+- Palavras: titulos de secao animam palavra por palavra via `ScrollMotionWord`
+- Cards: cada card anima individualmente com stagger delay (0.05s entre cards)
+- Secoes: cada secao inteira tem fade-in + slide-up ao entrar na viewport
+- Badges/tags: scale-in com micro delay
+- Numeros/KPIs: counter animation triggered por `useInView`
 
-**1.3 Refatorar `prospect-tts` edge function**
-- Apos gerar o audio com ElevenLabs, salvar o MP3 no bucket `scout-audio`
-- Inserir registro em `prospect_audio` com `audio_url` e `status: ready`
-- Retornar JSON `{ audio_url, duration, trace_id }` em vez de binary
-- Adicionar `idempotency_key` para evitar duplicatas
+### 4. Arquivos criados
 
-**1.4 Refatorar `ProspectMessageGenerator` (audio section)**
-- Gerar `idempotency_key` por clique (prospect_id + timestamp)
-- Mostrar estados: idle -> gerando -> pronto/erro
-- Ao receber `audio_url`, usar a URL publica do storage (nao blob)
-- Historico de audios: listar audios anteriores do prospect
-- Botao "Tentar Novamente" com retry real
-- Botao "Baixar MP3" usa a URL do storage
+- `src/components/squad-ui/ScrollMotion.tsx` -- componentes de motion por scroll
 
-### Fase 2: Automacao Persistente + Timeline Unificada
+### 5. Arquivos modificados (ordenados por impacto)
 
-**2.1 Persistir configs de automacao**
-- Salvar `approveFirst`, `autoSend`, `dailyLimit` na tabela `prospecting_settings` (ja existe)
-- Carregar configs ao montar `ProspectAutomations`
+1. `src/pages/Dashboard.tsx` -- secoes abaixo do fold usam `whileInView`, blur reduzido
+2. `src/components/dashboard/MetricCard.tsx` -- blur reduzido de 12-15px para 4px
+3. `src/components/dashboard/KPICards.tsx` -- blur reduzido
+4. `src/components/layout/DashboardLayout.tsx` -- content wrapper blur reduzido
+5. `src/components/layout/Header.tsx` -- blur reduzido
+6. `src/components/marketing-hub/MkAppShell.tsx` -- blur reduzido
+7. `src/pages/marketing-hub/MkAssetsPage.tsx` -- `ScrollMotionStagger` nos grids
+8. `src/pages/marketing-hub/MkContentsPage.tsx` -- idem
+9. `src/pages/marketing-hub/MkReportsPage.tsx` -- idem
+10. `src/pages/marketing-hub/MkAutomationsPage.tsx` -- idem
+11. `src/pages/marketing-hub/MkBrandingPage.tsx` -- idem
+12. `src/pages/marketing-hub/MkApprovalsPage.tsx` -- idem
+13. `src/components/landing/LandingHero.tsx` -- blur reduzido
+14. `src/components/landing/NeonTitle.tsx` -- blur reduzido
+15. `src/components/client-portal/PortalHeaderPremium.tsx` -- badges com `whileInView`
+16. `src/components/squad-ui/index.ts` -- exportar novos componentes
 
-**2.2 Timeline unificada**
-- Criar query que une:
-  - `prospect_activities` (atividades manuais)
-  - `automation_suggestions` (acoes IA)
-  - `event_logs` (envios, erros)
-  - `prospect_audio` (audios gerados)
-- Ordenar por data, mostrar com icones por tipo
-- Filtros: Todas | Atividades | IA | Envios | Audios
+### Resultado esperado
 
-**2.3 Notificacoes de prospeccao**
-- Ao completar `runAutomations`, criar alertas em `alerts` para:
-  - Follow-up vencido
-  - Lead sem contato ha X dias
-  - Mensagem pendente de aprovacao
-- Badge no sidebar ja conectado ao sistema de alertas existente
-
-### Fase 3: WhatsApp com Registro + Follow-up Automatico
-
-**3.1 Registrar envio no `event_logs`**
-- Ao clicar "Enviar WhatsApp", antes de abrir wa.me:
-  - Inserir `event_logs` com action: `whatsapp.sent`, entity_type: `prospect`, entity_id
-  - Toast confirmando registro
-
-**3.2 Follow-up automatico**
-- Apos registrar envio WhatsApp, criar `prospect_activity` tipo `followup`:
-  - `due_at`: +3 dias
-  - `title`: "Follow-up: [prospect_name]"
-  - `description`: "Verificar resposta apos mensagem WhatsApp"
-
-**3.3 Melhorar deteccao de dispositivo**
-- Manter logica atual (ja funciona bem):
-  - Mobile: `whatsapp://send?phone=...` com fallback `wa.me`
-  - Desktop: `wa.me` (abre WhatsApp Web/Desktop)
-- Adicionar botao "Copiar" sempre visivel como fallback principal
-
-### Fase 4: Telemetria e Debug
-
-**4.1 trace_id em tudo**
-- Gerar `crypto.randomUUID()` no frontend antes de cada chamada
-- Passar como header `X-Trace-Id` para edge functions
-- Logar no backend com o trace_id
-- Mostrar trace_id no toast de erro (copiavel)
-
-**4.2 Estados de botao obrigatorios**
-- Todo botao de acao tera: `disabled` quando loading, spinner + label, try/catch + toast erro
-
----
-
-## Arquivos a criar:
-- (nenhum novo componente — refatorar os existentes)
-
-## Arquivos a modificar:
-- `supabase/functions/prospect-tts/index.ts` — salvar no storage + retornar JSON
-- `src/components/prospecting/ProspectMessageGenerator.tsx` — audio persistente + registro WhatsApp + follow-up
-- `src/components/prospecting/ProspectAutomations.tsx` — persistir configs + timeline unificada
-- `src/hooks/useProspectAI.ts` — ajustar `generateAudio` para novo formato de resposta
-- `src/index.css` — nenhuma mudanca
-
-## Migracao SQL:
-- Criar tabela `prospect_audio`
-- Habilitar RLS
-
-## Pre-requisito critico:
-- **Reconectar ElevenLabs**: a API key atual retorna 401 `missing_permissions` para `text_to_speech`. O usuario precisa gerar uma nova key com permissao TTS no painel ElevenLabs e reconectar.
-
-## Sobre WhatsApp Web QR / API Oficial:
-- **WhatsApp Cloud API** requer conta Meta Business verificada + numero empresarial dedicado. Isso esta fora do escopo de implementacao aqui (requer configuracao externa no Meta Business Suite).
-- **QR/Session WhatsApp Web** nao sera implementado (instavel, viola ToS Meta, e o proprio usuario reconheceu preferir API oficial).
-- O sistema usara **wa.me deep links** (funciona 100% em PC e mobile) + **botao Copiar** como fallback universal. O envio via n8n (ja configurado com `agent-approve-whatsapp-send`) continua disponivel para envios via API quando o webhook estiver ativo.
+- Animacoes de blur **sempre completam** e ficam nitidas
+- Elementos animam **quando entram na viewport** (nao no mount da pagina)
+- Motion individual por palavras, cards e secoes
+- Performance melhor (blur max 4px em vez de 25px)
+- Mesmo DNA cinematografico SQUAD Film, so que funcional
