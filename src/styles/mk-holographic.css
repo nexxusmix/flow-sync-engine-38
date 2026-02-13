@@ -1,0 +1,125 @@
+/**
+ * Marketing Hub — SolaFlux Holographic Design System
+ * Isolated platform skin: Space Grotesk, cyan/blue glow, glass-projection panels
+ * Does NOT affect Film Hub or any other platform
+ */
+
+.mk-holo {
+  /* === Platform Tokens === */
+  --mk-primary: 195, 100%, 40%;        /* #009CCA */
+  --mk-primary-light: 195, 100%, 55%;
+  --mk-primary-glow: 195, 100%, 50%;
+  --mk-bg: #000000;
+  --mk-surface: rgba(255, 255, 255, 0.01);
+  --mk-glass-outline: rgba(0, 156, 202, 0.12);
+  --mk-glass-outline-light: rgba(0, 156, 202, 0.15);
+  --mk-text: #FFFFFF;
+  --mk-text-muted: rgba(255, 255, 255, 0.45);
+  --mk-text-dim: rgba(255, 255, 255, 0.25);
+  --mk-font: 'Space Grotesk', sans-serif;
+
+  font-family: var(--mk-font);
+  background: var(--mk-bg);
+  color: var(--mk-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glass Projection Panel */
+.mk-holo .glass-projection {
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 0.5px solid var(--mk-glass-outline-light);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(0, 156, 202, 0.02);
+}
+
+/* Holographic Card */
+.mk-holo .holographic-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.0) 100%);
+  border: 0.5px solid rgba(0, 156, 202, 0.1);
+  position: relative;
+}
+.mk-holo .holographic-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(45deg, transparent 48%, rgba(0, 156, 202, 0.03) 50%, transparent 52%);
+  pointer-events: none;
+}
+
+/* Data Glow */
+.mk-holo .data-glow {
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+.mk-holo .data-glow-blue {
+  text-shadow: 0 0 12px rgba(0, 156, 202, 0.5);
+}
+
+/* Section labels — terminal-style */
+.mk-holo .section-label {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: hsl(var(--mk-primary-light));
+  font-weight: 400;
+}
+
+/* Status badges */
+.mk-holo .badge-verified {
+  border: 1px solid rgba(0, 156, 202, 0.3);
+  color: hsl(var(--mk-primary-light));
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 4px;
+}
+.mk-holo .badge-active {
+  border: 1px solid rgba(0, 156, 202, 0.3);
+  color: hsl(var(--mk-primary-light));
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 4px;
+}
+.mk-holo .badge-processing {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 4px;
+}
+.mk-holo .badge-queued {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 4px;
+}
+
+/* Ambient glow background */
+.mk-holo .ambient-glow {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 400px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0, 156, 202, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Footer bar */
+.mk-holo .holo-footer {
+  border-top: 0.5px solid var(--mk-glass-outline);
+  color: var(--mk-text-dim);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}

@@ -6,15 +6,18 @@ interface MkCardProps {
   className?: string;
   hover?: boolean;
   onClick?: () => void;
+  variant?: "glass" | "holographic";
 }
 
-export function MkCard({ children, className, hover = false, onClick }: MkCardProps) {
+export function MkCard({ children, className, hover = false, onClick, variant = "holographic" }: MkCardProps) {
   return (
     <div
       onClick={onClick}
       className={cn(
-        "rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 transition-all duration-200",
-        hover && "hover:border-[hsl(210,100%,55%)]/30 hover:bg-white/[0.05] cursor-pointer",
+        "rounded-lg p-5 transition-all duration-200",
+        variant === "holographic" && "holographic-card",
+        variant === "glass" && "glass-projection",
+        hover && "hover:border-[rgba(0,156,202,0.25)] cursor-pointer",
         onClick && "cursor-pointer",
         className
       )}

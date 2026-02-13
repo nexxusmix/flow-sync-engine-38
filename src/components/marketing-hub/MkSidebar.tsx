@@ -1,14 +1,17 @@
+/**
+ * MkSidebar — Holographic sidebar for Marketing Hub
+ * Space Grotesk, cyan accent, glass-projection style
+ */
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Menu, X, ArrowLeftRight } from "lucide-react";
+import { X, ArrowLeftRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import squadHubLogo from "@/assets/squad-hub-logo.png";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MkMenuItem {
   name: string;
   href: string;
   icon: string;
-  badge?: number;
 }
 
 const menuItems: MkMenuItem[] = [
@@ -35,59 +38,64 @@ interface MkSidebarProps {
 export function MkSidebar({ collapsed, onToggle }: MkSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   return (
     <motion.aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-[#0a0a0c] border-r border-white/[0.05] flex flex-col",
+        "fixed left-0 top-0 z-40 h-screen flex flex-col",
+        "bg-[#050507] border-r border-[rgba(0,156,202,0.08)]",
         collapsed ? "w-[72px]" : "w-[260px]"
       )}
+      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       initial={false}
       animate={{ width: collapsed ? 72 : 260 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-white/[0.05]">
+      <div className="flex h-14 items-center justify-between px-4 border-b border-[rgba(0,156,202,0.08)]">
         <AnimatePresence mode="wait">
           {!collapsed && (
             <motion.div
-              className="flex items-center gap-2"
+              className="flex items-center gap-2.5"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <div className="w-7 h-7 rounded-lg bg-[hsl(210,100%,55%)] flex items-center justify-center">
-                <span className="text-white text-xs font-bold">M</span>
+              <div className="w-8 h-8 rounded border border-[rgba(0,156,202,0.25)] flex items-center justify-center bg-[rgba(0,156,202,0.05)]">
+                <span className="text-[hsl(195,100%,50%)] text-sm font-semibold">H</span>
               </div>
-              <span className="text-sm font-semibold text-white/90 tracking-tight">Marketing Hub</span>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-medium text-white/70 tracking-wider uppercase">Hub Marketing</span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
         {collapsed && (
-          <div className="mx-auto w-8 h-8 rounded-lg bg-[hsl(210,100%,55%)] flex items-center justify-center">
-            <span className="text-white text-xs font-bold">M</span>
+          <div className="mx-auto w-8 h-8 rounded border border-[rgba(0,156,202,0.25)] flex items-center justify-center bg-[rgba(0,156,202,0.05)]">
+            <span className="text-[hsl(195,100%,50%)] text-sm font-semibold">H</span>
           </div>
         )}
         {!collapsed && (
-          <button onClick={onToggle} className="w-7 h-7 rounded-md flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-all">
+          <button onClick={onToggle} className="w-7 h-7 rounded flex items-center justify-center text-white/20 hover:text-white/50 transition-all">
             <X className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
         )}
       </div>
 
-      {/* Switch Hub button */}
-      <div className="px-3 py-2 border-b border-white/[0.05]">
+      {/* Switch Hub */}
+      <div className="px-3 py-2 border-b border-[rgba(0,156,202,0.06)]">
         <button
           onClick={() => navigate("/")}
           className={cn(
-            "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all",
+            "w-full flex items-center gap-2.5 px-3 py-2 rounded text-white/25 hover:text-white/50 hover:bg-white/[0.02] transition-all",
             collapsed && "justify-center px-2"
           )}
         >
           <ArrowLeftRight className="w-4 h-4 shrink-0" strokeWidth={1.5} />
           <AnimatePresence>
             {!collapsed && (
-              <motion.span className="text-[11px] uppercase tracking-widest" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.span className="text-[10px] uppercase tracking-[0.15em]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 Film Hub
               </motion.span>
             )}
@@ -105,29 +113,24 @@ export function MkSidebar({ collapsed, onToggle }: MkSidebarProps) {
               to={item.href}
               title={collapsed ? item.name : undefined}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all duration-150 group",
                 isActive
-                  ? "bg-[hsl(210,100%,55%)] text-white"
-                  : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]",
+                  ? "bg-[rgba(0,156,202,0.08)] border border-[rgba(0,156,202,0.2)] text-[hsl(195,100%,60%)]"
+                  : "text-white/30 hover:text-white/60 hover:bg-white/[0.02] border border-transparent",
                 collapsed && "justify-center px-2"
               )}
             >
-              <span className={cn("material-symbols-outlined text-xl", isActive ? "text-white" : "text-white/40 group-hover:text-[hsl(210,100%,65%)]")}>
+              <span className={cn("material-symbols-outlined text-xl", isActive ? "text-[hsl(195,100%,55%)]" : "text-white/25 group-hover:text-[hsl(195,100%,45%)]")}>
                 {item.icon}
               </span>
               {!collapsed && (
-                <span className="text-[13px] font-medium tracking-wide flex-1">{item.name}</span>
-              )}
-              {!collapsed && item.badge && (
-                <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", isActive ? "bg-white/20 text-white" : "bg-[hsl(210,100%,55%)]/15 text-[hsl(210,100%,65%)]")}>
-                  {item.badge}
-                </span>
+                <span className="text-[12px] font-normal tracking-wide flex-1">{item.name}</span>
               )}
             </Link>
           );
         })}
 
-        <div className="my-3 border-t border-white/[0.05]" />
+        <div className="my-3 border-t border-[rgba(0,156,202,0.06)]" />
 
         {bottomItems.map((item) => {
           const isActive = location.pathname === item.href;
@@ -136,33 +139,32 @@ export function MkSidebar({ collapsed, onToggle }: MkSidebarProps) {
               key={item.href}
               to={item.href}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group",
-                isActive ? "bg-[hsl(210,100%,55%)] text-white" : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all duration-150 group border border-transparent",
+                isActive ? "bg-[rgba(0,156,202,0.08)] border-[rgba(0,156,202,0.2)] text-[hsl(195,100%,60%)]" : "text-white/25 hover:text-white/50 hover:bg-white/[0.02]",
                 collapsed && "justify-center px-2"
               )}
             >
-              <span className={cn("material-symbols-outlined text-lg", isActive ? "text-white" : "text-white/40 group-hover:text-[hsl(210,100%,65%)]")}>
+              <span className={cn("material-symbols-outlined text-lg", isActive ? "text-[hsl(195,100%,55%)]" : "text-white/25 group-hover:text-[hsl(195,100%,45%)]")}>
                 {item.icon}
               </span>
-              {!collapsed && <span className="text-[13px] font-medium tracking-wide">{item.name}</span>}
+              {!collapsed && <span className="text-[12px] font-normal tracking-wide">{item.name}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* User */}
-      <div className={cn("px-3 py-3 border-t border-white/[0.05]", collapsed && "px-2")}>
-        <div className={cn("flex items-center gap-2.5", collapsed && "justify-center")}>
-          <div className="w-9 h-9 rounded-lg bg-[hsl(210,100%,55%)]/15 flex items-center justify-center text-[hsl(210,100%,65%)] text-[11px] font-medium shrink-0">
-            RS
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="text-[11px] text-white/80 font-medium truncate">Rodrigo S.</p>
-              <p className="text-[10px] text-white/30">Marketing Hub</p>
-            </div>
+      {/* Logout */}
+      <div className={cn("px-3 py-3 border-t border-[rgba(0,156,202,0.06)]", collapsed && "px-2")}>
+        <button
+          onClick={async () => { await logout(); window.location.href = "/"; }}
+          className={cn(
+            "w-full flex items-center gap-2.5 px-3 py-2 rounded text-white/20 hover:text-red-400/60 hover:bg-red-500/5 transition-all",
+            collapsed && "justify-center px-2"
           )}
-        </div>
+        >
+          <span className="material-symbols-outlined text-lg">logout</span>
+          {!collapsed && <span className="text-[11px] tracking-wider">Sair</span>}
+        </button>
       </div>
     </motion.aside>
   );
