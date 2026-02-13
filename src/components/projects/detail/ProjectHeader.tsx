@@ -223,7 +223,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
             </div>
 
             {/* Bottom row - Project info */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-3">
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`text-[10px] md:text-xs px-2 py-1 rounded border font-medium ${statusConfig?.color || 'text-muted-foreground'}`}>
