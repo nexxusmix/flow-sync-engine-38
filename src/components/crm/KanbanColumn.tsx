@@ -6,9 +6,10 @@ interface KanbanColumnProps {
   count: number;
   deals: Deal[];
   color: string;
+  onDeleteDeal?: (id: string) => void;
 }
 
-export function KanbanColumn({ title, count, deals, color }: KanbanColumnProps) {
+export function KanbanColumn({ title, count, deals, color, onDeleteDeal }: KanbanColumnProps) {
   return (
     <div className="flex flex-col min-w-[300px] max-w-[300px]">
       {/* Column Header */}
@@ -28,7 +29,7 @@ export function KanbanColumn({ title, count, deals, color }: KanbanColumnProps) 
       {/* Cards Container */}
       <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar pb-4">
         {deals.map(deal => (
-          <KanbanCard key={deal.id} deal={deal} />
+          <KanbanCard key={deal.id} deal={deal} onDelete={onDeleteDeal} />
         ))}
         <button className="w-full p-4 border border-dashed border-border rounded-2xl text-[10px] font-black text-muted-foreground uppercase tracking-wider hover:border-primary/30 hover:text-primary transition-all flex items-center justify-center gap-2">
           <Plus className="w-4 h-4" />

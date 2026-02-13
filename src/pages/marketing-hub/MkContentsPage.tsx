@@ -4,7 +4,9 @@ import { MkCard, MkStatusBadge, MkEmptyState } from "@/components/marketing-hub/
 import { useMarketingStore } from "@/stores/marketingStore";
 import { ContentItem, CONTENT_ITEM_STAGES, ContentItemStatus, CONTENT_CHANNELS } from "@/types/marketing";
 import { motion } from "framer-motion";
-import { Plus, Search, List, LayoutGrid } from "lucide-react";
+import { Plus, Search, List, LayoutGrid, MoreVertical, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +98,7 @@ export default function MkContentsPage() {
                   <span className="text-[11px] text-white/20">{items.length}</span>
                 </div>
                 <div className="space-y-2">
-                  {items.map(item => <ContentCard key={item.id} item={item} onStatusChange={updateContentStatus} />)}
+                  {items.map(item => <ContentCard key={item.id} item={item} onStatusChange={updateContentStatus} onDelete={deleteContentItem} />)}
                 </div>
               </div>
             );
@@ -106,7 +108,7 @@ export default function MkContentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-              <ContentCard item={item} onStatusChange={updateContentStatus} />
+              <ContentCard item={item} onStatusChange={updateContentStatus} onDelete={deleteContentItem} />
             </motion.div>
           ))}
         </div>
@@ -147,24 +149,65 @@ export default function MkContentsPage() {
   );
 }
 
-function ContentCard({ item, onStatusChange }: { item: ContentItem; onStatusChange: (id: string, status: ContentItemStatus) => void }) {
+function ContentCard({ item, onStatusChange, onDelete }: { item: ContentItem; onStatusChange: (id: string, status: ContentItemStatus) => void; onDelete: (id: string) => void }) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
   const channel = CONTENT_CHANNELS.find(c => c.type === item.channel);
   return (
-    <MkCard hover className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <MkStatusBadge label={stage?.name || item.status} variant={stageVariant[item.status] || "slate"} />
-        {channel && <span className="text-[10px] text-white/30">{channel.name}</span>}
-      </div>
-      <h4 className="text-sm font-medium text-white/80 line-clamp-2">{item.title}</h4>
-      <div className="flex items-center gap-3 text-[11px] text-white/25 mt-auto pt-2 border-t border-white/[0.04]">
-        {item.due_at && <span>{format(new Date(item.due_at), "dd MMM", { locale: ptBR })}</span>}
-        {item.owner_initials && (
-          <span className="ml-auto w-6 h-6 rounded-full bg-[hsl(210,100%,55%)]/15 text-[hsl(210,100%,65%)] flex items-center justify-center text-[9px] font-medium">
-            {item.owner_initials}
-          </span>
-        )}
-      </div>
-    </MkCard>
+    <>
+      <MkCard hover className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <MkStatusBadge label={stage?.name || item.status} variant={stageVariant[item.status] || "slate"} />
+          <div className="flex items-center gap-1">
+            {channel && <span className="text-[10px] text-white/30">{channel.name}</span>}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1 text-white/20 hover:text-white/60 transition-colors rounded">
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <h4 className="text-sm font-medium text-white/80 line-clamp-2">{item.title}</h4>
+        <div className="flex items-center gap-3 text-[11px] text-white/25 mt-auto pt-2 border-t border-white/[0.04]">
+          {item.due_at && <span>{format(new Date(item.due_at), "dd MMM", { locale: ptBR })}</span>}
+          {item.owner_initials && (
+            <span className="ml-auto w-6 h-6 rounded-full bg-[hsl(210,100%,55%)]/15 text-[hsl(210,100%,65%)] flex items-center justify-center text-[9px] font-medium">
+              {item.owner_initials}
+            </span>
+          )}
+        </div>
+      </MkCard>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Conteúdo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir "{item.title}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { onDelete(item.id); toast.success("Conteúdo excluído"); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -4,8 +4,10 @@ import { MkCard, MkEmptyState, MkStatusBadge } from "@/components/marketing-hub/
 import { supabase } from "@/integrations/supabase/client";
 import { MarketingAsset, ASSET_TYPES, AssetType } from "@/types/marketing";
 import { motion } from "framer-motion";
-import { Upload, Search, Image, Film, FileText, File } from "lucide-react";
+import { Upload, Search, Image, Film, FileText, File, MoreVertical, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function MkAssetsPage() {
   const [assets, setAssets] = useState<MarketingAsset[]>([]);
@@ -41,6 +43,16 @@ export default function MkAssetsPage() {
       if (newAsset) setAssets(prev => [newAsset as unknown as MarketingAsset, ...prev]);
     }
     toast.success("Upload concluído!");
+  };
+
+  const handleDeleteAsset = async (asset: MarketingAsset) => {
+    if (asset.storage_path) {
+      await supabase.storage.from("marketing-assets").remove([asset.storage_path]);
+    }
+    const { error } = await supabase.from("marketing_assets").delete().eq("id", asset.id);
+    if (error) { toast.error("Erro ao excluir"); return; }
+    setAssets(prev => prev.filter(a => a.id !== asset.id));
+    toast.success("Asset excluído!");
   };
 
   const filtered = assets.filter(a => {
@@ -91,8 +103,8 @@ export default function MkAssetsPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map((asset, i) => (
-            <motion.div key={asset.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.02 }}>
-              <AssetCard asset={asset} />
+             <motion.div key={asset.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.02 }}>
+               <AssetCard asset={asset} onDelete={handleDeleteAsset} />
             </motion.div>
           ))}
         </div>
@@ -101,24 +113,65 @@ export default function MkAssetsPage() {
   );
 }
 
-function AssetCard({ asset }: { asset: MarketingAsset }) {
+function AssetCard({ asset, onDelete }: { asset: MarketingAsset; onDelete: (a: MarketingAsset) => void }) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const isImage = asset.mime_type?.startsWith("image");
   const isVideo = asset.mime_type?.startsWith("video");
   return (
-    <MkCard hover className="p-0 overflow-hidden">
-      <div className="aspect-square bg-white/[0.02] flex items-center justify-center">
-        {isImage && asset.public_url ? (
-          <img src={asset.public_url} alt={asset.title} className="w-full h-full object-cover" />
-        ) : isVideo ? (
-          <Film className="w-8 h-8 text-white/15" />
-        ) : (
-          <FileText className="w-8 h-8 text-white/15" />
-        )}
-      </div>
-      <div className="p-3">
-        <p className="text-xs text-white/60 truncate">{asset.title}</p>
-        <p className="text-[10px] text-white/20 mt-0.5">{ASSET_TYPES.find(t => t.type === asset.type)?.name || asset.type}</p>
-      </div>
-    </MkCard>
+    <>
+      <MkCard hover className="p-0 overflow-hidden">
+        <div className="aspect-square bg-white/[0.02] flex items-center justify-center relative group">
+          {isImage && asset.public_url ? (
+            <img src={asset.public_url} alt={asset.title} className="w-full h-full object-cover" />
+          ) : isVideo ? (
+            <Film className="w-8 h-8 text-white/15" />
+          ) : (
+            <FileText className="w-8 h-8 text-white/15" />
+          )}
+          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1.5 rounded-lg bg-black/60 text-white/60 hover:text-white transition-colors">
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <div className="p-3">
+          <p className="text-xs text-white/60 truncate">{asset.title}</p>
+          <p className="text-[10px] text-white/20 mt-0.5">{ASSET_TYPES.find(t => t.type === asset.type)?.name || asset.type}</p>
+        </div>
+      </MkCard>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Asset</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir "{asset.title}"? O arquivo será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => onDelete(asset)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

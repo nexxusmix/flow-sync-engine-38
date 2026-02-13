@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { usePortalLink } from "@/hooks/usePortalLink";
 import { useProjectFiles } from "@/hooks/useProjectFiles";
@@ -24,7 +24,18 @@ import {
   AlertTriangle,
   Plus,
   Image as ImageIcon,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -56,6 +67,21 @@ export function PortalTab({ project }: PortalTabProps) {
   const [expirationDate, setExpirationDate] = useState<string>('');
   const [addMaterialOpen, setAddMaterialOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(project.logo_url || null);
+  const [deleteDeliverableId, setDeleteDeliverableId] = useState<string | null>(null);
+  const [deliverables, setDeliverables] = useState<any[]>([]);
+
+  // Load portal deliverables
+  useEffect(() => {
+    if (!portalLink?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('portal_deliverables')
+        .select('*')
+        .eq('portal_link_id', portalLink.id)
+        .order('created_at', { ascending: false });
+      if (data) setDeliverables(data);
+    })();
+  }, [portalLink?.id]);
 
   const handleLogoUpload = async (url: string | null) => {
     setLogoUrl(url);
@@ -101,6 +127,21 @@ export function PortalTab({ project }: PortalTabProps) {
 
   const handleToggleBlockIfUnpaid = (checked: boolean) => {
     setBlockIfUnpaid.mutate(checked);
+  };
+
+  const handleDeleteDeliverable = async () => {
+    if (!deleteDeliverableId) return;
+    const { error } = await supabase
+      .from('portal_deliverables')
+      .delete()
+      .eq('id', deleteDeliverableId);
+    if (error) {
+      toast.error('Erro ao excluir material');
+      return;
+    }
+    setDeliverables(prev => prev.filter(d => d.id !== deleteDeliverableId));
+    setDeleteDeliverableId(null);
+    toast.success('Material excluído!');
   };
 
   if (isLoading) {
@@ -368,6 +409,37 @@ export function PortalTab({ project }: PortalTabProps) {
         )}
       </div>
 
+      {/* Portal Deliverables (Materials) */}
+      {deliverables.length > 0 && (
+        <div className="glass-card rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <FileText className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <h3 className="font-semibold text-foreground">Materiais do Portal</h3>
+              <p className="text-sm text-muted-foreground">
+                {deliverables.length} material{deliverables.length !== 1 ? 'is' : ''} adicionado{deliverables.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {deliverables.map((d) => (
+              <div key={d.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">{d.title || d.file_name || 'Material'}</span>
+                </div>
+                <button
+                  onClick={() => setDeleteDeliverableId(d.id)}
+                  className="p-1 text-muted-foreground hover:text-destructive transition-colors rounded"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Add Material Dialog */}
       {portalLink && (
         <AddMaterialDialog
@@ -376,6 +448,27 @@ export function PortalTab({ project }: PortalTabProps) {
           onOpenChange={setAddMaterialOpen}
         />
       )}
+
+      {/* Delete Deliverable Confirmation */}
+      <AlertDialog open={!!deleteDeliverableId} onOpenChange={(open) => !open && setDeleteDeliverableId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Material</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este material do portal? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteDeliverable}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
