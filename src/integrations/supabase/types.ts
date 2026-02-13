@@ -3493,6 +3493,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          module_access: string[]
           updated_at: string
           user_id: string
         }
@@ -3501,6 +3502,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          module_access?: string[]
           updated_at?: string
           user_id: string
         }
@@ -3509,6 +3511,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          module_access?: string[]
           updated_at?: string
           user_id?: string
         }
@@ -4052,6 +4055,7 @@ export type Database = {
           name: string
           owner_id: string | null
           owner_name: string | null
+          product_type: string
           stage_current: string
           start_date: string | null
           status: string | null
@@ -4075,6 +4079,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           owner_name?: string | null
+          product_type?: string
           stage_current?: string
           start_date?: string | null
           status?: string | null
@@ -4098,6 +4103,7 @@ export type Database = {
           name?: string
           owner_id?: string | null
           owner_name?: string | null
+          product_type?: string
           stage_current?: string
           start_date?: string | null
           status?: string | null
@@ -5189,6 +5195,7 @@ export type Database = {
           default_currency: string
           default_timezone: string
           id: string
+          subscription_plan: string
           updated_at: string
           working_days: Json
           working_hours: Json
@@ -5201,6 +5208,7 @@ export type Database = {
           default_currency?: string
           default_timezone?: string
           id?: string
+          subscription_plan?: string
           updated_at?: string
           working_days?: Json
           working_hours?: Json
@@ -5213,6 +5221,7 @@ export type Database = {
           default_currency?: string
           default_timezone?: string
           id?: string
+          subscription_plan?: string
           updated_at?: string
           working_days?: Json
           working_hours?: Json
