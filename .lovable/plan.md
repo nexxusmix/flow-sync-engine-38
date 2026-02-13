@@ -1,64 +1,57 @@
 
-# Comando Rapido de Contexto para IA + Preview de Arquivos
 
-## Problema Atual
-- O botao "Preencher com IA" envia apenas nomes de arquivos para a IA, sem contexto do usuario
-- Nao ha campo para o usuario descrever rapidamente sobre o que sao os materiais
-- A IA nao consegue "ver" o conteudo dos arquivos (imagens), apenas analisa o nome
+# Perfil do Admin + Avatar Upload + Cores da Plataforma
 
-## Solucao
+## O que sera feito
 
-### 1. Campo "Comando Rapido" no Dialog de Upload
+### 1. Corrigir nome do admin para "Matheus Filipe"
+O perfil atual mostra `full_name: "Matheus"`. Sera atualizado para `"Matheus Filipe"` diretamente no banco.
 
-Adicionar um campo de texto (textarea) logo acima da lista de itens na fila, visivel quando ha arquivos na fila e antes de clicar "Preencher com IA".
+### 2. Upload de foto/avatar do perfil
+Hoje nao existe nenhum bucket de storage nem UI para subir avatar. Sera criado:
 
-- Placeholder: "Ex: Materiais da campanha de lancamento do produto X para Instagram..."
-- Label: "Contexto para IA (opcional)"
-- O texto digitado sera enviado como `projectContext` para a edge function `ai-fill-materials`
+- **Bucket `avatars`** (publico) no storage com policy de upload autenticado
+- **Secao "Meu Perfil"** no Header (dropdown do usuario) ou uma pagina `/perfil` acessivel pelo clique no avatar
+- UI com preview circular + botao de upload que salva no storage e atualiza `profiles.avatar_url`
+- O avatar aparecera no Header ao lado do botao de logout (substituindo ou complementando o icone atual)
 
-### 2. Enviar Contexto para a Edge Function
+### 3. Personalizacao de cores da plataforma
+A pagina de Branding (`/configuracoes/branding`) ja tem campos de `primary_color` e `accent_color` salvos no banco, mas eles nao afetam o CSS real da plataforma. Sera implementado:
 
-No `ClientUploadDialog.tsx`, a funcao `fillAllWithAI`:
-- Atualmente envia apenas `files` no body
-- Sera atualizada para enviar tambem `projectContext` com o texto do campo de comando rapido
-- A edge function `ai-fill-materials` ja aceita `projectContext` no body (linha 12) e ja o inclui no prompt (linha 26) -- so falta o frontend enviar
+- Um hook `useThemeColors` que le `branding_settings.primary_color` e `accent_color`
+- Aplicacao dinamica das cores como CSS variables (`--primary`, `--ring`, etc.) no `:root`
+- Preview em tempo real na pagina de Branding
+- Presets rapidos (ex: Azul SQUAD, Roxo, Verde, Laranja) para facilitar
 
-### 3. Enviar Imagens em Base64 para IA "Ver" o Conteudo
+---
 
-Para arquivos de imagem (que sao pequenos o suficiente), converter para base64 e enviar junto ao payload para que a IA possa analisar visualmente o conteudo.
+## Detalhes Tecnicos
 
-- Limitar a imagens com ate 2 MB para nao estourar payload
-- Enviar como campo `imageBase64` no array de files
-- Atualizar a edge function para usar o modelo `google/gemini-2.5-flash` (que suporta imagens) e incluir as imagens como content multimodal
+### DB
+- `UPDATE profiles SET full_name = 'Matheus Filipe' WHERE ...` (via insert tool)
+- Migration: criar bucket `avatars` com RLS policy de upload para usuarios autenticados
 
-### Detalhes Tecnicos
+### Arquivos a criar/editar
 
-**Arquivo: `src/components/client-portal/ClientUploadDialog.tsx`**
-- Novo estado: `aiContext: string` (campo de texto)
-- Renderizar um `<textarea>` entre o header da fila e o botao "Preencher com IA"
-- Na funcao `fillAllWithAI`, adicionar `projectContext: aiContext` ao body da chamada
-- Adicionar funcao `fileToBase64` para converter imagens pequenas
-- Enviar `imageBase64` para cada arquivo de imagem no payload
+| Arquivo | Acao |
+|---|---|
+| `src/components/layout/UserAvatarMenu.tsx` | **NOVO** - Componente de avatar clicavel com dropdown (perfil, upload foto, sair) |
+| `src/hooks/useThemeColors.ts` | **NOVO** - Hook que le cores do branding_settings e aplica como CSS vars |
+| `src/components/layout/Header.tsx` | Substituir botao de logout por UserAvatarMenu + integrar useThemeColors |
+| `src/pages/settings/BrandingSettingsPage.tsx` | Adicionar presets de cores e preview ao vivo |
+| `src/App.tsx` | Integrar useThemeColors no nivel raiz |
 
-**Arquivo: `supabase/functions/ai-fill-materials/index.ts`**
-- Trocar modelo para `google/gemini-2.5-flash` (suporta visao)
-- Montar mensagem multimodal: para cada arquivo com `imageBase64`, incluir o conteudo como `image_url` no array de content
-- Manter fallback: se nao houver imagens, funciona igual ao atual (so texto)
-- Manter o `projectContext` que ja esta implementado no prompt
+### Fluxo de Upload de Avatar
+1. Usuario clica no avatar no Header
+2. Dropdown abre com opcao "Alterar foto"
+3. Seleciona arquivo (imagem)
+4. Upload para bucket `avatars/{userId}.webp`
+5. URL publica salva em `profiles.avatar_url`
+6. Avatar atualiza em tempo real no Header
 
-### Fluxo Final
+### Fluxo de Cores
+1. Admin vai em Configuracoes > Branding
+2. Escolhe cor primaria (picker ou preset)
+3. CSS variables atualizam em tempo real (preview)
+4. Ao salvar, todas as sessoes carregam as novas cores do banco
 
-```text
-1. Usuario adiciona arquivos ao dialog
-2. Digita no campo: "Fotos do backstage da gravacao do clipe XYZ"
-3. Clica "Preencher com IA"
-4. Frontend converte imagens pequenas para base64
-5. Envia {files, projectContext, imagesBase64} para edge function
-6. IA recebe contexto + ve as imagens + le os nomes
-7. Retorna titulos e descricoes contextualizados
-8. UI preenche automaticamente
-```
-
-### Arquivos a Editar
-1. `src/components/client-portal/ClientUploadDialog.tsx` -- adicionar campo de contexto + enviar base64 de imagens
-2. `supabase/functions/ai-fill-materials/index.ts` -- trocar modelo para multimodal + receber imagens
