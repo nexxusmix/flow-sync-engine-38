@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { ProjectWithStages } from '@/hooks/useProjects';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Sparkles, Loader2 } from 'lucide-react';
+import { Copy, Sparkles, Loader2, Link2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useClientMessages } from '@/hooks/useClientMessages';
+import { usePortalLink } from '@/hooks/usePortalLink';
 import { PROJECT_STAGES } from '@/data/projectTemplates';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Label } from '@/components/ui/label';
 
 interface PanoramaTabProps {
   project: ProjectWithStages;
@@ -20,6 +22,7 @@ export function PanoramaTab({ project }: PanoramaTabProps) {
   const [variants, setVariants] = useState<{ short: string; normal: string; long: string } | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<'short' | 'normal' | 'long'>('normal');
   const { logQuickCopy } = useClientMessages(project.id);
+  const { portalUrl } = usePortalLink(project.id);
 
   const stageInfo = PROJECT_STAGES.find(s => s.type === project.stage_current);
   const currentStageIdx = PROJECT_STAGES.findIndex(s => s.type === project.stage_current);
@@ -107,6 +110,27 @@ export function PanoramaTab({ project }: PanoramaTabProps) {
           </p>
         </div>
       </div>
+
+      {/* Portal Link */}
+      {portalUrl && (
+        <div className="p-2 bg-muted/30 rounded-lg">
+          <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Link2 className="w-3 h-3" /> Link do Portal para o cliente
+          </Label>
+          <p className="text-xs text-primary break-all mt-0.5">{portalUrl}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] px-2 mt-1 gap-1"
+            onClick={() => {
+              navigator.clipboard.writeText(portalUrl);
+              toast.success('Link do portal copiado!');
+            }}
+          >
+            <Copy className="w-3 h-3" /> Copiar link
+          </Button>
+        </div>
+      )}
 
       {/* Generate panorama */}
       <Button onClick={generatePanorama} disabled={isGenerating} className="w-full gap-2">
