@@ -62,39 +62,40 @@ function formatDateForFilename(): string {
   return `${dd}-${mm}-${yyyy}`;
 }
 
-function generateWeekRef(): string {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const weekNum = Math.ceil(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
-  return `WF-${now.getFullYear()}-WK${weekNum}`;
+function generateRefCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "HB";
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
 
 function buildFileName(type: ExportType, entityName?: string): string {
   const dateStr = formatDateForFilename();
+  const code = generateRefCode();
   const slugify = (s: string) =>
     s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
 
   switch (type) {
     case "tasks":
-      return `WORKFLOW_DE_TAREFAS_${dateStr}_${generateWeekRef()}.pdf`;
+      return `QUADRO_DE_TAREFAS_${dateStr}_${code}.pdf`;
     case "project":
-      return `RELATORIO_PROJETO_${slugify(entityName || "PROJETO")}_${dateStr}.pdf`;
+      return `PROJETO_${slugify(entityName || "PROJETO")}_${dateStr}_${code}.pdf`;
     case "report_360":
-      return `RELATORIO_360_${dateStr}.pdf`;
+      return `RELATORIO_360_${dateStr}_${code}.pdf`;
     case "finance":
-      return `RELATORIO_FINANCEIRO_${dateStr}.pdf`;
+      return `RELATORIO_FINANCEIRO_${dateStr}_${code}.pdf`;
     case "project_overview":
-      return `VISAO_GERAL_PROJETOS_${dateStr}.pdf`;
+      return `VISAO_GERAL_PROJETOS_${dateStr}_${code}.pdf`;
     case "portal":
-      return `PORTAL_CLIENTE_${slugify(entityName || "PORTAL")}_${dateStr}.pdf`;
+      return `PORTAL_CLIENTE_${slugify(entityName || "PORTAL")}_${dateStr}_${code}.pdf`;
     case "campaign":
-      return `CAMPANHA_${slugify(entityName || "CAMPANHA")}_${dateStr}.pdf`;
+      return `CAMPANHA_${slugify(entityName || "CAMPANHA")}_${dateStr}_${code}.pdf`;
     case "content":
-      return `CONTEUDO_${slugify(entityName || "CONTEUDO")}_${dateStr}.pdf`;
+      return `CONTEUDO_${slugify(entityName || "CONTEUDO")}_${dateStr}_${code}.pdf`;
     case "creative":
-      return `CRIATIVO_${slugify(entityName || "CRIATIVO")}_${dateStr}.pdf`;
+      return `CRIATIVO_${slugify(entityName || "CRIATIVO")}_${dateStr}_${code}.pdf`;
     default:
-      return `SQUAD_HUB_EXPORT_${dateStr}.pdf`;
+      return `HUB_EXPORT_${dateStr}_${code}.pdf`;
   }
 }
 

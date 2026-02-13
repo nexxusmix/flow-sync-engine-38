@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Design System Colors (SQUAD Film - Premium Dark Theme)
+// Design System Colors (HUB - Premium Dark Theme)
 const COLORS = {
   background: "#050505",
   surface: "#0a0a0a",
@@ -143,7 +143,7 @@ function generateReport360HTML(
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Relatório 360° - SQUAD FILM</title>
+  <title>Relatório 360° - HUB</title>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -1051,7 +1051,7 @@ function generateReport360HTML(
     <div class="scope-section">
       <div class="scope-header">Escopo do Projeto: <span>${escapeHtml(sampleProject.name || '')}</span></div>
       <p class="scope-text">
-        ${escapeHtml(sampleProject.description || 'Este projeto audiovisual visa registrar e transmitir a magnitude do empreendimento através de uma narrativa cinematográfica completa. A produção será conduzida pela SQUAD FILM, utilizando equipamentos de qualidade Cinema 4K e drone, abrangendo desde a captação até a finalização.')}
+        ${escapeHtml(sampleProject.description || 'Este projeto audiovisual visa registrar e transmitir a magnitude do empreendimento atraves de uma narrativa cinematografica completa.')}
       </p>
       <div class="specs-grid">
         <div>
@@ -1079,7 +1079,7 @@ function generateReport360HTML(
     <div class="flow-section">
       <div class="flow-header">
         <div class="flow-title">Fluxo de Produção & Timeline</div>
-        <div class="flow-badge"><div class="dot"></div>Squad Engine Active</div>
+        <div class="flow-badge"><div class="dot"></div>HUB Engine Active</div>
       </div>
       <div class="flow-grid">
         <div class="flow-step active">
@@ -1198,11 +1198,11 @@ function generateReport360HTML(
     <!-- Footer -->
     <footer class="footer">
       <div class="footer-brand">
-        <div class="footer-title">Squad Film Studio</div>
-        <div class="footer-tagline">Premium Visual Storytelling</div>
+        <div class="footer-title">HUB v2.4</div>
+        <div class="footer-tagline">Premium Operations Platform</div>
       </div>
       <div class="footer-powered">
-        powered by <span>SQUAD///FILM</span>
+        powered by <span>SQUAD</span>
       </div>
     </footer>
   </div>
@@ -1396,7 +1396,7 @@ function generateProjectHTML(
           </div>
           <div class="metric-item">
             <div class="metric-label">Responsável</div>
-            <div class="metric-value">${escapeHtml((project.owner_name || 'Squad Film').substring(0, 14))}</div>
+            <div class="metric-value">${escapeHtml((project.owner_name || 'HUB').substring(0, 14))}</div>
           </div>
         </div>
         
@@ -1446,7 +1446,7 @@ function generateProjectHTML(
               </ul>
             </div>
             <div>
-              <h4 class="methodology-title">COMPROMISSOS SQUAD</h4>
+              <h4 class="methodology-title">COMPROMISSOS HUB</h4>
               <ul class="methodology-list">
                 <li>• Equipe de 02 Profissionais</li>
                 <li>• Rigor no Cronograma</li>
@@ -1513,8 +1513,8 @@ function generateProjectHTML(
         
         <footer class="footer">
           <div>
-            <div class="footer-brand">SQUAD /// FILM</div>
-            <div class="footer-tagline">Visual Storytelling Studio</div>
+            <div class="footer-brand">HUB v2.4</div>
+            <div class="footer-tagline">Premium Operations Platform</div>
           </div>
           <div class="footer-meta">
             <div>Relatório Gerado em ${new Date().getFullYear()} • ${escapeHtml(project.name)} — Executivo</div>
@@ -1603,7 +1603,7 @@ function generateSimpleHTML(
   </section>
   
   <footer class="footer">
-    <div class="footer-brand">SQUAD /// FILM</div>
+    <div class="footer-brand">HUB v2.4</div>
     <div class="footer-meta">©${new Date().getFullYear()} • Página 1</div>
   </footer>
 </body>
