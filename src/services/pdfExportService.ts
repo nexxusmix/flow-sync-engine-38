@@ -49,21 +49,31 @@ export interface ExportOptions {
 }
 
 const DEFAULT_OPTIONS: ExportOptions = {
-  autoOpen: false,
-  autoDownload: true,
+  autoOpen: true,
+  autoDownload: false,
   showToasts: true,
-  loadingMessage: "Gerando PDF...",
-  successMessage: "PDF baixado com sucesso!",
+  loadingMessage: "Gerando relatório...",
+  successMessage: "Relatório gerado com sucesso!",
 };
 
 /**
- * Downloads a file from URL directly to user's device
+ * Downloads a file from URL directly to user's device.
+ * Validates content-type to prevent downloading raw HTML as PDF.
  */
 async function downloadFile(url: string, fileName: string): Promise<void> {
   try {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch file');
+    }
+    
+    const contentType = response.headers.get('content-type') || '';
+    
+    // If the response is HTML, open it rendered in a new window instead of downloading
+    if (contentType.includes('text/html')) {
+      console.warn('[pdfExportService] Server returned HTML instead of PDF, opening rendered view');
+      await openPrintableWindow(url);
+      return;
     }
     
     const blob = await response.blob();
@@ -80,18 +90,27 @@ async function downloadFile(url: string, fileName: string): Promise<void> {
     setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
   } catch (error) {
     console.error('[pdfExportService] Error downloading file:', error);
-    // Fallback: open in new tab
+    // Fallback: open in new tab (rendered)
     window.open(url, '_blank');
   }
 }
 
 /**
- * Opens the HTML report in a new window and triggers print dialog
- * Fetches HTML content and writes it to a new window to avoid CORS/display issues
+ * Opens the HTML report in a new window, renders it visually, and triggers print dialog.
+ * Works on desktop and mobile (iOS Safari included).
  */
 async function openPrintableWindow(url: string): Promise<void> {
   try {
-    // Fetch the HTML content
+    // On mobile, just open the URL directly - the browser will render it
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Mobile: open URL directly in new tab - browser renders HTML visually
+      window.open(url, '_blank');
+      return;
+    }
+    
+    // Desktop: fetch HTML and write to a new window for print dialog
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch report');
@@ -99,41 +118,31 @@ async function openPrintableWindow(url: string): Promise<void> {
     
     const htmlContent = await response.text();
     
-    // Create a new window
     const printWindow = window.open('', '_blank', 'width=1100,height=900,scrollbars=yes,resizable=yes');
     
     if (!printWindow) {
-      // Popup blocked - show instructions
-      toast.error('Popup bloqueado! Permita popups e tente novamente.', {
-        description: 'Clique no ícone de popup bloqueado na barra de endereços'
-      });
+      // Popup blocked - fallback to direct open
+      window.open(url, '_blank');
       return;
     }
     
-    // Write the HTML content to the new window
     printWindow.document.open();
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     
-    // Wait for content to load, then trigger print
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-      }, 300);
-    };
-    
-    // Also trigger after a delay in case onload doesn't fire
-    setTimeout(() => {
+    // Trigger print after content loads
+    const triggerPrint = () => {
       if (printWindow && !printWindow.closed) {
         printWindow.focus();
         printWindow.print();
       }
-    }, 1000);
+    };
+    
+    printWindow.onload = () => setTimeout(triggerPrint, 500);
+    setTimeout(triggerPrint, 1500);
     
   } catch (error) {
     console.error('[pdfExportService] Error opening printable window:', error);
-    // Fallback: just open the URL directly
     window.open(url, '_blank');
   }
 }
@@ -220,7 +229,7 @@ export async function exportProjectPDF(
   options?: ExportOptions
 ): Promise<ExportResult> {
   return exportPdf("project", { id: projectId }, {
-    successMessage: "Relatório do projeto exportado!",
+    successMessage: "Relatório do projeto gerado!",
     ...options,
   });
 }
@@ -233,7 +242,7 @@ export async function exportReport360PDF(
   options?: ExportOptions
 ): Promise<ExportResult> {
   return exportPdf("report_360", { period }, {
-    successMessage: "Relatório 360° exportado!",
+    successMessage: "Relatório 360° gerado!",
     ...options,
   });
 }
@@ -246,7 +255,7 @@ export async function exportTasksPDF(
   options?: ExportOptions
 ): Promise<ExportResult> {
   return exportPdf("tasks", { filters }, {
-    successMessage: "Quadro de tarefas exportado!",
+    successMessage: "Quadro de tarefas gerado!",
     ...options,
   });
 }
@@ -259,7 +268,7 @@ export async function exportFinancePDF(
   options?: ExportOptions
 ): Promise<ExportResult> {
   return exportPdf("finance", { period }, {
-    successMessage: "Relatório financeiro exportado!",
+    successMessage: "Relatório financeiro gerado!",
     ...options,
   });
 }
@@ -272,7 +281,7 @@ export async function exportOverviewPDF(
   options?: ExportOptions
 ): Promise<ExportResult> {
   return exportPdf("project_overview", { period }, {
-    successMessage: "Visão geral exportada!",
+    successMessage: "Visão geral gerada!",
     ...options,
   });
 }
@@ -286,7 +295,7 @@ export async function exportPortalPDF(
   options?: ExportOptions
 ): Promise<ExportResult> {
   return exportPdf("portal", { token, id: projectId }, {
-    successMessage: "Relatório do portal exportado!",
+    successMessage: "Relatório do portal gerado!",
     ...options,
   });
 }
