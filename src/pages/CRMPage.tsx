@@ -1,4 +1,5 @@
 import { useState, useRef, MouseEvent } from "react";
+import { formatCurrencyBRL } from "@/utils/format";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KanbanColumn } from "@/components/crm/KanbanColumn";
 import { useCRM, CRM_STAGES, Deal } from "@/hooks/useCRM";
@@ -117,7 +118,7 @@ export default function CRMPage() {
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-[10px] font-black text-primary uppercase tracking-wider">
-                Forecast: R$ {(metrics.forecast / 1000).toFixed(0)}.000
+                Forecast: {formatCurrencyBRL(metrics.forecast)}
               </span>
             </div>
 
