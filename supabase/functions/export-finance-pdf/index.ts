@@ -213,21 +213,25 @@ serve(async (req) => {
       // Fallback to project-files
       const { error: fb } = await supabase.storage.from("project-files").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
       if (fb) throw new Error(`Upload failed: ${fb.message}`);
-      const { data: pubUrl } = supabase.storage.from("project-files").getPublicUrl(filePath);
-      return new Response(JSON.stringify({ success: true, public_url: pubUrl.publicUrl, file_path: filePath }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const { data: signedFb } = await supabase.storage.from("project-files").createSignedUrl(filePath, 1800);
+      const fbUrl = signedFb?.signedUrl || supabase.storage.from("project-files").getPublicUrl(filePath).data.publicUrl;
+      return new Response(JSON.stringify({ success: true, signed_url: fbUrl, public_url: fbUrl, storage_path: filePath, file_name: fileName }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: pubUrl } = supabase.storage.from("exports").getPublicUrl(filePath);
-    console.log("Finance PDF generated:", pubUrl.publicUrl);
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from("exports").createSignedUrl(filePath, 1800);
+    const url = signedUrlError
+      ? supabase.storage.from("exports").getPublicUrl(filePath).data.publicUrl
+      : signedUrlData.signedUrl;
+    console.log("Finance PDF generated:", filePath);
 
     return new Response(
-      JSON.stringify({ success: true, public_url: pubUrl.publicUrl, file_path: filePath }),
+      JSON.stringify({ success: true, signed_url: url, public_url: url, storage_path: filePath, file_name: fileName }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("export-finance-pdf error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

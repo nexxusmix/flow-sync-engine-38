@@ -153,22 +153,34 @@ export default function ClientPortalPage() {
     if (!project) return;
     
     setIsExporting(true);
-    toast.info("Gerando PDF do portal...");
+    const toastId = toast.loading("Gerando PDF do portal...");
     
     try {
-      const { data: result, error } = await supabase.functions.invoke('export-universal-pdf', {
-        body: { type: 'project', id: project.id }
+      const { data: result, error } = await supabase.functions.invoke('export-pdf', {
+        body: { type: 'portal', id: project.id, token: shareToken }
       });
       
       if (error) throw error;
+      if (!result?.success) throw new Error(result?.error || "Falha ao gerar PDF");
       
-      if (result?.public_url) {
-        window.open(result.public_url, '_blank');
-        toast.success("PDF gerado com sucesso!");
+      const url = result.signed_url || result.public_url;
+      if (url) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Falha ao baixar PDF");
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = `portal_${project.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'export'}.pdf`;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 250);
       }
+      toast.success("PDF gerado com sucesso!", { id: toastId });
     } catch (err) {
       console.error('PDF export error:', err);
-      toast.error("Erro ao gerar PDF");
+      toast.error("Erro ao gerar PDF", { id: toastId });
     } finally {
       setIsExporting(false);
     }

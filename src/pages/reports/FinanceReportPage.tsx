@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
+import { useExportPdf } from '@/hooks/useExportPdf';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -59,22 +59,14 @@ export default function FinanceReportPage() {
     }).format(value);
   };
 
+  const { exportFinance, isExporting: isExportingPdf } = useExportPdf();
+
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('export-finance-pdf', {
-        body: { period },
-      });
-
-      if (error) throw error;
-
-      if (data?.public_url) {
-        window.open(data.public_url, '_blank');
-        toast.success('PDF gerado com sucesso!');
-      }
+      await exportFinance(period);
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Erro ao exportar PDF');
     } finally {
       setIsExporting(false);
     }
