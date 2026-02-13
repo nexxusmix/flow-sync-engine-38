@@ -152,7 +152,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
           )}
           <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em]">
             <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-pulse" />
-            <span>Alpha v2.4</span>
+            <span>Hub v2.4</span>
           </div>
         </motion.div>
 
