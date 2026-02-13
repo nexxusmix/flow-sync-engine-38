@@ -190,7 +190,7 @@ export default function TasksPage() {
 
   return (
     <DashboardLayout title="Tarefas">
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] 2xl:max-w-[1800px] mx-auto w-full min-w-0 overflow-x-hidden">
         {/* Header */}
         <div className="flex flex-col gap-3 md:gap-4">
           <div className="flex items-start justify-between">
@@ -209,7 +209,7 @@ export default function TasksPage() {
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2 md:gap-3 overflow-x-auto scrollbar-none">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 min-w-0">
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
               <TabsList>
                 <TabsTrigger value="board" className="gap-1.5">

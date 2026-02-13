@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   CheckSquare, Square, MoreHorizontal, Trash2, 
   Edit, Calendar, GripVertical, Tag
@@ -186,7 +187,7 @@ function TaskColumnComponent({ column, tasks, onEditTask, onToggle, onDelete, on
   return (
     <div 
       className={cn(
-        "flex flex-col min-w-[280px] max-w-[320px] rounded-xl p-3 transition-colors",
+        "flex flex-col min-w-0 w-full rounded-xl p-3 transition-colors",
         column.color,
         isDragOver && "ring-2 ring-primary/50"
       )}
@@ -195,15 +196,15 @@ function TaskColumnComponent({ column, tasks, onEditTask, onToggle, onDelete, on
       onDrop={handleDrop}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-foreground">{column.title}</h3>
-          <span className="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-sm font-medium text-foreground truncate">{column.title}</h3>
+          <span className="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded flex-shrink-0">
             {tasks.length}
           </span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
+      <div className="flex flex-col gap-2 flex-1 overflow-y-auto max-h-[calc(100vh-340px)]">
         {tasks.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p className="text-xs">Nenhuma tarefa</p>
@@ -235,6 +236,15 @@ interface TasksBoardProps {
 }
 
 export function TasksBoard({ tasks, onEditTask, onMoveTask, onToggleComplete, onDeleteTask }: TasksBoardProps) {
+  const isMobile = useIsMobile();
+  const [mobileColumn, setMobileColumn] = useState<Task['status']>(() => {
+    try { return (localStorage.getItem('tasks:selectedColumn') as Task['status']) || 'today'; } catch { return 'today'; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('tasks:selectedColumn', mobileColumn); } catch {}
+  }, [mobileColumn]);
+
   const handleDrop = (taskId: string, newStatus: Task['status']) => {
     onMoveTask?.(taskId, newStatus);
   };
@@ -243,8 +253,44 @@ export function TasksBoard({ tasks, onEditTask, onMoveTask, onToggleComplete, on
     return tasks.filter(t => t.status === status);
   };
 
+  if (isMobile) {
+    return (
+      <div className="w-full min-w-0">
+        {/* Mobile column selector */}
+        <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-none pb-1">
+          {TASK_COLUMNS.map((col) => (
+            <button
+              key={col.key}
+              onClick={() => setMobileColumn(col.key)}
+              className={cn(
+                "flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                mobileColumn === col.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              {col.title} ({getTasksByStatus(col.key).length})
+            </button>
+          ))}
+        </div>
+        {/* Single column view */}
+        {TASK_COLUMNS.filter(c => c.key === mobileColumn).map((column) => (
+          <TaskColumnComponent
+            key={column.key}
+            column={column}
+            tasks={getTasksByStatus(column.key)}
+            onEditTask={onEditTask}
+            onToggle={onToggleComplete || (() => {})}
+            onDelete={onDeleteTask || (() => {})}
+            onDrop={handleDrop}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 w-full min-w-0">
       {TASK_COLUMNS.map((column) => (
         <TaskColumnComponent
           key={column.key}
