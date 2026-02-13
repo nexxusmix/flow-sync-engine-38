@@ -11,6 +11,7 @@ import {
   FileText,
   Users,
   Clapperboard,
+  Bell,
 } from "lucide-react";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TasksTab } from "./tabs/TasksTab";
@@ -22,8 +23,10 @@ import { PortalTab } from "./tabs/PortalTab";
 import { AuditTab } from "./tabs/AuditTab";
 import { MeetingsTab } from "../meetings/MeetingsTab";
 import { StoryboardTab } from "./tabs/StoryboardTab";
+import { AlertsTab } from "./tabs/AlertsTab";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useProjectRevisions } from "@/hooks/useProjectRevisions";
+import { useAlerts } from "@/hooks/useAlerts";
 import { cn } from "@/lib/utils";
 
 interface ProjectTabsProps {
@@ -41,6 +44,7 @@ const tabs = [
   { id: "files", label: "Arquivos", icon: FolderOpen },
   { id: "schedule", label: "Cronograma", icon: Calendar },
   { id: "storyboard", label: "Storyboard IA", icon: Clapperboard },
+  { id: "alerts", label: "Avisos", icon: Bell },
   { id: "portal", label: "Portal", icon: Globe },
   { id: "audit", label: "Auditoria", icon: FileText },
 ];
@@ -49,6 +53,9 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
   // Get revision stats for badge
   const { stats } = useProjectRevisions(project.id);
   const pendingCount = stats?.pending || 0;
+
+  // Get alerts count for badge
+  const { unreadCount: alertsCount } = useAlerts({ projectId: project.id, status: 'open' });
 
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-6">
@@ -69,6 +76,15 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
                   "bg-amber-500 text-white"
                 )}>
                   {pendingCount > 99 ? '99+' : pendingCount}
+                </span>
+              )}
+              {/* Badge for alerts tab */}
+              {tab.id === 'alerts' && alertsCount > 0 && (
+                <span className={cn(
+                  "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1",
+                  "bg-red-500 text-white"
+                )}>
+                  {alertsCount > 99 ? '99+' : alertsCount}
                 </span>
               )}
             </TabsTrigger>
@@ -107,6 +123,10 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
 
       <TabsContent value="storyboard" className="mt-6">
         <StoryboardTab project={project} />
+      </TabsContent>
+
+      <TabsContent value="alerts" className="mt-6">
+        <AlertsTab project={project} />
       </TabsContent>
       
       <TabsContent value="portal" className="mt-6">
