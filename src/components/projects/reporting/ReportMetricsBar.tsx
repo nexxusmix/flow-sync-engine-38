@@ -79,7 +79,7 @@ export function ReportMetricsBar({
             {metric.label}
           </span>
           <p className={cn(
-            "text-2xl font-bold text-foreground truncate",
+            "text-2xl font-medium text-foreground truncate",
             metric.className
           )}>
             {metric.value}

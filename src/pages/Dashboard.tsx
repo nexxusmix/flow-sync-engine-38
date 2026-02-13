@@ -139,7 +139,7 @@ export default function Dashboard() {
           </motion.div>
           
           <motion.div 
-            className="glass-card px-6 py-4 rounded-2xl flex items-center gap-4"
+            className="glass-card px-6 py-4 rounded-2xl flex items-center gap-4 flex-shrink-0"
             initial={{ opacity: 0, x: 30, filter: "blur(12px)" }}
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
@@ -400,7 +400,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-[8px] text-muted-foreground uppercase font-light">Valor</p>
-                        <p className="text-[10px] font-normal text-foreground">R$ {(project.contract_value / 1000).toFixed(0)}k</p>
+                        <p className="text-[10px] font-normal text-foreground truncate">R$ {(project.contract_value / 1000).toFixed(0)}k</p>
                       </div>
                       <div>
                         <p className="text-[8px] text-muted-foreground uppercase font-light">Fase</p>

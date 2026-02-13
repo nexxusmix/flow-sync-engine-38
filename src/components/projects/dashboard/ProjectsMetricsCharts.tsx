@@ -108,7 +108,7 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
               <FolderCheck className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{metrics.active}</p>
+              <p className="text-2xl font-medium text-foreground">{metrics.active}</p>
               <p className="text-xs text-muted-foreground">Ativos</p>
             </div>
           </div>
@@ -120,7 +120,7 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
               <TrendingUp className="w-5 h-5 text-emerald-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{metrics.completed}</p>
+              <p className="text-2xl font-medium text-foreground">{metrics.completed}</p>
               <p className="text-xs text-muted-foreground">Concluídos</p>
             </div>
           </div>
@@ -132,7 +132,7 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
               <AlertTriangle className="w-5 h-5 text-red-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{metrics.withBlock}</p>
+              <p className="text-2xl font-medium text-foreground">{metrics.withBlock}</p>
               <p className="text-xs text-muted-foreground">Bloqueados</p>
             </div>
           </div>
@@ -144,7 +144,7 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
               <DollarSign className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(metrics.totalValue)}</p>
+              <p className="text-lg font-medium text-foreground truncate">{formatCurrency(metrics.totalValue)}</p>
               <p className="text-xs text-muted-foreground">Valor Total</p>
             </div>
           </div>

@@ -226,9 +226,9 @@ export default function ClientPortalPage() {
                 <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
                   <DollarSign className="w-4 h-4 text-violet-500" />
                 </div>
-                <span className="text-[9px] font-bold text-violet-500 uppercase">Valor</span>
+                <span className="text-[9px] font-medium text-violet-500 uppercase">Valor</span>
               </div>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-lg font-medium text-foreground truncate">
                 {project.contract_value ? formatCurrency(project.contract_value) : '--'}
               </p>
               <p className="text-[10px] text-muted-foreground">Valor do Contrato</p>
@@ -239,10 +239,10 @@ export default function ClientPortalPage() {
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                   <Activity className="w-4 h-4 text-emerald-500" />
                 </div>
-                <span className="text-[9px] font-bold text-emerald-500 uppercase">Saúde</span>
+                <span className="text-[9px] font-medium text-emerald-500 uppercase">Saúde</span>
               </div>
               <p className={cn(
-                "text-lg font-bold",
+                "text-lg font-medium truncate",
                 (project.health_score || 0) >= 90 ? 'text-emerald-500' :
                 (project.health_score || 0) >= 70 ? 'text-amber-500' : 'text-red-500'
               )}>

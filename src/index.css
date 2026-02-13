@@ -269,7 +269,7 @@
   }
 
   .kpi-value {
-    @apply text-4xl font-normal tracking-tighter text-foreground;
+    @apply text-4xl font-normal tracking-tighter text-foreground truncate;
   }
 
   .kpi-label {
