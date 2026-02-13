@@ -133,7 +133,7 @@ function PortalOverviewPremiumComponent({
     try {
       // Archive the deliverables (soft delete)
       const { error } = await supabase
-        .from('project_deliverables')
+        .from('portal_deliverables')
         .update({ visible_in_portal: false, updated_at: new Date().toISOString() })
         .in('id', ids);
 
@@ -170,7 +170,7 @@ function PortalOverviewPremiumComponent({
     try {
       if (actionToUndo.type === 'delete') {
         await supabase
-          .from('project_deliverables')
+          .from('portal_deliverables')
           .update({ visible_in_portal: true, updated_at: new Date().toISOString() })
           .in('id', actionToUndo.ids);
         
@@ -195,7 +195,7 @@ function PortalOverviewPremiumComponent({
     try {
       if (actionToRedo.type === 'delete') {
         await supabase
-          .from('project_deliverables')
+          .from('portal_deliverables')
           .update({ visible_in_portal: false, updated_at: new Date().toISOString() })
           .in('id', actionToRedo.ids);
         
