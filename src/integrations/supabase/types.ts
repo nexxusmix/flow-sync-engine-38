@@ -2407,6 +2407,56 @@ export type Database = {
           },
         ]
       }
+      creative_work_references: {
+        Row: {
+          created_at: string
+          creative_work_id: string
+          file_id: string | null
+          id: string
+          tags: string[] | null
+          title: string
+          type: string
+          updated_at: string
+          url: string | null
+          use_for_ai: boolean
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          creative_work_id: string
+          file_id?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string
+          type?: string
+          updated_at?: string
+          url?: string | null
+          use_for_ai?: boolean
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          creative_work_id?: string
+          file_id?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string
+          type?: string
+          updated_at?: string
+          url?: string | null
+          use_for_ai?: boolean
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_work_references_creative_work_id_fkey"
+            columns: ["creative_work_id"]
+            isOneToOne: false
+            referencedRelation: "creative_works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creative_works: {
         Row: {
           brand_kit_id: string | null

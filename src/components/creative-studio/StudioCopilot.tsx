@@ -1,12 +1,15 @@
 /**
- * StudioCopilot — SolaFlux Holographic Design
- * Right panel with quick actions, custom instruction, tips
+ * StudioCopilot — SQUAD FILM / Liquid Glass
+ * Right panel with tabs: Copiloto | Referências | Ações
  */
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, Plus, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AiPromptField } from '@/components/ai/AiPromptField';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
 import type { CreativeWork, CreativeBlock } from '@/types/creative-works';
 
 interface StudioCopilotProps {
@@ -188,13 +191,7 @@ export function StudioCopilot({
         )}
 
         {activeTab === 'references' && (
-          <div className="p-5 flex flex-col items-center justify-center py-16 text-center">
-            <span className="material-symbols-outlined text-3xl text-white/10 mb-3" style={{ fontVariationSettings: "'wght' 200" }}>link</span>
-            <p className="text-sm text-white/25 mb-4">Nenhuma referência vinculada</p>
-            <button className="px-4 py-2 rounded border border-[rgba(0,156,202,0.15)] text-[11px] text-white/30 hover:text-white/50 hover:border-[rgba(0,156,202,0.25)] transition-colors">
-              Adicionar Referência
-            </button>
-          </div>
+          <ReferencesPanel workId={work?.id} />
         )}
 
         {activeTab === 'actions' && (
@@ -245,6 +242,135 @@ export function StudioCopilot({
           <span className="text-[10px] text-[hsl(195,100%,50%)] tracking-wider font-medium">SQUAD///FILM</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ======== References Sub-Panel ========
+interface Reference {
+  id: string;
+  type: string;
+  url: string | null;
+  title: string;
+  tags: string[];
+  use_for_ai: boolean;
+}
+
+function ReferencesPanel({ workId }: { workId?: string }) {
+  const queryClient = useQueryClient();
+  const [newUrl, setNewUrl] = useState('');
+  const [newTitle, setNewTitle] = useState('');
+
+  const { data: refs = [] } = useQuery({
+    queryKey: ['cw-references', workId],
+    queryFn: async () => {
+      if (!workId) return [];
+      const { data } = await supabase
+        .from('creative_work_references')
+        .select('*')
+        .eq('creative_work_id', workId)
+        .order('created_at', { ascending: false });
+      return (data || []) as Reference[];
+    },
+    enabled: !!workId,
+  });
+
+  const addRef = useMutation({
+    mutationFn: async () => {
+      if (!workId || !newUrl.trim()) return;
+      const type = newUrl.includes('youtube') ? 'youtube'
+        : newUrl.includes('figma') ? 'figma'
+        : newUrl.includes('drive.google') ? 'drive' : 'url';
+      await supabase.from('creative_work_references').insert({
+        creative_work_id: workId,
+        url: newUrl,
+        title: newTitle || newUrl,
+        type,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cw-references', workId] });
+      setNewUrl(''); setNewTitle('');
+      toast.success('Referência adicionada');
+    },
+  });
+
+  const deleteRef = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('creative_work_references').delete().eq('id', id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cw-references', workId] });
+    },
+  });
+
+  const toggleAI = useMutation({
+    mutationFn: async ({ id, val }: { id: string; val: boolean }) => {
+      await supabase.from('creative_work_references').update({ use_for_ai: val }).eq('id', id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cw-references', workId] });
+    },
+  });
+
+  return (
+    <div className="p-5 space-y-4">
+      {/* Add reference */}
+      <div className="space-y-2">
+        <h4 className="text-[10px] text-white/25 uppercase tracking-[0.12em]">Adicionar Referência</h4>
+        <input
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          placeholder="Título (opcional)"
+          className="w-full h-8 bg-[rgba(255,255,255,0.03)] border border-[rgba(0,156,202,0.1)] rounded px-3 text-xs text-white/60 outline-none focus:border-[rgba(0,156,202,0.3)]"
+        />
+        <div className="flex gap-2">
+          <input
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)}
+            placeholder="URL (YouTube, Figma, Drive...)"
+            className="flex-1 h-8 bg-[rgba(255,255,255,0.03)] border border-[rgba(0,156,202,0.1)] rounded px-3 text-xs text-white/60 outline-none focus:border-[rgba(0,156,202,0.3)]"
+          />
+          <button onClick={() => addRef.mutate()} disabled={!newUrl.trim()}
+            className="px-3 h-8 rounded bg-[hsl(195,100%,40%)] text-white text-xs disabled:opacity-30">
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* List */}
+      {refs.length === 0 ? (
+        <div className="py-8 text-center">
+          <p className="text-sm text-white/20">Nenhuma referência</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {refs.map((ref) => (
+            <div key={ref.id} className="flex items-center gap-2 p-2 rounded border border-[rgba(0,156,202,0.08)] hover:border-[rgba(0,156,202,0.15)] transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-white/50 truncate">{ref.title}</p>
+                <p className="text-[9px] text-white/20 truncate">{ref.url}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[8px] text-white/20">IA</span>
+                <Switch
+                  checked={ref.use_for_ai}
+                  onCheckedChange={(val) => toggleAI.mutate({ id: ref.id, val })}
+                  className="scale-75"
+                />
+                {ref.url && (
+                  <a href={ref.url} target="_blank" rel="noopener noreferrer" className="text-white/20 hover:text-primary">
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+                <button onClick={() => deleteRef.mutate(ref.id)} className="text-white/20 hover:text-red-400">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
