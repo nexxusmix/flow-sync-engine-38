@@ -14,6 +14,7 @@ import { AddVersionDialog } from "./AddVersionDialog";
 import { VideoPlayerWithMarkers } from "./VideoPlayerWithMarkers";
 import { AnnotationCanvas } from "./AnnotationCanvas";
 import { RevisionForm } from "./RevisionForm";
+import { MaterialLightbox } from "./MaterialLightbox";
 import { QuickRevisionDrawer } from "../QuickRevisionDrawer";
 import type {
   PortalDeliverable,
@@ -89,6 +90,9 @@ function PortalMaterialsTabComponent({
   // Category filter
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
+  // Lightbox state
+  const [lightboxMaterialId, setLightboxMaterialId] = useState<string | null>(null);
+  
   // Player state
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   
@@ -284,133 +288,34 @@ function PortalMaterialsTabComponent({
       {/* Materials Grid */}
       <div className="grid md:grid-cols-2 gap-4">
         {materials.map((material) => {
-          const isExpanded = expandedPlayerId === material.id;
-          const isVideo = material.youtube_url || material.file_url?.includes('.mp4') || material.type?.includes('video');
-
           return (
-            <div key={material.id} className="space-y-3">
-              {/* Video Player (expanded) */}
-              {isExpanded && isVideo && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="relative"
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 z-10 bg-black/50 text-white hover:bg-black/70"
-                    onClick={() => setExpandedPlayerId(null)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                  <VideoPlayerWithMarkers
-                    videoUrl={material.file_url || undefined}
-                    youtubeUrl={material.youtube_url || undefined}
-                    thumbnailUrl={material.thumbnail_url || undefined}
-                    title={material.title}
-                    comments={selectedComments}
-                    onMarkFrame={handleMarkFrame}
-                    onOpenAnnotation={handleOpenAnnotation}
-                    onRequestComment={() => {
-                      onSelectMaterial(material.id);
-                      // Scroll to comment form
-                    }}
-                    onRequestRevision={() => {
-                      onSelectMaterial(material.id);
-                      setShowRevisionForm(true);
-                    }}
-                  />
-                </motion.div>
-              )}
-
-              {/* Material Card */}
-              {!isExpanded && (
-                <div
-                  onClick={() => {
-                    if (isVideo) {
-                      setExpandedPlayerId(material.id);
-                      onSelectMaterial(material.id);
-                    } else {
-                      onSelectMaterial(material.id === selectedMaterialId ? null : material.id);
-                    }
+            <div key={material.id}>
+              <div
+                onClick={() => {
+                  setLightboxMaterialId(material.id);
+                  onSelectMaterial(material.id);
+                }}
+              >
+                <PortalMaterialCard
+                  material={material}
+                  versions={versions.filter(v => v.deliverable_id === material.id)}
+                  comments={comments.filter(c => c.deliverable_id === material.id)}
+                  approval={approvals.find(a => a.deliverable_id === material.id)}
+                  isSelected={selectedMaterialId === material.id}
+                  onSelect={() => {}}
+                  onViewVersion={(version) => {
+                    console.log('View version:', version);
                   }}
-                >
-                  <PortalMaterialCard
-                    material={material}
-                    versions={versions.filter(v => v.deliverable_id === material.id)}
-                    comments={comments.filter(c => c.deliverable_id === material.id)}
-                    approval={approvals.find(a => a.deliverable_id === material.id)}
-                    isSelected={selectedMaterialId === material.id}
-                    onSelect={() => {}}
-                    onViewVersion={(version) => {
-                      console.log('View version:', version);
-                    }}
-                    onRequestRevision={handleQuickRevisionFromCard}
-                  />
-                </div>
-              )}
-
-              {/* Revision Form (when frame is marked) */}
-              {showRevisionForm && selectedMaterialId === material.id && (
-                <RevisionForm
-                  materialId={material.id}
-                  materialTitle={material.title}
-                  timestampMs={revisionTimestampMs}
-                  screenshotUrl={revisionScreenshot}
-                  onSubmit={handleRevisionSubmit}
-                  onCancel={() => {
-                    setShowRevisionForm(false);
-                    handleClearTimecode();
-                  }}
-                  onChangeTimestamp={() => setShowRevisionForm(false)}
-                  isSubmitting={isRequestingRevision}
+                  onRequestRevision={handleQuickRevisionFromCard}
                 />
-              )}
-
-              {/* Inline Comment - ALWAYS show when material is selected or expanded */}
-              {(selectedMaterialId === material.id || isExpanded) && !showRevisionForm && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <PortalInlineComment
-                    materialId={material.id}
-                    materialTitle={material.title}
-                    comments={selectedComments}
-                    approval={selectedApproval}
-                    currentTimecode={revisionTimecode}
-                    screenshotUrl={revisionScreenshot}
-                    frameTimestampMs={revisionTimestampMs}
-                    onAddComment={(data) => onAddComment({
-                      ...data,
-                      timecode: revisionTimecode,
-                      frameTimestampMs: revisionTimestampMs,
-                      screenshotUrl: revisionScreenshot,
-                    })}
-                    onApprove={onApprove}
-                    onRequestRevision={(data) => onRequestRevision({
-                      ...data,
-                      timecode: revisionTimecode,
-                      frameTimestampMs: revisionTimestampMs,
-                      screenshotUrl: revisionScreenshot,
-                    })}
-                    isAddingComment={isAddingComment}
-                    isApproving={isApproving}
-                    isRequestingRevision={isRequestingRevision}
-                    onClearTimecode={revisionTimecode ? handleClearTimecode : undefined}
-                  />
-                </motion.div>
-              )}
+              </div>
 
               {/* Add New Version Button (manager only) */}
               {isManager && selectedMaterialId === material.id && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full border-dashed border-[#2a2a2a] text-gray-500 hover:text-cyan-400 hover:border-cyan-500/30"
+                  className="w-full mt-3 border-dashed border-[#2a2a2a] text-gray-500 hover:text-cyan-400 hover:border-cyan-500/30"
                   onClick={() => handleAddNewVersion(material)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -421,6 +326,31 @@ function PortalMaterialsTabComponent({
           );
         })}
       </div>
+
+      {/* Material Lightbox */}
+      {lightboxMaterialId && (() => {
+        const lbMaterial = materials.find(m => m.id === lightboxMaterialId);
+        if (!lbMaterial) return null;
+        const lbComments = comments.filter(c => c.deliverable_id === lightboxMaterialId);
+        const lbApproval = approvals.find(a => a.deliverable_id === lightboxMaterialId);
+        return (
+          <MaterialLightbox
+            material={lbMaterial}
+            materials={materials}
+            comments={lbComments}
+            approval={lbApproval}
+            onClose={() => setLightboxMaterialId(null)}
+            onNavigate={(id) => {
+              setLightboxMaterialId(id);
+              onSelectMaterial(id);
+            }}
+            onAddComment={onAddComment}
+            onRequestRevision={onRequestRevision}
+            isAddingComment={isAddingComment}
+            isRequestingRevision={isRequestingRevision}
+          />
+        );
+      })()}
 
       {/* Annotation Canvas (Fullscreen Overlay) */}
       <AnimatePresence>
