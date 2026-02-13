@@ -5069,13 +5069,19 @@ export type Database = {
       }
       tasks: {
         Row: {
+          ai_refined: boolean
+          attachments: Json | null
           category: string
           completed_at: string | null
           created_at: string
           description: string | null
           due_date: string | null
           id: string
+          links: Json | null
           position: number
+          priority: string
+          progress: number
+          start_date: string | null
           status: string
           tags: string[] | null
           title: string
@@ -5083,13 +5089,19 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_refined?: boolean
+          attachments?: Json | null
           category?: string
           completed_at?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
           id?: string
+          links?: Json | null
           position?: number
+          priority?: string
+          progress?: number
+          start_date?: string | null
           status?: string
           tags?: string[] | null
           title: string
@@ -5097,13 +5109,19 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_refined?: boolean
+          attachments?: Json | null
           category?: string
           completed_at?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
           id?: string
+          links?: Json | null
           position?: number
+          priority?: string
+          progress?: number
+          start_date?: string | null
           status?: string
           tags?: string[] | null
           title?: string

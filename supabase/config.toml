@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.generate-template-fields]
 verify_jwt = false
+
+[functions.refine-task-ai]
+verify_jwt = false
