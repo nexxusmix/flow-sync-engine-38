@@ -1,8 +1,9 @@
-import { Play, Clapperboard, X, Film, ImageIcon } from "lucide-react";
+import { Play, Clapperboard, X, Film, ImageIcon, Link2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useProjectMedia, type MediaItem } from "@/hooks/useProjectMedia";
+import { useProjectMediaFeed, type ProjectMediaItem } from "@/hooks/useProjectMediaFeed";
 
 const VIDEO_RE = /\.(mp4|webm|mov|avi|mkv)(\?|$)/i;
 function isVideo(url: string) { return VIDEO_RE.test(url); }
@@ -97,8 +98,14 @@ function InlineVideo({ src, className }: { src: string; className?: string }) {
   );
 }
 
-// ── ProjectCard ──
+// ── Unified slide type ──
+interface CardSlide {
+  url: string;
+  type: "image" | "video" | "external_video";
+  title?: string;
+}
 
+// ── ProjectCard ──
 interface ProjectCardProps {
   title: string;
   client: string;
@@ -111,37 +118,58 @@ interface ProjectCardProps {
 
 export function ProjectCard({ title, client, status, image, date, index = 0, projectId }: ProjectCardProps) {
   const { data: mediaItems } = useProjectMedia(projectId);
+  const { data: feedItems } = useProjectMediaFeed(projectId);
   const [modalUrl, setModalUrl] = useState<string | null>(null);
 
-  // Build the final slides list: fetched media → fallback image prop
-  const slides: MediaItem[] = mediaItems && mediaItems.length > 0
-    ? mediaItems
-    : image
-      ? [{ url: image, type: "image" as const }]
-      : [];
+  // Build slides: feed items first, then legacy, then fallback
+  const slides: CardSlide[] = [];
+  
+  // From feed
+  if (feedItems && feedItems.length > 0) {
+    for (const f of feedItems) {
+      const url = f.media_url || f.thumb_url || "";
+      if (!url) continue;
+      const type = f.media_type === "video" ? "video" as const
+        : f.media_type === "external_video" ? "external_video" as const
+        : "image" as const;
+      if (!slides.find(s => s.url === url)) {
+        slides.push({ url, type, title: f.title });
+      }
+    }
+  }
+  
+  // From legacy
+  if (slides.length === 0 && mediaItems && mediaItems.length > 0) {
+    for (const m of mediaItems) {
+      slides.push({ url: m.url, type: m.type === "video" ? "video" : "image", title: m.title });
+    }
+  }
+  
+  // Fallback
+  if (slides.length === 0 && image) {
+    slides.push({ url: image, type: "image" });
+  }
 
   const [current, setCurrent] = useState(0);
   const [imgErrors, setImgErrors] = useState<Set<number>>(new Set());
   const [isPaused, setIsPaused] = useState(false);
 
-  // Filter out errored slides
   const validSlides = slides.filter((_, i) => !imgErrors.has(i));
 
   const handleImgError = useCallback((slideIndex: number) => {
     setImgErrors(prev => new Set(prev).add(slideIndex));
   }, []);
 
-  // Reset state when slides change
   useEffect(() => {
     setCurrent(0);
     setImgErrors(new Set());
   }, [slides.length]);
 
-  // Autoplay - different timings for video vs image
+  // Autoplay
   useEffect(() => {
     if (validSlides.length <= 1 || isPaused) return;
     const currentSlide = validSlides[current];
-    const delay = currentSlide?.type === "video" ? 8000 : 4000;
+    const delay = currentSlide?.type === "video" || currentSlide?.type === "external_video" ? 8000 : 4000;
     const timer = setInterval(() => {
       setCurrent(prev => (prev + 1) % validSlides.length);
     }, delay);
@@ -153,9 +181,13 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
 
   const handleSlideClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (currentSlide) {
-      setModalUrl(currentSlide.url);
-    }
+    if (currentSlide) setModalUrl(currentSlide.url);
+  };
+
+  const typeIcon = (type: string) => {
+    if (type === "video") return <Film className="w-3 h-3 text-white/80" />;
+    if (type === "external_video") return <Link2 className="w-3 h-3 text-white/80" />;
+    return <ImageIcon className="w-3 h-3 text-white/80" />;
   };
 
   return (
@@ -163,17 +195,8 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{
-          delay: index * 0.1,
-          type: "spring",
-          stiffness: 100,
-          damping: 15,
-        }}
-        whileHover={{
-          y: -12,
-          scale: 1.02,
-          transition: { duration: 0.3 },
-        }}
+        transition={{ delay: index * 0.1, type: "spring", stiffness: 100, damping: 15 }}
+        whileHover={{ y: -12, scale: 1.02, transition: { duration: 0.3 } }}
         whileTap={{ scale: 0.98 }}
         className="glass-card rounded-[2rem] overflow-hidden group cursor-pointer hover:border-primary/30 transition-all duration-500"
         onMouseEnter={() => setIsPaused(true)}
@@ -216,11 +239,7 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
               {currentSlide && (
                 <div className="absolute top-3 left-3 z-10">
                   <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full">
-                    {currentSlide.type === "video" ? (
-                      <Film className="w-3 h-3 text-white/80" />
-                    ) : (
-                      <ImageIcon className="w-3 h-3 text-white/80" />
-                    )}
+                    {typeIcon(currentSlide.type)}
                     {validSlides.length > 1 && (
                       <span className="text-[9px] text-white/70 font-light">{current + 1}/{validSlides.length}</span>
                     )}
@@ -228,19 +247,18 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
                 </div>
               )}
 
-              {/* Dots indicator */}
+              {/* Story-mode progress bars */}
               {validSlides.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                  {validSlides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
-                      className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                        i === current
-                          ? "bg-primary w-4"
-                          : "bg-white/50 hover:bg-white/80"
-                      }`}
-                    />
+                <div className="absolute bottom-3 left-3 right-3 flex gap-1 z-10">
+                  {validSlides.map((s, i) => (
+                    <div key={i} className="flex-1 h-0.5 rounded-full overflow-hidden bg-white/20">
+                      <motion.div
+                        className="h-full bg-white/80"
+                        initial={{ width: "0%" }}
+                        animate={{ width: i === current ? "100%" : i < current ? "100%" : "0%" }}
+                        transition={i === current ? { duration: s.type === "video" ? 8 : 4, ease: "linear" } : { duration: 0 }}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -270,12 +288,7 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
         </div>
         <div className="p-6 space-y-3">
           <div className="flex items-center gap-2">
-            <motion.span
-              className="badge-info"
-              whileHover={{ scale: 1.05 }}
-            >
-              {status}
-            </motion.span>
+            <motion.span className="badge-info" whileHover={{ scale: 1.05 }}>{status}</motion.span>
             <span className="text-[9px] text-muted-foreground font-normal uppercase tracking-wider">{date}</span>
           </div>
           <h3 className="text-lg font-normal text-foreground tracking-tight group-hover:text-primary transition-colors duration-300">{title}</h3>
@@ -283,7 +296,6 @@ export function ProjectCard({ title, client, status, image, date, index = 0, pro
         </div>
       </motion.div>
 
-      {/* Media Modal */}
       {modalUrl && <MediaModal url={modalUrl} onClose={() => setModalUrl(null)} />}
     </>
   );
