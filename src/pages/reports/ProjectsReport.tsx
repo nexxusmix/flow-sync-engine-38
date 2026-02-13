@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { useExportPdf } from "@/hooks/useExportPdf";
 import {
-  FolderKanban, ArrowLeft, Download, ChevronRight, AlertTriangle, DollarSign, Clock
+  FolderKanban, ArrowLeft, Download, ChevronRight, AlertTriangle, DollarSign, Clock, Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export default function ProjectsReport() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isExporting, exportProjectsOverview } = useExportPdf();
 
   useEffect(() => {
     loadData();
@@ -99,9 +101,9 @@ export default function ProjectsReport() {
               <p className="text-sm text-muted-foreground">Visão geral e drill-down</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" disabled>
-            <Download className="w-4 h-4 mr-2" />
-            Exportar PDF
+          <Button variant="outline" size="sm" disabled={isExporting} onClick={() => exportProjectsOverview("3m")}>
+            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            {isExporting ? "Gerando..." : "Exportar PDF"}
           </Button>
         </div>
 
