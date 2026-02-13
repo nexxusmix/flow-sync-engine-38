@@ -78,10 +78,10 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Google Sans", "Google Sans Flex", "system-ui", "sans-serif"],
-        serif: ["Libre Baskerville", "Georgia", "serif"],
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
-        display: ["Google Sans", "system-ui", "sans-serif"],
+        sans: ["Google Sans Flex", "system-ui", "sans-serif"],
+        serif: ["Google Sans Flex", "system-ui", "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
+        display: ["Google Sans Flex", "system-ui", "sans-serif"],
       },
       fontWeight: {
         light: "300",
