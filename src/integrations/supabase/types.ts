@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_items: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          metadata: Json | null
+          priority: string
+          project_id: string | null
+          scope: string
+          snoozed_until: string | null
+          source: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          metadata?: Json | null
+          priority?: string
+          project_id?: string | null
+          scope?: string
+          snoozed_until?: string | null
+          source?: string
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          metadata?: Json | null
+          priority?: string
+          project_id?: string | null
+          scope?: string
+          snoozed_until?: string | null
+          source?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       action_log: {
         Row: {
           action_type: string
@@ -3487,6 +3547,71 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_drafts: {
+        Row: {
+          action_item_id: string | null
+          attachments: Json | null
+          channel: string
+          client_id: string | null
+          content: string
+          created_at: string
+          id: string
+          project_id: string | null
+          scope: string
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          tone: string
+          updated_at: string
+          variables_used: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          action_item_id?: string | null
+          attachments?: Json | null
+          channel?: string
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          scope?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          tone?: string
+          updated_at?: string
+          variables_used?: Json | null
+          workspace_id?: string
+        }
+        Update: {
+          action_item_id?: string | null
+          attachments?: Json | null
+          channel?: string
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          scope?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          tone?: string
+          updated_at?: string
+          variables_used?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_drafts_action_item_id_fkey"
+            columns: ["action_item_id"]
+            isOneToOne: false
+            referencedRelation: "action_items"
             referencedColumns: ["id"]
           },
         ]

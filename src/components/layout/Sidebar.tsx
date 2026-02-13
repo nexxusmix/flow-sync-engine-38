@@ -18,6 +18,7 @@ interface MenuItem {
 
 const mainMenuItems: MenuItem[] = [
   { name: "Overview", href: "/", icon: "dashboard", modules: ['production', 'marketing'] },
+  { name: "Central de Ações", href: "/central-acoes", icon: "bolt", modules: ['production', 'marketing'] },
   { name: "Calendário", href: "/calendario", icon: "calendar_month", modules: ['production', 'marketing'] },
   { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8, modules: ['production', 'marketing'] },
   { name: "CRM", href: "/crm", icon: "radar", badge: 3, modules: ['production', 'marketing'] },
