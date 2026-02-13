@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Wand2, Image, Download, Loader2, Sparkles, ImagePlus } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
+import { AssetCarousel } from "./AssetCarousel";
 
 interface ProjectArtSectionProps {
   projectId: string;
@@ -72,6 +73,7 @@ export function ProjectArtSection({
   };
 
   return (
+    <>
     <Card className="glass-card p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -200,5 +202,9 @@ export function ProjectArtSection({
         )}
       </div>
     </Card>
+
+    {/* Asset Carousel */}
+    <AssetCarousel projectId={projectId} />
+  </>
   );
 }
