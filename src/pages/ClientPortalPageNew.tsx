@@ -366,8 +366,12 @@ export default function ClientPortalPage() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen h-screen overflow-y-auto bg-background scroll-smooth relative"
+      className="holo min-h-screen h-screen overflow-y-auto bg-background scroll-smooth relative"
+      data-platform="portal"
     >
+      {/* Holographic Ambient Glow */}
+      <div className="holo-ambient" />
+      
       {/* Animated Background */}
       <CursorGlow />
       <BackgroundParticles />
@@ -381,7 +385,7 @@ export default function ClientPortalPage() {
         }}
       />
 
-      <div className="max-w-[1400px] xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <div className="world-stage max-w-[1400px] xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Header with animations */}
         <ScrollReveal direction="down" delay={0.1}>
           <PortalHeaderPremium
