@@ -3913,6 +3913,68 @@ export type Database = {
           },
         ]
       }
+      project_media_items: {
+        Row: {
+          created_at: string
+          duration_sec: number | null
+          external_url: string | null
+          id: string
+          media_type: string
+          media_url: string | null
+          pinned: boolean
+          project_id: string
+          sort_order: number
+          source_id: string | null
+          source_type: string
+          status: string
+          thumb_url: string | null
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_sec?: number | null
+          external_url?: string | null
+          id?: string
+          media_type: string
+          media_url?: string | null
+          pinned?: boolean
+          project_id: string
+          sort_order?: number
+          source_id?: string | null
+          source_type: string
+          status?: string
+          thumb_url?: string | null
+          title?: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          duration_sec?: number | null
+          external_url?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string | null
+          pinned?: boolean
+          project_id?: string
+          sort_order?: number
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          thumb_url?: string | null
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_media_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_stage_settings: {
         Row: {
           blocks_delivery: boolean | null
@@ -5446,6 +5508,33 @@ export type Database = {
           status?: string
           tags?: string[] | null
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ui_state: {
+        Row: {
+          id: string
+          scope: string
+          scope_key: string
+          state: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          scope: string
+          scope_key: string
+          state?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          scope?: string
+          scope_key?: string
+          state?: Json
           updated_at?: string
           user_id?: string
         }

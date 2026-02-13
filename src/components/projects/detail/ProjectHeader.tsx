@@ -15,11 +15,13 @@ import {
   FileDown,
   ImagePlus,
   Pencil,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { ProjectBannerSection } from "./ProjectBannerSection";
+import { ProjectCommandCenter } from "@/components/projects/ProjectCommandCenter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -32,6 +34,7 @@ interface ProjectHeaderProps {
 export function ProjectHeader({ project }: ProjectHeaderProps) {
   const queryClient = useQueryClient();
   const { setSelectedProjectId, setEditProjectModalOpen } = useProjectsStore();
+  const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const { portalLink, portalUrl, isLoading: portalLoading, createLink } = usePortalLink(project.id, {
     name: project.name,
     clientName: project.client_name || undefined,
@@ -140,6 +143,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   };
 
   return (
+    <>
     <div className="space-y-4">
       {/* Main Info Card */}
       <div className="glass-card rounded-2xl md:rounded-3xl overflow-hidden">
@@ -215,6 +219,15 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
             {/* Right - Quick Actions */}
             <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCommandCenterOpen(true)}
+                className="h-9 hidden sm:flex gap-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5"
+              >
+                <Sparkles className="w-4 h-4 text-primary" />
+                Atualizar com IA
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -318,5 +331,21 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
         </div>
       </div>
     </div>
+
+      {/* IA Command Center */}
+      <ProjectCommandCenter
+        open={commandCenterOpen}
+        onOpenChange={setCommandCenterOpen}
+        projectId={project.id}
+        projectName={project.name}
+        projectContext={{
+          status: statusConfig?.label || project.status,
+          stage: stageInfo?.name || project.stage_current,
+          clientName: project.client_name || undefined,
+          contractValue: project.contract_value || 0,
+          healthScore: project.health_score || 0,
+        }}
+      />
+    </>
   );
 }
