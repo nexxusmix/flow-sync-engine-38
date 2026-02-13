@@ -10,25 +10,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 99%;
     --foreground: 0 0% 5%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 5%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 5%;
-    --primary: 0 0% 5%;
+    --primary: 195 100% 35%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
+    --secondary: 220 14% 95%;
     --secondary-foreground: 0 0% 5%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 96%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 9% 40%;
+    --accent: 220 14% 95%;
     --accent-foreground: 0 0% 5%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 0 0% 5%;
+    --border: 220 15% 85%;
+    --input: 220 15% 85%;
+    --ring: 195 100% 35%;
     --radius: 0.75rem;
 
     /* Status colors */
@@ -39,15 +39,20 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
+    /* Glass tokens for light mode */
+    --glass-border: 220 15% 75%;
+    --glass-surface: 220 14% 97%;
+    --glow: 195 100% 35%;
+
     /* Sidebar */
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 97%;
     --sidebar-foreground: 0 0% 30%;
-    --sidebar-primary: 0 0% 5%;
+    --sidebar-primary: 195 100% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent: 220 14% 94%;
     --sidebar-accent-foreground: 0 0% 5%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 0 0% 5%;
+    --sidebar-border: 220 15% 87%;
+    --sidebar-ring: 195 100% 35%;
   }
 
   .dark {
@@ -189,44 +194,66 @@
 @layer components {
   /* Glass Card - SQUAD Film Style - defocused blur depth */
   .glass-card {
-    background: rgba(255, 255, 255, 0.01);
+    background: hsl(var(--glass-surface) / 0.5);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border: 0.5px solid hsl(var(--glass-border, 195 100% 40%) / 0.15);
-    box-shadow: 0 0 18px rgba(0,0,0,.85), inset 0 0 10px hsl(var(--glow, 195 100% 40%) / 0.03);
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(var(--foreground) / 0.06);
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     transform-style: preserve-3d;
   }
   
   .glass-card:hover {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: hsl(var(--glass-border, 195 100% 40%) / 0.3);
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 4px 12px hsl(var(--foreground) / 0.08);
     transform: perspective(800px) translateZ(5px);
-    box-shadow: 0 0 30px rgba(0,0,0,.7), 0 0 40px -10px hsl(var(--glow, 195 100% 40%) / 0.15);
+  }
+
+  .dark .glass-card {
+    background: rgba(255, 255, 255, 0.01);
+    border: 0.5px solid hsl(var(--glass-border) / 0.15);
+    box-shadow: 0 0 18px rgba(0,0,0,.85), inset 0 0 10px hsl(var(--glow) / 0.03);
+  }
+
+  .dark .glass-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: hsl(var(--glass-border) / 0.3);
+    box-shadow: 0 0 30px rgba(0,0,0,.7), 0 0 40px -10px hsl(var(--glow) / 0.15);
   }
 
   /* Glass Projection - holographic panel */
   .glass-projection {
-    background: hsl(var(--glass-surface, 0 0% 100%) / 0.01);
+    background: hsl(var(--glass-surface) / 0.6);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border: 0.5px solid hsl(var(--glass-border, 195 100% 40%) / 0.15);
-    box-shadow: 0 0 18px rgba(0,0,0,.85), inset 0 0 10px hsl(var(--glow, 195 100% 40%) / 0.03);
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(var(--foreground) / 0.06);
+  }
+
+  .dark .glass-projection {
+    background: hsl(var(--glass-surface) / 0.01);
+    border: 0.5px solid hsl(var(--glass-border) / 0.15);
+    box-shadow: 0 0 18px rgba(0,0,0,.85), inset 0 0 10px hsl(var(--glow) / 0.03);
   }
 
   /* Holographic Card - gradient sweep */
   .holographic-card {
     position: relative;
-    background: linear-gradient(135deg, rgba(255,255,255,.02), rgba(255,255,255,0));
-    border: 0.5px solid hsl(var(--glass-border, 195 100% 40%) / 0.10);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dark .holographic-card {
+    background: linear-gradient(135deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    border: 0.5px solid hsl(var(--glass-border) / 0.10);
   }
 
   .holographic-card::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(45deg, transparent 48%, hsl(var(--glow, 195 100% 40%) / 0.03) 50%, transparent 52%);
+    background: linear-gradient(45deg, transparent 48%, hsl(var(--glow) / 0.03) 50%, transparent 52%);
     pointer-events: none;
     border-radius: inherit;
   }
@@ -275,9 +302,12 @@
 
   .card-elevated:hover {
     border-color: hsl(var(--primary) / 0.2);
-    background: hsl(0 0% 3%);
     transform: perspective(800px) translateZ(8px) rotateX(-1deg);
     box-shadow: 0 20px 50px -20px hsl(var(--primary) / 0.1);
+  }
+
+  .dark .card-elevated:hover {
+    background: hsl(0 0% 3%);
   }
 
   /* Flat card */
