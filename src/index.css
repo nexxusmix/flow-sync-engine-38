@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@300;400;500;600;700&family=Host+Grotesk:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;1,400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,200,0,0');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,200,0,0');
 
@@ -51,7 +51,7 @@
   }
 
   .dark {
-    /* SQUAD Film - Pure Black Immersive */
+    /* SQUAD Film - Pure Black Immersive — #009CCA brand */
     --background: 0 0% 0%;              /* Pure black #000000 */
     --foreground: 0 0% 100%;            /* Pure white */
 
@@ -62,8 +62,8 @@
     --popover: 0 0% 3%;
     --popover-foreground: 0 0% 100%;
 
-    /* Primary - Squad Blue */
-    --primary: 193 100% 41%;            /* #00A3D3 */
+    /* Primary - SQUAD Blue #009CCA */
+    --primary: 195 100% 40%;            /* #009CCA */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary */
@@ -83,16 +83,16 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Borders - Very subtle */
-    --border: 0 0% 8%;
-    --input: 0 0% 8%;
-    --ring: 193 100% 41%;
+    --border: 195 20% 8%;
+    --input: 195 10% 8%;
+    --ring: 195 100% 40%;
 
     /* Status colors */
     --success: 142 40% 40%;
     --success-foreground: 0 0% 100%;
     --warning: 38 60% 45%;
     --warning-foreground: 0 0% 0%;
-    --info: 193 100% 41%;
+    --info: 195 100% 40%;
     --info-foreground: 0 0% 100%;
 
     /* Sidebar */
@@ -102,8 +102,13 @@
     --sidebar-primary-foreground: 0 0% 0%;
     --sidebar-accent: 0 0% 5%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 5%;
-    --sidebar-ring: 193 100% 41%;
+    --sidebar-border: 195 15% 5%;
+    --sidebar-ring: 195 100% 40%;
+
+    /* SQUAD Film Glass tokens */
+    --glass-border: 195 100% 40%;
+    --glass-surface: 0 0% 100%;
+    --glow: 195 100% 40%;
   }
 }
 
@@ -123,8 +128,8 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Host Grotesk', sans-serif;
-    font-weight: 400; /* Regular weight for better readability */
+    font-family: 'Google Sans Flex', 'Host Grotesk', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
     overflow: hidden;
     height: 100vh;
     height: 100dvh;
@@ -182,19 +187,81 @@
 @layer components {
   /* Glass Card - SQUAD Film Style - defocused blur depth */
   .glass-card {
-    background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(24px) saturate(1.2);
-    -webkit-backdrop-filter: blur(24px) saturate(1.2);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.01);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 0.5px solid hsl(var(--glass-border, 195 100% 40%) / 0.15);
+    box-shadow: 0 0 18px rgba(0,0,0,.85), inset 0 0 10px hsl(var(--glow, 195 100% 40%) / 0.03);
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     transform-style: preserve-3d;
   }
   
   .glass-card:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: hsl(var(--glass-border, 195 100% 40%) / 0.3);
     transform: perspective(800px) translateZ(5px);
-    box-shadow: 0 20px 60px -20px hsl(var(--primary) / 0.12);
+    box-shadow: 0 0 30px rgba(0,0,0,.7), 0 0 40px -10px hsl(var(--glow, 195 100% 40%) / 0.15);
+  }
+
+  /* Glass Projection - holographic panel */
+  .glass-projection {
+    background: hsl(var(--glass-surface, 0 0% 100%) / 0.01);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 0.5px solid hsl(var(--glass-border, 195 100% 40%) / 0.15);
+    box-shadow: 0 0 18px rgba(0,0,0,.85), inset 0 0 10px hsl(var(--glow, 195 100% 40%) / 0.03);
+  }
+
+  /* Holographic Card - gradient sweep */
+  .holographic-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    border: 0.5px solid hsl(var(--glass-border, 195 100% 40%) / 0.10);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .holographic-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent 48%, hsl(var(--glow, 195 100% 40%) / 0.03) 50%, transparent 52%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Data Glow - text highlight */
+  .data-glow {
+    text-shadow: 0 0 12px hsl(var(--glow, 195 100% 40%) / 0.55);
+  }
+
+  /* Brand Line - thin separator */
+  .brand-line {
+    height: 1px;
+    background: linear-gradient(90deg, hsl(var(--primary) / 0.5), hsl(var(--primary) / 0.05));
+  }
+
+  /* Scan Effect - sweeping line */
+  .scan-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  .scan-effect::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.06), transparent);
+    animation: scanSweep 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes scanSweep {
+    0% { left: -50%; }
+    50%, 100% { left: 100%; }
+  }
+
+  /* Grid Dots - HUD background pattern */
+  .grid-dots {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 
   /* Card Elevated - 3D depth on hover */
@@ -1052,30 +1119,30 @@
      NEON & LANDING PAGE EFFECTS
      ======================================== */
 
-  /* Neon Text Glow */
+  /* Neon Text Glow - SQUAD Blue #009CCA */
   .neon-text {
     text-shadow:
-      0 0 10px rgba(0, 163, 211, 0.5),
-      0 0 20px rgba(0, 163, 211, 0.3),
-      0 0 40px rgba(0, 163, 211, 0.2),
-      0 0 80px rgba(0, 163, 211, 0.1);
+      0 0 10px rgba(0, 156, 202, 0.5),
+      0 0 20px rgba(0, 156, 202, 0.3),
+      0 0 40px rgba(0, 156, 202, 0.2),
+      0 0 80px rgba(0, 156, 202, 0.1);
     animation: neonPulse 3s ease-in-out infinite;
   }
 
   @keyframes neonPulse {
     0%, 100% {
       text-shadow:
-        0 0 10px rgba(0, 163, 211, 0.5),
-        0 0 20px rgba(0, 163, 211, 0.3),
-        0 0 40px rgba(0, 163, 211, 0.2),
-        0 0 80px rgba(0, 163, 211, 0.1);
+        0 0 10px rgba(0, 156, 202, 0.5),
+        0 0 20px rgba(0, 156, 202, 0.3),
+        0 0 40px rgba(0, 156, 202, 0.2),
+        0 0 80px rgba(0, 156, 202, 0.1);
     }
     50% {
       text-shadow:
-        0 0 15px rgba(0, 163, 211, 0.7),
-        0 0 30px rgba(0, 163, 211, 0.5),
-        0 0 60px rgba(0, 163, 211, 0.3),
-        0 0 100px rgba(0, 163, 211, 0.2);
+        0 0 15px rgba(0, 156, 202, 0.7),
+        0 0 30px rgba(0, 156, 202, 0.5),
+        0 0 60px rgba(0, 156, 202, 0.3),
+        0 0 100px rgba(0, 156, 202, 0.2);
     }
   }
 
@@ -1090,7 +1157,7 @@
     position: absolute;
     inset: -2px;
     border-radius: inherit;
-    background: linear-gradient(45deg, rgba(0, 163, 211, 0.5), rgba(139, 92, 246, 0.5), rgba(0, 163, 211, 0.5));
+    background: linear-gradient(45deg, rgba(0, 156, 202, 0.5), rgba(0, 200, 255, 0.5), rgba(0, 156, 202, 0.5));
     background-size: 200% 200%;
     animation: neonBorderRotate 3s linear infinite;
     opacity: 0;
@@ -1125,7 +1192,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(0, 163, 211, 0.4),
+      rgba(0, 156, 202, 0.4),
       transparent
     );
     animation: scannerEffect 2s ease-in-out infinite;
@@ -1157,8 +1224,8 @@
     inset: -20px;
     background: radial-gradient(
       ellipse at center,
-      rgba(0, 163, 211, 0.3) 0%,
-      rgba(0, 163, 211, 0.1) 40%,
+      rgba(0, 156, 202, 0.3) 0%,
+      rgba(0, 156, 202, 0.1) 40%,
       transparent 70%
     );
     filter: blur(40px);

@@ -78,8 +78,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Host Grotesk", "system-ui", "sans-serif"],
+        sans: ["Google Sans Flex", "Host Grotesk", "system-ui", "sans-serif"],
         serif: ["Playfair Display", "Georgia", "serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
       },
       fontWeight: {
         light: "300",
