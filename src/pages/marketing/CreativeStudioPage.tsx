@@ -61,6 +61,53 @@ export default function CreativeStudioPage() {
     fetchBrandKits();
   }, []);
 
+  // Auto-fill brief when project is linked and brief is empty
+  useEffect(() => {
+    if (!work?.project_id || !workId) return;
+    const briefBlock = getBlock('brief');
+    if (briefBlock?.content) return; // Brief already has content
+
+    const fillBriefFromProject = async () => {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('name, description, due_date')
+        .eq('id', work.project_id!)
+        .single();
+
+      if (!project) return;
+
+      // Fetch deliverables
+      const { data: milestones } = await (supabase
+        .from('payment_milestones' as any)
+        .select('title')
+        .eq('project_id', work.project_id!) as any);
+
+      const deliverables = (milestones || []).map((m: any) => m.title).filter(Boolean) as string[];
+
+      const briefContent: Record<string, unknown> = {
+        objective: project.description?.substring(0, 500) || `Projeto: ${project.name}`,
+        audience: '',
+        offer: '',
+        restrictions: '',
+        tone: '',
+        deliverables,
+        deadline: project.due_date || '',
+        references: [],
+      };
+
+      await upsertBlock.mutateAsync({
+        type: 'brief',
+        content: briefContent,
+        source: 'manual',
+        status: 'draft',
+      });
+
+      toast.success('Brief pré-preenchido com dados do projeto!');
+    };
+
+    fillBriefFromProject();
+  }, [work?.project_id, workId]);
+
   const handleCreateNewWork = async () => {
     setIsCreating(true);
     try {

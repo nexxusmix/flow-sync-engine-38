@@ -23,6 +23,24 @@ interface GenerateRequest {
 
 // System prompts for each block type
 const BLOCK_PROMPTS: Record<string, string> = {
+  brief: `Você é um estrategista criativo especializado em briefs de projetos audiovisuais e de conteúdo.
+Sua tarefa é criar um brief completo e detalhado baseado nos dados reais do projeto.
+
+ESTRUTURA DO BRIEF:
+- objective: Objetivo principal do projeto (baseado no escopo e descrição do projeto)
+- audience: Público-alvo (baseado nos dados do cliente e projeto)
+- offer: Proposta de valor ou oferta central
+- restrictions: Restrições ou limitações conhecidas
+- tone: Tom e estilo sugerido
+- deliverables: Lista de entregas esperadas (baseada nas entregas do projeto)
+- deadline: Prazo (baseado nas datas do projeto)
+- references: Lista de referências relevantes
+
+REGRAS:
+- Use TODOS os dados do projeto, cliente e campanha fornecidos para enriquecer o brief
+- Seja específico e contextual, não genérico
+- Mantenha linguagem profissional em português BR`,
+
   narrative_script: `Você é um roteirista profissional de vídeos e conteúdo audiovisual.
 Sua tarefa é criar roteiros narrativos estruturados para produções de vídeo.
 
@@ -40,7 +58,8 @@ REGRAS:
 - Seja cinematográfico e visual nas descrições
 - Use linguagem clara e objetiva
 - Inclua indicações de emoção e tom
-- Mantenha coerência narrativa entre os atos`,
+- Mantenha coerência narrativa entre os atos
+- Use os dados reais do projeto/cliente para contextualizar`,
 
   storyboard: `Você é um diretor de arte especializado em storyboards para vídeo.
 Crie cenas visuais detalhadas que guiem a produção.
@@ -84,9 +103,16 @@ serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const sbAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // Auth check with user client
+    const sbAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
     const { error: authErr } = await sbAuth.auth.getClaims(authHeader.replace("Bearer ", ""));
     if (authErr) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // Service client for fetching context data
+    const sbService = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: GenerateRequest = await req.json();
     const { workId, blockType, action, instruction, currentContent, context } = body;
@@ -94,6 +120,103 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // ============ FETCH REAL CONTEXT DATA ============
+    let projectContext = '';
+    let clientContext = '';
+    let campaignContext = '';
+    let materialsContext = '';
+
+    // Fetch project data
+    if (context?.projectId) {
+      const { data: project } = await sbService
+        .from('projects')
+        .select('name, description, status, stage_current, template, start_date, due_date, contract_value, client_name')
+        .eq('id', context.projectId)
+        .single();
+
+      if (project) {
+        projectContext = `
+DADOS DO PROJETO:
+- Nome: ${project.name}
+- Cliente: ${project.client_name || 'N/A'}
+- Descrição: ${project.description || 'N/A'}
+- Status: ${project.status || 'N/A'}
+- Etapa: ${project.stage_current || 'N/A'}
+- Tipo: ${project.template || 'N/A'}
+- Início: ${project.start_date || 'N/A'}
+- Prazo: ${project.due_date || 'N/A'}
+- Valor: ${project.contract_value ? `R$ ${project.contract_value}` : 'N/A'}`;
+      }
+
+      // Fetch project deliverables/milestones
+      const { data: milestones } = await sbService
+        .from('payment_milestones')
+        .select('title, description, percentage, status')
+        .eq('project_id', context.projectId)
+        .order('display_order');
+
+      if (milestones?.length) {
+        projectContext += `\n- Entregas/Milestones: ${milestones.map(m => `${m.title}${m.description ? ` (${m.description})` : ''}`).join('; ')}`;
+      }
+
+      // Fetch project materials
+      const { data: materials } = await sbService
+        .from('portal_deliverables')
+        .select('title, description, type, status')
+        .eq('project_id', context.projectId)
+        .limit(10);
+
+      if (materials?.length) {
+        materialsContext = `\nMATERIAIS DO PROJETO:
+${materials.map(m => `- ${m.title} (${m.type || 'arquivo'}) — ${m.status || 'pendente'}${m.description ? `: ${m.description}` : ''}`).join('\n')}`;
+      }
+    }
+
+    // Fetch client data
+    if (context?.clientId) {
+      const { data: client } = await sbService
+        .from('crm_contacts')
+        .select('name, company, role, industry, notes')
+        .eq('id', context.clientId)
+        .single();
+
+      if (client) {
+        clientContext = `
+DADOS DO CLIENTE:
+- Nome: ${client.name}
+- Empresa: ${client.company || 'N/A'}
+- Cargo: ${client.role || 'N/A'}
+- Segmento: ${client.industry || 'N/A'}
+- Notas: ${client.notes || 'N/A'}`;
+      }
+    }
+
+    // Fetch campaign data
+    if (context?.campaignId) {
+      const { data: campaign } = await sbService
+        .from('campaigns')
+        .select('name, objective, offer, audience, start_date, end_date, budget')
+        .eq('id', context.campaignId)
+        .single();
+
+      if (campaign) {
+        campaignContext = `
+DADOS DA CAMPANHA:
+- Nome: ${campaign.name}
+- Objetivo: ${campaign.objective || 'N/A'}
+- Oferta: ${campaign.offer || 'N/A'}
+- Público-alvo: ${campaign.audience || 'N/A'}
+- Período: ${campaign.start_date || '?'} a ${campaign.end_date || '?'}
+- Budget: ${campaign.budget ? `R$ ${campaign.budget}` : 'N/A'}`;
+      }
+    }
+
+    // Fetch brand kit if linked
+    let brandKitContext = '';
+    if (context?.brandKit) {
+      brandKitContext = `\nBRAND KIT: ${JSON.stringify(context.brandKit)}`;
     }
 
     // Build system prompt
@@ -108,11 +231,14 @@ ${instruction ? `INSTRUÇÃO ESPECÍFICA: ${instruction}` : ''}
 Retorne APENAS o JSON válido com a estrutura apropriada para o tipo de bloco.
 NÃO inclua explicações ou texto adicional fora do JSON.`;
 
-    // Build user prompt
-    let userPrompt = `Contexto do trabalho:
+    // Build user prompt with REAL context
+    let userPrompt = `Contexto do trabalho criativo:
 - Título: ${context?.title || 'Trabalho Criativo'}
-${context?.projectId ? `- Projeto vinculado: ${context.projectId}` : ''}
-${context?.clientId ? `- Cliente vinculado: ${context.clientId}` : ''}
+${projectContext}
+${clientContext}
+${campaignContext}
+${materialsContext}
+${brandKitContext}
 `;
 
     if (currentContent && Object.keys(currentContent).length > 0) {
@@ -120,12 +246,12 @@ ${context?.clientId ? `- Cliente vinculado: ${context.clientId}` : ''}
 ${JSON.stringify(currentContent, null, 2)}`;
     }
 
-    userPrompt += `\n\nGere o conteúdo para o bloco "${blockType}".`;
+    userPrompt += `\n\nGere o conteúdo para o bloco "${blockType}" usando os dados reais fornecidos acima.`;
 
     // Define the function schema based on block type
     const functionSchema = getBlockFunctionSchema(blockType);
 
-    console.log('Calling AI Gateway for block:', blockType, 'action:', action);
+    console.log('Calling AI Gateway for block:', blockType, 'action:', action, 'with project context:', !!projectContext);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -153,14 +279,12 @@ ${JSON.stringify(currentContent, null, 2)}`;
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a few seconds." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "Payment required. Add credits to continue." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       
@@ -200,6 +324,27 @@ ${JSON.stringify(currentContent, null, 2)}`;
 // Get function schema for block type
 function getBlockFunctionSchema(blockType: string) {
   switch (blockType) {
+    case 'brief':
+      return {
+        name: "generate_brief",
+        description: "Generate a complete project brief based on real project data",
+        parameters: {
+          type: "object",
+          properties: {
+            objective: { type: "string", description: "Main objective of the project" },
+            audience: { type: "string", description: "Target audience" },
+            offer: { type: "string", description: "Core value proposition or offer" },
+            restrictions: { type: "string", description: "Known restrictions or limitations" },
+            tone: { type: "string", description: "Suggested tone and style" },
+            deliverables: { type: "array", items: { type: "string" }, description: "List of expected deliverables" },
+            deadline: { type: "string", description: "Deadline in YYYY-MM-DD format" },
+            references: { type: "array", items: { type: "string" }, description: "Relevant references" }
+          },
+          required: ["objective", "audience", "tone", "deliverables"],
+          additionalProperties: false
+        }
+      };
+
     case 'narrative_script':
       return {
         name: "generate_narrative_script",
@@ -284,8 +429,34 @@ function getBlockFunctionSchema(blockType: string) {
         }
       };
 
+    case 'shotlist':
+      return {
+        name: "generate_shotlist",
+        description: "Generate a production shotlist",
+        parameters: {
+          type: "object",
+          properties: {
+            shots: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  number: { type: "number" },
+                  description: { type: "string" },
+                  shot_type: { type: "string" },
+                  movement: { type: "string" },
+                  lens: { type: "string" },
+                  notes: { type: "string" }
+                },
+                required: ["number", "description", "shot_type"]
+              }
+            }
+          },
+          required: ["shots"]
+        }
+      };
+
     default:
-      // Generic schema for other block types
       return {
         name: `generate_${blockType}`,
         description: `Generate content for ${blockType} block`,
