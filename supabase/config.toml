@@ -128,3 +128,6 @@ verify_jwt = false
 
 [functions.generate-client-message]
 verify_jwt = false
+
+[functions.generate-alert-ai]
+verify_jwt = false

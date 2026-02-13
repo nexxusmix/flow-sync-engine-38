@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle, Clock, Info, CheckCircle2,
-  Bell, MoreVertical, Trash2, Clock3, Sparkles, Eye,
+  Bell, MoreVertical, Trash2, Clock3, Sparkles, Eye, Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { GenerateAlertsButton } from '@/components/alerts/GenerateAlertsButton';
+import { CreateAlertModal } from '@/components/alerts/CreateAlertModal';
 
 const severityConfig = {
   critical: { icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Crítico' },
@@ -45,6 +46,7 @@ export function AlertsTab({ project }: AlertsTabProps) {
   const { alerts, isLoading, updateStatus, deleteAlert } = useAlerts({ projectId: project.id });
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'open' | 'all'>('open');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const filtered = alerts.filter(a => {
     if (statusFilter === 'open') return a.status === 'open';
@@ -168,6 +170,9 @@ export function AlertsTab({ project }: AlertsTabProps) {
           >
             Todos
           </Button>
+          <Button size="sm" variant="outline" onClick={() => setShowCreateModal(true)} className="h-7 text-xs">
+            <Plus className="w-3.5 h-3.5 mr-1" /> Novo Aviso
+          </Button>
           <GenerateAlertsButton />
         </div>
       </div>
@@ -216,6 +221,7 @@ export function AlertsTab({ project }: AlertsTabProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <CreateAlertModal open={showCreateModal} onOpenChange={setShowCreateModal} defaultProjectId={project.id} />
     </div>
   );
 }
