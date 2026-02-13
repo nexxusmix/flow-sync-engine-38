@@ -1,3 +1,4 @@
+import { formatCurrencyBRL } from "@/utils/format";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
@@ -47,15 +48,15 @@ export default function Dashboard() {
   const metricCards = [
     { 
       label: "Receita do Mês", 
-      value: `R$ ${((metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}k`, 
-      trend: metrics?.pendingPayments ? `${((metrics.pendingPayments / 1000).toFixed(0))}k pendente` : "Ok", 
+      value: formatCurrencyBRL(metrics?.monthlyRevenue || 0), 
+      trend: metrics?.pendingPayments ? `${formatCurrencyBRL(metrics.pendingPayments)} pendente` : "Ok", 
       trendUp: !metrics?.pendingPayments, 
       icon: DollarSign 
     },
     { 
       label: "Pipeline Ativo", 
-      value: `R$ ${((metrics?.totalPipelineValue || 0) / 1000).toFixed(0)}k`, 
-      trend: `Forecast: R$ ${((metrics?.forecast || 0) / 1000).toFixed(0)}k`, 
+      value: formatCurrencyBRL(metrics?.totalPipelineValue || 0), 
+      trend: `Forecast: ${formatCurrencyBRL(metrics?.forecast || 0)}`, 
       trendUp: true, 
       icon: TrendingUp 
     },
@@ -342,7 +343,7 @@ export default function Dashboard() {
               <span className="text-[8px] font-normal text-emerald-500 uppercase">Pipeline</span>
             </div>
             <p className="text-[10px] text-muted-foreground mb-1 font-light">Pipeline Ativo</p>
-            <p className="text-lg font-normal text-foreground">R$ {((metrics?.totalPipelineValue || 0) / 1000).toFixed(0)}k</p>
+            <p className="text-lg font-normal text-foreground">{formatCurrencyBRL(metrics?.totalPipelineValue || 0)}</p>
           </div>
 
           <div className="glass-card rounded-xl p-4 border-l-2 border-primary min-h-[100px]">
@@ -400,7 +401,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-[8px] text-muted-foreground uppercase font-light">Valor</p>
-                        <p className="text-[10px] font-normal text-foreground truncate">R$ {(project.contract_value / 1000).toFixed(0)}k</p>
+                        <p className="text-[10px] font-normal text-foreground truncate">{formatCurrencyBRL(project.contract_value || 0)}</p>
                       </div>
                       <div>
                         <p className="text-[8px] text-muted-foreground uppercase font-light">Fase</p>
