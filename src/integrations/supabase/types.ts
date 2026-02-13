@@ -2118,6 +2118,8 @@ export type Database = {
       }
       contracts: {
         Row: {
+          account_holder_name: string | null
+          bank_name: string | null
           client_document: string | null
           client_name: string | null
           created_at: string
@@ -2128,6 +2130,8 @@ export type Database = {
           notes: string | null
           payment_block_on_breach: boolean | null
           payment_terms: string | null
+          pix_key: string | null
+          pix_key_type: string | null
           project_id: string
           project_name: string | null
           proposal_id: string | null
@@ -2142,6 +2146,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          account_holder_name?: string | null
+          bank_name?: string | null
           client_document?: string | null
           client_name?: string | null
           created_at?: string
@@ -2152,6 +2158,8 @@ export type Database = {
           notes?: string | null
           payment_block_on_breach?: boolean | null
           payment_terms?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           project_id: string
           project_name?: string | null
           proposal_id?: string | null
@@ -2166,6 +2174,8 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          account_holder_name?: string | null
+          bank_name?: string | null
           client_document?: string | null
           client_name?: string | null
           created_at?: string
@@ -2176,6 +2186,8 @@ export type Database = {
           notes?: string | null
           payment_block_on_breach?: boolean | null
           payment_terms?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           project_id?: string
           project_name?: string | null
           proposal_id?: string | null
