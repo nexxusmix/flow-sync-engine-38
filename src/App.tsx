@@ -94,7 +94,15 @@ import TasksPage from "./pages/TasksPage";
 
 // Marketing Hub Pages
 import MkDashboardPage from "./pages/marketing-hub/MkDashboardPage";
-import MkPlaceholderPage from "./pages/marketing-hub/MkPlaceholderPage";
+import MkCampaignsPage from "./pages/marketing-hub/MkCampaignsPage";
+import MkContentsPage from "./pages/marketing-hub/MkContentsPage";
+import MkCalendarPage from "./pages/marketing-hub/MkCalendarPage";
+import MkBrandingPage from "./pages/marketing-hub/MkBrandingPage";
+import MkAssetsPage from "./pages/marketing-hub/MkAssetsPage";
+import MkApprovalsPage from "./pages/marketing-hub/MkApprovalsPage";
+import MkReportsPage from "./pages/marketing-hub/MkReportsPage";
+import MkAutomationsPage from "./pages/marketing-hub/MkAutomationsPage";
+import MkSettingsPage from "./pages/marketing-hub/MkSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -205,15 +213,15 @@ function AppRoutes() {
       <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
       {/* Marketing Hub — /m/* */}
       <Route path="/m" element={<ProtectedRoute><MkDashboardPage /></ProtectedRoute>} />
-      <Route path="/m/campanhas" element={<ProtectedRoute><MkPlaceholderPage title="Campanhas" /></ProtectedRoute>} />
-      <Route path="/m/conteudos" element={<ProtectedRoute><MkPlaceholderPage title="Conteúdos" /></ProtectedRoute>} />
-      <Route path="/m/calendario" element={<ProtectedRoute><MkPlaceholderPage title="Calendário Editorial" /></ProtectedRoute>} />
-      <Route path="/m/branding" element={<ProtectedRoute><MkPlaceholderPage title="Branding Studio" /></ProtectedRoute>} />
-      <Route path="/m/assets" element={<ProtectedRoute><MkPlaceholderPage title="Assets & Mídia" /></ProtectedRoute>} />
-      <Route path="/m/aprovacoes" element={<ProtectedRoute><MkPlaceholderPage title="Aprovações" /></ProtectedRoute>} />
-      <Route path="/m/relatorios" element={<ProtectedRoute><MkPlaceholderPage title="Relatórios" /></ProtectedRoute>} />
-      <Route path="/m/automacoes" element={<ProtectedRoute><MkPlaceholderPage title="Automações" /></ProtectedRoute>} />
-      <Route path="/m/configuracoes" element={<ProtectedRoute><MkPlaceholderPage title="Configurações" /></ProtectedRoute>} />
+      <Route path="/m/campanhas" element={<ProtectedRoute><MkCampaignsPage /></ProtectedRoute>} />
+      <Route path="/m/conteudos" element={<ProtectedRoute><MkContentsPage /></ProtectedRoute>} />
+      <Route path="/m/calendario" element={<ProtectedRoute><MkCalendarPage /></ProtectedRoute>} />
+      <Route path="/m/branding" element={<ProtectedRoute><MkBrandingPage /></ProtectedRoute>} />
+      <Route path="/m/assets" element={<ProtectedRoute><MkAssetsPage /></ProtectedRoute>} />
+      <Route path="/m/aprovacoes" element={<ProtectedRoute><MkApprovalsPage /></ProtectedRoute>} />
+      <Route path="/m/relatorios" element={<ProtectedRoute><MkReportsPage /></ProtectedRoute>} />
+      <Route path="/m/automacoes" element={<ProtectedRoute><MkAutomationsPage /></ProtectedRoute>} />
+      <Route path="/m/configuracoes" element={<ProtectedRoute><MkSettingsPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
