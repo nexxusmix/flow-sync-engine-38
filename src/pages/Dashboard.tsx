@@ -2,8 +2,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { ProjectQuickAccessGrid } from "@/components/dashboard/ProjectQuickAccessGrid";
-import { AIChatSnippet } from "@/components/dashboard/AIChatSnippet";
-import { ActionsList } from "@/components/dashboard/ActionsList";
+import { ActionHubRail } from "@/components/action-hub/ActionHubRail";
+import { ActionHubOverviewCard } from "@/components/action-hub/ActionHubOverviewCard";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useAuth } from "@/hooks/useAuth";
@@ -424,6 +424,9 @@ export default function Dashboard() {
           )}
         </motion.div>
 
+        {/* Action Hub Rail - Horizontal Section */}
+        <ActionHubRail />
+
         {/* Section: Main Layout Split */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           {/* Left Column: Projects (8 cols) */}
@@ -467,10 +470,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right Column: AI & Actions (4 cols) */}
+          {/* Right Column: Overview Card (4 cols) */}
           <div className="xl:col-span-4 space-y-6">
-            <AIChatSnippet />
-            <ActionsList />
+            <ActionHubOverviewCard />
           </div>
         </div>
       </div>

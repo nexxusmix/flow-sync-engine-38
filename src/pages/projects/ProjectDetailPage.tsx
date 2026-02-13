@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ProjectHeader } from "@/components/projects/detail/ProjectHeader";
 import { ProjectTabs } from "@/components/projects/detail/ProjectTabs";
 import { EditProjectModal } from "@/components/projects/modals/EditProjectModal";
+import { ActionHubRail } from "@/components/action-hub/ActionHubRail";
 import { useProject } from "@/hooks/useProjects";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence, useTabPersistence } from "@/hooks/usePersistedState";
@@ -78,6 +79,11 @@ export default function ProjectDetailPage() {
 
         {/* Project Header with info and quick actions */}
         <ProjectHeader project={project} />
+
+        {/* Project Action Hub */}
+        {activeTab === 'overview' && (
+          <ActionHubRail projectId={projectId} title={`Ações — ${project.name}`} />
+        )}
 
         {/* Tabs Content */}
         <ProjectTabs 
