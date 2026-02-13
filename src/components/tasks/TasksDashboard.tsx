@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { Task } from '@/stores/tasksStore';
+import { useExecutionPlans } from '@/hooks/useExecutionPlans';
+import { DailyPlanWidget } from '@/components/tasks/DailyPlanWidget';
 import { Card } from '@/components/ui/card';
 import { 
   CheckCircle2, Clock, AlertTriangle, ListTodo,
@@ -30,6 +32,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function TasksDashboard({ tasks }: TasksDashboardProps) {
+  const { plans, getPlanForTask } = useExecutionPlans();
   const today = startOfDay(new Date());
   
   const metrics = useMemo(() => {
@@ -89,9 +92,14 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
     }
   };
 
+  const todayTasks = useMemo(() => 
+    tasks.filter(t => t.status === 'today'), [tasks]
+  );
+
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
+      {/* Daily Plan Widget */}
+      <DailyPlanWidget todayTasks={todayTasks} plans={plans} getPlanForTask={getPlanForTask} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">

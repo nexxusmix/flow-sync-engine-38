@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
+import { useExecutionPlans } from "@/hooks/useExecutionPlans";
+import { ExecutionPlanPanel } from "@/components/tasks/ExecutionPlanPanel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
@@ -52,6 +54,7 @@ function detectLinkType(url: string): TaskLink['type'] {
 }
 
 export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }: TaskEditDrawerProps) {
+  const { getPlanForTask, generatePlan, isGenerating: isPlanGenerating, updatePlan, togglePin } = useExecutionPlans();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<Task['status']>('backlog');
@@ -338,6 +341,18 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
               ))}
             </div>
           </div>
+
+          {/* Execution Plan (AI) */}
+          {task && (
+            <ExecutionPlanPanel
+              task={task}
+              plan={getPlanForTask(task.id)}
+              isGenerating={isPlanGenerating}
+              onGenerate={generatePlan}
+              onUpdate={updatePlan}
+              onTogglePin={togglePin}
+            />
+          )}
 
           {/* Links */}
           <div>

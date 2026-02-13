@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.refine-task-ai]
 verify_jwt = false
+
+[functions.generate-execution-plan]
+verify_jwt = false

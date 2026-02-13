@@ -5073,6 +5073,74 @@ export type Database = {
         }
         Relationships: []
       }
+      task_execution_plans: {
+        Row: {
+          break_pattern: string | null
+          cognitive_load: number | null
+          created_at: string
+          definition_of_done: Json | null
+          emergency_mode: boolean
+          energy_level: string | null
+          estimate_max: number | null
+          estimate_min: number | null
+          id: string
+          micro_steps: Json | null
+          next_action: string | null
+          pinned: boolean
+          suggested_time_slot: string | null
+          task_id: string
+          updated_at: string
+          user_notes: string | null
+          work_mode: string | null
+        }
+        Insert: {
+          break_pattern?: string | null
+          cognitive_load?: number | null
+          created_at?: string
+          definition_of_done?: Json | null
+          emergency_mode?: boolean
+          energy_level?: string | null
+          estimate_max?: number | null
+          estimate_min?: number | null
+          id?: string
+          micro_steps?: Json | null
+          next_action?: string | null
+          pinned?: boolean
+          suggested_time_slot?: string | null
+          task_id: string
+          updated_at?: string
+          user_notes?: string | null
+          work_mode?: string | null
+        }
+        Update: {
+          break_pattern?: string | null
+          cognitive_load?: number | null
+          created_at?: string
+          definition_of_done?: Json | null
+          emergency_mode?: boolean
+          energy_level?: string | null
+          estimate_max?: number | null
+          estimate_min?: number | null
+          id?: string
+          micro_steps?: Json | null
+          next_action?: string | null
+          pinned?: boolean
+          suggested_time_slot?: string | null
+          task_id?: string
+          updated_at?: string
+          user_notes?: string | null
+          work_mode?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_execution_plans_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           ai_refined: boolean
