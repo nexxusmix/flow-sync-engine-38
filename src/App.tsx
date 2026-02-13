@@ -63,6 +63,7 @@ import TargetsPage from "./pages/prospecting/TargetsPage";
 import OpportunitiesPage from "./pages/prospecting/OpportunitiesPage";
 import ActivitiesPage from "./pages/prospecting/ActivitiesPage";
 import CadencesPage from "./pages/prospecting/CadencesPage";
+import ScoutPage from "./pages/prospecting/ScoutPage";
 
 // Finance Pages
 import FinanceDashboard from "./pages/finance/FinanceDashboard";
@@ -131,6 +132,7 @@ function AppRoutes() {
       <Route path="/prospeccao/oportunidades" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
       <Route path="/prospeccao/atividades" element={<ProtectedRoute><ActivitiesPage /></ProtectedRoute>} />
       <Route path="/prospeccao/cadencias" element={<ProtectedRoute><CadencesPage /></ProtectedRoute>} />
+      <Route path="/prospeccao/scout" element={<ProtectedRoute><ScoutPage /></ProtectedRoute>} />
       <Route path="/propostas" element={<ProtectedRoute><ProposalsListPage /></ProtectedRoute>} />
       <Route path="/propostas/list" element={<ProtectedRoute><ProposalsListPage /></ProtectedRoute>} />
       <Route path="/propostas/:proposalId" element={<ProtectedRoute><ProposalDetailPage /></ProtectedRoute>} />

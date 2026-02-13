@@ -107,3 +107,12 @@ verify_jwt = false
 
 [functions.generate-execution-plan]
 verify_jwt = false
+
+[functions.scout-generate-copy]
+verify_jwt = false
+
+[functions.scout-generate-audio]
+verify_jwt = false
+
+[functions.scout-approve-send]
+verify_jwt = false
