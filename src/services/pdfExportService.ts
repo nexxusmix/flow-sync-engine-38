@@ -6,12 +6,9 @@
  * - Error handling
  * - Toast notifications
  * - Signed URL management
- * - Auto-open rendered HTML with print dialog (Save as PDF)
  * 
- * IMPORTANT: The edge function generates styled HTML that is stored in Supabase Storage.
- * The HTML embeds an auto-print script (desktop) and a "Save as PDF" button (mobile).
- * We ALWAYS open the HTML URL directly in a new tab so the browser renders it visually.
- * We NEVER download the HTML as a blob/file - that would show raw code.
+ * The edge functions generate real PDF binary files using pdf-lib.
+ * The signed URL opens directly in the browser's native PDF viewer.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -49,8 +46,8 @@ export interface ExportOptions {
 
 const DEFAULT_OPTIONS: ExportOptions = {
   showToasts: true,
-  loadingMessage: "Gerando relatório...",
-  successMessage: "Relatório pronto! Use Imprimir > Salvar como PDF.",
+  loadingMessage: "Gerando relatório PDF...",
+  successMessage: "PDF gerado com sucesso!",
 };
 
 /**
@@ -96,9 +93,7 @@ async function exportPdf(
     const url = data.signed_url || data.public_url;
 
     if (url) {
-      // ALWAYS open URL in a new tab - the HTML renders visually in the browser.
-      // The embedded script auto-triggers print dialog (desktop) 
-      // or shows a "Save as PDF" button (mobile).
+      // Open real PDF in new tab - browser's native PDF viewer handles it
       window.open(url, '_blank');
     }
 
@@ -127,7 +122,7 @@ async function exportPdf(
 // ─── Public export functions ───────────────────────────────────
 
 export async function exportProjectPDF(projectId: string, options?: ExportOptions): Promise<ExportResult> {
-  return exportPdf("project", { id: projectId }, { successMessage: "Relatório do projeto pronto!", ...options });
+  return exportPdf("project", { id: projectId }, { successMessage: "PDF do projeto pronto!", ...options });
 }
 
 export async function exportReport360PDF(period: string = "3m", options?: ExportOptions): Promise<ExportResult> {
