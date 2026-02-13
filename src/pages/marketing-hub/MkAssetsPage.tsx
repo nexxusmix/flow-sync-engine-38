@@ -103,7 +103,7 @@ export default function MkAssetsPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map((asset, i) => (
-             <motion.div key={asset.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.02 }}>
+             <motion.div key={asset.id} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, margin: "-40px" }} transition={{ delay: i * 0.02 }}>
                <AssetCard asset={asset} onDelete={handleDeleteAsset} />
             </motion.div>
           ))}

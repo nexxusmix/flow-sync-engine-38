@@ -14,7 +14,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
   return (
     <motion.div 
       className="glass-card rounded-[2rem] p-6 group transition-colors duration-500 border border-transparent"
-      initial={{ opacity: 0, y: 30, scale: 0.92, filter: "blur(12px)" }}
+      initial={{ opacity: 0, y: 30, scale: 0.92, filter: "blur(4px)" }}
       animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       transition={{ 
         delay: index * 0.1,
@@ -36,7 +36,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
       <div className="flex items-start justify-between mb-4">
         <motion.div 
           className="icon-box"
-          initial={{ opacity: 0, scale: 0, filter: "blur(10px)" }}
+           initial={{ opacity: 0, scale: 0, filter: "blur(4px)" }}
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
           transition={{ delay: 0.2 + index * 0.1, type: "spring", stiffness: 200 }}
           whileHover={{ scale: 1.15, rotate: [0, -8, 8, 0] }}
@@ -46,7 +46,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
         {trend && (
           <motion.span 
             className={`text-[11px] font-normal uppercase tracking-wider flex items-center gap-1 ${trendUp ? 'text-success' : 'text-destructive'}`}
-            initial={{ opacity: 0, x: 15, filter: "blur(8px)" }}
+            initial={{ opacity: 0, x: 15, filter: "blur(4px)" }}
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.4 + index * 0.1 }}
           >
@@ -63,7 +63,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
       <div className="space-y-1">
         <motion.p 
           className="kpi-value"
-          initial={{ opacity: 0, scale: 0.5, filter: "blur(15px)" }}
+          initial={{ opacity: 0, scale: 0.5, filter: "blur(4px)" }}
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
           transition={{ delay: 0.3 + index * 0.1, type: "spring" as const, stiffness: 100 }}
         >
@@ -71,7 +71,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
         </motion.p>
         <motion.p 
           className="kpi-label"
-          initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
+          initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ delay: 0.4 + index * 0.1 }}
         >

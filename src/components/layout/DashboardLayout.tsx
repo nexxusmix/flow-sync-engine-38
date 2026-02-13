@@ -119,7 +119,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
         >
           <motion.div 
             className="w-full flex-1"
-            initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
+            initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.6, type: "spring", stiffness: 80, damping: 18 }}
             style={isMobile ? undefined : { transformStyle: "preserve-3d" }}

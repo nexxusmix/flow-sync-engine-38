@@ -43,7 +43,7 @@ export default function MkApprovalsPage() {
       ) : (
         <div className="space-y-3">
           {items.map((item, i) => (
-            <motion.div key={item.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
+            <motion.div key={item.id} initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ delay: i * 0.04 }}>
               <MkCard className="flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-medium text-white/80 truncate">{item.title}</h4>

@@ -25,7 +25,7 @@ export function NeonTitle({ text, highlightWord, className = '' }: NeonTitleProp
       opacity: 0, 
       y: 40,
       rotateX: -90,
-      filter: 'blur(10px)',
+      filter: 'blur(4px)',
     },
     visible: { 
       opacity: 1, 
