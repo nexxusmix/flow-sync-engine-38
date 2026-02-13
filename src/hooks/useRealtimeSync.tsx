@@ -8,6 +8,7 @@ type TableName =
   | 'project_stages' 
   | 'calendar_events' 
   | 'project_files' 
+  | 'project_assets'
   | 'portal_links'
   | 'portal_deliverables'
   | 'portal_comments'
@@ -59,6 +60,11 @@ const TABLE_QUERY_MAPPINGS: QueryKeyMapping[] = [
   {
     table: 'project_files',
     queryKeys: [],
+    getProjectId: (payload) => payload.new?.project_id || payload.old?.project_id,
+  },
+  {
+    table: 'project_assets',
+    queryKeys: [['project-assets'], ['project-media']],
     getProjectId: (payload) => payload.new?.project_id || payload.old?.project_id,
   },
   {

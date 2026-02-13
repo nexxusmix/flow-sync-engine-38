@@ -149,6 +149,21 @@ export function useProjects() {
       // Auto-set product_type based on active module
       const productType = activeModule === 'full' ? (input as any).product_type || 'production' : activeModule;
 
+      // Resolve owner full_name from profiles
+      let ownerName = user?.email?.split('@')[0] || null;
+      let ownerId: string | null = null;
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('user_id', user.id)
+          .single();
+        if (profile) {
+          ownerName = profile.full_name || ownerName;
+          ownerId = profile.id;
+        }
+      }
+
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .insert({
@@ -160,7 +175,8 @@ export function useProjects() {
           due_date: input.due_date || null,
           contract_value: input.contract_value || 0,
           has_payment_block: input.has_payment_block || false,
-          owner_name: user?.email?.split('@')[0] || null,
+          owner_name: ownerName,
+          owner_id: ownerId,
           stage_current: 'briefing',
           status: 'active',
           health_score: 100,
