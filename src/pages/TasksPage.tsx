@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES, useTasksStore } from "@/stores/tasksStore";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
+import { TasksBoardView } from "@/components/tasks/TasksBoardView";
 import { TasksDashboard } from "@/components/tasks/TasksDashboard";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,7 @@ import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
 import { usePersistedState, useScrollPersistence } from "@/hooks/usePersistedState";
 import { 
-  Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown
+  Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,14 +58,14 @@ const defaultTaskForm: TaskFormData = {
   due_date: '',
 };
 
-type ViewMode = 'dashboard' | 'kanban' | 'timeline';
+type ViewMode = 'board' | 'kanban' | 'timeline' | 'dashboard';
 
 export default function TasksPage() {
   const { tasks, isLoading, isCreating, isGenerating, fetchTasks, createTask, updateTask, createTasksFromAI } = useTasksStore();
   const { isExporting, exportTasks } = useExportPdf();
   
   // URL-persisted view mode
-  const [viewMode, setViewMode] = useUrlState('view', 'kanban') as [ViewMode, (v: ViewMode) => void];
+  const [viewMode, setViewMode] = useUrlState('view', 'board') as [ViewMode, (v: ViewMode) => void];
   
   // Scroll persistence
   useScrollPersistence('tasks');
@@ -198,9 +199,9 @@ export default function TasksPage() {
           <div className="flex items-center gap-2 md:gap-3 overflow-x-auto scrollbar-none">
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
               <TabsList>
-                <TabsTrigger value="dashboard" className="gap-1.5">
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
+                <TabsTrigger value="board" className="gap-1.5">
+                  <List className="w-4 h-4" />
+                  <span className="hidden sm:inline">Quadro</span>
                 </TabsTrigger>
                 <TabsTrigger value="kanban" className="gap-1.5">
                   <Columns3 className="w-4 h-4" />
@@ -209,6 +210,10 @@ export default function TasksPage() {
                 <TabsTrigger value="timeline" className="gap-1.5">
                   <CalendarIcon className="w-4 h-4" />
                   <span className="hidden sm:inline">Timeline</span>
+                </TabsTrigger>
+                <TabsTrigger value="dashboard" className="gap-1.5">
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -238,6 +243,8 @@ export default function TasksPage() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
+        ) : viewMode === 'board' ? (
+          <TasksBoardView tasks={tasks} onEditTask={handleEditTask} />
         ) : viewMode === 'dashboard' ? (
           <TasksDashboard tasks={tasks} />
         ) : viewMode === 'timeline' ? (
