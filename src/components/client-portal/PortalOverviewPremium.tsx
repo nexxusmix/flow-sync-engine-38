@@ -503,94 +503,110 @@ function PortalOverviewPremiumComponent({
         </DialogContent>
       </Dialog>
 
-      {/* Status de Entregas */}
-      <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
-        <div className="p-5 border-b border-[#1a1a1a] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: 18 }}>
-              checklist
-            </span>
-            <h3 className="text-sm font-medium text-foreground">Status de Entregas</h3>
-          </div>
-          <span className="text-xs text-muted-foreground">{totalDeliverables} Itens Contratados</span>
-        </div>
-
-        <div className="divide-y divide-[#1a1a1a]">
-          {awaitingReview > 0 && (
-            <div className="p-5 bg-amber-500/5 border-l-2 border-amber-400">
-              <div className="flex items-start gap-4">
-                <span className="material-symbols-outlined text-amber-400 mt-0.5" style={{ fontSize: 20 }}>
-                  rate_review
-                </span>
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-foreground mb-1">
-                    {awaitingReview} {awaitingReview === 1 ? 'entrega aguardando' : 'entregas aguardando'} revisão
-                  </h4>
-                  <p className="text-xs text-amber-400 font-medium mb-2">
-                    Aguardando sua Revisão
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Material disponível para feedback imediato na aba 'Entregas'.
-                  </p>
-                  <Button 
-                    size="sm"
-                    className="bg-amber-500 hover:bg-amber-600 text-black text-xs h-8 rounded-none font-medium"
-                    onClick={() => {
-                      const firstAwaitingId = deliverables.find(d => d.awaiting_approval)?.id;
-                      if (firstAwaitingId && onReviewNow) {
-                        onReviewNow(firstAwaitingId);
-                      }
-                    }}
-                  >
-                    Revisar Agora
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {totalDeliverables > 0 && (
-            <div className="p-5">
-              <div className="flex items-start gap-4">
-                <span className="material-symbols-outlined text-primary mt-0.5" style={{ fontSize: 20 }}>
-                  movie_edit
-                </span>
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-foreground mb-1">
-                    Entregas em Produção
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    {totalDeliverables - awaitingReview} itens em produção ou finalizados.
-                  </p>
-                  <span className="text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold bg-primary/20 text-primary">
-                    Em Andamento
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {totalDeliverables === 0 && (
-            <div className="p-8 text-center">
-              <span className="material-symbols-outlined text-muted-foreground mb-2" style={{ fontSize: 32 }}>
-                inventory_2
+      {/* Itens Entregáveis - Cards */}
+      {totalDeliverables > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary" style={{ fontSize: 18 }}>
+                checklist
               </span>
-              <p className="text-xs text-muted-foreground">
-                Nenhuma entrega cadastrada ainda.
-              </p>
+              <h3 className="text-sm font-medium text-foreground uppercase tracking-wide">
+                Itens Entregáveis
+              </h3>
             </div>
-          )}
-        </div>
-
-        {totalDeliverables > 0 && (
-          <div className="p-4 border-t border-[#1a1a1a]">
-            <button className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
-              Ver lista completa de {totalDeliverables} entregas
-              <ArrowRight className="w-3 h-3" />
-            </button>
+            <span className="text-xs text-muted-foreground">{totalDeliverables} itens contratados</span>
           </div>
-        )}
-      </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {deliverables.map((deliverable) => {
+              const isAwaiting = deliverable.awaiting_approval;
+              return (
+                <div
+                  key={deliverable.id}
+                  className={cn(
+                    "bg-card border rounded-xl p-5 transition-all hover:border-primary/40",
+                    isAwaiting ? "border-amber-500/30 bg-amber-500/5" : "border-border"
+                  )}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                      isAwaiting ? "bg-amber-500/15" : "bg-primary/10"
+                    )}>
+                      <span 
+                        className={cn(
+                          "material-symbols-outlined",
+                          isAwaiting ? "text-amber-400" : "text-primary"
+                        )} 
+                        style={{ fontSize: 18 }}
+                      >
+                        {deliverable.type === 'video' ? 'movie' 
+                          : deliverable.type === 'image' ? 'image' 
+                          : deliverable.type === 'audio' ? 'headphones' 
+                          : 'description'}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-medium text-foreground truncate">
+                        {deliverable.title}
+                      </h4>
+                      {deliverable.description && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                          {deliverable.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className={cn(
+                      "text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded",
+                      isAwaiting 
+                        ? "bg-amber-500/20 text-amber-400" 
+                        : deliverable.status === 'approved' || deliverable.status === 'aprovado'
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : "bg-primary/15 text-primary"
+                    )}>
+                      {isAwaiting 
+                        ? "Aguardando Revisão" 
+                        : deliverable.status === 'approved' || deliverable.status === 'aprovado'
+                          ? "Aprovado"
+                          : "Em Produção"}
+                    </span>
+                    {deliverable.current_version > 0 && (
+                      <span className="text-[10px] text-muted-foreground">
+                        V{String(deliverable.current_version).padStart(2, '0')}
+                      </span>
+                    )}
+                  </div>
+
+                  {isAwaiting && onReviewNow && (
+                    <Button 
+                      size="sm"
+                      className="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-black text-xs h-8 font-medium"
+                      onClick={() => onReviewNow(deliverable.id)}
+                    >
+                      Revisar Agora
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {totalDeliverables === 0 && (
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <span className="material-symbols-outlined text-muted-foreground mb-2" style={{ fontSize: 32 }}>
+            inventory_2
+          </span>
+          <p className="text-xs text-muted-foreground">
+            Nenhuma entrega cadastrada ainda.
+          </p>
+        </div>
+      )}
 
       {/* Resumo Executivo - Collapsible */}
       <div className="bg-[#0a0a0a] border border-[#1a1a1a]">
