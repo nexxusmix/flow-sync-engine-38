@@ -241,12 +241,14 @@ export function ProjectsDashboard() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="glass-card rounded-2xl p-4 flex items-center gap-4">
-            <div>
+          <div className="glass-card rounded-2xl p-4 flex items-center gap-4 max-w-xs">
+            <div className="min-w-0 flex-1">
               <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mb-1">Pipeline Total</p>
-              <p className="text-lg font-medium text-foreground">{formatCurrency(totalPipeline)}</p>
+              <p className="text-lg font-medium text-foreground truncate">{formatCurrency(totalPipeline)}</p>
             </div>
-            <RadialProgress value={avgHealth} size={60} label="HEALTH" />
+            <div className="flex-shrink-0">
+              <RadialProgress value={avgHealth} size={60} label="HEALTH" />
+            </div>
           </div>
         </div>
       </div>
@@ -348,14 +350,14 @@ export function ProjectsDashboard() {
         <div className="xl:col-span-4 space-y-6">
           {/* Primary Metrics */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="glass-card rounded-2xl p-4">
+            <div className="glass-card rounded-2xl p-4 min-w-0">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Pipeline Ativo</p>
-              <p className="text-lg font-medium text-foreground">{formatCurrency(totalPipeline)}</p>
+              <p className="text-lg font-medium text-foreground truncate">{formatCurrency(totalPipeline)}</p>
             </div>
 
             <div className="glass-card rounded-2xl p-4">
@@ -418,7 +420,7 @@ export function ProjectsDashboard() {
                       <div className="flex items-center justify-between text-[9px]">
                         <div>
                           <span className="text-muted-foreground">Valor </span>
-                          <span className="font-medium text-foreground">{formatCurrency(project.contract_value || 0)}</span>
+                          <span className="font-medium text-foreground truncate">{formatCurrency(project.contract_value || 0)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Fase </span>
