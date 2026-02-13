@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
+import { SendToClientModal } from "@/components/projects/SendToClientModal";
 import { usePortalLink } from "@/hooks/usePortalLink";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { PROJECT_STAGES, STATUS_CONFIG } from "@/data/projectTemplates";
@@ -17,6 +18,7 @@ import {
   Pencil,
   Sparkles,
   Upload,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
@@ -38,6 +40,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const { setSelectedProjectId, setEditProjectModalOpen } = useProjectsStore();
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [sendToClientOpen, setSendToClientOpen] = useState(false);
   const { portalLink, portalUrl, isLoading: portalLoading, createLink } = usePortalLink(project.id, {
     name: project.name,
     clientName: project.client_name || undefined,
@@ -224,6 +227,14 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
+                onClick={() => setSendToClientOpen(true)}
+                className="h-9 hidden sm:flex gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Send className="w-4 h-4" />
+                Enviar ao Cliente
+              </Button>
+              <Button
+                size="sm"
                 onClick={() => setUploadDialogOpen(true)}
                 className="h-9 hidden sm:flex gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
@@ -363,6 +374,13 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         projectId={project.id}
+      />
+
+      {/* Send to Client Modal */}
+      <SendToClientModal
+        open={sendToClientOpen}
+        onOpenChange={setSendToClientOpen}
+        project={project}
       />
     </>
   );
