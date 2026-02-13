@@ -109,6 +109,7 @@ function ClientUploadDialogComponent({
   const [sentCount, setSentCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isFillingAI, setIsFillingAI] = useState(false);
+  const [aiContext, setAiContext] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false); // idempotency guard
 
@@ -187,6 +188,20 @@ function ClientUploadDialogComponent({
     setQueue(prev => prev.map(i => i.id === id ? { ...i, status, error: errorMsg } : i));
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data:mime;base64, prefix
+        const base64 = result.split(',')[1] || result;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const fillAllWithAI = async () => {
     const fileItems = queue.filter(i => i.file);
     if (fileItems.length === 0) {
@@ -202,19 +217,33 @@ function ClientUploadDialogComponent({
 
     setIsFillingAI(true);
     try {
-      const filesPayload = fileItems.map(i => ({
-        fileName: i.file!.name,
-        mimeType: i.file!.type,
-        fileSize: `${(i.file!.size / (1024 * 1024)).toFixed(1)} MB`,
+      // Build payload with base64 for images under 2MB
+      const filesPayload = await Promise.all(fileItems.map(async (i) => {
+        const payload: any = {
+          fileName: i.file!.name,
+          mimeType: i.file!.type,
+          fileSize: `${(i.file!.size / (1024 * 1024)).toFixed(1)} MB`,
+        };
+        // Convert images under 2MB to base64 for AI vision
+        if (i.file!.type.startsWith('image/') && i.file!.size <= 2 * 1024 * 1024) {
+          try {
+            payload.imageBase64 = await fileToBase64(i.file!);
+          } catch (e) {
+            console.warn('[AI Fill] Failed to convert image to base64:', e);
+          }
+        }
+        return payload;
       }));
 
       const { data, error: fnError } = await supabase.functions.invoke('ai-fill-materials', {
-        body: { files: filesPayload },
+        body: { 
+          files: filesPayload,
+          projectContext: aiContext.trim() || undefined,
+        },
       });
 
       if (fnError || !data?.results) {
         console.warn('[AI Fill] Failed:', fnError || data?.error);
-        // Fallback to guess
         setQueue(prev => prev.map(item => ({
           ...item,
           title: item.title || (item.file ? guessTitle(item.file) : item.title),
@@ -409,6 +438,20 @@ function ClientUploadDialogComponent({
           {/* Queue items */}
           {queue.length > 0 && (
             <div className="space-y-3">
+              {/* Contexto rápido para IA */}
+              {!sending && (
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-gray-500">Contexto para IA (opcional)</Label>
+                  <textarea
+                    value={aiContext}
+                    onChange={(e) => setAiContext(e.target.value)}
+                    placeholder="Ex: Materiais da campanha de lançamento do produto X para Instagram..."
+                    rows={2}
+                    className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-md px-3 py-2 text-sm text-white/70 placeholder:text-gray-600 resize-none focus:outline-none focus:border-purple-500/40 transition-colors"
+                  />
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-gray-500 uppercase tracking-wider">
                   {queue.length} {queue.length === 1 ? 'item' : 'itens'} na fila

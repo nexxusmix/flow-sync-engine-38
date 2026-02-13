@@ -36,6 +36,7 @@ export function UploadMaterialDialog({ open, onOpenChange, projectId }: UploadMa
   const [aiProcess, setAiProcess] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'file' | 'youtube' | 'link'>('file');
+  const [aiContext, setAiContext] = useState('');
 
   // AI fill state
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -74,6 +75,19 @@ export function UploadMaterialDialog({ open, onOpenChange, projectId }: UploadMa
     if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   }, [addFiles]);
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1] || result;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleAiFill = async () => {
     if (queue.length === 0) return;
     setAiProcessing(true);
@@ -81,18 +95,30 @@ export function UploadMaterialDialog({ open, onOpenChange, projectId }: UploadMa
     setAiProgress(10);
 
     try {
-      // Simulate analysis phase
       await new Promise(r => setTimeout(r, 600));
       setAiProgress(30);
       setAiPhase('generating');
 
+      const filesPayload = await Promise.all(queue.map(async (q) => {
+        const payload: any = {
+          fileName: q.file.name,
+          mimeType: q.file.type,
+          fileSize: formatSize(q.file.size),
+        };
+        if (q.file.type.startsWith('image/') && q.file.size <= 2 * 1024 * 1024) {
+          try {
+            payload.imageBase64 = await fileToBase64(q.file);
+          } catch (e) {
+            console.warn('Failed to convert image to base64:', e);
+          }
+        }
+        return payload;
+      }));
+
       const { data, error } = await supabase.functions.invoke('ai-fill-materials', {
         body: {
-          files: queue.map(q => ({
-            fileName: q.file.name,
-            mimeType: q.file.type,
-            fileSize: formatSize(q.file.size),
-          })),
+          files: filesPayload,
+          projectContext: aiContext.trim() || undefined,
         },
       });
 
@@ -278,19 +304,32 @@ export function UploadMaterialDialog({ open, onOpenChange, projectId }: UploadMa
             </div>
           )}
 
-          {/* Queue Header */}
           {queue.length > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-white/30 uppercase tracking-wider">{queue.length} ITENS NA FILA</span>
-              <button
-                onClick={handleAiFill}
-                disabled={aiProcessing || isUploading}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(280,80%,50%)] hover:bg-[hsl(280,80%,55%)] text-white text-xs font-medium transition-colors disabled:opacity-50"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                PREENCHER COM IA
-              </button>
-            </div>
+            <>
+              {/* Contexto rápido para IA */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] uppercase tracking-wider text-white/25">Contexto para IA (opcional)</Label>
+                <textarea
+                  value={aiContext}
+                  onChange={(e) => setAiContext(e.target.value)}
+                  placeholder="Ex: Materiais da campanha de lançamento do produto X para Instagram..."
+                  rows={2}
+                  className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white/60 placeholder:text-white/15 resize-none focus:outline-none focus:border-[rgba(0,156,202,0.3)] transition-colors"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-white/30 uppercase tracking-wider">{queue.length} ITENS NA FILA</span>
+                <button
+                  onClick={handleAiFill}
+                  disabled={aiProcessing || isUploading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(280,80%,50%)] hover:bg-[hsl(280,80%,55%)] text-white text-xs font-medium transition-colors disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  PREENCHER COM IA
+                </button>
+              </div>
+            </>
           )}
 
           {/* Queue Items */}

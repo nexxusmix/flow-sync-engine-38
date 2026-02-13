@@ -21,9 +21,11 @@ serve(async (req) => {
       `${i + 1}. "${f.fileName}" (${f.mimeType}, ${f.fileSize})`
     ).join("\n");
 
+    const hasImages = files.some((f: any) => f.imageBase64);
+
     const prompt = `Analise estes arquivos de um projeto audiovisual/criativo e gere títulos e descrições curtas para cada um.
 
-${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
+${projectContext ? `Contexto do projeto fornecido pelo usuário: ${projectContext}` : ""}
 
 Arquivos:
 ${fileDescriptions}
@@ -32,10 +34,27 @@ Para cada arquivo, gere:
 - title: título limpo e profissional (sem extensão, máx 60 chars)
 - description: descrição curta em 1 linha sobre o que provavelmente é o arquivo
 
+${hasImages ? "IMPORTANTE: Algumas imagens foram enviadas junto. Analise visualmente o conteúdo de cada imagem para gerar títulos e descrições mais precisos e contextualizados." : ""}
+
 Retorne um JSON array na mesma ordem dos arquivos:
 [{"title": "...", "description": "..."}, ...]
 
 IMPORTANTE: Retorne APENAS o JSON array, sem markdown, sem explicação.`;
+
+    // Build multimodal content array
+    const contentParts: any[] = [{ type: "text", text: prompt }];
+
+    // Add images as vision content
+    for (const f of files) {
+      if (f.imageBase64) {
+        contentParts.push({
+          type: "image_url",
+          image_url: {
+            url: `data:${f.mimeType || 'image/jpeg'};base64,${f.imageBase64}`,
+          },
+        });
+      }
+    }
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -44,10 +63,10 @@ IMPORTANTE: Retorne APENAS o JSON array, sem markdown, sem explicação.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: hasImages ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite",
         messages: [
-          { role: "system", content: "Você é um assistente que analisa nomes de arquivos de projetos criativos/audiovisuais e gera títulos profissionais. Responda sempre em JSON puro." },
-          { role: "user", content: prompt },
+          { role: "system", content: "Você é um assistente que analisa nomes de arquivos e imagens de projetos criativos/audiovisuais e gera títulos profissionais. Quando imagens são fornecidas, analise visualmente o conteúdo. Responda sempre em JSON puro." },
+          { role: "user", content: hasImages ? contentParts : prompt },
         ],
       }),
     });
@@ -77,7 +96,6 @@ IMPORTANTE: Retorne APENAS o JSON array, sem markdown, sem explicação.`;
       results = JSON.parse(jsonStr);
     } catch {
       console.warn("Failed to parse AI response:", content);
-      // Fallback: generate simple titles from filenames
       results = files.map((f: any) => ({
         title: f.fileName.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
         description: `Arquivo ${f.mimeType?.split("/")[0] || ""}`,
