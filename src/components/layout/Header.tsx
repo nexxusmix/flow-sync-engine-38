@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, LogOut, ChevronDown, CreditCard, Menu, Sun, Moon } from "lucide-react";
+import { NotificationBell } from "../alerts/NotificationBell";
 import {
   Dialog,
   DialogContent,
@@ -195,6 +196,8 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline text-xs uppercase tracking-wider font-light">Pagamento</span>
           </Button>
+
+          <NotificationBell />
 
           <div className="h-6 w-px bg-white/[0.06] mx-1 hidden md:block" />
 

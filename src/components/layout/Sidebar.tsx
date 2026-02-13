@@ -30,6 +30,7 @@ const mainMenuItems: MenuItem[] = [
   { name: "Contratos", href: "/contratos", icon: "contract", modules: ['production'] },
   { name: "Relatórios", href: "/relatorios", icon: "monitoring", modules: ['production', 'marketing'] },
   { name: "Tarefas", href: "/tarefas", icon: "task_alt", modules: ['production', 'marketing'] },
+  { name: "Avisos", href: "/avisos", icon: "notifications", modules: ['production', 'marketing'] },
 ];
 
 const settingsItems = [

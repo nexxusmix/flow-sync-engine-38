@@ -92,6 +92,7 @@ import AutomationsPage from "./pages/marketing/AutomationsPage";
 import TranscribePage from "./pages/marketing/TranscribePage";
 import UnifiedCalendarPage from "./pages/CalendarPage";
 import TasksPage from "./pages/TasksPage";
+import AlertsBoardPage from "./pages/AlertsBoardPage";
 
 // Marketing Hub Pages
 import MkDashboardPage from "./pages/marketing-hub/MkDashboardPage";
@@ -130,6 +131,7 @@ function AppRoutes() {
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <LandingPage />} />
       <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
       <Route path="/tarefas" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+      <Route path="/avisos" element={<ProtectedRoute><AlertsBoardPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
       {/* Projetos */}
