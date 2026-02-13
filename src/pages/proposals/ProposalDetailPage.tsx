@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AiPromptField } from "@/components/ai/AiPromptField";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -801,11 +802,12 @@ export default function ProposalDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Textarea
+            <AiPromptField
               value={aiBriefing}
-              onChange={(e) => setAiBriefing(e.target.value)}
+              onChange={setAiBriefing}
               placeholder="Descreva o projeto: tipo de serviço, objetivos, público-alvo, referências, restrições, orçamento aproximado..."
               rows={8}
+              featureId="proposal-ai"
             />
           </div>
           <DialogFooter>

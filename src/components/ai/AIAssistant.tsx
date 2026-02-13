@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { VoiceInputButton } from "./VoiceInputButton";
 import { useAgentChat } from "@/hooks/useAgentChat";
 import { ExecutionPlanView } from "./ExecutionPlanView";
 import type { AttachmentInfo } from "@/types/agent";
@@ -367,6 +368,13 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
               placeholder={uploadedFiles.length > 0 ? 'Descreva o que fazer com os arquivos...' : 'O que você precisa? Eu executo.'}
               disabled={isLoading}
               className="flex-1 bg-muted border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 placeholder:text-muted-foreground transition-colors disabled:opacity-50 min-w-0"
+            />
+            <VoiceInputButton
+              onTranscript={(text) => setInput(prev => prev ? prev + ' ' + text : text)}
+              mode="append"
+              disabled={isLoading}
+              className="w-10 h-10 rounded-xl"
+              size="icon"
             />
             <button
               onClick={isLoading ? cancelStream : handleSend}

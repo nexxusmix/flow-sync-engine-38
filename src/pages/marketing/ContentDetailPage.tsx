@@ -15,6 +15,7 @@ import { AiGenerateButton } from "@/components/ai/AiGenerateButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { VoiceInputButton } from "@/components/ai/VoiceInputButton";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -445,14 +446,24 @@ export default function ContentDetailPage() {
                 </div>
               </div>
 
-              <div>
+              <div className="relative">
                 <Label>Roteiro</Label>
-                <Textarea
-                  value={formData.script || ''}
-                  onChange={(e) => setFormData({ ...formData, script: e.target.value })}
-                  placeholder="Roteiro para gravação..."
-                  rows={8}
-                />
+                <div className="relative mt-1.5">
+                  <Textarea
+                    value={formData.script || ''}
+                    onChange={(e) => setFormData({ ...formData, script: e.target.value })}
+                    placeholder="Roteiro para gravação..."
+                    rows={8}
+                    className="pr-12"
+                  />
+                  <div className="absolute right-2 top-2">
+                    <VoiceInputButton
+                      onTranscript={(text) => setFormData({ ...formData, script: (formData.script || '') + '\n' + text })}
+                      mode="append"
+                      className="h-7 w-7"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
