@@ -1,5 +1,6 @@
 
 
+
 # CAMPANHA DE LANCAMENTO DIGITAL — SQUAD HUB
 ## Plano Estrategico 30 Dias | Instagram + Trafego Pago
 
@@ -227,4 +228,3 @@ S4        Escala            Conversao       R$ 600-1.000
 ## NOTA
 
 Este plano e um documento estrategico de marketing — nao envolve alteracoes de codigo na plataforma. Pode ser exportado ou usado como referencia para a equipe de conteudo e trafego.
-
