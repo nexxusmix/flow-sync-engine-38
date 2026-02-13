@@ -1,13 +1,14 @@
 /**
  * ProspectAutomations — Automation engine panel connected to Supabase
  * Toggles, rules, kill switch, limits, timeline, notifications
+ * Now: persists configs in prospecting_settings, unified timeline from multiple sources
  */
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Power, Shield, Clock, Send, MessageSquare, 
   AlertTriangle, Settings, Pause, Play, Bell,
   Activity, ChevronDown, ChevronUp, CheckCircle,
-  XCircle, Timer, Loader2
+  XCircle, Timer, Loader2, Volume2, Smartphone, Filter
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,19 @@ const LOCAL_RULES = [
   { id: 'post_meeting', label: 'Pós-Reunião', desc: 'Envia resumo e próximos passos' },
 ];
 
+type TimelineFilter = 'all' | 'activities' | 'ai' | 'sends' | 'audios';
+
+interface TimelineEntry {
+  id: string;
+  type: 'activity' | 'suggestion' | 'event' | 'audio';
+  title: string;
+  description?: string;
+  status?: string;
+  created_at: string;
+  icon: typeof Send;
+  color: string;
+}
+
 export function ProspectAutomations() {
   const { rules, pendingSuggestions, isLoading, isRunning, toggleRule, runAutomations, handleAction, ignoreSuggestion } = useAutomation();
   const [globalEnabled, setGlobalEnabled] = useState(false);
@@ -44,6 +58,29 @@ export function ProspectAutomations() {
   const [activeRules, setActiveRules] = useState<Record<string, boolean>>({});
   const [showTimeline, setShowTimeline] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('all');
+  const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
+  const [loadingTimeline, setLoadingTimeline] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  // Load persisted configs from prospecting_settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data } = await supabase
+        .from('prospecting_settings')
+        .select('approve_first, auto_send, global_enabled, daily_activity_limit')
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setApproveFirst((data as any).approve_first ?? true);
+        setAutoSend((data as any).auto_send ?? false);
+        setGlobalEnabled((data as any).global_enabled ?? false);
+        if (data.daily_activity_limit) setDailyLimit(data.daily_activity_limit);
+      }
+    };
+    loadSettings();
+  }, []);
 
   // Sync backend rules with local state
   useEffect(() => {
@@ -51,12 +88,153 @@ export function ProspectAutomations() {
       const map: Record<string, boolean> = {};
       rules.forEach(r => { map[r.key] = r.is_enabled; });
       setActiveRules(prev => ({ ...prev, ...map }));
-      setGlobalEnabled(rules.some(r => r.is_enabled));
     }
   }, [rules]);
 
+  // Persist config changes
+  const saveConfig = useCallback(async (updates: Record<string, any>) => {
+    setIsSavingConfig(true);
+    try {
+      const { data: existing } = await supabase
+        .from('prospecting_settings')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('prospecting_settings')
+          .update(updates)
+          .eq('id', existing.id);
+      }
+    } catch (err) {
+      console.error('Failed to save config:', err);
+    } finally {
+      setIsSavingConfig(false);
+    }
+  }, []);
+
+  const handleGlobalToggle = (v: boolean) => {
+    setGlobalEnabled(v);
+    saveConfig({ global_enabled: v });
+  };
+
+  const handleApproveFirstToggle = (v: boolean) => {
+    setApproveFirst(v);
+    saveConfig({ approve_first: v });
+  };
+
+  const handleAutoSendToggle = (v: boolean) => {
+    setAutoSend(v);
+    saveConfig({ auto_send: v });
+  };
+
+  const handleDailyLimitChange = (v: number) => {
+    setDailyLimit(v);
+    saveConfig({ daily_activity_limit: v });
+  };
+
+  // Load unified timeline
+  const loadTimeline = useCallback(async () => {
+    setLoadingTimeline(true);
+    try {
+      const entries: TimelineEntry[] = [];
+
+      // Suggestions (AI)
+      const { data: suggestions } = await supabase
+        .from('automation_suggestions')
+        .select('id, title, message, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (suggestions) {
+        suggestions.forEach(s => {
+          entries.push({
+            id: s.id,
+            type: 'suggestion',
+            title: s.title,
+            description: s.message || undefined,
+            status: s.status,
+            created_at: s.created_at,
+            icon: Loader2,
+            color: s.status === 'applied' ? 'text-emerald-400' : s.status === 'ignored' ? 'text-muted-foreground' : 'text-amber-400',
+          });
+        });
+      }
+
+      // Event logs (WhatsApp sends etc.)
+      const { data: events } = await supabase
+        .from('event_logs')
+        .select('id, action, entity_type, entity_id, payload, created_at, actor_name')
+        .in('action', ['whatsapp.sent', 'audio.generated', 'prospect.contacted'])
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (events) {
+        events.forEach(e => {
+          const payload = e.payload as any;
+          entries.push({
+            id: e.id,
+            type: 'event',
+            title: e.action === 'whatsapp.sent' 
+              ? `WhatsApp → ${payload?.prospect_name || e.entity_id}`
+              : e.action,
+            description: payload?.message_preview || e.actor_name || undefined,
+            status: 'sent',
+            created_at: e.created_at,
+            icon: e.action === 'whatsapp.sent' ? Smartphone : Send,
+            color: 'text-emerald-400',
+          });
+        });
+      }
+
+      // Audios
+      const { data: audios } = await supabase
+        .from('prospect_audio' as any)
+        .select('id, status, created_at, duration_seconds, error_message')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (audios) {
+        (audios as any[]).forEach(a => {
+          entries.push({
+            id: a.id,
+            type: 'audio',
+            title: `Áudio ${a.status === 'ready' ? 'gerado' : a.status === 'error' ? 'falhou' : 'processando'}`,
+            description: a.error_message || (a.duration_seconds ? `${a.duration_seconds}s` : undefined),
+            status: a.status,
+            created_at: a.created_at,
+            icon: Volume2,
+            color: a.status === 'ready' ? 'text-primary' : a.status === 'error' ? 'text-destructive' : 'text-muted-foreground',
+          });
+        });
+      }
+
+      // Sort all by date
+      entries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setTimelineEntries(entries);
+    } catch (err) {
+      console.error('Failed to load timeline:', err);
+    } finally {
+      setLoadingTimeline(false);
+    }
+  }, []);
+
+  // Load timeline when expanded
+  useEffect(() => {
+    if (showTimeline) loadTimeline();
+  }, [showTimeline, loadTimeline]);
+
+  const filteredTimeline = timelineEntries.filter(e => {
+    if (timelineFilter === 'all') return true;
+    if (timelineFilter === 'activities') return e.type === 'activity';
+    if (timelineFilter === 'ai') return e.type === 'suggestion';
+    if (timelineFilter === 'sends') return e.type === 'event';
+    if (timelineFilter === 'audios') return e.type === 'audio';
+    return true;
+  });
+
   const handleKillSwitch = async () => {
-    // Disable all backend rules
     for (const rule of rules) {
       if (rule.is_enabled) {
         await toggleRule(rule.id, false);
@@ -64,6 +242,7 @@ export function ProspectAutomations() {
     }
     setGlobalEnabled(false);
     setActiveRules({});
+    saveConfig({ global_enabled: false });
     toast.success('Todas as automações foram pausadas');
   };
 
@@ -71,7 +250,6 @@ export function ProspectAutomations() {
     const newState = !activeRules[id];
     setActiveRules(prev => ({ ...prev, [id]: newState }));
 
-    // Try to find backend rule
     const backendRule = rules.find(r => r.key === id);
     if (backendRule) {
       await toggleRule(backendRule.id, newState);
@@ -102,6 +280,8 @@ export function ProspectAutomations() {
 
   const handleRunNow = async () => {
     await runAutomations();
+    // Reload timeline after run
+    if (showTimeline) loadTimeline();
   };
 
   return (
@@ -116,11 +296,11 @@ export function ProspectAutomations() {
             <h3 className="text-sm font-medium text-foreground">Automações IA</h3>
             <p className="text-[10px] text-muted-foreground">
               Motor de regras {rules.length > 0 ? `(${rules.length} regras)` : 'local'}
+              {isSavingConfig && ' • salvando...'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Notifications badge */}
           {pendingSuggestions.length > 0 && (
             <Button
               variant="ghost"
@@ -145,7 +325,7 @@ export function ProspectAutomations() {
               Kill Switch
             </Button>
           )}
-          <Switch checked={globalEnabled} onCheckedChange={setGlobalEnabled} />
+          <Switch checked={globalEnabled} onCheckedChange={handleGlobalToggle} />
         </div>
       </div>
 
@@ -199,14 +379,14 @@ export function ProspectAutomations() {
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Aprovar Antes</span>
-                <Switch checked={approveFirst} onCheckedChange={setApproveFirst} className="scale-75" />
+                <Switch checked={approveFirst} onCheckedChange={handleApproveFirstToggle} className="scale-75" />
               </div>
               <p className="text-[10px] text-muted-foreground">{approveFirst ? 'ON — você aprova' : 'OFF — cuidado!'}</p>
             </div>
             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Auto-Enviar</span>
-                <Switch checked={autoSend} onCheckedChange={setAutoSend} className="scale-75" />
+                <Switch checked={autoSend} onCheckedChange={handleAutoSendToggle} className="scale-75" />
               </div>
               <p className="text-[10px] text-muted-foreground">{autoSend ? 'ON — só admin' : 'OFF — seguro'}</p>
             </div>
@@ -216,7 +396,7 @@ export function ProspectAutomations() {
                 <input
                   type="number"
                   value={dailyLimit}
-                  onChange={(e) => setDailyLimit(Number(e.target.value))}
+                  onChange={(e) => handleDailyLimitChange(Number(e.target.value))}
                   className="w-14 h-6 bg-transparent border border-white/10 rounded px-2 text-xs text-foreground"
                   min={1}
                   max={100}
@@ -297,31 +477,54 @@ export function ProspectAutomations() {
             })}
           </div>
 
-          {/* Timeline (expandable) */}
+          {/* Unified Timeline (expandable) */}
           {showTimeline && (
             <div className="space-y-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Andamento Recente</p>
-              {isLoading ? (
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Timeline</p>
+                <div className="flex gap-1">
+                  {(['all', 'ai', 'sends', 'audios'] as TimelineFilter[]).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setTimelineFilter(f)}
+                      className={`text-[8px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors ${
+                        timelineFilter === f
+                          ? 'bg-primary/20 text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {f === 'all' ? 'Todas' : f === 'ai' ? 'IA' : f === 'sends' ? 'Envios' : 'Áudios'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {loadingTimeline ? (
                 <div className="flex items-center justify-center py-4">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 </div>
-              ) : pendingSuggestions.length === 0 ? (
+              ) : filteredTimeline.length === 0 ? (
                 <p className="text-[10px] text-muted-foreground/50 text-center py-3">
                   Nenhuma atividade recente. Clique "Executar Agora" para verificar.
                 </p>
               ) : (
-                pendingSuggestions.slice(0, 10).map((s) => (
-                  <div key={s.id} className="flex items-center gap-2 py-1.5 border-b border-white/[0.03] last:border-0">
-                    <div className={`w-1.5 h-1.5 rounded-full ${
-                      s.status === 'applied' ? 'bg-emerald-500' : 
-                      s.status === 'ignored' ? 'bg-muted-foreground' : 'bg-amber-500'
-                    }`} />
-                    <span className="text-[10px] text-foreground flex-1 truncate">{s.title}</span>
-                    <span className="text-[9px] text-muted-foreground/50 shrink-0">
-                      {formatDistanceToNow(new Date(s.created_at), { addSuffix: true, locale: ptBR })}
-                    </span>
-                  </div>
-                ))
+                filteredTimeline.slice(0, 15).map((entry) => {
+                  const EntryIcon = entry.icon;
+                  return (
+                    <div key={entry.id} className="flex items-start gap-2 py-1.5 border-b border-white/[0.03] last:border-0">
+                      <EntryIcon className={`w-3 h-3 mt-0.5 shrink-0 ${entry.color}`} />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] text-foreground block truncate">{entry.title}</span>
+                        {entry.description && (
+                          <span className="text-[9px] text-muted-foreground/70 block truncate">{entry.description}</span>
+                        )}
+                      </div>
+                      <span className="text-[9px] text-muted-foreground/50 shrink-0">
+                        {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: ptBR })}
+                      </span>
+                    </div>
+                  );
+                })
               )}
             </div>
           )}

@@ -43,6 +43,14 @@ export interface LeadSummary {
   avoid?: string;
 }
 
+export interface AudioResult {
+  audio_url: string;
+  duration: number;
+  trace_id: string;
+  audio_id?: string;
+  cached?: boolean;
+}
+
 export function useProspectAI() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastResult, setLastResult] = useState<any>(null);
@@ -112,32 +120,62 @@ export function useProspectAI() {
     });
   };
 
-  const generateAudio = async (text: string, voiceId?: string): Promise<string | null> => {
+  /**
+   * Generate audio via prospect-tts edge function.
+   * Now returns JSON with audio_url persisted in storage + prospect_audio table.
+   */
+  const generateAudio = async (
+    text: string, 
+    voiceId?: string,
+    opts?: { prospect_id?: string; opportunity_id?: string; idempotency_key?: string; trace_id?: string }
+  ): Promise<AudioResult | null> => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return null;
+      }
+
+      const traceId = opts?.trace_id || crypto.randomUUID();
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prospect-tts`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'X-Trace-Id': traceId,
           },
-          body: JSON.stringify({ text, voice_id: voiceId }),
+          body: JSON.stringify({
+            text,
+            voice_id: voiceId,
+            prospect_id: opts?.prospect_id,
+            opportunity_id: opts?.opportunity_id,
+            idempotency_key: opts?.idempotency_key,
+          }),
         }
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        toast.error(errData.error || 'Erro ao gerar áudio');
+        const errMsg = data?.error || `Erro ${response.status}`;
+        toast.error(errMsg);
         return null;
       }
 
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      return audioUrl;
-    } catch (err) {
+      return {
+        audio_url: data.audio_url,
+        duration: data.duration,
+        trace_id: data.trace_id || traceId,
+        audio_id: data.audio_id,
+        cached: data.cached,
+      };
+    } catch (err: any) {
       console.error('TTS error:', err);
-      toast.error('Falha ao gerar áudio');
+      toast.error(err?.message || 'Falha ao gerar áudio');
       return null;
     }
   };
