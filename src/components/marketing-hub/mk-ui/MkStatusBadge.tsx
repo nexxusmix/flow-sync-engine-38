@@ -1,15 +1,19 @@
 import { cn } from "@/lib/utils";
 
-type BadgeVariant = "blue" | "amber" | "emerald" | "purple" | "red" | "slate" | "cyan";
+type BadgeVariant = "verified" | "active" | "processing" | "queued" | "blue" | "amber" | "emerald" | "purple" | "red" | "slate" | "cyan";
 
 const variants: Record<BadgeVariant, string> = {
-  blue: "bg-[hsl(210,100%,55%)]/15 text-[hsl(210,100%,70%)]",
-  amber: "bg-amber-500/15 text-amber-400",
-  emerald: "bg-emerald-500/15 text-emerald-400",
-  purple: "bg-purple-500/15 text-purple-400",
-  red: "bg-red-500/15 text-red-400",
-  slate: "bg-white/[0.06] text-white/50",
-  cyan: "bg-cyan-500/15 text-cyan-400",
+  verified: "border border-[rgba(0,156,202,0.3)] text-[hsl(195,100%,55%)]",
+  active: "border border-[rgba(0,156,202,0.3)] text-[hsl(195,100%,55%)]",
+  processing: "border border-white/15 text-white/50",
+  queued: "border border-white/10 text-white/30",
+  blue: "border border-[rgba(0,156,202,0.3)] text-[hsl(195,100%,55%)]",
+  amber: "border border-amber-500/30 text-amber-400",
+  emerald: "border border-emerald-500/30 text-emerald-400",
+  purple: "border border-purple-500/30 text-purple-400",
+  red: "border border-red-500/30 text-red-400",
+  slate: "border border-white/10 text-white/40",
+  cyan: "border border-cyan-500/30 text-cyan-400",
 };
 
 interface MkStatusBadgeProps {
@@ -18,9 +22,9 @@ interface MkStatusBadgeProps {
   className?: string;
 }
 
-export function MkStatusBadge({ label, variant = "blue", className }: MkStatusBadgeProps) {
+export function MkStatusBadge({ label, variant = "verified", className }: MkStatusBadgeProps) {
   return (
-    <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium tracking-wide", variants[variant], className)}>
+    <span className={cn("inline-flex items-center px-3 py-0.5 rounded text-[10px] font-normal tracking-[0.1em] uppercase", variants[variant], className)}>
       {label}
     </span>
   );

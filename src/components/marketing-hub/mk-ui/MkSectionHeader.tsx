@@ -10,7 +10,10 @@ interface MkSectionHeaderProps {
 export function MkSectionHeader({ title, action, className }: MkSectionHeaderProps) {
   return (
     <div className={cn("flex items-center justify-between mb-4", className)}>
-      <h2 className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{title}</h2>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-[hsl(195,100%,45%)]" />
+        <h2 className="text-[11px] uppercase tracking-[0.12em] text-white/30 font-normal">{title}</h2>
+      </div>
       {action}
     </div>
   );
