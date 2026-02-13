@@ -1227,6 +1227,101 @@ export type Database = {
         }
         Relationships: []
       }
+      client_message_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          message_id: string
+          payload: Json | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          message_id: string
+          payload?: Json | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          message_id?: string
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_message_events_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "client_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_messages: {
+        Row: {
+          ai_goal: string | null
+          ai_variant: string | null
+          attachments: Json | null
+          channel: string
+          client_id: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          material_id: string | null
+          material_link: string | null
+          project_id: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          ai_goal?: string | null
+          ai_variant?: string | null
+          attachments?: Json | null
+          channel?: string
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          material_id?: string | null
+          material_link?: string | null
+          project_id: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          ai_goal?: string | null
+          ai_variant?: string | null
+          attachments?: Json | null
+          channel?: string
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          material_id?: string | null
+          material_link?: string | null
+          project_id?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       content_assets: {
         Row: {
           content_item_id: string

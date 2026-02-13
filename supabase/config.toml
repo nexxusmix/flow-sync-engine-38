@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.portal-upload-material]
 verify_jwt = false
+
+[functions.generate-client-message]
+verify_jwt = false
