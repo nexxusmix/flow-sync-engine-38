@@ -1,13 +1,9 @@
 /**
- * ClientUploadDialog - Dialog para cliente enviar material
- * 
- * Permite upload de:
- * - Links do YouTube
- * - Links externos (Drive, Vimeo, etc)
- * - Arquivos de referência
+ * ClientUploadDialog - Dialog para cliente enviar materiais
+ * Suporta múltiplos arquivos simultâneos com preenchimento IA
  */
 
-import { memo, useState } from "react";
+import { memo, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Upload, 
@@ -17,6 +13,12 @@ import {
   X, 
   Loader2,
   CheckCircle2,
+  Sparkles,
+  Trash2,
+  Image,
+  Film,
+  FileText,
+  File as FileIcon,
 } from "lucide-react";
 import {
   Dialog,
@@ -33,6 +35,16 @@ import { cn } from "@/lib/utils";
 
 type UploadType = 'youtube' | 'link' | 'file';
 
+export interface QueuedItem {
+  id: string;
+  type: UploadType;
+  title: string;
+  description: string;
+  url: string;
+  file?: File;
+  preview?: string;
+}
+
 interface ClientUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,35 +58,33 @@ interface ClientUploadDialogProps {
   isUploading?: boolean;
 }
 
-const uploadTypes = [
-  {
-    id: 'youtube' as UploadType,
-    label: 'YouTube',
-    icon: Youtube,
-    color: 'text-red-500',
-    bgColor: 'bg-red-500/10',
-    borderColor: 'border-red-500/30',
-    placeholder: 'https://youtube.com/watch?v=...',
-  },
-  {
-    id: 'link' as UploadType,
-    label: 'Link Externo',
-    icon: Link2,
-    color: 'text-cyan-500',
-    bgColor: 'bg-cyan-500/10',
-    borderColor: 'border-cyan-500/30',
-    placeholder: 'https://drive.google.com/...',
-  },
-  {
-    id: 'file' as UploadType,
-    label: 'Arquivo',
-    icon: FileUp,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10',
-    borderColor: 'border-purple-500/30',
-    placeholder: 'Selecione um arquivo',
-  },
-];
+function guessTitle(file: File): string {
+  const name = file.name.replace(/\.[^.]+$/, '');
+  return name
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
+}
+
+function guessDescription(file: File): string {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+  
+  if (file.type.startsWith('image/')) return `Imagem ${ext.toUpperCase()} • ${sizeMB} MB`;
+  if (file.type.startsWith('video/')) return `Vídeo ${ext.toUpperCase()} • ${sizeMB} MB`;
+  if (file.type === 'application/pdf') return `Documento PDF • ${sizeMB} MB`;
+  if (ext === 'doc' || ext === 'docx') return `Documento Word • ${sizeMB} MB`;
+  if (ext === 'zip' || ext === 'rar') return `Arquivo compactado • ${sizeMB} MB`;
+  return `Arquivo ${ext.toUpperCase()} • ${sizeMB} MB`;
+}
+
+function getFileIcon(file?: File) {
+  if (!file) return FileIcon;
+  if (file.type.startsWith('image/')) return Image;
+  if (file.type.startsWith('video/')) return Film;
+  if (file.type === 'application/pdf' || file.name.endsWith('.doc') || file.name.endsWith('.docx')) return FileText;
+  return FileIcon;
+}
 
 function ClientUploadDialogComponent({
   open,
@@ -82,262 +92,257 @@ function ClientUploadDialogComponent({
   onUpload,
   isUploading = false,
 }: ClientUploadDialogProps) {
-  const [selectedType, setSelectedType] = useState<UploadType | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [url, setUrl] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [queue, setQueue] = useState<QueuedItem[]>([]);
+  const [linkMode, setLinkMode] = useState<'youtube' | 'link' | null>(null);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkDesc, setLinkDesc] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
-    setSelectedType(null);
-    setTitle('');
-    setDescription('');
-    setUrl('');
-    setFile(null);
+    setQueue([]);
+    setLinkMode(null);
+    setLinkUrl('');
+    setLinkTitle('');
+    setLinkDesc('');
+    setSending(false);
+    setSentCount(0);
     setError(null);
   };
 
   const handleClose = () => {
-    if (!isUploading) {
+    if (!sending) {
       resetForm();
       onOpenChange(false);
     }
   };
 
-  const handleSubmit = async () => {
-    if (!selectedType || !title.trim()) {
-      setError('Preencha o título');
-      return;
-    }
+  const addFiles = useCallback((files: FileList | null) => {
+    if (!files) return;
+    const newItems: QueuedItem[] = Array.from(files).map(file => {
+      let preview: string | undefined;
+      if (file.type.startsWith('image/')) {
+        preview = URL.createObjectURL(file);
+      }
+      return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        type: 'file' as UploadType,
+        title: guessTitle(file),
+        description: guessDescription(file),
+        url: '',
+        file,
+        preview,
+      };
+    });
+    setQueue(prev => [...prev, ...newItems]);
+    setLinkMode(null);
+  }, []);
 
-    if (selectedType !== 'file' && !url.trim()) {
-      setError('Preencha o link');
-      return;
-    }
-
-    if (selectedType === 'file' && !file) {
-      setError('Selecione um arquivo');
-      return;
-    }
-
+  const addLink = () => {
+    if (!linkMode || !linkUrl.trim()) { setError('Preencha o link'); return; }
+    const title = linkTitle.trim() || (linkMode === 'youtube' ? 'Vídeo YouTube' : 'Link externo');
+    setQueue(prev => [...prev, {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: linkMode,
+      title,
+      description: linkDesc,
+      url: linkUrl.trim(),
+    }]);
+    setLinkUrl('');
+    setLinkTitle('');
+    setLinkDesc('');
+    setLinkMode(null);
     setError(null);
-
-    try {
-      await onUpload({
-        type: selectedType,
-        title: title.trim(),
-        description: description.trim() || undefined,
-        url: url.trim() || undefined,
-        file: file || undefined,
-      });
-      handleClose();
-    } catch (err) {
-      setError('Erro ao enviar. Tente novamente.');
-    }
   };
 
-  const selectedTypeConfig = uploadTypes.find(t => t.id === selectedType);
+  const removeItem = (id: string) => {
+    setQueue(prev => {
+      const item = prev.find(i => i.id === id);
+      if (item?.preview) URL.revokeObjectURL(item.preview);
+      return prev.filter(i => i.id !== id);
+    });
+  };
+
+  const updateItem = (id: string, field: keyof QueuedItem, value: string) => {
+    setQueue(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
+  };
+
+  const fillAllWithAI = () => {
+    setQueue(prev => prev.map(item => {
+      if (item.file) {
+        return {
+          ...item,
+          title: item.title || guessTitle(item.file),
+          description: item.description || guessDescription(item.file),
+        };
+      }
+      if (item.type === 'youtube') {
+        return { ...item, title: item.title || 'Referência YouTube', description: item.description || 'Vídeo de referência para a equipe de produção' };
+      }
+      return { ...item, title: item.title || 'Link de referência', description: item.description || 'Material externo compartilhado pelo cliente' };
+    }));
+  };
+
+  const handleSubmitAll = async () => {
+    if (queue.length === 0) { setError('Adicione pelo menos um material'); return; }
+    const missing = queue.find(i => !i.title.trim());
+    if (missing) { setError('Todos os itens precisam de título'); return; }
+    setError(null);
+    setSending(true);
+    setSentCount(0);
+
+    for (let i = 0; i < queue.length; i++) {
+      const item = queue[i];
+      try {
+        await onUpload({
+          type: item.type,
+          title: item.title.trim(),
+          description: item.description.trim() || undefined,
+          url: item.url.trim() || undefined,
+          file: item.file,
+        });
+        setSentCount(i + 1);
+      } catch {
+        setError(`Erro ao enviar "${item.title}"`);
+        setSending(false);
+        return;
+      }
+    }
+
+    setSending(false);
+    handleClose();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    addFiles(e.dataTransfer.files);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-[#0a0a0a] border-[#1a1a1a] text-white max-w-md p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-4 border-b border-[#1a1a1a]">
+      <DialogContent className="bg-[#0a0a0a] border-[#1a1a1a] text-white max-w-lg p-0 overflow-hidden max-h-[90vh] flex flex-col">
+        <DialogHeader className="p-6 pb-4 border-b border-[#1a1a1a] shrink-0">
           <DialogTitle className="text-lg font-medium uppercase tracking-wider">
-            Enviar Material
+            Enviar Materiais
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500">
-            Compartilhe referências, logos ou arquivos com a equipe
+            Arraste ou selecione vários arquivos de uma vez
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-6">
-          {/* Type Selection */}
-          <AnimatePresence mode="wait">
-            {!selectedType ? (
-              <motion.div
-                key="type-selection"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="grid grid-cols-3 gap-3"
-              >
-                {uploadTypes.map((type) => (
-                  <motion.button
-                    key={type.id}
-                    onClick={() => setSelectedType(type.id)}
-                    className={cn(
-                      "flex flex-col items-center gap-3 p-4 border rounded-none transition-all",
-                      "border-[#1a1a1a] hover:border-gray-600",
-                      type.bgColor
-                    )}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <type.icon className={cn("w-6 h-6", type.color)} />
-                    <span className="text-xs uppercase tracking-wider text-gray-400">
-                      {type.label}
-                    </span>
-                  </motion.button>
-                ))}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="form"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="space-y-4"
-              >
-                {/* Selected Type Header */}
-                <div className="flex items-center justify-between">
-                  <div className={cn(
-                    "flex items-center gap-2 px-3 py-1.5",
-                    selectedTypeConfig?.bgColor,
-                    "border",
-                    selectedTypeConfig?.borderColor
-                  )}>
-                    {selectedTypeConfig && (
-                      <selectedTypeConfig.icon className={cn("w-4 h-4", selectedTypeConfig.color)} />
-                    )}
-                    <span className="text-xs uppercase tracking-wider text-gray-400">
-                      {selectedTypeConfig?.label}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedType(null)}
-                    className="text-gray-500 hover:text-white transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+        <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+          {/* Drop zone */}
+          <div
+            onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-cyan-500'); }}
+            onDragLeave={e => e.currentTarget.classList.remove('border-cyan-500')}
+            onDrop={e => { e.currentTarget.classList.remove('border-cyan-500'); handleDrop(e); }}
+            onClick={() => fileRef.current?.click()}
+            className="border-2 border-dashed border-[#1a1a1a] hover:border-gray-600 rounded-lg p-6 text-center cursor-pointer transition-colors"
+          >
+            <Upload className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">Arraste arquivos aqui ou clique para selecionar</p>
+            <p className="text-[10px] text-gray-600 mt-1">Imagens, vídeos, PDFs, documentos, ZIPs...</p>
+          </div>
+          <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} accept="image/*,video/*,.pdf,.doc,.docx,.zip,.rar,.psd,.ai,.eps,.svg" />
+
+          {/* Add link buttons */}
+          <div className="flex gap-2">
+            <button onClick={() => setLinkMode('youtube')}
+              className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
+                linkMode === 'youtube' ? "border-red-500/40 bg-red-500/10 text-red-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
+              <Youtube className="w-3.5 h-3.5" /> YouTube
+            </button>
+            <button onClick={() => setLinkMode('link')}
+              className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
+                linkMode === 'link' ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
+              <Link2 className="w-3.5 h-3.5" /> Link
+            </button>
+          </div>
+
+          {/* Link form */}
+          <AnimatePresence>
+            {linkMode && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
+                <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder={linkMode === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://drive.google.com/...'} className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500" />
+                <div className="flex gap-2">
+                  <Input value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Título (opcional)" className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500 flex-1" />
+                  <Button size="sm" onClick={addLink} className="bg-cyan-500 hover:bg-cyan-600 text-black rounded-none shrink-0">
+                    Adicionar
+                  </Button>
                 </div>
-
-                {/* Title */}
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase tracking-wider text-gray-500">
-                    Título *
-                  </Label>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Logo principal PNG"
-                    className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500"
-                  />
-                </div>
-
-                {/* URL or File */}
-                {selectedType === 'file' ? (
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase tracking-wider text-gray-500">
-                      Arquivo *
-                    </Label>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        accept="image/*,video/*,.pdf,.doc,.docx,.zip"
-                      />
-                      <div className={cn(
-                        "flex items-center justify-center gap-2 p-4 border border-dashed",
-                        "border-[#1a1a1a] hover:border-gray-600 transition-colors",
-                        file && "border-emerald-500/50 bg-emerald-500/5"
-                      )}>
-                        {file ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                            <span className="text-sm text-gray-400 truncate max-w-[200px]">
-                              {file.name}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm text-gray-500">
-                              Clique para selecionar
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase tracking-wider text-gray-500">
-                      URL *
-                    </Label>
-                    <Input
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      placeholder={selectedTypeConfig?.placeholder}
-                      className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500"
-                    />
-                  </div>
-                )}
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase tracking-wider text-gray-500">
-                    Descrição (opcional)
-                  </Label>
-                  <Textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Adicione detalhes ou instruções..."
-                    rows={2}
-                    className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500 resize-none"
-                  />
-                </div>
-
-                {/* Error */}
-                {error && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xs text-red-500"
-                  >
-                    {error}
-                  </motion.p>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Queue items */}
+          {queue.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider">{queue.length} {queue.length === 1 ? 'item' : 'itens'} na fila</span>
+                <button onClick={fillAllWithAI} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-[10px] uppercase tracking-wider font-medium hover:bg-purple-500/20 transition-colors">
+                  <Sparkles className="w-3 h-3" /> Preencher com IA
+                </button>
+              </div>
+
+              {queue.map((item, i) => {
+                const Icon = item.file ? getFileIcon(item.file) : item.type === 'youtube' ? Youtube : Link2;
+                return (
+                  <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="border border-[#1a1a1a] p-3 space-y-2">
+                    <div className="flex items-start gap-3">
+                      {/* Preview or icon */}
+                      <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center shrink-0 overflow-hidden">
+                        {item.preview ? (
+                          <img src={item.preview} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-red-500' : item.type === 'link' ? 'text-cyan-500' : 'text-purple-500')} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <Input value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} placeholder="Título *" className="bg-transparent border-[#1a1a1a] rounded-none focus:border-cyan-500 h-8 text-sm px-2" />
+                        <Input value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Descrição (opcional)" className="bg-transparent border-[#1a1a1a] rounded-none focus:border-cyan-500 h-8 text-xs text-gray-400 px-2" />
+                      </div>
+                      <button onClick={() => removeItem(item.id)} className="text-gray-600 hover:text-red-400 transition-colors shrink-0 mt-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {item.file && (
+                      <p className="text-[10px] text-gray-600 pl-[60px]">{item.file.name} • {(item.file.size / (1024 * 1024)).toFixed(1)} MB</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-red-500">
+              {error}
+            </motion.p>
+          )}
         </div>
 
         {/* Footer */}
-        {selectedType && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-6 pt-4 border-t border-[#1a1a1a] flex justify-end gap-3"
-          >
-            <Button
-              variant="ghost"
-              onClick={handleClose}
-              disabled={isUploading}
-              className="text-gray-400 hover:text-white"
-            >
+        <div className="p-6 pt-4 border-t border-[#1a1a1a] flex items-center justify-between shrink-0">
+          <span className="text-[10px] text-gray-600">
+            {sending ? `Enviando ${sentCount + 1} de ${queue.length}...` : `${queue.length} ${queue.length === 1 ? 'material' : 'materiais'}`}
+          </span>
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={handleClose} disabled={sending} className="text-gray-400 hover:text-white">
               Cancelar
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isUploading}
-              className="bg-cyan-500 hover:bg-cyan-600 text-black font-medium rounded-none"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Enviando...
-                </>
+            <Button onClick={handleSubmitAll} disabled={sending || queue.length === 0} className="bg-cyan-500 hover:bg-cyan-600 text-black font-medium rounded-none">
+              {sending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando {sentCount + 1}/{queue.length}</>
               ) : (
-                <>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Enviar Material
-                </>
+                <><Upload className="w-4 h-4 mr-2" /> Enviar {queue.length > 0 ? `(${queue.length})` : ''}</>
               )}
             </Button>
-          </motion.div>
-        )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
