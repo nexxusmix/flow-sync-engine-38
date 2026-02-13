@@ -1,141 +1,266 @@
 
-# Fix PDF Export: Generate Real PDFs Instead of HTML/SVG Files
+# Multi-Product Platform Architecture ("Agency Suite")
 
-## Problem
+## Overview
 
-The platform has **3 different "PDF export" edge functions**, and none of them produce actual PDF files:
+Transform SQUAD Hub into a multi-product platform with two verticals -- **Produtora Audiovisual** and **Marketing & Social Media** -- sharing the same database, auth, finance, CRM, and AI engine, but with separate visual contexts, filtered data, and independent navigation.
 
-- **`export-pdf`** (main, 1355 lines): Generates styled **HTML**, uploads as `.html` with `contentType: text/html`, then opens the HTML URL in a new tab. On desktop browsers, the embedded script calls `window.print()` so users can "Save as PDF" manually. On Safari iOS, this shows **raw HTML source code**.
-- **`export-finance-pdf`** (450 lines): Generates an **SVG** image, uploads as `.svg` with `contentType: image/svg+xml`. Not a PDF at all.
-- **`export-creative-pdf`** (611 lines): Actually uses **`pdf-lib`** to generate a real PDF with `contentType: application/pdf`. This one works correctly.
+## What Already Exists (No Need to Rebuild)
 
-## Solution
+The codebase already has a full Marketing module:
+- Marketing Dashboard, Calendar, Pipeline, Ideas, Campaigns, Assets, Studio, References, Automations, Transcription
+- Content items, brand kits, creative works, campaigns tables
+- Marketing settings, reports
 
-Use **`pdf-lib`** (already proven in `export-creative-pdf`) to generate real PDF binary files in all edge functions. No Puppeteer/Playwright needed -- `pdf-lib` runs natively in Deno edge functions and creates proper PDF bytes.
+The Produtora module is the core platform (Projects, Stages, Portal, Deliverables, Storyboards, etc.)
 
-## Architecture
+**The work is about connecting them under a unified multi-product architecture, not rebuilding either.**
 
-```text
-Frontend (click "Export PDF")
-    |
-    v
-Edge Function (export-pdf / export-finance-pdf)
-    |
-    1. Fetch data from DB
-    2. Build PDF using pdf-lib (pages, text, shapes, colors)
-    3. Save as .pdf with contentType: application/pdf
-    4. Return signed URL
-    |
-    v
-Frontend receives signed URL
-    |
-    v
-window.open(url) --> Safari/Chrome opens native PDF viewer
+## Implementation Phases
+
+---
+
+### Phase 1: Database Schema Expansion
+
+**A) Add `product_type` to `projects` table**
+
+```sql
+ALTER TABLE public.projects
+  ADD COLUMN product_type text NOT NULL DEFAULT 'production'
+  CHECK (product_type IN ('production', 'marketing'));
 ```
 
-## Changes
+All existing projects get `'production'` by default. New marketing projects will be tagged `'marketing'`.
 
-### 1. Rewrite `export-pdf` edge function (~1355 lines)
+**B) Add `module_access` to `profiles` table**
 
-**Current**: Builds an HTML string with CSS, uploads as `.html`
-**New**: Use `pdf-lib` to draw text, rectangles, lines programmatically (like `export-creative-pdf` already does)
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN module_access text[] NOT NULL DEFAULT ARRAY['production', 'marketing'];
+```
 
-Key changes:
-- Import `pdf-lib`: `import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1"`
-- Replace `generatePDFHtml()` with `generatePdfDocument()` that creates pages using `pdf-lib` API
-- Each report type (project, report_360, tasks, portal, project_overview) gets a builder function that draws content onto PDF pages
-- Upload with `contentType: 'application/pdf'` and `.pdf` extension
-- Remove the HTML template, print-bar script, and CSS entirely
+Controls which modules each user can see. Default gives full access.
 
-The layout will use the same design system colors (dark background, cyan accents) rendered as PDF drawing commands:
-- `page.drawRectangle()` for cards/backgrounds
-- `page.drawText()` for labels/values
-- `page.drawLine()` for separators
-- KPI cards, tables, badges all rendered with the same visual hierarchy
+**C) Add `subscription_plan` to `workspace_settings`**
 
-### 2. Rewrite `export-finance-pdf` edge function (~450 lines)
+```sql
+ALTER TABLE public.workspace_settings
+  ADD COLUMN subscription_plan text NOT NULL DEFAULT 'full'
+  CHECK (subscription_plan IN ('production', 'marketing', 'full'));
+```
 
-**Current**: Builds SVG with `<text>` and `<rect>` elements
-**New**: Convert SVG drawing logic to equivalent `pdf-lib` calls
+Workspace-level plan that gates available modules.
 
-This is actually the easiest conversion since the SVG approach already uses absolute positioning (x, y coordinates) which maps directly to pdf-lib's API.
+No new tables needed -- just 3 columns on existing tables.
 
-### 3. Update `pdfExportService.ts` (frontend)
+---
 
-Minor changes:
-- Update the `ExportResult` type comments to reflect actual PDF
-- Change the `content_type` references from `text/html` to `application/pdf`
-- The `window.open(url, '_blank')` approach stays the same -- it will now open a real PDF that Safari handles natively
+### Phase 2: Platform Context System
 
-### 4. No changes needed to `export-creative-pdf`
+**A) Create `useProductContext` hook**
 
-Already generates real PDFs correctly using `pdf-lib`.
-
-### 5. No changes needed to `export-campaign-pdf` and `export-content-pdf`
-
-These call dedicated edge functions that need individual review, but they follow the same pattern. They will be addressed in the same rewrite if they also produce HTML.
-
-## Technical Details
-
-### pdf-lib patterns (proven in this codebase)
+A React context + hook that manages the active product module:
 
 ```typescript
-import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+type ProductModule = 'production' | 'marketing' | 'full';
 
-const pdfDoc = await PDFDocument.create();
-const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-const page = pdfDoc.addPage([595.28, 841.89]); // A4
-
-// Draw dark background
-page.drawRectangle({
-  x: 0, y: 0,
-  width: 595.28, height: 841.89,
-  color: rgb(0.02, 0.02, 0.02),
-});
-
-// Draw text
-page.drawText("RELATÓRIO", {
-  x: 40, y: 780,
-  font: fontBold, size: 28,
-  color: rgb(1, 1, 1),
-});
-
-// Save
-const pdfBytes = await pdfDoc.save();
+interface ProductContextType {
+  activeModule: ProductModule;
+  setActiveModule: (module: ProductModule) => void;
+  hasAccess: (module: 'production' | 'marketing') => boolean;
+  availableModules: ProductModule[];
+}
 ```
 
-### Upload pattern
+- Persisted in `localStorage`
+- Reads `module_access` from user profile
+- Reads `subscription_plan` from workspace settings
+- Exposes `hasAccess()` for conditional rendering
+
+**B) Create Platform Selector Page (`/plataforma`)**
+
+Shown after login when user has access to multiple modules. Three cards:
+
+- "Produtora Audiovisual" -- icon: Clapperboard -- routes to `/`
+- "Marketing & Social Media" -- icon: Megaphone -- routes to `/marketing`
+- "Agency Suite (Completo)" -- routes to `/` with full sidebar
+
+If user only has access to one module, skip selector and redirect.
+
+**C) Persist selection**
+
+Store in `localStorage` as `squad-active-module`. Restore on refresh.
+
+---
+
+### Phase 3: Context-Aware Sidebar
+
+**Current sidebar**: Single flat list of all menu items.
+
+**New behavior**: Sidebar items filtered by `activeModule`:
+
+| Item | Production | Marketing | Full |
+|------|-----------|-----------|------|
+| Overview | Yes | Yes (marketing dashboard) | Yes |
+| Calendario | Yes | Yes | Yes |
+| Projetos | Yes (production only) | Yes (marketing only) | Yes (all) |
+| CRM | Yes | Yes | Yes |
+| Marketing module | No | Yes | Yes |
+| Gerar Posts | No | Yes | Yes |
+| Transcricao | No | Yes | Yes |
+| Prospeccao | Yes | No | Yes |
+| Financeiro | Yes | Yes | Yes |
+| Propostas | Yes | No | Yes |
+| Contratos | Yes | No | Yes |
+| Relatorios | Yes | Yes | Yes |
+| Tarefas | Yes | Yes | Yes |
+
+Implementation:
+- Each menu item gets a `modules` field: `['production']`, `['marketing']`, or `['production', 'marketing']`
+- Sidebar filters items based on `activeModule`
+- Add a module switcher pill at the top of the sidebar (below logo)
+
+---
+
+### Phase 4: Project Filtering by Product Type
+
+**A) Update `useProjects` hook**
+
+Add `product_type` filter to all project queries:
 
 ```typescript
-const fileName = `${slug}-${timestamp}.pdf`;
-await supabase.storage.from('exports').upload(storagePath, pdfBytes, {
-  contentType: 'application/pdf',
-  upsert: true,
-});
+const { activeModule } = useProductContext();
+
+// When activeModule is 'production', filter product_type = 'production'
+// When activeModule is 'marketing', filter product_type = 'marketing'  
+// When activeModule is 'full', show all
 ```
 
-### Color conversion
+**B) Update New Project Modal**
 
-The current hex colors will be converted to `rgb()` calls:
-- `#050505` becomes `rgb(0.02, 0.02, 0.02)`
-- `#06b6d4` (primary cyan) becomes `rgb(0.024, 0.714, 0.831)`
-- `#22c55e` (success green) becomes `rgb(0.133, 0.773, 0.369)`
+- Auto-set `product_type` based on `activeModule`
+- When in "full" mode, show a selector (Production / Marketing)
 
-### Page overflow handling
+**C) Update Projects List, Kanban, Board views**
 
-Each builder function will track the current Y position and automatically add new pages when content exceeds the page height, similar to how `export-creative-pdf` handles multi-page documents.
+All already consume `useProjects` -- filtering at the hook level propagates automatically.
 
-### Font limitation
+---
 
-`pdf-lib` with `StandardFonts` only supports basic Latin characters. For Portuguese characters (accents like a, e, o), StandardFonts.Helvetica handles these correctly since they're within the Latin-1 range.
+### Phase 5: Marketing-Specific Project Stages
 
-## Scope
+When `product_type = 'marketing'`, projects use different default stages:
 
-- Rewrite `export-pdf/index.ts` to use pdf-lib
-- Rewrite `export-finance-pdf/index.ts` to use pdf-lib  
-- Update `pdfExportService.ts` content_type references
-- Verify `export-campaign-pdf` and `export-content-pdf` (fix if also HTML-based)
-- All 6 export types (project, report_360, tasks, finance, portal, project_overview) will produce real `.pdf` files
-- Safari iOS will open native PDF viewer instead of showing source code
+```typescript
+const MARKETING_STAGES = [
+  { stage_key: 'briefing', title: 'Briefing' },
+  { stage_key: 'roteiro', title: 'Roteiro/Copy' },
+  { stage_key: 'design', title: 'Design/Criacao' },
+  { stage_key: 'revisao', title: 'Revisao Cliente' },
+  { stage_key: 'aprovacao', title: 'Aprovacao' },
+  { stage_key: 'publicacao', title: 'Publicacao' },
+  { stage_key: 'analise', title: 'Analise de Resultado' },
+];
+```
+
+The `project_stage_settings` table already supports custom stages per workspace. Add a `product_type` filter to stage templates.
+
+---
+
+### Phase 6: Cross-Module Integration Points
+
+These are the "gold" features that connect both verticals:
+
+**A) Marketing roteiro becomes Production task**
+- Button on content items: "Enviar para Producao"
+- Creates a task linked to the content item's project
+
+**B) Brand Kit sharing**
+- Brand kits (already in `brand_kits` table) visible to both modules
+- Branding created in marketing available in production projects
+
+**C) Unified financial view**
+- `revenues` and `expenses` tables already have `project_id`
+- Finance dashboard aggregates across both product types
+- Add a filter toggle: "Produtora | Marketing | Todos"
+
+**D) Unified CRM**
+- `crm_contacts` and `crm_deals` serve both verticals
+- Add `product_type` tag to deals to track origin
+- Pipeline shows combined or filtered view
+
+---
+
+### Phase 7: Dashboard Variants
+
+**Production Dashboard** (existing `/` route):
+- Keeps current layout: revenue, pipeline, active projects, timeline
+
+**Marketing Dashboard** (existing `/marketing` route):
+- Keeps current layout: content calendar, ideas, campaigns, metrics
+
+**Full Dashboard** (new combined view):
+- Top row: unified KPIs (revenue from both, total projects, total content)
+- Left column: production highlights
+- Right column: marketing highlights
+- Bottom: unified timeline combining deliveries + publications
+
+---
+
+### Phase 8: Reports Filtering
+
+Add `product_type` filter to all report pages:
+- Report 360 shows combined or filtered metrics
+- Finance reports can segment by product type
+- Marketing reports only show marketing data
+- Operations reports show production data
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/hooks/useProductContext.tsx` | Context provider + hook for active module |
+| `src/pages/PlatformSelectorPage.tsx` | Module selection screen after login |
+| `src/components/layout/ModuleSwitcher.tsx` | Sidebar pill to switch between modules |
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/App.tsx` | Add PlatformSelector route, wrap with ProductProvider |
+| `src/components/layout/Sidebar.tsx` | Filter items by module, add ModuleSwitcher |
+| `src/hooks/useProjects.tsx` | Add product_type filter to queries |
+| `src/components/projects/modals/NewProjectModal.tsx` | Auto-set product_type |
+| `src/pages/Dashboard.tsx` | Conditional rendering based on module |
+| `src/pages/finance/FinanceDashboard.tsx` | Add product_type filter toggle |
+| `src/hooks/useDashboardMetrics.tsx` | Accept product_type filter |
+| `src/pages/settings/SettingsDashboard.tsx` | Add "Planos" settings section |
+
+## Database Changes (3 migrations)
+
+1. `ALTER TABLE projects ADD COLUMN product_type text NOT NULL DEFAULT 'production'`
+2. `ALTER TABLE profiles ADD COLUMN module_access text[] NOT NULL DEFAULT ARRAY['production','marketing']`
+3. `ALTER TABLE workspace_settings ADD COLUMN subscription_plan text NOT NULL DEFAULT 'full'`
+
+## What This Does NOT Change
+
+- Auth system (same login for everyone)
+- Task system (tasks are user-scoped, not module-scoped)
+- CRM core (contacts/deals shared)
+- AI engine (same for both)
+- Client portal (project-scoped, works for both types)
+- Storage buckets (shared)
+- RLS policies (user-scoped, unaffected)
+- Design system (same theme, same components)
+
+## Guardrails
+
+- No breaking changes to existing data or features
+- All existing projects automatically tagged as `production`
+- Users with `full` access see everything as before
+- Module filtering is purely additive (filter layer on top of existing queries)
+- No new tables -- only 3 new columns
+- No secret exposure
+- No changes to RLS (module_access is UI-level gating, not security)
