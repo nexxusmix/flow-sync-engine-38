@@ -1,9 +1,11 @@
+/**
+ * CreativeStudioPage — SolaFlux Holographic Design
+ * 3-panel layout: Sidebar (blocks+context) | Editor | Copilot
+ * Space Grotesk, glass-projection, cyan glow
+ */
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import {
   StudioSidebar,
   StudioCopilot,
@@ -16,6 +18,8 @@ import type { CreativeBlockType, NarrativeScriptContent } from '@/types/creative
 import type { StudioNavItem } from '@/components/creative-studio/StudioSidebar';
 import type { BrandKit } from '@/types/marketing';
 import { TemplateStudioPanel } from '@/components/studio/TemplateStudioPanel';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import '@/styles/mk-holographic.css';
 
 const BLOCK_LABELS: Record<CreativeBlockType, string> = {
   brief: 'Brief',
@@ -34,7 +38,7 @@ export default function CreativeStudioPage() {
   const { workId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   const [activeBlock, setActiveBlock] = useState<StudioNavItem>('narrative_script');
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewResult, setPreviewResult] = useState<Record<string, unknown> | null>(null);
@@ -43,12 +47,11 @@ export default function CreativeStudioPage() {
 
   const { createWork } = useCreativeWorks();
   const { work, blocks, isLoading, updateWork, upsertBlock, getBlock } = useCreativeWork(workId);
-  
+
   const currentBlockType = activeBlock === 'templates' ? 'narrative_script' : activeBlock as CreativeBlockType;
   const currentBlock = getBlock(currentBlockType);
   const { versions } = useBlockVersions(currentBlock?.id);
 
-  // Fetch brand kits for templates panel
   useEffect(() => {
     const fetchBrandKits = async () => {
       const { data } = await supabase.from('brand_kits').select('*').order('name');
@@ -57,14 +60,12 @@ export default function CreativeStudioPage() {
     fetchBrandKits();
   }, []);
 
-  // Create new work handler
   const handleCreateNewWork = async () => {
     setIsCreating(true);
     try {
       const projectId = searchParams.get('project_id');
       const clientId = searchParams.get('client_id');
       const campaignId = searchParams.get('campaign_id');
-      
       const newWork = await createWork.mutateAsync({
         title: 'Novo Trabalho Criativo',
         project_id: projectId,
@@ -79,38 +80,24 @@ export default function CreativeStudioPage() {
     }
   };
 
-  // Auto-create on mount if no workId
   useEffect(() => {
     if (!workId && !isCreating) {
       handleCreateNewWork();
     }
   }, [workId]);
 
-  // Generate content with AI
   const handleGenerate = async () => {
     if (!work) return;
-    
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('studio-generate-block', {
         body: {
-          workId: work.id,
-          blockType: currentBlockType,
-          action: 'generate',
-          context: {
-            title: work.title,
-            projectId: work.project_id,
-            clientId: work.client_id,
-            campaignId: work.campaign_id,
-          },
+          workId: work.id, blockType: currentBlockType, action: 'generate',
+          context: { title: work.title, projectId: work.project_id, clientId: work.client_id, campaignId: work.campaign_id },
         },
       });
-
       if (error) throw error;
-      
-      if (data?.content) {
-        setPreviewResult(data.content);
-      }
+      if (data?.content) setPreviewResult(data.content);
     } catch (err) {
       console.error('Generate error:', err);
       toast.error('Erro ao gerar conteúdo');
@@ -119,31 +106,19 @@ export default function CreativeStudioPage() {
     }
   };
 
-  // Improve existing content
   const handleImprove = async () => {
     if (!work || !currentBlock) return;
-    
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('studio-generate-block', {
         body: {
-          workId: work.id,
-          blockType: currentBlockType,
-          action: 'improve',
+          workId: work.id, blockType: currentBlockType, action: 'improve',
           currentContent: currentBlock.content,
-          context: {
-            title: work.title,
-            projectId: work.project_id,
-            clientId: work.client_id,
-          },
+          context: { title: work.title, projectId: work.project_id, clientId: work.client_id },
         },
       });
-
       if (error) throw error;
-      
-      if (data?.content) {
-        setPreviewResult(data.content);
-      }
+      if (data?.content) setPreviewResult(data.content);
     } catch (err) {
       console.error('Improve error:', err);
       toast.error('Erro ao melhorar conteúdo');
@@ -152,67 +127,42 @@ export default function CreativeStudioPage() {
     }
   };
 
-  // Regenerate (same as generate but with warning)
-  const handleRegenerate = async () => {
-    await handleGenerate();
-  };
+  const handleRegenerate = async () => { await handleGenerate(); };
 
-  // Save block content
   const handleSaveBlock = async (content: NarrativeScriptContent) => {
     await upsertBlock.mutateAsync({
       type: currentBlockType,
       content: content as unknown as Record<string, unknown>,
-      source: 'manual',
-      status: 'draft',
+      source: 'manual', status: 'draft',
     });
   };
 
-  // Apply preview result
   const handleApplyPreview = async () => {
     if (!previewResult) return;
-    
     await upsertBlock.mutateAsync({
       type: currentBlockType,
       content: previewResult,
-      source: 'ai',
-      status: 'draft',
+      source: 'ai', status: 'draft',
     });
-    
     setPreviewResult(null);
     toast.success('Conteúdo aplicado!');
   };
 
-  // Discard preview
-  const handleDiscardPreview = () => {
-    setPreviewResult(null);
-  };
+  const handleDiscardPreview = () => { setPreviewResult(null); };
 
-  // Quick actions from copilot
   const handleQuickAction = async (action: string, instruction?: string) => {
     if (!work || !currentBlock) return;
-    
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('studio-generate-block', {
         body: {
-          workId: work.id,
-          blockType: currentBlockType,
-          action,
-          instruction,
+          workId: work.id, blockType: currentBlockType, action, instruction,
           currentContent: currentBlock.content,
-          context: {
-            title: work.title,
-            projectId: work.project_id,
-            clientId: work.client_id,
-          },
+          context: { title: work.title, projectId: work.project_id, clientId: work.client_id },
         },
       });
-
       if (error) throw error;
-      
-      if (data?.content) {
-        setPreviewResult(data.content);
-      }
+      if (data?.content) setPreviewResult(data.content);
     } catch (err) {
       console.error('Quick action error:', err);
       toast.error('Erro ao processar ação');
@@ -221,29 +171,21 @@ export default function CreativeStudioPage() {
     }
   };
 
-  // Handle title change
   const handleTitleChange = async (title: string) => {
-    if (work) {
-      await updateWork.mutateAsync({ title });
-    }
+    if (work) await updateWork.mutateAsync({ title });
   };
 
-  // Handle work context update
   const handleWorkUpdate = async (updates: Partial<typeof work>) => {
-    if (work) {
-      await updateWork.mutateAsync(updates);
-    }
+    if (work) await updateWork.mutateAsync(updates);
   };
 
-  // Restore version
   const handleRestoreVersion = async (version: number) => {
     const targetVersion = versions.find(v => v.version === version);
     if (targetVersion) {
       await upsertBlock.mutateAsync({
         type: currentBlockType,
         content: targetVersion.content as Record<string, unknown>,
-        source: 'manual',
-        status: 'draft',
+        source: 'manual', status: 'draft',
       });
       toast.success(`Versão ${version} restaurada`);
     }
@@ -253,13 +195,12 @@ export default function CreativeStudioPage() {
     return (
       <DashboardLayout title="Studio Criativo">
         <div className="h-full flex items-center justify-center">
-          <div className="text-muted-foreground">Carregando...</div>
+          <div className="text-white/30" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Carregando...</div>
         </div>
       </DashboardLayout>
     );
   }
 
-  // Render block editor based on active type
   const renderBlockEditor = () => {
     switch (activeBlock) {
       case 'narrative_script':
@@ -288,7 +229,7 @@ export default function CreativeStudioPage() {
 
   return (
     <DashboardLayout title="Studio Criativo">
-      <div className="h-[calc(100vh-4rem)] flex">
+      <div className="h-[calc(100vh-4rem)] flex" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
         {/* Sidebar */}
         <StudioSidebar
           work={work || null}
@@ -300,14 +241,18 @@ export default function CreativeStudioPage() {
         />
 
         {/* Main Editor */}
-        <div className="flex-1 bg-background overflow-hidden">
-          {activeBlock === 'templates' ? (
-            <div className="h-full p-4">
-              <TemplateStudioPanel brandKits={brandKits} />
-            </div>
-          ) : (
-            renderBlockEditor()
-          )}
+        <div className="flex-1 bg-[#000000] overflow-hidden relative">
+          {/* Subtle ambient glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[200px] bg-[radial-gradient(ellipse_at_50%_0%,rgba(0,156,202,0.04)_0%,transparent_70%)] pointer-events-none z-0" />
+          <div className="relative z-10 h-full">
+            {activeBlock === 'templates' ? (
+              <div className="h-full p-4">
+                <TemplateStudioPanel brandKits={brandKits} />
+              </div>
+            ) : (
+              renderBlockEditor()
+            )}
+          </div>
         </div>
 
         {/* Copilot Panel */}
