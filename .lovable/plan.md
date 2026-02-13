@@ -1,126 +1,119 @@
 
-# Criar Aviso Inteligente -- Modal Avancado com IA + Selecao de Contexto do Projeto
+# Corrigir Layouts Quebrados e Textos Cortados em Toda a Plataforma
 
-## Resumo
-O modal "Novo Aviso" atual e basico (titulo, mensagem, tipo, severidade). Vamos transforma-lo em um modal avancado que:
-
-1. Ao selecionar um projeto, carrega TODOS os dados dele (entregas, reunioes, receitas, revisoes, etapas, escopo, materiais)
-2. Permite selecionar itens especificos do projeto para incluir no aviso
-3. Botao "Gerar com IA" que analisa o contexto selecionado e gera titulo + mensagem inteligentes
-4. Funciona tanto no Quadro de Avisos geral quanto na aba Avisos do projeto individual
+## Problema Identificado
+O container "Pipeline Total + Health" no dashboard de projetos (e areas similares) nao possui tratamento de overflow adequado. Valores monetarios longos como "R$ 15.590,00" sao cortados quando o espaco e insuficiente. Esse padrao se repete em multiplos locais da plataforma.
 
 ---
 
-## O que muda na experiencia
+## Locais com Problemas e Correcoes
 
-### Fluxo atual
-Titulo manual -> Tipo -> Severidade -> Projeto (opcional) -> Criar
+### 1. ProjectsDashboard.tsx -- Header Pipeline + Health (PRINCIPAL)
+**Linha 244**: O `glass-card` com Pipeline Total e RadialProgress nao tem `min-w-0`, `overflow-hidden` ou responsividade.
 
-### Novo fluxo
-1. Seleciona Projeto (ou ja vem preenchido se estiver na aba do projeto)
-2. Aparece painel "Contexto do Projeto" com itens selecionaveis:
-   - Entregas pendentes (portal_deliverables via portal_links)
-   - Reunioes proximas (calendar_events)
-   - Receitas pendentes/vencidas (revenues)
-   - Revisoes aguardando (portal_change_requests)
-   - Prazos do projeto (due_date, stage_current)
-   - Saude do projeto (health_score)
-   - Escopo / descricao
-3. Usuario marca checkboxes nos itens que quer incluir
-4. Pode preencher titulo/mensagem manualmente OU clicar "Gerar com IA"
-5. IA analisa os itens selecionados e gera titulo + mensagem contextualizados
-6. Tipo e severidade sao sugeridos pela IA (editaveis)
-7. Cria o aviso
+**Correcao:**
+- Adicionar `min-w-0` no container do texto para permitir truncamento
+- Adicionar `truncate` no valor monetario
+- Garantir que o container flex tenha `flex-shrink-0` no RadialProgress
+- Tornar o layout responsivo: em telas pequenas, empilhar verticalmente
+
+### 2. ProjectsDashboard.tsx -- Sidebar Metrics (linhas 350-389)
+Os 4 cards de metricas (Pipeline Ativo, Projetos Ativos, Health Medio, Margem Liquida) com `text-lg font-medium` podem ter valores cortados em colunas estreitas.
+
+**Correcao:**
+- Adicionar `truncate` nos valores monetarios
+- Adicionar `min-w-0` nos containers pai
+
+### 3. ProjectsDashboard.tsx -- Visao de Contas cards (linhas 418-422)
+Valor formatado com `formatCurrency` pode exceder o espaco disponivel.
+
+**Correcao:**
+- Adicionar `truncate` no span do valor
+
+### 4. Dashboard.tsx (Overview) -- Header date card (linha 142)
+O `glass-card` com data pode comprimir em telas menores.
+
+**Correcao:**
+- Adicionar `flex-shrink-0` para evitar compressao
+
+### 5. Dashboard.tsx -- Visao de Contas grid (linhas 400-403)
+Valor "R$ Xk" em `text-[10px]` pode cortar em grid de 3 colunas estreitas.
+
+**Correcao:**
+- Adicionar `truncate` nos textos de valor
+
+### 6. ReportMetricsBar.tsx -- Valor Total (linha 82)
+Ja tem `truncate` -- OK, mas o `font-bold` viola a regra tipografica (deve ser `font-medium` max 500).
+
+**Correcao:**
+- Trocar `font-bold` por `font-medium` para seguir o padrao tipografico
+
+### 7. ClientPortalPage.tsx -- Metric cards (linhas 231-251)
+Valor do contrato e health score em cards sem protecao de overflow.
+
+**Correcao:**
+- Adicionar `truncate` nos valores
+
+### 8. MetricCard.tsx -- kpi-value (linha 65)
+O valor KPI usa `text-4xl` sem `truncate`, pode estourar em telas pequenas.
+
+**Correcao:**
+- Adicionar `truncate` na classe `kpi-value` no index.css
+
+### 9. ProjectsMetricsCharts.tsx -- Valores bold (linha 111)
+`text-2xl font-bold` viola padrao tipografico.
+
+**Correcao:**
+- Trocar `font-bold` por `font-medium`
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivos a criar
-
-| Arquivo | Descricao |
-|---|---|
-| `src/components/alerts/CreateAlertModal.tsx` | **REESCREVER** -- Modal expandido com selecao de contexto + IA |
-| `supabase/functions/generate-alert-ai/index.ts` | **NOVO** -- Edge function que gera titulo, mensagem, tipo e severidade via IA |
-
 ### Arquivos a editar
 
-| Arquivo | Mudanca |
+| Arquivo | Tipo de correcao |
 |---|---|
-| `src/components/projects/detail/tabs/AlertsTab.tsx` | Adicionar botao "Novo Aviso" que abre o modal ja com o projeto preenchido |
-| `supabase/config.toml` | Registrar a nova edge function `generate-alert-ai` |
+| `src/components/projects/dashboard/ProjectsDashboard.tsx` | Overflow no header Pipeline+Health, sidebar metrics, e Visao de Contas |
+| `src/pages/Dashboard.tsx` | Overflow no header date, Visao de Contas grid |
+| `src/components/projects/reporting/ReportMetricsBar.tsx` | font-bold -> font-medium |
+| `src/pages/ClientPortalPage.tsx` | truncate nos valores de metricas |
+| `src/index.css` | Adicionar truncate na classe .kpi-value |
+| `src/components/projects/dashboard/ProjectsMetricsCharts.tsx` | font-bold -> font-medium |
 
-### CreateAlertModal expandido
+### Padrao de correcao aplicado
 
-O modal tera 2 colunas em telas grandes:
+Para cada container com valor monetario ou numerico:
+1. Container pai: `min-w-0` (permite flex shrink)
+2. Elemento de texto: `truncate` (corta com ellipsis)
+3. Elementos fixos (icones, radiais): `flex-shrink-0`
+4. Em containers flex horizontais com texto longo: substituir por layout vertical em breakpoints menores
 
-**Coluna esquerda -- Formulario:**
-- Titulo (input, preenchivel por IA)
-- Mensagem (textarea, preenchivel por IA)
-- Tipo (select, sugerido por IA)
-- Severidade (select, sugerido por IA)
-- Data limite (date picker)
-- Botao "Gerar com IA" (sparkles icon)
-- Botao "Criar Aviso"
+### Correcao principal (ProjectsDashboard header):
 
-**Coluna direita -- Contexto do Projeto (aparece ao selecionar projeto):**
-- Secao "Prazos": checkbox com due_date, stage_current
-- Secao "Entregas": checkboxes com deliverables pendentes
-- Secao "Reunioes": checkboxes com proximas reunioes
-- Secao "Financeiro": checkboxes com receitas pendentes/vencidas
-- Secao "Revisoes": checkboxes com change_requests pendentes
-- Secao "Saude": checkbox com health_score
-- Secao "Escopo": checkbox para incluir descricao do projeto
-- Botao "Selecionar tudo" / "Limpar"
-
-Quando usuario clica "Gerar com IA":
-1. Coleta todos os itens selecionados
-2. Envia ao edge function `generate-alert-ai`
-3. IA retorna: `{ title, message, type, severity }`
-4. Preenche os campos automaticamente (editaveis)
-
-### Edge Function `generate-alert-ai`
-
-Recebe:
+De:
 ```text
-{
-  projectName, clientName, dueDate, stageCurrent, healthScore,
-  selectedItems: {
-    deliverables: [...],
-    meetings: [...],
-    revenues: [...],
-    revisions: [...],
-    includeScope: true/false,
-    scopeText: "..."
-  },
-  userNote: "texto opcional do usuario"
-}
+<div className="glass-card rounded-2xl p-4 flex items-center gap-4">
+  <div>
+    <p>Pipeline Total</p>
+    <p>{formatCurrency(totalPipeline)}</p>
+  </div>
+  <RadialProgress ... />
+</div>
 ```
 
-Retorna:
+Para:
 ```text
-{
-  title: "emoji + titulo direto",
-  message: "descricao contextualizada",
-  type: "deadline_due | payment_overdue | ...",
-  severity: "info | warning | critical"
-}
+<div className="glass-card rounded-2xl p-4 flex items-center gap-4 max-w-xs">
+  <div className="min-w-0 flex-1">
+    <p>Pipeline Total</p>
+    <p className="truncate">{formatCurrency(totalPipeline)}</p>
+  </div>
+  <div className="flex-shrink-0">
+    <RadialProgress ... />
+  </div>
+</div>
 ```
 
-Usa Lovable AI (google/gemini-3-flash-preview) com LOVABLE_API_KEY ja configurado.
-
-### AlertsTab -- Botao Novo Aviso
-
-Na aba de Avisos do projeto individual, adicionar botao "Novo Aviso" ao lado do "Gerar Avisos Inteligentes". Ao clicar, abre o CreateAlertModal ja com o `projectId` preenchido (prop opcional no modal).
-
-### Dados carregados ao selecionar projeto
-
-Quando o usuario seleciona um projeto no modal, dispara queries paralelas:
-- `projects` -> dados basicos (due_date, health_score, stage_current, description)
-- `portal_links` -> IDs dos links do projeto
-- `portal_deliverables` -> entregas via portal_link_id
-- `calendar_events` -> reunioes do projeto
-- `revenues` -> receitas do projeto
-- `portal_change_requests` -> revisoes via portal_link_id
-
-Tudo carregado uma vez e exibido como checkboxes selecionaveis.
+### Regra tipografica aplicada
+Conforme o padrao da plataforma, `font-bold` sera substituido por `font-medium` (peso 500) em todos os valores de metricas encontrados.
