@@ -424,10 +424,15 @@ export function PortalTab({ project }: PortalTabProps) {
           <div className="space-y-2">
             {deliverables.map((d) => (
               <div key={d.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{d.title || d.file_name || 'Material'}</span>
-                </div>
+                 <div className="flex items-center gap-2 flex-1 min-w-0">
+                   <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                   <span className="text-sm truncate">{d.title || d.file_name || 'Material'}</span>
+                   {d.material_category && d.material_category !== 'deliverable' && (
+                     <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">
+                       {d.material_category}
+                     </Badge>
+                   )}
+                 </div>
                 <button
                   onClick={() => setDeleteDeliverableId(d.id)}
                   className="p-1 text-muted-foreground hover:text-destructive transition-colors rounded"

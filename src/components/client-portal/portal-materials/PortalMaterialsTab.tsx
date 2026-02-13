@@ -3,10 +3,11 @@
  * Agora com QuickRevisionDrawer para solicitação rápida de ajustes
  */
 
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileVideo, Plus, Upload, X } from "lucide-react";
+import { FileVideo, Plus, Upload, X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { PortalMaterialCard } from "./PortalMaterialCard";
 import { PortalInlineComment } from "./PortalInlineComment";
 import { AddVersionDialog } from "./AddVersionDialog";
@@ -85,6 +86,9 @@ function PortalMaterialsTabComponent({
   const [quickRevisionMaterial, setQuickRevisionMaterial] = useState<PortalDeliverable | null>(null);
   const [showQuickRevisionDrawer, setShowQuickRevisionDrawer] = useState(false);
   
+  // Category filter
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
   // Player state
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   
@@ -135,8 +139,17 @@ function PortalMaterialsTabComponent({
   };
 
   // Filter only manager-uploaded materials (not client uploads)
-  const materials = deliverables.filter(d => !d.uploaded_by_client && d.visible_in_portal);
+  const allMaterials = deliverables.filter(d => !d.uploaded_by_client && d.visible_in_portal);
+  
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    allMaterials.forEach(m => { if (m.material_category) cats.add(m.material_category); });
+    return Array.from(cats).sort();
+  }, [allMaterials]);
 
+  const materials = categoryFilter 
+    ? allMaterials.filter(m => m.material_category === categoryFilter)
+    : allMaterials;
   const selectedMaterial = materials.find(m => m.id === selectedMaterialId);
   const selectedComments = comments.filter(c => c.deliverable_id === selectedMaterialId);
   const selectedApproval = approvals.find(a => a.deliverable_id === selectedMaterialId);
@@ -208,7 +221,7 @@ function PortalMaterialsTabComponent({
     setRevisionScreenshot(undefined);
   };
 
-  if (materials.length === 0) {
+  if (allMaterials.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -242,6 +255,29 @@ function PortalMaterialsTabComponent({
               Enviar Material
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Category Filters */}
+      {categories.length > 1 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge
+            variant={categoryFilter === null ? "default" : "outline"}
+            className="cursor-pointer text-xs"
+            onClick={() => setCategoryFilter(null)}
+          >
+            Todos ({allMaterials.length})
+          </Badge>
+          {categories.map(cat => (
+            <Badge
+              key={cat}
+              variant={categoryFilter === cat ? "default" : "outline"}
+              className="cursor-pointer text-xs capitalize"
+              onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
+            >
+              {cat} ({allMaterials.filter(m => m.material_category === cat).length})
+            </Badge>
+          ))}
         </div>
       )}
 
