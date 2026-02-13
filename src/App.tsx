@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useRealtimeSync } from "./hooks/useRealtimeSync";
+import { useThemeColors } from "./hooks/useThemeColors";
 import { ProductProvider } from "./hooks/useProductContext";
 import { UndoRedoProvider } from "./components/layout/UndoRedoProvider";
 import { BackgroundUploadIndicator } from "./components/ui/BackgroundUploadIndicator";
@@ -121,6 +122,9 @@ function AppRoutes() {
   
   // Inicializa sincronização realtime global
   useRealtimeSync();
+  
+  // Aplica cores dinâmicas do branding
+  useThemeColors();
 
   return (
     <Routes>
