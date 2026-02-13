@@ -38,7 +38,7 @@ export default function StudioCreativoPage() {
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
 
   // Export PDF
-  const { isExporting, exportedUrl, exportStudioRun, openPdf, copyLink, resetExport } = useExportPdf();
+  const { isExporting, exportStudioRun } = useExportPdf();
 
   useEffect(() => {
     fetchBriefs();
@@ -51,7 +51,7 @@ export default function StudioCreativoPage() {
       fetchOutputs(selectedBrief.id);
       fetchScenes(selectedBrief.id);
       fetchImages(selectedBrief.id);
-      resetExport(); // Reset export URL when switching briefs
+      // brief changed
     }
   }, [selectedBrief]);
 
@@ -607,43 +607,20 @@ ${formData.inputText}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  {exportedUrl ? (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={openPdf}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Abrir PDF
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={copyLink}
-                      >
-                        <Copy className="w-4 h-4" />
-                        Copiar Link
-                      </Button>
-                    </>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="gap-2"
-                      onClick={() => exportStudioRun(selectedBrief.id)}
-                      disabled={isExporting}
-                    >
-                      {isExporting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Download className="w-4 h-4" />
-                      )}
-                      {isExporting ? "Exportando..." : "Exportar PDF"}
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => exportStudioRun(selectedBrief.id)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    {isExporting ? "Exportando..." : "Exportar PDF"}
+                  </Button>
                   <StudioApplyActions
                     brief={selectedBrief}
                     concept={concept}
