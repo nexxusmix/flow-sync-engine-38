@@ -108,8 +108,8 @@ serve(async (req) => {
     
     // Auth check with user client
     const sbAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
-    const { error: authErr } = await sbAuth.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (authErr) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: { user }, error: authErr } = await sbAuth.auth.getUser();
+    if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // Service client for fetching context data
     const sbService = createClient(supabaseUrl, supabaseServiceKey);
