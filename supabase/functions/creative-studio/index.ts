@@ -33,8 +33,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const sbAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
-    const { error: authErr } = await sbAuth.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (authErr) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: { user }, error: authErr } = await sbAuth.auth.getUser();
+    if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { briefId, inputText, brandKit, packageType, format } = await req.json() as GenerateRequest;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

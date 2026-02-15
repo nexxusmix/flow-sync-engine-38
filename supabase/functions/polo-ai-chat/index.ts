@@ -171,9 +171,8 @@ serve(async (req) => {
     const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Token inválido" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
