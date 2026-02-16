@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Brain, Loader2, Play, CheckCircle2, X, Clock, Zap, Coffee, FileDown, Save } from 'lucide-react';
+import { Brain, Loader2, Play, X, Clock, FileDown, Save, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -36,6 +35,30 @@ interface TaskExecutionGuideProps {
   onComplete?: (taskId: string) => void;
 }
 
+// --- Helper: format estimated time ---
+function formatEstimatedTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}min`;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
+
+// --- Helper: get block status label ---
+function getBlockStatus(bIdx: number, activeBlockIdx: number, blockCompleted: boolean): { label: string; className: string } {
+  if (blockCompleted && bIdx <= activeBlockIdx) return { label: 'Done', className: 'text-emerald-400' };
+  if (bIdx === activeBlockIdx) return { label: 'Active', className: 'text-white font-medium' };
+  if (bIdx === activeBlockIdx + 1) return { label: 'Queued', className: 'text-slate-400' };
+  if (bIdx === activeBlockIdx + 2) return { label: 'Pending', className: 'text-slate-500' };
+  return { label: 'Scheduled', className: 'text-slate-600' };
+}
+
+// --- Helper: status indicator dot color ---
+function getIndicatorStyle(type: ExecutionBlock['type']): string {
+  if (type === 'deep_work') return 'bg-[hsl(var(--primary))] shadow-[0_0_6px_rgba(0,115,153,0.5)]';
+  if (type === 'shallow_work') return 'bg-slate-600';
+  return 'bg-amber-500/50';
+}
+
 export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +69,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
 
   const pendingTasks = tasks.filter(t => t.status !== 'done');
 
@@ -73,6 +97,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
       setActiveBlockIdx(0);
       setActiveTaskIdx(0);
       setCompletedTasks(new Set());
+      setExpandedBlock(null);
     } catch (err: any) {
       const msg = err.message || 'Erro ao gerar plano';
       setError(msg);
@@ -123,13 +148,8 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   };
 
   const totalTasks = plan?.blocks.reduce((sum, b) => sum + b.tasks.length, 0) || 0;
-  const progressPct = totalTasks > 0 ? (completedTasks.size / totalTasks) * 100 : 0;
-
-  const blockTypeConfig = {
-    deep_work: { icon: Brain, color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/20' },
-    shallow_work: { icon: Zap, color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20' },
-    break: { icon: Coffee, color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20' },
-  };
+  const now = new Date();
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
 
   return (
     <>
@@ -146,141 +166,234 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+
+            {/* Modal Container */}
             <motion.div
-              className="relative z-10 w-full max-w-lg max-h-[70vh] my-auto flex flex-col rounded-2xl border border-border bg-background shadow-2xl"
+              className="relative z-10 w-full max-w-5xl max-h-[70vh] my-auto flex flex-col rounded-3xl border border-[rgba(0,115,153,0.25)] bg-black/90 backdrop-blur-[20px] shadow-[0_8px_32px_0_rgba(0,0,0,0.8)]"
+              style={{
+                backgroundImage: 'radial-gradient(rgba(0,115,153,0.05) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+              }}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
             >
-              {/* Fixed Header */}
-              <div className="shrink-0 p-5 pb-3 space-y-3 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-primary" /> Modo Foco
-                  </h2>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsOpen(false)}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
+              {/* Close button */}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="absolute top-5 right-5 z-20 text-slate-500 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-                {plan && !isLoading && !error && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{completedTasks.size}/{totalTasks} tarefas</span>
-                      <span>~{formatTime(plan.total_estimated_minutes * 60)} estimado</span>
+              {/* ─── HEADER ─── */}
+              <div className="shrink-0 px-8 pt-8 pb-6">
+                <p
+                  className="text-[9px] uppercase tracking-[0.3em] text-[hsl(var(--primary))]/70 font-mono mb-3"
+                  style={{ textShadow: '1px 0 0 rgba(255,255,255,0.05), -1px 0 0 rgba(0,115,153,0.3)' }}
+                >
+                  MODO FOCO · BLOCOS OTIMIZADOS COM IA
+                  <span className="ml-4 text-slate-600">//HUB · {dateStr}</span>
+                </p>
+
+                <div className="flex items-end justify-between gap-6">
+                  <h2
+                    className="text-3xl font-bold uppercase tracking-tight text-white"
+                    style={{ textShadow: '1px 0 0 rgba(255,255,255,0.05), -1px 0 0 rgba(0,115,153,0.3)' }}
+                  >
+                    Plano de Execução
+                  </h2>
+
+                  {plan && !isLoading && !error && (
+                    <div className="flex items-center gap-0 bg-[rgba(0,115,153,0.07)] border border-[rgba(0,115,153,0.15)] rounded-xl px-5 py-2.5">
+                      <div className="text-center px-4">
+                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Blocos</p>
+                        <p className="text-lg font-semibold text-white">{plan.blocks.length}</p>
+                      </div>
+                      <div className="w-px h-8 bg-[rgba(0,115,153,0.2)]" />
+                      <div className="text-center px-4">
+                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Tarefas</p>
+                        <p className="text-lg font-semibold text-white">{totalTasks}</p>
+                      </div>
+                      <div className="w-px h-8 bg-[rgba(0,115,153,0.2)]" />
+                      <div className="text-center px-4">
+                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Tempo Estimado</p>
+                        <p className="text-lg font-semibold text-white">{formatEstimatedTime(plan.total_estimated_minutes)}</p>
+                      </div>
                     </div>
-                    <Progress value={progressPct} className="h-2" />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
+              {/* ─── CONTENT ─── */}
+              <div className="flex-1 overflow-y-auto min-h-0 px-8">
                 {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12 gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground animate-pulse">Gerando plano de execução com IA...</p>
-                    <p className="text-[10px] text-muted-foreground">Analisando {pendingTasks.length} tarefas • Neurociência + Produtividade</p>
+                  <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--primary))]" />
+                    <p className="text-sm text-slate-400 animate-pulse">Gerando plano de execução com IA...</p>
+                    <p className="text-[10px] text-slate-600">Analisando {pendingTasks.length} tarefas · Neurociência + Produtividade</p>
                   </div>
                 ) : error ? (
-                  <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                    <p className="text-sm text-destructive font-medium">Não foi possível gerar o plano</p>
-                    <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
-                    <Button variant="outline" size="sm" onClick={generatePlan} className="gap-1.5 mt-2">
+                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+                    <p className="text-sm text-red-400 font-medium">Não foi possível gerar o plano</p>
+                    <p className="text-xs text-slate-500 max-w-xs">{error}</p>
+                    <Button variant="outline" size="sm" onClick={generatePlan} className="gap-1.5 mt-2 border-[rgba(0,115,153,0.25)] bg-transparent text-white hover:bg-[rgba(0,115,153,0.1)]">
                       <Play className="w-3.5 h-3.5" /> Tentar novamente
                     </Button>
                   </div>
                 ) : plan ? (
-                  <div className="space-y-4">
-                    {plan.tips.length > 0 && (
-                      <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2.5 space-y-0.5">
-                        {plan.tips.map((tip, i) => <p key={i}>💡 {tip}</p>)}
-                      </div>
-                    )}
+                  <div>
+                    {/* Table Header */}
+                    <div className="grid grid-cols-[1fr_140px_140px_100px] gap-2 px-4 pb-3 border-b border-white/[0.04]">
+                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Execução Estratégica</span>
+                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Método</span>
+                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Duração</span>
+                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono text-right">Progresso</span>
+                    </div>
 
+                    {/* Block Rows */}
                     {plan.blocks.map((block, bIdx) => {
-                      const config = blockTypeConfig[block.type] || blockTypeConfig.shallow_work;
-                      const BlockIcon = config.icon;
-                      const isActive = bIdx === activeBlockIdx;
                       const blockCompleted = block.tasks.every(t => completedTasks.has(t.id));
+                      const status = getBlockStatus(bIdx, activeBlockIdx, blockCompleted);
+                      const isExpanded = expandedBlock === bIdx;
+                      const methodLabel = block.type === 'break' ? 'BREAK' : block.type === 'deep_work' ? 'DEEP WORK' : 'SHALLOW WORK';
+                      const taskNames = block.tasks.map(t => t.title).join(' / ');
 
                       return (
-                        <motion.div
-                          key={block.id}
-                          className={cn(
-                            "rounded-xl border p-3 space-y-2 transition-all",
-                            config.bg,
-                            isActive && "ring-1 ring-primary/30"
-                          )}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: bIdx * 0.05 }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <BlockIcon className={cn("w-4 h-4", config.color)} />
-                              <span className="text-sm font-semibold">{block.title}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3" />
-                              {block.duration_minutes}min
-                              {blockCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                            </div>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{block.technique}</p>
-
-                          <div className="space-y-1">
-                            {block.tasks.map((task, tIdx) => {
-                              const isDone = completedTasks.has(task.id);
-                              return (
-                                <div
-                                  key={task.id}
-                                  className={cn(
-                                    "flex items-center gap-2 p-2 rounded-lg text-xs transition-all",
-                                    isDone ? "bg-green-500/10 line-through text-muted-foreground" : "bg-background/50"
-                                  )}
-                                >
-                                  <button
-                                    onClick={() => !isDone && completeTask(task.id)}
-                                    className={cn("w-4 h-4 rounded-full border-2 shrink-0 transition-all",
-                                      isDone ? "bg-green-500 border-green-500" : "border-muted-foreground hover:border-primary"
-                                    )}
-                                  />
-                                  <span className="flex-1 font-medium">{task.title}</span>
-                                  <span className="text-muted-foreground">{task.estimated_minutes}min</span>
-                                  {isActive && tIdx === activeTaskIdx && !isDone && (
-                                    <TaskTimer compact onTimeUpdate={() => {}} />
-                                  )}
+                        <div key={block.id}>
+                          {/* Row */}
+                          <div
+                            className="grid grid-cols-[1fr_140px_140px_100px] gap-2 items-center px-4 py-3.5 border-b border-white/[0.03] cursor-pointer transition-all duration-300 hover:bg-[rgba(0,115,153,0.08)]"
+                            onClick={() => setExpandedBlock(isExpanded ? null : bIdx)}
+                          >
+                            {/* Col 1: Title + subtitle */}
+                            <div className="flex items-start gap-3 min-w-0">
+                              <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", getIndicatorStyle(block.type))} />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-[13px] font-medium text-white/90 truncate">{block.title}</p>
+                                  <ChevronDown className={cn("w-3.5 h-3.5 text-slate-600 transition-transform shrink-0", isExpanded && "rotate-180")} />
                                 </div>
-                              );
-                            })}
+                                <p className="text-[9px] uppercase tracking-widest text-slate-500 truncate mt-0.5">{taskNames}</p>
+                              </div>
+                            </div>
+
+                            {/* Col 2: Method */}
+                            <span className="text-[11px] font-mono text-slate-400 tracking-wider">{methodLabel}</span>
+
+                            {/* Col 3: Duration */}
+                            <span className="text-[11px] font-mono text-slate-400">
+                              {block.technique} {block.duration_minutes}min
+                            </span>
+
+                            {/* Col 4: Progress */}
+                            <span className={cn("text-[11px] font-mono text-right", status.className)}>
+                              {status.label}
+                            </span>
                           </div>
-                        </motion.div>
+
+                          {/* Expanded Tasks */}
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden bg-[rgba(0,115,153,0.04)] border-b border-white/[0.03]"
+                              >
+                                <div className="px-4 py-3 pl-12 space-y-1.5">
+                                  {block.tasks.map((task, tIdx) => {
+                                    const isDone = completedTasks.has(task.id);
+                                    return (
+                                      <div
+                                        key={task.id}
+                                        className={cn(
+                                          "flex items-center gap-3 py-2 px-3 rounded-lg text-xs transition-all",
+                                          isDone ? "opacity-50 line-through" : "hover:bg-[rgba(0,115,153,0.06)]"
+                                        )}
+                                      >
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); if (!isDone) completeTask(task.id); }}
+                                          className={cn(
+                                            "w-4 h-4 rounded-full border-2 shrink-0 transition-all",
+                                            isDone ? "bg-emerald-500 border-emerald-500" : "border-slate-600 hover:border-[hsl(var(--primary))]"
+                                          )}
+                                        />
+                                        <span className="flex-1 text-[12px] text-white/80 font-medium">{task.title}</span>
+                                        <span className="text-[10px] text-slate-500 font-mono">{task.estimated_minutes}min</span>
+                                        {bIdx === activeBlockIdx && tIdx === activeTaskIdx && !isDone && (
+                                          <TaskTimer compact onTimeUpdate={() => {}} />
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       );
                     })}
                   </div>
                 ) : null}
               </div>
-              {/* Fixed Footer with actions */}
+
+              {/* ─── FOOTER ─── */}
               {plan && !isLoading && !error && (
-                <div className="shrink-0 p-4 border-t border-border flex items-center gap-2 bg-background rounded-b-2xl">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs" disabled={isExportingPdf}>
-                        {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                        Exportar PDF
+                <div className="shrink-0 px-8 py-5 border-t border-white/[0.04]">
+                  {/* Tips */}
+                  {plan.tips.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono mb-2.5">Dicas de Produtividade</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        {plan.tips.map((tip, i) => (
+                          <p key={i} className="text-[11px] text-slate-400 leading-relaxed">
+                            <span className="text-[hsl(var(--primary))] mr-1.5 font-mono">&gt;</span>
+                            {tip}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions row */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-slate-600 font-mono">
+                      powered by <span className="text-slate-500">SQUAD///FILM</span>
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
+                            disabled={isExportingPdf}
+                          >
+                            {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                            Exportar PDF
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="z-[60]">
+                          <DropdownMenuItem onClick={() => handleExportPdf('landscape')}>A4 Horizontal (Paisagem)</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExportPdf('portrait')}>A4 Vertical (Retrato)</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
+                        onClick={handleSavePlan}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                        Salvar Plano
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="z-[60]">
-                      <DropdownMenuItem onClick={() => handleExportPdf('landscape')}>A4 Horizontal (Paisagem)</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExportPdf('portrait')}>A4 Vertical (Retrato)</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleSavePlan} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    Salvar Plano
-                  </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </motion.div>
