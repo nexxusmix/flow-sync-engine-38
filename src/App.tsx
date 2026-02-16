@@ -10,7 +10,7 @@ import { useThemeColors } from "./hooks/useThemeColors";
 import { ProductProvider } from "./hooks/useProductContext";
 import { UndoRedoProvider } from "./components/layout/UndoRedoProvider";
 import { BackgroundUploadIndicator } from "./components/ui/BackgroundUploadIndicator";
-import PlatformSelectorPage from "./pages/PlatformSelectorPage";
+
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
@@ -217,7 +217,7 @@ function AppRoutes() {
       <Route path="/configuracoes/branding" element={<ProtectedRoute><BrandingSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/auditoria" element={<ProtectedRoute><AuditSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/danger-zone" element={<ProtectedRoute><DangerZoneSettingsPage /></ProtectedRoute>} />
-      <Route path="/plataforma" element={<ProtectedRoute><PlatformSelectorPage /></ProtectedRoute>} />
+      <Route path="/plataforma" element={<Navigate to="/" replace />} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />
       <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
       {/* Marketing Hub — /m/* */}

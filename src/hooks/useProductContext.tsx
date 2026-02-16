@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, ReactNode, useCallback } from 'react';
 
 export type ProductModule = 'production' | 'marketing' | 'full';
 
@@ -11,33 +11,17 @@ interface ProductContextType {
 
 const ProductContext = createContext<ProductContextType | null>(null);
 
-const STORAGE_KEY = 'squad-active-module';
-
 export function ProductProvider({ children }: { children: ReactNode }) {
-  const [activeModule, setActiveModuleState] = useState<ProductModule>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && ['production', 'marketing', 'full'].includes(stored)) {
-        return stored as ProductModule;
-      }
-    } catch {}
-    return 'full';
-  });
+  const activeModule: ProductModule = 'full';
+  const availableModules: ProductModule[] = ['full'];
 
-  // For now, all modules available. Later this reads from profile.module_access + workspace_settings.subscription_plan
-  const availableModules: ProductModule[] = ['production', 'marketing', 'full'];
-
-  const setActiveModule = useCallback((module: ProductModule) => {
-    setActiveModuleState(module);
-    try {
-      localStorage.setItem(STORAGE_KEY, module);
-    } catch {}
+  const setActiveModule = useCallback((_module: ProductModule) => {
+    // No-op: platform is unified
   }, []);
 
-  const hasAccess = useCallback((module: 'production' | 'marketing') => {
-    if (activeModule === 'full') return true;
-    return activeModule === module;
-  }, [activeModule]);
+  const hasAccess = useCallback((_module: 'production' | 'marketing') => {
+    return true;
+  }, []);
 
   return (
     <ProductContext.Provider value={{ activeModule, setActiveModule, hasAccess, availableModules }}>

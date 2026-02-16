@@ -139,16 +139,6 @@ const settingsSections = [
     adminOnly: false,
   },
   {
-    id: 'platform',
-    title: 'Plataforma',
-    description: 'Módulos e planos de acesso',
-    icon: Building2,
-    path: '/plataforma',
-    color: 'text-teal-500',
-    bgColor: 'bg-teal-500/10',
-    adminOnly: false,
-  },
-  {
     id: 'danger-zone',
     title: 'Danger Zone',
     description: 'Reset e ações críticas',
