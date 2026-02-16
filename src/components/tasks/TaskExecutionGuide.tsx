@@ -36,16 +36,19 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   const [activeBlockIdx, setActiveBlockIdx] = useState(0);
   const [activeTaskIdx, setActiveTaskIdx] = useState(0);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
 
   const pendingTasks = tasks.filter(t => t.status !== 'done');
 
   const generatePlan = async () => {
     setIsOpen(true);
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-execution-blocks', {
+      const topTasks = pendingTasks.slice(0, 20);
+      const { data, error: fnError } = await supabase.functions.invoke('generate-execution-blocks', {
         body: {
-          tasks: pendingTasks.map(t => ({
+          tasks: topTasks.map(t => ({
             id: t.id,
             title: t.title,
             description: t.description,
@@ -56,13 +59,16 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
           })),
         },
       });
-      if (error) throw error;
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
       setPlan(data);
       setActiveBlockIdx(0);
       setActiveTaskIdx(0);
       setCompletedTasks(new Set());
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao gerar plano');
+      const msg = err.message || 'Erro ao gerar plano';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +124,15 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground animate-pulse">Gerando plano de execução com IA...</p>
-                  <p className="text-[10px] text-muted-foreground">Analisando {pendingTasks.length} tarefas • Neurociência + Produtividade</p>
+                  <p className="text-[10px] text-muted-foreground">Analisando até {Math.min(pendingTasks.length, 20)} tarefas • Neurociência + Produtividade</p>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                  <p className="text-sm text-destructive font-medium">Não foi possível gerar o plano</p>
+                  <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
+                  <Button variant="outline" size="sm" onClick={generatePlan} className="gap-1.5 mt-2">
+                    <Play className="w-3.5 h-3.5" /> Tentar novamente
+                  </Button>
                 </div>
               ) : plan ? (
                 <div className="space-y-4">
