@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getYouTubeThumbnailHQ, getYouTubeEmbedUrl } from "@/lib/youtube-utils";
 import type {
   PortalDeliverable,
   PortalComment,
@@ -54,16 +55,6 @@ interface MaterialLightboxProps {
   }) => void;
   isAddingComment: boolean;
   isRequestingRevision: boolean;
-}
-
-function getYouTubeThumbnail(url: string) {
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  return match ? `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg` : null;
-}
-
-function getYouTubeEmbedUrl(url: string) {
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  return match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1` : null;
 }
 
 function MaterialLightboxComponent({
@@ -97,7 +88,7 @@ function MaterialLightboxComponent({
   // Determine what to show as main preview
   const thumbnailUrl =
     material.thumbnail_url ||
-    (material.youtube_url ? getYouTubeThumbnail(material.youtube_url) : null) ||
+    (material.youtube_url ? getYouTubeThumbnailHQ(material.youtube_url) : null) ||
     (material.file_url && material.file_url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? material.file_url : null);
 
   const handleSubmit = () => {

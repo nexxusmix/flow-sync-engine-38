@@ -7,6 +7,7 @@
 
 import { memo, useState } from "react";
 import { format } from "date-fns";
+import { getYouTubeThumbnail } from "@/lib/youtube-utils";
 import { ptBR } from "date-fns/locale";
 import { 
   Package, 
@@ -69,13 +70,6 @@ function PortalMaterialsTabComponent({
     return <FileText className="w-5 h-5" />;
   };
 
-  const getYouTubeThumbnail = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-    if (match) {
-      return `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`;
-    }
-    return null;
-  };
 
   return (
     <div className="space-y-6">

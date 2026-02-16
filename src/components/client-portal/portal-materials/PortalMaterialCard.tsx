@@ -25,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getYouTubeThumbnail } from "@/lib/youtube-utils";
 import type { PortalDeliverable, PortalComment, PortalApproval, PortalVersion } from "@/hooks/useClientPortalEnhanced";
 import { getTagConfig, type ChangelogItem } from "./types";
 
@@ -73,13 +74,6 @@ function PortalMaterialCardComponent({
     if (material.type?.includes('video')) return <FileVideo className="w-5 h-5" />;
     if (material.type?.includes('image')) return <ImageIcon className="w-5 h-5" />;
     return <FileText className="w-5 h-5" />;
-  };
-
-  // Get YouTube thumbnail
-  const getYouTubeThumbnail = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-    if (match) return `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`;
-    return null;
   };
 
   const thumbnail = material.thumbnail_url ||

@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getYouTubeThumbnail } from "@/lib/youtube-utils";
 import type { PortalDeliverable } from "@/hooks/useClientPortalEnhanced";
 
 interface QuickRevisionDrawerProps {
@@ -76,12 +77,6 @@ function QuickRevisionDrawerComponent({
     if (material.type?.includes('video')) return <FileVideo className="w-5 h-5" />;
     if (material.type?.includes('image')) return <ImageIcon className="w-5 h-5" />;
     return <FileText className="w-5 h-5" />;
-  };
-
-  const getYouTubeThumbnail = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-    if (match) return `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`;
-    return null;
   };
 
   const thumbnail = material?.thumbnail_url ||

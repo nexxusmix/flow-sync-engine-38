@@ -18,20 +18,17 @@ function PortalFooterPremiumComponent() {
           </div>
           
           <div className="flex items-center gap-6">
-            <a href="#" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+            <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
               Suporte Direto
             </a>
-            <a href="#" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+            <a href="/privacidade" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
               Privacidade
-            </a>
-            <a href="#" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
-              Dashboard
             </a>
           </div>
         </div>
         
         <p className="text-center text-xs text-gray-600 mt-4">
-          © 2024 Portal Exclusivo do Cliente
+          © {new Date().getFullYear()} Portal Exclusivo do Cliente
         </p>
       </div>
     </footer>

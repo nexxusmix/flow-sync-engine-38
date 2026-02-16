@@ -115,8 +115,8 @@ function PortalDeliverablesTabComponent({
     }
   };
 
-  const getYouTubeThumbnail = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+  const getYouTubeThumbnailLocal = (url: string) => {
+    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/);
     if (match) {
       return `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`;
     }
@@ -146,7 +146,7 @@ function PortalDeliverablesTabComponent({
           const commentCount = getCommentCount(material.id);
           const isSelected = selectedMaterialId === material.id;
           const thumbnail = material.thumbnail_url || 
-            (material.youtube_url ? getYouTubeThumbnail(material.youtube_url) : null);
+            (material.youtube_url ? getYouTubeThumbnailLocal(material.youtube_url) : null);
 
           return (
             <div
