@@ -5,7 +5,7 @@ import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksBoardView } from "@/components/tasks/TasksBoardView";
 import { TasksDashboardBI } from "@/components/tasks/TasksDashboardBI";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
-import { TaskEditDrawer } from "@/components/tasks/TaskEditDrawer";
+import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskBulkActions } from "@/components/tasks/TaskBulkActions";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
@@ -360,8 +360,8 @@ export default function TasksPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Premium Edit Drawer */}
-        <TaskEditDrawer
+        {/* Task Detail Modal */}
+        <TaskDetailModal
           task={editingTask}
           open={isEditDrawerOpen}
           onOpenChange={(open) => {

@@ -353,22 +353,49 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                 </div>
               </div>
 
-              {/* Task list */}
-              <div className="space-y-1">
-                <AnimatePresence mode="popLayout">
-                  {expandedTasks.length === 0 ? (
-                    <motion.div
-                      key="empty"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-center py-12 text-muted-foreground"
-                    >
-                      <p className="text-sm font-light">
-                        {search ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa nesta coluna"}
-                      </p>
-                    </motion.div>
-                  ) : (
-                     expandedTasks.map((task) => (
+              {/* Task list / Grid for backlog */}
+              {expandedColumn === 'backlog' ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                  <AnimatePresence mode="popLayout">
+                    {expandedTasks.length === 0 ? (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="col-span-full text-center py-12 text-muted-foreground"
+                      >
+                        <p className="text-sm font-light">
+                          {search ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa nesta coluna"}
+                        </p>
+                      </motion.div>
+                    ) : (
+                      expandedTasks.map((task) => (
+                        <BacklogGridCard
+                          key={task.id}
+                          task={task}
+                          onEdit={() => onEditTask(task)}
+                          onToggle={() => toggleComplete(task.id)}
+                        />
+                      ))
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <AnimatePresence mode="popLayout">
+                    {expandedTasks.length === 0 ? (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center py-12 text-muted-foreground"
+                      >
+                        <p className="text-sm font-light">
+                          {search ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa nesta coluna"}
+                        </p>
+                      </motion.div>
+                    ) : (
+                      expandedTasks.map((task) => (
                         <ExpandedTaskRow
                           key={task.id}
                           task={task}
@@ -378,14 +405,87 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                           onDelete={() => deleteTask(task.id)}
                         />
                       ))
-                  )}
-                </AnimatePresence>
-              </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// ─── Backlog Grid Card ────────────────────────────────────
+interface BacklogGridCardProps {
+  task: Task;
+  onEdit: () => void;
+  onToggle: () => void;
+}
+
+function BacklogGridCard({ task, onEdit, onToggle }: BacklogGridCardProps) {
+  const isCompleted = task.status === "done";
+  const categoryInfo = TASK_CATEGORIES.find((c) => c.key === task.category);
+  const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !isCompleted;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      onClick={onEdit}
+      className={cn(
+        "cursor-pointer rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 hover:bg-white/[0.05] transition-all group",
+        isCompleted && "opacity-50"
+      )}
+    >
+      <div className="flex items-start gap-2 mb-2">
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+          className="flex-shrink-0 mt-0.5"
+        >
+          {isCompleted ? (
+            <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+          ) : (
+            <Square className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-foreground transition-colors" />
+          )}
+        </button>
+        <p className={cn(
+          "text-xs font-medium text-foreground line-clamp-2 leading-tight",
+          isCompleted && "line-through text-muted-foreground"
+        )}>
+          {task.title}
+        </p>
+      </div>
+      {task.description && (
+        <p className="text-[10px] text-muted-foreground/60 line-clamp-2 mb-2 font-light">
+          {task.description}
+        </p>
+      )}
+      <div className="flex items-center gap-1 flex-wrap">
+        {categoryInfo && (
+          <Badge variant="secondary" className={cn("text-[8px] px-1.5 py-0 text-primary-foreground", categoryInfo.color)}>
+            {categoryInfo.label}
+          </Badge>
+        )}
+        {task.tags?.slice(0, 2).map((tag, i) => (
+          <Badge key={i} variant="outline" className="text-[8px] px-1 py-0 border-white/[0.06]">
+            {tag}
+          </Badge>
+        ))}
+      </div>
+      {task.due_date && (
+        <span className={cn(
+          "text-[9px] flex items-center gap-1 mt-2 font-light",
+          isOverdue ? "text-destructive" : "text-muted-foreground/60"
+        )}>
+          <Calendar className="w-2.5 h-2.5" />
+          {format(parseISO(task.due_date), "dd MMM", { locale: ptBR })}
+        </span>
+      )}
+    </motion.div>
   );
 }
 
