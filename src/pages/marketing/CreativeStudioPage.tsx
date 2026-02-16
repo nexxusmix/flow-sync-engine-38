@@ -5,6 +5,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Loader2, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   StudioSidebar,
   StudioCopilot,
@@ -128,11 +130,7 @@ export default function CreativeStudioPage() {
     }
   };
 
-  useEffect(() => {
-    if (!workId && !isCreating) {
-      handleCreateNewWork();
-    }
-  }, [workId]);
+  // No longer auto-create — user must explicitly create via button or arrive with an ID
 
   const handleGenerate = async () => {
     if (!work) return;
@@ -290,7 +288,27 @@ export default function CreativeStudioPage() {
     }
   };
 
-  if (isLoading || !workId) {
+  if (!workId) {
+    return (
+      <DashboardLayout title="Studio Criativo">
+        <div className="h-[60vh] flex flex-col items-center justify-center text-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <span className="material-symbols-outlined text-3xl text-primary" style={{ fontVariationSettings: "'wght' 200" }}>movie_creation</span>
+          </div>
+          <h2 className="text-xl font-medium text-foreground">Studio Criativo</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Crie roteiros, storyboards, moodboards e mais — tudo assistido por IA.
+          </p>
+          <Button onClick={handleCreateNewWork} disabled={isCreating} className="gap-2">
+            {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {isCreating ? 'Criando...' : 'Novo Trabalho Criativo'}
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (isLoading) {
     return (
       <DashboardLayout title="Studio Criativo">
         <div className="h-full flex items-center justify-center">

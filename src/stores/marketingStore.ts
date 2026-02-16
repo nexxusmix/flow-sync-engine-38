@@ -222,30 +222,31 @@ export const useMarketingStore = create<MarketingState>((set, get) => ({
       .order('created_at', { ascending: false });
     
     if (!error && data) {
-      // Fetch comments and checklist for each item
-      const itemsWithRelations = await Promise.all(
-        (data as any[]).map(async (item) => {
-          const { data: comments } = await supabase
-            .from('content_comments')
-            .select('*')
-            .eq('content_item_id', item.id)
-            .order('created_at', { ascending: false });
-          
-          const { data: checklist } = await supabase
-            .from('content_checklist')
-            .select('*')
-            .eq('content_item_id', item.id)
-            .order('created_at', { ascending: true });
-          
-          return {
-            ...item,
-            campaign: item.campaigns,
-            idea: item.content_ideas,
-            comments: comments || [],
-            checklist: checklist || [],
-          };
-        })
-      );
+      // Batch fetch comments and checklist for all items
+      const itemIds = (data as any[]).map((i) => i.id);
+      
+      const [commentsResult, checklistResult] = await Promise.all([
+        supabase.from('content_comments').select('*').in('content_item_id', itemIds).order('created_at', { ascending: false }),
+        supabase.from('content_checklist').select('*').in('content_item_id', itemIds).order('created_at', { ascending: true }),
+      ]);
+      
+      const commentsByItem = (commentsResult.data || []).reduce((acc: Record<string, any[]>, c: any) => {
+        (acc[c.content_item_id] ||= []).push(c);
+        return acc;
+      }, {});
+      
+      const checklistByItem = (checklistResult.data || []).reduce((acc: Record<string, any[]>, c: any) => {
+        (acc[c.content_item_id] ||= []).push(c);
+        return acc;
+      }, {});
+      
+      const itemsWithRelations = (data as any[]).map((item) => ({
+        ...item,
+        campaign: item.campaigns,
+        idea: item.content_ideas,
+        comments: commentsByItem[item.id] || [],
+        checklist: checklistByItem[item.id] || [],
+      }));
       
       set({ contentItems: itemsWithRelations as ContentItem[], isLoading: false });
     } else {
@@ -440,7 +441,14 @@ export const useMarketingStore = create<MarketingState>((set, get) => ({
   },
 
   getContentByStatus: (status) => {
-    return get().contentItems.filter((i) => i.status === status);
+    const { contentItems, contentFilters } = get();
+    return contentItems.filter((i) => {
+      if (i.status !== status) return false;
+      if (contentFilters.search && !i.title.toLowerCase().includes(contentFilters.search.toLowerCase())) return false;
+      if (contentFilters.channel !== 'all' && i.channel !== contentFilters.channel) return false;
+      if (contentFilters.campaign_id !== 'all' && i.campaign_id !== contentFilters.campaign_id) return false;
+      return true;
+    });
   },
 
   getContentForCalendar: (month, year) => {

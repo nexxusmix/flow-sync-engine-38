@@ -196,7 +196,6 @@ export default function CalendarPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="month">Mês</SelectItem>
-                <SelectItem value="week">Semana</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={() => navigate('/marketing/pipeline')}>

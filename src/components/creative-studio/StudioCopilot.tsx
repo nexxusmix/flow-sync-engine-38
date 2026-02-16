@@ -217,7 +217,15 @@ export function StudioCopilot({
             <h4 className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-3">Gerenciar</h4>
             {[
               { icon: 'content_copy', label: 'Duplicar Trabalho', onClick: onDuplicate },
-              { icon: 'download', label: 'Exportar PDF', onClick: () => toast.info('Export PDF em breve') },
+              { icon: 'download', label: 'Exportar PDF', onClick: async () => {
+                if (!work) return;
+                try {
+                  const { data, error } = await supabase.functions.invoke('export-creative-pdf', { body: { work_id: work.id } });
+                  if (error) throw error;
+                  if (data?.public_url) { window.open(data.public_url, '_blank'); toast.success('PDF gerado!'); }
+                  else toast.warning('PDF não disponível no momento');
+                } catch { toast.error('Erro ao exportar PDF'); }
+              } },
               { icon: 'archive', label: 'Arquivar', destructive: true, onClick: onArchive },
             ].map((a) => (
               <button
