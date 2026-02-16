@@ -228,10 +228,10 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                   {config.description}
                 </p>
 
-                {/* Mini task list preview */}
-                {preview.length > 0 && (
-                  <div className="mt-4 space-y-1.5">
-                    {preview.slice(0, 3).map((task) => {
+                {/* Full task list with scroll */}
+                {count > 0 && (
+                  <div className="mt-4 max-h-[180px] overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                    {tasks.filter(t => t.status === col.key).map((task) => {
                       const categoryInfo = TASK_CATEGORIES.find((c) => c.key === task.category);
                       return (
                         <div
@@ -266,11 +266,6 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                         </div>
                       );
                     })}
-                    {count > 3 && (
-                      <span className="text-[10px] text-muted-foreground/50 font-light pl-5">
-                        +{count - 3} mais
-                      </span>
-                    )}
                   </div>
                 )}
 
