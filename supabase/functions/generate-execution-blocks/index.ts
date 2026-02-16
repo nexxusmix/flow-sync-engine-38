@@ -40,15 +40,13 @@ function sanitizeAndParse(raw: string): any {
   return null;
 }
 
-function prioritizeTasks(tasks: any[], limit: number): any[] {
-  // Sort: tasks with due_date first (earliest first), then by creation order
-  const sorted = [...tasks].sort((a, b) => {
+function sortTasksByUrgency(tasks: any[]): any[] {
+  return [...tasks].sort((a, b) => {
     if (a.due_date && !b.due_date) return -1;
     if (!a.due_date && b.due_date) return 1;
     if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
     return 0;
   });
-  return sorted.slice(0, limit);
 }
 
 Deno.serve(async (req) => {
@@ -68,8 +66,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'tasks array required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Limit to top 20 most urgent tasks
-    const limitedTasks = prioritizeTasks(tasks, 20);
+    // Sort by urgency but send ALL tasks
+    const sortedTasks = sortTasksByUrgency(tasks);
 
     const prompt = `Você é um especialista em neurociência da produtividade, TDAH e técnicas de execução.
 Analise estas tarefas e gere um PLANO DE EXECUÇÃO em blocos otimizados.
@@ -84,7 +82,7 @@ TÉCNICAS A APLICAR:
 REGRAS OBRIGATÓRIAS DE FORMATO:
 - Retorne APENAS JSON puro, sem markdown, sem comentários
 - Use APENAS aspas duplas
-- Máximo 6 blocos no total
+- Organize TODAS as tarefas em blocos (sem limite de blocos)
 - Máximo 4 tarefas por bloco
 - 2-3 dicas curtas
 - Inclua pausas (type: "break") entre blocos intensos
@@ -92,14 +90,33 @@ REGRAS OBRIGATÓRIAS DE FORMATO:
 Formato exato:
 {"blocks":[{"id":"block_1","title":"Título","type":"deep_work","technique":"Pomodoro 25min","duration_minutes":25,"tasks":[{"id":"id","title":"título","estimated_minutes":15,"cognitive_type":"deep"}]}],"total_estimated_minutes":60,"tips":["dica 1","dica 2"]}
 
-Tarefas (${limitedTasks.length} de ${tasks.length} total):
-${JSON.stringify(limitedTasks)}`;
+Tarefas (${sortedTasks.length} total):
+${JSON.stringify(sortedTasks)}`;
 
     const callAI = async (taskList: any[], maxTokens: number) => {
-      const p = taskList === limitedTasks ? prompt : prompt.replace(
-        `Tarefas (${limitedTasks.length} de ${tasks.length} total):\n${JSON.stringify(limitedTasks)}`,
-        `Tarefas (${taskList.length}):\n${JSON.stringify(taskList)}`
-      );
+      const p = `Você é um especialista em neurociência da produtividade, TDAH e técnicas de execução.
+Analise estas tarefas e gere um PLANO DE EXECUÇÃO em blocos otimizados.
+
+TÉCNICAS A APLICAR:
+- Eat the Frog (tarefa mais difícil primeiro)
+- Pomodoro (blocos de 25min + 5min pausa)
+- Time Boxing (limitar tempo por tarefa)
+- 2-Minute Rule (tarefas rápidas primeiro)
+- Context Batching (agrupar por contexto similar)
+
+REGRAS OBRIGATÓRIAS DE FORMATO:
+- Retorne APENAS JSON puro, sem markdown, sem comentários
+- Use APENAS aspas duplas
+- Organize TODAS as tarefas em blocos (sem limite de blocos)
+- Máximo 4 tarefas por bloco
+- 2-3 dicas curtas
+- Inclua pausas (type: "break") entre blocos intensos
+
+Formato exato:
+{"blocks":[{"id":"block_1","title":"Título","type":"deep_work","technique":"Pomodoro 25min","duration_minutes":25,"tasks":[{"id":"id","title":"título","estimated_minutes":15,"cognitive_type":"deep"}]}],"total_estimated_minutes":60,"tips":["dica 1","dica 2"]}
+
+Tarefas (${taskList.length} total):
+${JSON.stringify(taskList)}`;
       const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}` },
@@ -115,15 +132,14 @@ ${JSON.stringify(limitedTasks)}`;
       return aiResp.choices?.[0]?.message?.content?.trim() || '';
     };
 
-    // First attempt with full 20 tasks
-    let content = await callAI(limitedTasks, 8192);
+    // First attempt with all tasks, generous token limit
+    let content = await callAI(sortedTasks, 16384);
     let result = sanitizeAndParse(content);
 
-    // Retry with fewer tasks if parse failed
+    // Retry if parse failed
     if (!result) {
-      console.warn('First parse failed, retrying with top 10 tasks');
-      const fewerTasks = limitedTasks.slice(0, 10);
-      content = await callAI(fewerTasks, 8192);
+      console.warn('First parse failed, retrying');
+      content = await callAI(sortedTasks, 16384);
       result = sanitizeAndParse(content);
     }
 
