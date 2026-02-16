@@ -6453,6 +6453,7 @@ export type Database = {
           start_date: string | null
           status: string
           tags: string[] | null
+          time_spent_seconds: number
           title: string
           updated_at: string
           user_id: string
@@ -6473,6 +6474,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           tags?: string[] | null
+          time_spent_seconds?: number
           title: string
           updated_at?: string
           user_id: string
@@ -6493,6 +6495,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           tags?: string[] | null
+          time_spent_seconds?: number
           title?: string
           updated_at?: string
           user_id?: string

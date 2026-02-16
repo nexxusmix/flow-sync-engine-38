@@ -146,6 +146,7 @@ export interface AgentMessage {
   runId?: string;
   needsConfirmation?: boolean;
   dbId?: string; // ID from agent_messages table
+  isAutoExecuting?: boolean; // True during auto-execution
 }
 
 // Response format from Polo AI
