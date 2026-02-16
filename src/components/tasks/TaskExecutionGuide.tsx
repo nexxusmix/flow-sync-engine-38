@@ -148,7 +148,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
             <motion.div
-              className="relative z-10 w-full max-w-lg max-h-[80vh] my-auto flex flex-col rounded-2xl border border-border bg-background shadow-2xl"
+              className="relative z-10 w-full max-w-lg max-h-[70vh] my-auto flex flex-col rounded-2xl border border-border bg-background shadow-2xl"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
