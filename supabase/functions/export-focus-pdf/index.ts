@@ -1,6 +1,7 @@
 /**
  * export-focus-pdf — Premium PDF for Focus Mode execution plans
- * Uses pdf-lib with dark premium design matching HUB v2.4
+ * Layout: Single-page "Liquid Glass" style matching HUB v2.4 reference
+ * Uses pdf-lib with dark premium design
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -12,23 +13,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// ─── Design Tokens (Premium Dark) ────────────────────────
-const BG      = rgb(0.043, 0.059, 0.078);
-const SURFACE = rgb(0.067, 0.078, 0.098);
-const BORDER  = rgb(0.118, 0.133, 0.157);
+// ─── Design Tokens ────────────────────────────────────────
+const BG      = rgb(0.02, 0.04, 0.06);   // near-black
+const SURFACE = rgb(0.04, 0.07, 0.10);   // dark surface for table
+const BORDER  = rgb(0.08, 0.12, 0.16);   // subtle border
 const WHITE   = rgb(1, 1, 1);
-const OFF_WHITE = rgb(0.88, 0.89, 0.91);
-const MUTED   = rgb(0.45, 0.47, 0.50);
-const DIM     = rgb(0.30, 0.32, 0.35);
-const ACCENT  = rgb(0.09, 0.61, 0.79); // #179bc7 SQUAD blue
-const PURPLE  = rgb(0.58, 0.35, 0.98);  // Deep work
-const BLUE    = rgb(0.24, 0.52, 0.98);  // Shallow work
-const GREEN   = rgb(0.13, 0.77, 0.37);  // Break
-const SUCCESS = rgb(0.13, 0.77, 0.37);
-
-const A4_W = 595.28;
-const A4_H = 841.89;
-const MARGIN = 48;
+const OFF_WHITE = rgb(0.85, 0.87, 0.89);
+const MUTED   = rgb(0.40, 0.44, 0.48);
+const DIM     = rgb(0.25, 0.28, 0.32);
+const ACCENT  = rgb(0, 0.45, 0.60);      // #007399 SQUAD blue
+const ACCENT_LIGHT = rgb(0.09, 0.61, 0.79);
 
 function sanitize(str: string | null | undefined): string {
   if (!str) return "";
@@ -63,22 +57,33 @@ serve(async (req) => {
     if (!blocks || !Array.isArray(blocks)) throw new Error('Missing blocks data');
 
     const isLandscape = orientation === 'landscape';
-    const PAGE_W = isLandscape ? A4_H : A4_W;
-    const PAGE_H = isLandscape ? A4_W : A4_H;
+    const PAGE_W = isLandscape ? 841.89 : 595.28;
+    const PAGE_H = isLandscape ? 595.28 : 841.89;
+    const MARGIN = 48;
     const CONTENT_W = PAGE_W - MARGIN * 2;
 
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const refCode = generateRefCode();
+    const dateStr = formatDateShort();
 
-    function wrapText(text: string, fontSize: number, maxWidth: number): string[] {
+    // ─── Calculations ─────────────────────────────────
+    const totalBlocks = blocks.length;
+    const totalTasks = blocks.reduce((s: number, b: any) => s + (b.tasks?.length || 0), 0);
+    const totalMinutes = total_estimated_minutes || blocks.reduce((s: number, b: any) => s + (b.duration_minutes || 0), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    const timeStr = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
+
+    // ─── Helper: wrap text ────────────────────────────
+    function wrapText(text: string, fontSize: number, maxWidth: number, f = font): string[] {
       const words = text.split(" ");
       const lines: string[] = [];
       let current = "";
       for (const word of words) {
         const test = current ? `${current} ${word}` : word;
-        if (font.widthOfTextAtSize(test, fontSize) > maxWidth && current) {
+        if (f.widthOfTextAtSize(test, fontSize) > maxWidth && current) {
           lines.push(current);
           current = word;
         } else { current = test; }
@@ -87,133 +92,240 @@ serve(async (req) => {
       return lines;
     }
 
+    // ─── Helper: truncate text to fit width ───────────
+    function truncateText(text: string, fontSize: number, maxWidth: number, f = font): string {
+      if (f.widthOfTextAtSize(text, fontSize) <= maxWidth) return text;
+      let t = text;
+      while (t.length > 0 && f.widthOfTextAtSize(t + '...', fontSize) > maxWidth) {
+        t = t.substring(0, t.length - 1);
+      }
+      return t + '...';
+    }
+
+    // ─── Page management ──────────────────────────────
     let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
     let y = PAGE_H - MARGIN;
 
-    function drawBg(p: any) {
+    function drawBackground(p: any) {
       p.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: BG });
+      // Top accent line
       p.drawRectangle({ x: 0, y: PAGE_H - 2, width: PAGE_W, height: 2, color: ACCENT });
+      // Bottom accent line
+      p.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: 2, color: ACCENT });
     }
-
-    function newPage() {
-      page = pdfDoc.addPage([PAGE_W, PAGE_H]);
-      drawBg(page);
-      y = PAGE_H - MARGIN;
-    }
-
-    function ensureSpace(needed: number) { if (y < MARGIN + 40 + needed) newPage(); }
 
     function drawFooter(p: any) {
-      p.drawLine({ start: { x: MARGIN, y: MARGIN - 8 }, end: { x: PAGE_W - MARGIN, y: MARGIN - 8 }, thickness: 0.5, color: BORDER });
-      p.drawText(`HUB · ${refCode} · ${formatDateShort()}`, { x: MARGIN, y: MARGIN - 22, size: 7, font, color: DIM });
-      p.drawText('PLANO DE EXECUCAO', { x: PAGE_W - MARGIN - font.widthOfTextAtSize('PLANO DE EXECUCAO', 7), y: MARGIN - 22, size: 7, font, color: DIM });
+      const footerY = 18;
+      p.drawLine({ start: { x: MARGIN, y: footerY + 10 }, end: { x: PAGE_W - MARGIN, y: footerY + 10 }, thickness: 0.5, color: BORDER });
+      p.drawText(`HUB · ${refCode} · ${dateStr}`, { x: MARGIN, y: footerY, size: 6.5, font, color: DIM });
+      const rightText = 'PLANO DE EXECUCAO';
+      p.drawText(rightText, { x: PAGE_W - MARGIN - font.widthOfTextAtSize(rightText, 6.5), y: footerY, size: 6.5, font, color: DIM });
     }
 
-    // ─── Cover ──────────────────────────────────────────
-    drawBg(page);
+    function newPage(): any {
+      page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      drawBackground(page);
+      drawFooter(page);
+      y = PAGE_H - MARGIN;
+      return page;
+    }
 
-    // Accent stripe
-    page.drawRectangle({ x: MARGIN, y: PAGE_H - MARGIN - 4, width: 60, height: 4, color: ACCENT });
+    function ensureSpace(needed: number) {
+      if (y < MARGIN + 40 + needed) newPage();
+    }
 
-    y = PAGE_H - MARGIN - 40;
-    page.drawText('PLANO DE EXECUCAO', { x: MARGIN, y, size: 28, font: fontBold, color: WHITE });
-    y -= 32;
-    page.drawText('MODO FOCO · BLOCOS OTIMIZADOS COM IA', { x: MARGIN, y, size: 10, font, color: MUTED });
-    y -= 40;
+    // ─── Draw Page Background ─────────────────────────
+    drawBackground(page);
 
-    // Stats bar
-    const totalBlocks = blocks.length;
-    const totalTasksCount = blocks.reduce((s: number, b: any) => s + (b.tasks?.length || 0), 0);
-    const totalMinutes = total_estimated_minutes || blocks.reduce((s: number, b: any) => s + (b.duration_minutes || 0), 0);
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-    const timeStr = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
+    // ─── HEADER SECTION ───────────────────────────────
+    // Subtitle line: "● MODO FOCO · BLOCOS OTIMIZADOS COM IA // HUB · CODE · DATE"
+    const subtitleLeft = `MODO FOCO · BLOCOS OTIMIZADOS COM IA`;
+    const subtitleRight = `// HUB · ${refCode} · ${dateStr}`;
+    
+    y = PAGE_H - MARGIN - 8;
+    
+    // Small accent dot
+    page.drawCircle({ x: MARGIN + 4, y: y + 3, size: 3, color: ACCENT });
+    
+    page.drawText(subtitleLeft, { x: MARGIN + 14, y, size: 7, font, color: ACCENT_LIGHT });
+    page.drawText(subtitleRight, { x: MARGIN + 14 + font.widthOfTextAtSize(subtitleLeft + '  ', 7), y, size: 7, font, color: MUTED });
+    
+    y -= 28;
 
-    page.drawRectangle({ x: MARGIN, y: y - 36, width: CONTENT_W, height: 36, color: SURFACE, borderColor: BORDER, borderWidth: 0.5 });
-    const stats = [
-      { label: 'BLOCOS', value: `${totalBlocks}` },
-      { label: 'TAREFAS', value: `${totalTasksCount}` },
-      { label: 'TEMPO ESTIMADO', value: timeStr },
-      { label: 'ORIENTACAO', value: isLandscape ? 'PAISAGEM' : 'RETRATO' },
-    ];
-    const statW = CONTENT_W / stats.length;
-    stats.forEach((s, i) => {
-      const sx = MARGIN + statW * i + 12;
-      page.drawText(s.label, { x: sx, y: y - 14, size: 6, font, color: MUTED });
-      page.drawText(s.value, { x: sx, y: y - 28, size: 11, font: fontBold, color: WHITE });
+    // Title: "PLANO DE EXECUCAO"
+    page.drawText('PLANO DE EXECUCAO', { x: MARGIN, y, size: 26, font: fontBold, color: WHITE });
+
+    // Stats box (right-aligned, same y as title)
+    const statsBoxW = isLandscape ? 280 : 220;
+    const statsBoxH = 44;
+    const statsBoxX = PAGE_W - MARGIN - statsBoxW;
+    const statsBoxY = y - 8;
+
+    page.drawRectangle({
+      x: statsBoxX, y: statsBoxY, width: statsBoxW, height: statsBoxH,
+      color: SURFACE, borderColor: ACCENT, borderWidth: 0.5,
     });
-    y -= 56;
 
-    // Tips
-    if (tips && tips.length > 0) {
-      page.drawText('DICAS DE PRODUTIVIDADE', { x: MARGIN, y, size: 8, font: fontBold, color: ACCENT });
-      y -= 16;
-      for (const tip of tips) {
-        const tipText = sanitize(tip);
-        const lines = wrapText(`> ${tipText}`, 9, CONTENT_W - 16);
-        for (const line of lines) {
-          page.drawText(line, { x: MARGIN + 8, y, size: 9, font, color: OFF_WHITE });
-          y -= 14;
-        }
+    // Stats inside box
+    const statItems = [
+      { label: 'BLOCOS', value: `${totalBlocks}` },
+      { label: 'TAREFAS', value: `${totalTasks}` },
+      { label: 'TEMPO ESTIMADO', value: timeStr },
+    ];
+    const statColW = statsBoxW / statItems.length;
+    statItems.forEach((s, i) => {
+      const sx = statsBoxX + statColW * i + 10;
+      page.drawText(s.label, { x: sx, y: statsBoxY + statsBoxH - 14, size: 5.5, font, color: MUTED });
+      page.drawText(s.value, { x: sx, y: statsBoxY + 8, size: 14, font: fontBold, color: WHITE });
+      // Divider between stats
+      if (i < statItems.length - 1) {
+        const divX = statsBoxX + statColW * (i + 1);
+        page.drawLine({ start: { x: divX, y: statsBoxY + 6 }, end: { x: divX, y: statsBoxY + statsBoxH - 6 }, thickness: 0.5, color: BORDER });
       }
-      y -= 8;
-    }
+    });
 
-    drawFooter(page);
+    y -= 52;
 
-    // ─── Blocks ─────────────────────────────────────────
-    newPage();
+    // ─── TABLE HEADER ─────────────────────────────────
+    // Column layout
+    const col1X = MARGIN;                           // Execução Estratégica
+    const col2X = MARGIN + CONTENT_W * 0.50;        // Método
+    const col3X = MARGIN + CONTENT_W * 0.67;        // Duração
+    const col4X = PAGE_W - MARGIN;                  // Progresso (right-aligned)
 
+    const colHeaders = [
+      { text: 'EXECUCAO ESTRATEGICA', x: col1X + 16 },
+      { text: 'METODO', x: col2X },
+      { text: 'DURACAO', x: col3X },
+    ];
+
+    // Draw column header line
+    page.drawLine({ start: { x: MARGIN, y: y }, end: { x: PAGE_W - MARGIN, y: y }, thickness: 0.5, color: BORDER });
+    y -= 14;
+
+    colHeaders.forEach(h => {
+      page.drawText(h.text, { x: h.x, y, size: 6, font, color: MUTED });
+    });
+    // Right-aligned "PROGRESSO"
+    const progText = 'PROGRESSO';
+    page.drawText(progText, { x: col4X - font.widthOfTextAtSize(progText, 6), y, size: 6, font, color: MUTED });
+
+    y -= 10;
+    page.drawLine({ start: { x: MARGIN, y: y }, end: { x: PAGE_W - MARGIN, y: y }, thickness: 0.5, color: BORDER });
+    y -= 6;
+
+    // ─── BLOCK ROWS ───────────────────────────────────
     for (let bIdx = 0; bIdx < blocks.length; bIdx++) {
       const block = blocks[bIdx];
       const blockTasks = block.tasks || [];
-      const blockHeight = 52 + blockTasks.length * 20;
-      ensureSpace(blockHeight);
+      const ROW_H = 38;
 
-      const blockColor = block.type === 'deep_work' ? PURPLE : block.type === 'break' ? GREEN : BLUE;
-      const typeLabel = block.type === 'deep_work' ? 'DEEP WORK' : block.type === 'break' ? 'PAUSA' : 'SHALLOW WORK';
+      ensureSpace(ROW_H + 4);
 
-      // Block card background
-      page.drawRectangle({ x: MARGIN, y: y - blockHeight, width: CONTENT_W, height: blockHeight, color: SURFACE, borderColor: BORDER, borderWidth: 0.5 });
-      // Left accent bar
-      page.drawRectangle({ x: MARGIN, y: y - blockHeight, width: 3, height: blockHeight, color: blockColor });
+      // Determine progress status
+      let progressLabel = 'Scheduled';
+      if (bIdx === 0) progressLabel = 'Active';
+      else if (bIdx === 1) progressLabel = 'Queued';
+      else if (bIdx < 3) progressLabel = 'Queued';
+      else if (block.type === 'shallow_work') progressLabel = 'Pending';
 
-      // Block header
-      const headerY = y - 16;
-      page.drawText(sanitize(block.title || `Bloco ${bIdx + 1}`), { x: MARGIN + 14, y: headerY, size: 11, font: fontBold, color: WHITE });
-      
-      // Type badge
-      const badgeText = typeLabel;
-      const badgeW = font.widthOfTextAtSize(badgeText, 7) + 12;
-      const badgeX = PAGE_W - MARGIN - badgeW - 8;
-      page.drawRectangle({ x: badgeX, y: headerY - 3, width: badgeW, height: 14, color: blockColor, opacity: 0.2 });
-      page.drawText(badgeText, { x: badgeX + 6, y: headerY, size: 7, font: fontBold, color: blockColor });
+      // Determine type color
+      const isDeep = block.type === 'deep_work';
+      const isBreak = block.type === 'break';
+      const dotColor = isBreak ? rgb(0.85, 0.65, 0.15) : isDeep ? ACCENT : MUTED;
 
-      // Technique + duration
-      page.drawText(`${sanitize(block.technique)} · ${block.duration_minutes || 0}min`, { x: MARGIN + 14, y: headerY - 16, size: 8, font, color: MUTED });
+      // Row background (subtle)
+      page.drawRectangle({
+        x: MARGIN, y: y - ROW_H, width: CONTENT_W, height: ROW_H,
+        color: BG, // transparent-ish
+      });
 
-      // Tasks
-      let taskY = headerY - 36;
-      for (const task of blockTasks) {
-        page.drawText('-', { x: MARGIN + 16, y: taskY, size: 8, font, color: DIM });
-        const taskTitle = sanitize(task.title);
-        const truncated = font.widthOfTextAtSize(taskTitle, 9) > CONTENT_W - 100 
-          ? taskTitle.substring(0, 60) + '...' 
-          : taskTitle;
-        page.drawText(truncated, { x: MARGIN + 28, y: taskY, size: 9, font, color: OFF_WHITE });
-        const estText = `${task.estimated_minutes || 0}min`;
-        page.drawText(estText, { x: PAGE_W - MARGIN - font.widthOfTextAtSize(estText, 8) - 10, y: taskY, size: 8, font, color: MUTED });
-        taskY -= 20;
-      }
+      // Status dot
+      const dotY = y - ROW_H / 2 + 3;
+      page.drawCircle({ x: MARGIN + 8, y: dotY, size: 3.5, color: dotColor });
 
-      y -= blockHeight + 12;
+      // Block title
+      const titleMaxW = (col2X - col1X - 30);
+      const blockTitle = sanitize(block.title || `Bloco ${bIdx + 1}`);
+      const truncTitle = truncateText(blockTitle, 10, titleMaxW, fontBold);
+      page.drawText(truncTitle, { x: col1X + 18, y: y - 15, size: 10, font: fontBold, color: OFF_WHITE });
+
+      // Task names as subtitle
+      const taskNames = blockTasks.map((t: any) => sanitize(t.title)).join(' / ');
+      const truncSub = truncateText(taskNames.toUpperCase(), 6, titleMaxW, font);
+      page.drawText(truncSub, { x: col1X + 18, y: y - 27, size: 6, font, color: DIM });
+
+      // Method
+      const methodLabel = isBreak ? 'PAUSA' : isDeep ? 'DEEP WORK' : 'SHALLOW WORK';
+      page.drawText(methodLabel, { x: col2X, y: y - 18, size: 7.5, font, color: MUTED });
+
+      // Duration
+      const technique = sanitize(block.technique || '');
+      const duration = `${block.duration_minutes || 0}min`;
+      const durText = technique ? `${technique} ${duration}` : duration;
+      page.drawText(durText, { x: col3X, y: y - 18, size: 7.5, font, color: MUTED });
+
+      // Progress (right-aligned)
+      const progColor = progressLabel === 'Active' ? WHITE : MUTED;
+      page.drawText(progressLabel, { x: col4X - font.widthOfTextAtSize(progressLabel, 7.5), y: y - 18, size: 7.5, font, color: progColor });
+
+      // Bottom border
+      page.drawLine({
+        start: { x: MARGIN, y: y - ROW_H },
+        end: { x: PAGE_W - MARGIN, y: y - ROW_H },
+        thickness: 0.3, color: rgb(1, 1, 1), opacity: 0.03,
+      });
+
+      y -= ROW_H + 2;
     }
 
+    // ─── TIPS + FOOTER SECTION ────────────────────────
+    ensureSpace(80);
+    y -= 12;
+
+    // Tips title
+    page.drawText('DICAS DE PRODUTIVIDADE', { x: MARGIN, y, size: 7, font: fontBold, color: ACCENT_LIGHT });
+    y -= 16;
+
+    // Tips in columns (up to 3)
+    const tipsList = (tips || []).slice(0, 3);
+    const tipColW = CONTENT_W / Math.max(tipsList.length, 1);
+
+    tipsList.forEach((tip: string, i: number) => {
+      const tipX = MARGIN + tipColW * i;
+      const tipText = sanitize(tip);
+      const lines = wrapText(`> ${tipText}`, 7, tipColW - 16);
+      let tipY = y;
+      for (const line of lines) {
+        // Color the ">" in accent
+        if (line.startsWith('>')) {
+          page.drawText('>', { x: tipX, y: tipY, size: 7, font, color: ACCENT_LIGHT });
+          page.drawText(line.substring(2), { x: tipX + font.widthOfTextAtSize('> ', 7), y: tipY, size: 7, font, color: OFF_WHITE });
+        } else {
+          page.drawText(line, { x: tipX, y: tipY, size: 7, font, color: OFF_WHITE });
+        }
+        tipY -= 11;
+      }
+    });
+
+    y -= 40;
+
+    // Orientation badge (bottom right)
+    const orientLabel = isLandscape ? 'ORIENTACAO: PAISAGEM' : 'ORIENTACAO: RETRATO';
+    const orientW = font.widthOfTextAtSize(orientLabel, 6.5);
+    page.drawText(orientLabel, { x: PAGE_W - MARGIN - orientW, y: MARGIN + 32, size: 6.5, font, color: MUTED });
+
+    // Powered by
+    const poweredText = 'POWERED BY SQUAD///FILM';
+    const poweredW = font.widthOfTextAtSize(poweredText, 6.5);
+    page.drawText(poweredText, { x: PAGE_W - MARGIN - poweredW, y: MARGIN + 20, size: 6.5, font: fontBold, color: MUTED });
+
+    // Footer
     drawFooter(page);
 
-    // ─── Save & Return ──────────────────────────────────
+    // ─── Save & Upload ────────────────────────────────
     const pdfBytes = await pdfDoc.save();
-    const fileName = `PLANO_FOCO_${formatDateShort()}_${refCode}.pdf`;
+    const fileName = `PLANO_FOCO_${dateStr}_${refCode}.pdf`;
     const filePath = `focus-plans/${fileName}`;
 
     const { error: uploadError } = await supabase.storage.from('exports').upload(filePath, pdfBytes, { contentType: 'application/pdf', upsert: true });
