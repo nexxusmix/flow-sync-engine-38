@@ -1,12 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { useExecutionPlans } from "@/hooks/useExecutionPlans";
 import { ExecutionPlanBadge } from "@/components/tasks/ExecutionPlanBadge";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, ArrowUpDown, Search, ArrowRight, Plus,
-  Inbox, CalendarDays, Sun, CheckCircle2
+  Inbox, CalendarDays, Sun, CheckCircle2, Sparkles, X, Loader2
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -76,19 +78,81 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
   const deleteTask = onDeleteTask || (() => {});
   const [expandedColumn, setExpandedColumn] = useState<Task["status"] | null>(null);
   const [search, setSearch] = useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [aiQuery, setAiQuery] = useState("");
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiFilteredIds, setAiFilteredIds] = useState<Set<string> | null>(null);
   const [sortBy, setSortBy] = useState<"created" | "due_date" | "title">("created");
+
+  // AI search handler
+  const handleAiSearch = useCallback(async () => {
+    if (!globalSearch.trim()) return;
+    setIsAiSearching(true);
+    setAiFilteredIds(null);
+    try {
+      const tasksSummary = tasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        category: t.category,
+        tags: t.tags,
+        due_date: t.due_date,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('ai-task-search', {
+        body: { query: globalSearch, tasks: tasksSummary }
+      });
+
+      if (error) throw error;
+      if (data?.matchedIds?.length > 0) {
+        setAiFilteredIds(new Set(data.matchedIds));
+        toast.success(`IA encontrou ${data.matchedIds.length} tarefa(s)`);
+      } else {
+        setAiFilteredIds(new Set());
+        toast.info('IA não encontrou tarefas correspondentes');
+      }
+    } catch (err) {
+      console.error('AI search error:', err);
+      toast.error('Erro na busca com IA');
+    } finally {
+      setIsAiSearching(false);
+    }
+  }, [globalSearch, tasks]);
+
+  const clearSearch = useCallback(() => {
+    setGlobalSearch("");
+    setAiFilteredIds(null);
+  }, []);
+
+  // Apply global search + AI filter to tasks
+  const filteredTasks = useMemo(() => {
+    let list = tasks;
+    if (globalSearch.trim() && !aiFilteredIds) {
+      const q = globalSearch.toLowerCase();
+      list = list.filter(t =>
+        t.title.toLowerCase().includes(q) ||
+        t.description?.toLowerCase().includes(q) ||
+        t.tags?.some(tag => tag.toLowerCase().includes(q))
+      );
+    }
+    if (aiFilteredIds) {
+      list = list.filter(t => aiFilteredIds.has(t.id));
+    }
+    return list;
+  }, [tasks, globalSearch, aiFilteredIds]);
 
   // Counts per status
   const counts = useMemo(() => {
     const c: Record<string, number> = { backlog: 0, week: 0, today: 0, done: 0 };
-    tasks.forEach((t) => c[t.status]++);
+    filteredTasks.forEach((t) => c[t.status]++);
     return c;
-  }, [tasks]);
+  }, [filteredTasks]);
 
   // Tasks for expanded column
   const expandedTasks = useMemo(() => {
     if (!expandedColumn) return [];
-    let list = tasks.filter((t) => t.status === expandedColumn);
+    let list = filteredTasks.filter((t) => t.status === expandedColumn);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -109,20 +173,78 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return list;
-  }, [tasks, expandedColumn, search, sortBy]);
+  }, [filteredTasks, expandedColumn, search, sortBy]);
 
   // Preview tasks (top 4 per column)
   const getPreviewTasks = (status: Task["status"]) =>
-    tasks.filter((t) => t.status === status).slice(0, 4);
+    filteredTasks.filter((t) => t.status === status).slice(0, 4);
 
   // Overdue count for a column
   const getOverdueCount = (status: Task["status"]) =>
-    tasks.filter(
+    filteredTasks.filter(
       (t) => t.status === status && t.due_date && isPast(parseISO(t.due_date)) && t.status !== "done"
     ).length;
 
   return (
     <div className="space-y-6">
+      {/* Global Search Bar */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={globalSearch}
+            onChange={(e) => {
+              setGlobalSearch(e.target.value);
+              if (aiFilteredIds) setAiFilteredIds(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && globalSearch.trim()) handleAiSearch();
+            }}
+            placeholder="Buscar tarefas ou perguntar à IA…"
+            className="pl-9 pr-9 h-10 text-sm bg-white/[0.02] border-white/[0.08] rounded-xl focus:border-primary/30"
+          />
+          {globalSearch && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleAiSearch}
+          disabled={!globalSearch.trim() || isAiSearching}
+          className={cn(
+            "h-10 gap-2 rounded-xl border-white/[0.08] bg-white/[0.02] text-xs uppercase tracking-wider font-light",
+            "hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all",
+            aiFilteredIds && "border-primary/30 bg-primary/10 text-primary"
+          )}
+        >
+          {isAiSearching ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5" />
+          )}
+          {isAiSearching ? "Buscando…" : "IA"}
+        </Button>
+      </div>
+
+      {/* AI filter active indicator */}
+      {aiFilteredIds && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/15">
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs text-primary font-light">
+            Filtro IA ativo · {aiFilteredIds.size} resultado{aiFilteredIds.size !== 1 ? 's' : ''} para "{globalSearch}"
+          </span>
+          <button onClick={clearSearch} className="ml-auto text-primary/60 hover:text-primary transition-colors">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Premium Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         {TASK_COLUMNS.map((col, index) => {
@@ -231,7 +353,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                 {/* Full task list with scroll */}
                 {count > 0 && (
                   <div className="mt-4 max-h-[180px] overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                    {tasks.filter(t => t.status === col.key).map((task) => {
+                    {filteredTasks.filter(t => t.status === col.key).map((task) => {
                       const categoryInfo = TASK_CATEGORIES.find((c) => c.key === task.category);
                       return (
                         <div

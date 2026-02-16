@@ -147,3 +147,6 @@ verify_jwt = false
 
 [functions.task-ai-executor]
 verify_jwt = false
+
+[functions.ai-task-search]
+verify_jwt = false
