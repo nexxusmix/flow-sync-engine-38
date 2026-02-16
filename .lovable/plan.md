@@ -1,55 +1,142 @@
 
-# Diagnostico do Portal do Cliente - Bugs e Melhorias
+# Diagnostico Completo: Marketing, Conteudo e Studio Criativo
 
-## Bugs Criticos Encontrados
+## Bugs Encontrados
 
-### 1. YouTube Thumbnail quebrado (404)
-A regex que extrai o ID do YouTube captura parametros de URL como parte do ID do video.
-- URL: `https://youtu.be/nd2-q-WL07w?si=BWouv7BVFpwN_H9d`
-- ID extraido (ERRADO): `nd2-q-WL07w?si=BWouv7BVFpwN_H9d`
-- ID correto: `nd2-q-WL07w`
-- Resultado: Thumbnail retorna 404 e imagem aparece quebrada
-- Afeta 5+ arquivos que duplicam essa funcao (`PortalMaterialCard`, `MaterialLightbox`, `QuickRevisionDrawer`, etc.)
-- **Correcao**: Criar util centralizado com regex corrigida: `([^&?\s]+)` em vez de `([^&\s]+)`, adicionando `?` aos caracteres excluidos
+### BUG 1 - CRITICO: Badge ref warning no MarketingDashboard
+O console mostra "Function components cannot be given refs" no componente `Badge` dentro de `MarketingDashboard.tsx`. Isso ocorre porque o `Badge` (linha 25 de badge.tsx) e um `div`, nao usa `forwardRef`, mas esta sendo usado como child de um componente que tenta passar ref (provavelmente via Tooltip ou DropdownMenu).
+- **Arquivo**: `src/components/ui/badge.tsx`
+- **Correcao**: Adicionar `React.forwardRef` ao componente Badge
 
-### 2. Aba Materiais mostra apenas 1 de 10 itens
-A filtragem `deliverables.filter(d => !d.uploaded_by_client)` exclui 9 dos 10 materiais porque foram marcados como `uploaded_by_client: true` (provavelmente pela funcao de upload). O sidebar da Overview mostra "10 materiais prontos" mas ao clicar em Materiais so aparece 1.
-- **Correcao**: Exibir todos os materiais na aba, separando por secoes (Entregas da equipe / Envios do cliente) em vez de esconder os uploads do cliente
+### BUG 2 - CRITICO: N+1 queries no fetchContentItems
+O `marketingStore.ts` (linhas 226-248) faz uma query separada de `content_comments` e `content_checklist` para **cada** content item usando `Promise.all`. Com 50 itens, isso gera 100+ queries ao banco. Causa lentidao perceptivel ao carregar Pipeline, Dashboard e Calendario.
+- **Arquivo**: `src/stores/marketingStore.ts`
+- **Correcao**: Buscar comments e checklist em batch (um SELECT para todos os IDs) em vez de N queries individuais
 
-### 3. Lightbox nao abre em fullscreen verdadeiro
-Ao clicar num material, o lightbox aparece inline sobrepondo parcialmente o conteudo, nao como modal fullscreen imersivo conforme esperado.
-- **Correcao**: Revisar o `MaterialLightbox` para usar `fixed inset-0 z-50` e garantir cobertura total
+### BUG 3: getContentByStatus ignora filtros de busca
+No Pipeline (Kanban), `getContentByStatus` (linha 442-444) retorna todos os itens daquele status sem aplicar o filtro de busca. Digitar algo na busca nao filtra os cards nas colunas.
+- **Arquivo**: `src/stores/marketingStore.ts`
+- **Correcao**: Aplicar `contentFilters.search` dentro de `getContentByStatus`
 
-### 4. Ano do footer fixo em 2024
-O arquivo `PortalFooterPremium.tsx` tem `© 2024` hardcoded.
-- **Correcao**: Trocar para `new Date().getFullYear()`
+### BUG 4: Pagina "Conteudo" vazia (placeholder)
+`ContentPage.tsx` mostra apenas "Em desenvolvimento" sem funcionalidade. Deveria redirecionar para `/marketing/pipeline` ou ser removida da navegacao.
+- **Arquivo**: `src/pages/ContentPage.tsx`
+
+### BUG 5: "Ver Conteudos" no CampaignCard nao faz nada
+Na pagina de Campanhas, o botao "Ver Conteudos" (linha 170) nao tem onClick - e apenas um `Button` sem acao.
+- **Arquivo**: `src/pages/marketing/CampaignsPage.tsx` (linha 170)
+- **Correcao**: Navegar para pipeline filtrado por campanha
+
+### BUG 6: "Exportar PDF" no StudioCopilot mostra toast placeholder
+No painel Copilot do Studio Criativo (linha 221), clicar em "Exportar PDF" mostra `toast.info('Export PDF em breve')` em vez de realmente exportar.
+- **Arquivo**: `src/components/creative-studio/StudioCopilot.tsx` (linha 221)
+- **Correcao**: Implementar export real ou remover botao
+
+### BUG 7: Studio Criativo auto-cria trabalho ao acessar sem ID
+`CreativeStudioPage.tsx` (linhas 131-135) cria automaticamente um novo trabalho criativo toda vez que o usuario acessa `/marketing/studio` sem ID. Isso gera trabalhos "fantasma" sem conteudo.
+- **Arquivo**: `src/pages/marketing/CreativeStudioPage.tsx`
+- **Correcao**: Mostrar tela de selecao/listagem em vez de criar automaticamente
+
+### BUG 8: Calendario - view "Semana" nao funciona
+O `CalendarPage.tsx` tem um seletor "Mes/Semana" (linhas 193-200) mas nao implementa a view de semana - sempre mostra o mes completo.
+- **Arquivo**: `src/pages/marketing/CalendarPage.tsx`
+- **Correcao**: Implementar view semanal ou remover opcao
+
+### BUG 9: LoginPage footer com ano 2024 hardcoded
+A tela de login mostra "2024 SQUAD FILM GLOBAL" no footer (visivel no screenshot).
+- **Arquivo**: Tela de login
+- **Correcao**: Usar `new Date().getFullYear()`
 
 ## Problemas de UX
 
-### 5. Links quebrados no footer
-Os links "Suporte Direto", "Privacidade" e "Dashboard" apontam para `#` (nao fazem nada). "Dashboard" nao deveria existir para clientes nao autenticados.
-- **Correcao**: Remover "Dashboard", fazer "Suporte Direto" abrir WhatsApp/email configurado e "Privacidade" apontar para pagina valida ou remover
+### UX 1: Transcrições nao persistem
+`TranscribePage.tsx` armazena transcrições apenas em `useState`. Ao navegar para outra pagina e voltar, todas as transcrições sao perdidas. Deveria salvar no banco.
 
-### 6. "Previsao Entrega" vazio
-O card de metrica mostra "—" mesmo com 9 etapas cadastradas e Briefing em andamento. Poderia mostrar a data do `due_date` do projeto se disponivel.
-- **Correcao**: Usar `project.due_date` quando disponivel, senao mostrar estimativa baseada nas etapas
+### UX 2: Instagram Page - MVP limitado sem feedback claro
+A pagina mostra informacao tecnica sobre "access_token" e "Meta Graph API" que confunde usuarios nao-tecnicos. Deveria esconder detalhes tecnicos.
 
-## Plano de Correcao
+### UX 3: Dois Studios Criativos duplicados
+Existem duas paginas de studio: `StudioCreativoPage.tsx` (antigo, baseado em briefs) e `CreativeStudioPage.tsx` (novo, modular com blocos). Isso pode confundir rotas e manutenção.
+
+### UX 4: Acoes rapidas no Copilot sem bloco selecionado
+No Studio Criativo, as acoes rapidas (Resumir, Expandir, etc.) ficam desabilitadas quando nao ha bloco com conteudo, mas nao explicam por que estao desabilitadas.
+
+### UX 5: Delete de brief sem confirmação
+`StudioCreativoPage.tsx` (linha 452-462) deleta briefs sem dialogo de confirmacao, gerando risco de perda acidental.
+
+## Plano de Correcao (Priorizado)
+
+### Alta Prioridade
+1. **Badge forwardRef** - Corrigir warning no `badge.tsx` adicionando `React.forwardRef`
+2. **N+1 queries** - Refatorar `fetchContentItems` no `marketingStore.ts` para buscar comments/checklist em batch
+3. **Pipeline search** - Fazer `getContentByStatus` respeitar filtro de busca
+4. **CampaignCard "Ver Conteudos"** - Adicionar navegacao com filtro
+
+### Media Prioridade
+5. **Studio auto-create** - Mostrar lista de trabalhos existentes ao acessar `/marketing/studio`
+6. **Transcrições persistencia** - Salvar resultados no banco
+7. **Exportar PDF no Copilot** - Conectar ao export real ou remover
+
+### Baixa Prioridade
+8. **ContentPage redirect** - Redirecionar para pipeline
+9. **Calendario view semana** - Implementar ou remover opcao
+10. **Instagram UX** - Esconder detalhes tecnicos da API
+11. **Login footer ano** - Dinamico
+12. **Delete confirmation** - Dialogo antes de excluir briefs
+
+### Detalhes Tecnicos
+
+**badge.tsx** - Mudar de:
+```tsx
+function Badge({ className, variant, ...props }: BadgeProps) {
+  return <div ... />;
+}
+```
+Para:
+```tsx
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
+  ({ className, variant, ...props }, ref) => {
+    return <div ref={ref} ... />;
+  }
+);
+Badge.displayName = "Badge";
+```
+
+**marketingStore.ts - fetchContentItems** - Mudar de N queries individuais para:
+```tsx
+const itemIds = data.map(i => i.id);
+const { data: allComments } = await supabase
+  .from('content_comments').select('*').in('content_item_id', itemIds);
+const { data: allChecklist } = await supabase
+  .from('content_checklist').select('*').in('content_item_id', itemIds);
+// Depois mapear por item
+```
+
+**marketingStore.ts - getContentByStatus** - Adicionar filtro:
+```tsx
+getContentByStatus: (status) => {
+  const { contentItems, contentFilters } = get();
+  return contentItems.filter((i) => {
+    if (i.status !== status) return false;
+    if (contentFilters.search && !i.title.toLowerCase().includes(contentFilters.search.toLowerCase())) return false;
+    return true;
+  });
+},
+```
+
+**CampaignsPage.tsx** - Botao "Ver Conteudos":
+```tsx
+<Button variant="outline" className="flex-1" size="sm"
+  onClick={() => navigate(`/marketing/pipeline?campaign=${campaign.id}`)}>
+  Ver Conteudos
+</Button>
+```
 
 ### Arquivos a modificar:
-
-1. **Criar `src/lib/youtube-utils.ts`** - Funcao centralizada para extrair ID do YouTube com regex corrigida
-2. **`src/components/client-portal/portal-materials/PortalMaterialCard.tsx`** - Importar util centralizado
-3. **`src/components/client-portal/portal-materials/MaterialLightbox.tsx`** - Importar util centralizado + verificar posicionamento fullscreen
-4. **`src/components/client-portal/QuickRevisionDrawer.tsx`** - Importar util centralizado
-5. **`src/components/client-portal/portal-tabs/PortalMaterialsTab.tsx`** - Importar util centralizado
-6. **`src/components/client-portal/portal-tabs/PortalDeliverablesTab.tsx`** - Importar util centralizado
-7. **`src/components/client-portal/portal-materials/PortalMaterialsTab.tsx`** - Mostrar todos os materiais (com secao separada para uploads do cliente)
-8. **`src/components/client-portal/PortalFooterPremium.tsx`** - Ano dinamico + corrigir links
-9. **`src/components/client-portal/PortalMetricsGrid.tsx`** - Usar due_date para previsao de entrega
-
-### Ordem de execucao:
-1. YouTube util (resolve 404 em todas as views)
-2. MaterialsTab filtering (resolve materiais faltantes)
-3. Lightbox fullscreen (corrige experiencia de revisao)
-4. Footer e metricas (polish)
+1. `src/components/ui/badge.tsx`
+2. `src/stores/marketingStore.ts`
+3. `src/pages/marketing/CampaignsPage.tsx`
+4. `src/pages/marketing/CreativeStudioPage.tsx`
+5. `src/components/creative-studio/StudioCopilot.tsx`
+6. `src/pages/marketing/CalendarPage.tsx`
+7. `src/pages/ContentPage.tsx`
