@@ -1,114 +1,85 @@
 
-# Criar Usuario Demo + Tutorial Interativo de Onboarding
+# Isolar Dados por Usuario: Cada um ve apenas o seu
 
-## Parte 1: Criar usuario e popular com dados demo
+## Problema Atual
 
-### Criar usuario via Edge Function `seed-demo-user`
-Uma Edge Function que:
-1. Cria o usuario `gabrielvalledesign@gmail.com` com senha `123456789` via Supabase Admin API
-2. Insere dados ficticios completos em todas as tabelas principais
+As tabelas `revenues`, `expenses`, `campaigns` e `content_items` nao possuem coluna `created_by`. As politicas RLS dessas tabelas apenas verificam `auth.uid() IS NOT NULL`, ou seja, qualquer usuario logado ve TODOS os dados dessas tabelas. Isso faz com que os dados ficticios do Gabriel aparecam para o Matheus e vice-versa.
 
-### Dados ficticios a serem criados:
+Alem disso, existem 18 expenses duplicados (3 execucoes do seed criaram 3x os mesmos 6 registros).
 
-**CRM (8 contatos + 6 deals)**
-- Contatos: Studio Aurora, Maria Design, Empresa Nexus, Cafe Artesanal, Clinica Vida, Tech Solutions, Imobiliaria Prime, Restaurante Sabor
-- Deals em varios estagios do funil (lead, qualificacao, proposta, negociacao, fechado, onboarding)
+## O que sera feito
 
-**Projetos (5 projetos em estagios diferentes)**
-- "Filme Institucional - Studio Aurora" (em producao, 80% concluido)
-- "Pacote Reels - Cafe Artesanal" (em edicao)
-- "Ensaio Fotografico - Clinica Vida" (em aprovacao)
-- "Motion Vinheta - Tech Solutions" (briefing)
-- "Tour 360 - Imobiliaria Prime" (concluido)
-- Cada projeto com etapas (`project_stages`) preenchidas
+### 1. Migracoes no banco de dados
 
-**Financeiro**
-- 8 receitas (mix de recebidas, pendentes e atrasadas)
-- 6 despesas (equipamento, software, freelancers, etc.)
+Adicionar coluna `created_by UUID REFERENCES auth.users(id)` nas tabelas:
+- `revenues`
+- `expenses`
+- `campaigns`
+- `content_items`
 
-**Marketing (10 content_items)**
-- Conteudos em todos os status: idea, draft, review, approved, scheduled, published
-- Canais: Instagram, YouTube, TikTok, LinkedIn
-- 1 campanha ativa "Lancamento Verao 2026"
+Atualizar as politicas RLS de SELECT/UPDATE/DELETE para filtrar por `created_by = auth.uid()` e as de INSERT para setar `created_by = auth.uid()` no `WITH CHECK`.
 
-**Tarefas (8 tarefas)**
-- Mix de todo, in_progress, done
-- Com tags, prioridades e datas
+### 2. Atribuir dados existentes ao Matheus
 
-**Propostas (2)**
-- Uma enviada, outra aprovada
+Executar UPDATE para setar `created_by` dos registros existentes (Porto 153 revenues, content_items existentes, etc.) para o user_id do Matheus (`5bdb380c-6d49-4f80-b42b-856484360bd5`).
 
-**Eventos de Calendario (5)**
-- Reunioes, entregas e marcos nos proximos 30 dias
+### 3. Limpar duplicatas
 
-## Parte 2: Tutorial Dinamico de Onboarding
+Deletar as 12 expenses duplicadas (manter apenas 6 unicos).
 
-### Componente `OnboardingTutorial.tsx`
-Um overlay animado (framer-motion) que aparece na primeira vez que o usuario acessa o Dashboard.
+### 4. Atualizar Edge Function `seed-demo-user`
 
-**Mecanismo de controle:**
-- Usa tabela `ui_state` com scope `onboarding_completed` para verificar se ja viu
-- Se nao existe registro, mostra o tutorial
-- Ao finalizar, salva `{ completed: true }` no `ui_state`
+Adicionar `created_by: userId` em todos os inserts de revenues, expenses, campaigns e content_items. Tambem limpar dados antigos do Gabriel antes de re-inserir (evitar duplicatas em futuras execucoes).
 
-**Fluxo do tutorial (6-8 passos):**
-1. **Boas-vindas** - "Bem-vindo ao Hub!" com animacao de entrada
-2. **Dashboard** - Destaque nos KPIs e acesso rapido a projetos
-3. **Projetos** - Explica o fluxo de producao e etapas
-4. **CRM** - Pipeline de vendas e contatos
-5. **Financeiro** - Receitas, despesas e fluxo de caixa
-6. **Marketing** - Pipeline de conteudo e calendario
-7. **Tarefas** - Quadro Kanban e organizacao
-8. **Pronto!** - "Explore a vontade. Tudo ja esta com dados de exemplo."
+### 5. Atualizar frontend
 
-**Design:**
-- Modal fullscreen com backdrop blur
-- Cada passo tem icone, titulo, descricao curta e ilustracao/animacao
-- Barra de progresso com dots
-- Botoes "Pular" e "Proximo"
-- Animacoes de fade + slide entre passos (framer-motion)
+Modificar os stores e hooks que criam registros nessas tabelas para incluir `created_by` automaticamente:
+- `src/stores/financialStore.ts` - createRevenue, createExpense
+- `src/stores/marketingStore.ts` - createContentItem, createCampaign (se aplicavel)
+- `src/hooks/useProjects.tsx` - onde cria revenues vinculadas a projetos
 
-### Aplicar tutorial ao Matheus Filipe
-- Deletar o registro de `ui_state` com scope `onboarding_completed` do usuario Matheus (se existir)
-- Na proxima vez que ele acessar o Dashboard, o tutorial aparecera automaticamente
+### 6. Re-executar seed do Gabriel
 
-## Arquivos a criar/modificar
+Chamar a Edge Function novamente para popular os dados do Gabriel com o campo `created_by` corretamente preenchido.
 
-### Criar:
-1. `supabase/functions/seed-demo-user/index.ts` - Edge Function para criar usuario e dados
-2. `src/components/onboarding/OnboardingTutorial.tsx` - Componente do tutorial animado
-3. `src/components/onboarding/OnboardingStep.tsx` - Componente individual de cada passo
+## Arquivos a modificar
 
-### Modificar:
-4. `src/pages/Dashboard.tsx` - Importar e renderizar `OnboardingTutorial`
-5. `supabase/config.toml` - Registrar nova Edge Function
+1. **Migracao SQL** - Adicionar coluna `created_by` + atualizar RLS em `revenues`, `expenses`, `campaigns`, `content_items`
+2. **`supabase/functions/seed-demo-user/index.ts`** - Adicionar `created_by` em todos os inserts + limpeza previa
+3. **`src/stores/financialStore.ts`** - Incluir `created_by` nos inserts de revenue/expense
+4. **`src/stores/marketingStore.ts`** - Incluir `created_by` nos inserts de content_items/campaigns
+5. **`src/hooks/useProjects.tsx`** - Incluir `created_by` nos inserts de revenues
+6. **SQL de dados** - Atribuir registros existentes ao Matheus + limpar duplicatas
 
 ## Detalhes Tecnicos
 
-### Edge Function `seed-demo-user`
-```
-- Usa SUPABASE_SERVICE_ROLE_KEY para criar usuario via admin API
-- Insere profile, role assignment (admin), e todos os dados demo
-- Retorna sucesso com resumo dos dados criados
-```
+### Migracao SQL
+```sql
+ALTER TABLE revenues ADD COLUMN created_by UUID REFERENCES auth.users(id) DEFAULT auth.uid();
+ALTER TABLE expenses ADD COLUMN created_by UUID REFERENCES auth.users(id) DEFAULT auth.uid();
+ALTER TABLE campaigns ADD COLUMN created_by UUID REFERENCES auth.users(id) DEFAULT auth.uid();
+ALTER TABLE content_items ADD COLUMN created_by UUID REFERENCES auth.users(id);
 
-### OnboardingTutorial - Logica de exibicao
-```tsx
-// No Dashboard.tsx
-const { data: onboardingState } = useQuery({
-  queryKey: ['onboarding-state', user?.id],
-  queryFn: async () => {
-    const { data } = await supabase.from('ui_state')
-      .select('state')
-      .eq('user_id', user.id)
-      .eq('scope', 'onboarding_completed')
-      .single();
-    return data?.state?.completed ?? false;
-  },
-});
-
-// Mostrar tutorial se onboardingState === false
+-- Atualizar RLS para filtrar por created_by
+DROP POLICY auth_select_revenues ON revenues;
+CREATE POLICY auth_select_revenues ON revenues FOR SELECT USING (created_by = auth.uid());
+-- (repetir para UPDATE, DELETE, INSERT em todas as 4 tabelas)
 ```
 
-### Marcacao de conclusao para Matheus
-- Inserir via SQL direto: deletar qualquer registro de `ui_state` com scope `onboarding_completed` para o user_id do Matheus
+### Frontend - financialStore.ts
+```typescript
+createRevenue: async (data) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const insertData = { ...data, created_by: user?.id };
+  // ...insert
+}
+```
+
+### Seed - limpeza previa
+```typescript
+// Limpar dados antigos do Gabriel antes de re-inserir
+await supabase.from('revenues').delete().eq('created_by', userId);
+await supabase.from('expenses').delete().eq('created_by', userId);
+await supabase.from('content_items').delete().eq('created_by', userId);
+await supabase.from('campaigns').delete().eq('created_by', userId);
+```
