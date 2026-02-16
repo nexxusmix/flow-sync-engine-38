@@ -1,12 +1,17 @@
+import { RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Clapperboard, Palette } from "lucide-react";
 import { AnimatedCounter } from "./AnimatedCounter";
 
-export function LandingHero() {
+interface LandingHeroProps {
+  scrollContainerRef?: RefObject<HTMLDivElement>;
+}
+
+export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
   const navigate = useNavigate();
-  const { scrollYProgress } = useScroll();
+  const { scrollYProgress } = useScroll({ container: scrollContainerRef as any });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -100]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 

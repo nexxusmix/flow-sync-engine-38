@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   ParticlesBackground,
   AnimatedGradientOrbs,
@@ -16,15 +17,16 @@ import { LandingCTA } from "@/components/landing/LandingCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 
 export default function LandingPage() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden overflow-y-auto">
+    <div ref={scrollContainerRef} className="h-screen overflow-y-auto bg-background relative overflow-x-hidden">
       <ParticlesBackground />
       <AnimatedGradientOrbs />
       <CyberpunkGrid />
       <div className="grain" />
 
       <LandingNav />
-      <LandingHero />
+      <LandingHero scrollContainerRef={scrollContainerRef} />
       <LandingProblem />
       <LandingSolution />
       <LandingPricing />
