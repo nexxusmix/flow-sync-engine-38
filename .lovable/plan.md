@@ -1,32 +1,34 @@
 
+# Fix: Modal Modo Foco cortado no topo
 
-# Fix: Erro ao exportar PDF do Modo Foco
-
-## Causa raiz
-
-A Edge Function `export-focus-pdf` usa o caractere `○` (U+25CB, circulo branco) para marcar tarefas. A fonte `Helvetica` do pdf-lib so suporta caracteres WinAnsi (Latin-1), e esse simbolo nao faz parte do conjunto. O erro exato nos logs:
-
-```
-WinAnsi cannot encode "○" (0x25cb)
-```
+## Problema
+O modal do Modo Foco esta ultrapassando os limites da viewport. O `max-h-[85vh]` nao esta sendo respeitado corretamente devido ao zoom de 1.2 aplicado no container principal da plataforma, fazendo o conteudo escalar alem do viewport real e cortando o header com o botao de fechar.
 
 ## Correcao
 
-**Arquivo:** `supabase/functions/export-focus-pdf/index.ts`
+**Arquivo:** `src/components/tasks/TaskExecutionGuide.tsx`
 
-Substituir o caractere `○` por `-` (hifen) na linha que desenha o marcador de cada tarefa. O hifen e totalmente compativel com WinAnsi.
+1. **Trocar `items-center` por `items-start`** no container fixo (linha 144) para que o modal alinhe pelo topo em vez de tentar centralizar verticalmente (o que causa corte quando o conteudo e grande)
+2. **Adicionar `overflow-y-auto`** no container fixo para permitir scroll do proprio overlay
+3. **Reduzir `max-h-[85vh]` para `max-h-[80vh]`** no modal para dar mais margem
+4. **Adicionar `my-auto`** no motion.div do modal para centralizar quando couber, mas sem cortar quando nao couber
 
-Linha atual:
-```typescript
-page.drawText('○', { x: MARGIN + 16, y: taskY, size: 8, font, color: DIM });
+### Mudanca exata
+
+Linha 144 - Container externo:
+```
+// De:
+className="fixed inset-0 z-50 flex items-center justify-center p-4"
+// Para:
+className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4"
 ```
 
-Corrigida:
-```typescript
-page.drawText('-', { x: MARGIN + 16, y: taskY, size: 8, font, color: DIM });
+Linha 151 - Modal interno:
+```
+// De:
+className="relative z-10 w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl border border-border bg-background shadow-2xl"
+// Para:
+className="relative z-10 w-full max-w-lg max-h-[80vh] my-auto flex flex-col rounded-2xl border border-border bg-background shadow-2xl"
 ```
 
-Tambem verificar a funcao `sanitize()` que ja remove caracteres fora do range Latin-1, mas o `○` esta hardcoded no codigo, nao vem de dados do usuario -- por isso o sanitize nao o captura.
-
-Apenas 1 linha precisa mudar. Apos o deploy automatico, a exportacao de PDF do Modo Foco voltara a funcionar.
-
+Isso garante que o modal nunca ultrapasse a viewport e sempre mostre o header com o botao X visivel.
