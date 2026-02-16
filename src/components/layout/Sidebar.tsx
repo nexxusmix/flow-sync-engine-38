@@ -3,35 +3,30 @@ import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import squadHubLogo from "@/assets/squad-hub-logo.png";
-import { ModuleSwitcher } from "./ModuleSwitcher";
-import { useProductContext } from "@/hooks/useProductContext";
-
-type ModuleTag = 'production' | 'marketing';
 
 interface MenuItem {
   name: string;
   href: string;
   icon: string;
   badge?: number;
-  modules: ModuleTag[];
 }
 
 const mainMenuItems: MenuItem[] = [
-  { name: "Overview", href: "/", icon: "dashboard", modules: ['production', 'marketing'] },
-  { name: "Central de Ações", href: "/central-acoes", icon: "bolt", modules: ['production', 'marketing'] },
-  { name: "Calendário", href: "/calendario", icon: "calendar_month", modules: ['production', 'marketing'] },
-  { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8, modules: ['production', 'marketing'] },
-  { name: "CRM", href: "/crm", icon: "radar", badge: 3, modules: ['production', 'marketing'] },
-  { name: "Marketing", href: "/marketing", icon: "perm_media", badge: 12, modules: ['marketing'] },
-  { name: "Gerar Posts", href: "/marketing/studio?tab=templates", icon: "auto_awesome", modules: ['marketing'] },
-  { name: "Transcrição", href: "/marketing/transcricao", icon: "mic", modules: ['marketing'] },
-  { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5, modules: ['production'] },
-  { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet", modules: ['production', 'marketing'] },
-  { name: "Propostas", href: "/propostas", icon: "description", modules: ['production'] },
-  { name: "Contratos", href: "/contratos", icon: "contract", modules: ['production'] },
-  { name: "Relatórios", href: "/relatorios", icon: "monitoring", modules: ['production', 'marketing'] },
-  { name: "Tarefas", href: "/tarefas", icon: "task_alt", modules: ['production', 'marketing'] },
-  { name: "Avisos", href: "/avisos", icon: "notifications", modules: ['production', 'marketing'] },
+  { name: "Overview", href: "/", icon: "dashboard" },
+  { name: "Central de Ações", href: "/central-acoes", icon: "bolt" },
+  { name: "Calendário", href: "/calendario", icon: "calendar_month" },
+  { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8 },
+  { name: "CRM", href: "/crm", icon: "radar", badge: 3 },
+  { name: "Marketing", href: "/marketing", icon: "perm_media", badge: 12 },
+  { name: "Gerar Posts", href: "/marketing/studio?tab=templates", icon: "auto_awesome" },
+  { name: "Transcrição", href: "/marketing/transcricao", icon: "mic" },
+  { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
+  { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
+  { name: "Propostas", href: "/propostas", icon: "description" },
+  { name: "Contratos", href: "/contratos", icon: "contract" },
+  { name: "Relatórios", href: "/relatorios", icon: "monitoring" },
+  { name: "Tarefas", href: "/tarefas", icon: "task_alt" },
+  { name: "Avisos", href: "/avisos", icon: "notifications" },
 ];
 
 const settingsItems = [
@@ -60,13 +55,6 @@ const menuItemVariants = {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
-  const { activeModule } = useProductContext();
-
-  // Filter menu items based on active module
-  const filteredItems = mainMenuItems.filter(item => {
-    if (activeModule === 'full') return true;
-    return item.modules.includes(activeModule);
-  });
 
   return (
     <motion.aside 
@@ -104,12 +92,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </button>
       </div>
 
-      {/* Module Switcher */}
-      <ModuleSwitcher collapsed={collapsed} />
-
       {/* Main Navigation */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-thin">
-        {filteredItems.map((item, index) => {
+        {mainMenuItems.map((item, index) => {
           const isActive = location.pathname === item.href || 
             (item.href !== '/' && location.pathname.startsWith(item.href));
           return (
@@ -178,7 +163,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           return (
             <motion.div
               key={item.name}
-              custom={filteredItems.length + index}
+              custom={mainMenuItems.length + index}
               variants={menuItemVariants}
               initial="hidden"
               animate="visible"
