@@ -1,123 +1,106 @@
 
-# Correcao Completa do Polo AI - Diagnostico e Plano
+# Task Cards: Modal Popup + IA + Uploads + Grid Backlog
 
-## PROBLEMAS ENCONTRADOS
+## Resumo
 
-### PROBLEMA 1 - CRITICO: Autenticacao quebrada no chat (401)
-**Arquivo:** `src/hooks/useAgentChat.tsx` (linhas 247-252 e 512-517)
-**Causa:** O frontend envia `Authorization: Bearer ${VITE_SUPABASE_PUBLISHABLE_KEY}` (a chave anonima publica) em vez do token JWT do usuario logado. A edge function `polo-ai-chat` chama `getUser()` que precisa do JWT real do usuario para autenticar.
-**Impacto:** TODAS as chamadas ao Polo AI retornam 401, resultando na mensagem "Erro ao processar sua solicitacao."
-**Correcao:** Trocar `VITE_SUPABASE_PUBLISHABLE_KEY` por `session.access_token` nas duas chamadas fetch (sendMessage e regeneratePlan).
-
-### PROBLEMA 2 - CRITICO: Criacao de tarefas sempre falha
-**Arquivo:** `supabase/functions/polo-ai-execute/index.ts` (funcao `toolCreateTasks`, linhas 241-260)
-**Causa:** A funcao tenta inserir `workspace_id` e `project_id` na tabela `tasks`, mas essas colunas NAO EXISTEM. Alem disso, a coluna `user_id` (NOT NULL, sem default) nunca e preenchida.
-**Esquema real da tabela `tasks`:**
-- `user_id` (uuid, NOT NULL, SEM default) -- obrigatorio, nunca enviado
-- `category` (text, NOT NULL, default 'operacao') -- ok, tem default
-- `position` (integer, NOT NULL, default 0) -- ok, tem default
-- `status` (text, NOT NULL, default 'backlog') -- ok, tem default
-- `priority` (text, NOT NULL, default 'normal') -- ok, tem default
-- NAO TEM: `workspace_id`, `project_id`
-**Impacto:** Toda acao "Criar Tarefas" do Polo AI falha com erro de not-null constraint no `user_id`, e colunas inexistentes geram erro de schema.
-**Correcao:** Remover `workspace_id` e `project_id` do insert, adicionar `user_id` (passado como parametro do userId autenticado).
-
-### PROBLEMA 3 - CRITICO: userId nao e propagado ao executor
-**Arquivo:** `supabase/functions/polo-ai-execute/index.ts`
-**Causa:** O `userId` e recebido do body da requisicao (linha 330) mas nunca e passado para `toolCreateTasks`, `toolCreateContent`, `toolCreateEvent`. Essas funcoes precisam do userId para preencher campos obrigatorios.
-**Correcao:** Passar `userId` para todas as funcoes tool que precisam dele.
-
-### PROBLEMA 4 - MEDIO: CORS incompleto no polo-ai-execute
-**Arquivo:** `supabase/functions/polo-ai-execute/index.ts` (linha 7)
-**Causa:** Headers CORS tem apenas `"authorization, x-client-info, apikey, content-type"`, faltando os headers de plataforma que o cliente Supabase envia (`x-supabase-client-platform`, etc).
-**Correcao:** Atualizar para o padrao completo de CORS usado em `polo-ai-chat`.
-
-### PROBLEMA 5 - MEDIO: update_status em projetos usa campo errado
-**Arquivo:** `supabase/functions/polo-ai-execute/index.ts` (funcao `toolUpdateStatus`)
-**Causa:** A funcao atualiza `status`, mas projetos usam `stage_current` como campo de estágio. O AI pode gerar planos com `update_status` para projetos que nao funcionam corretamente.
-**Correcao:** Quando a entidade for `project`, atualizar tambem `stage_current` junto com `status`.
-
-### PROBLEMA 6 - BAIXO: Auto-execucao com indice errado
-**Arquivo:** `src/hooks/useAgentChat.tsx` (funcao `autoExecutePlan`, linha 377)
-**Causa:** `msgIndex` e `messages.length` no momento da chamada (antes de adicionar user+assistant), mas quando `autoExecutePlan` roda, ja existem 2 mensagens a mais. O `msgIndex + 1` pode apontar para a mensagem errada.
-**Correcao:** Usar o indice correto baseado no estado atual das mensagens.
+Transformar os cards de tarefa para abrir em um popup modal com animacao premium (escala do card para o centro), adicionar botao "Gerar Plano com IA" no modal, suporte a upload/preview de arquivos, e layout grid 6 colunas para o Backlog.
 
 ---
 
-## PLANO DE CORRECAO
+## 1. Novo Componente: TaskDetailModal
 
-### Passo 1: Corrigir autenticacao no useAgentChat.tsx
-Nas duas chamadas fetch (sendMessage linha 251 e regeneratePlan linha 517), trocar:
-```typescript
-// ANTES (quebrado):
-Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+Criar `src/components/tasks/TaskDetailModal.tsx` -- um Dialog/overlay customizado que substitui o Sheet lateral atual.
 
-// DEPOIS (correto):
-Authorization: `Bearer ${session.access_token}`,
-```
+**Animacao:**
+- Ao clicar no card, o modal aparece com `framer-motion` usando `scale` de 0.8 para 1.0 + fade-in + backdrop blur
+- Ao fechar, anima de volta com scale 1.0 para 0.85 + fade-out
+- Backdrop com `bg-black/60 backdrop-blur-md`
+- Transicao: spring com stiffness ~300, damping ~25
 
-### Passo 2: Corrigir toolCreateTasks no polo-ai-execute
-```typescript
-// ANTES (quebrado):
-async function toolCreateTasks(supabase, data, workspaceId) {
-  const tasks = (data.tasks || []);
-  for (const task of tasks) {
-    await supabase.from('tasks').insert({
-      workspace_id: workspaceId,     // NAO EXISTE
-      project_id: data.project_id,   // NAO EXISTE
-      title: task.title,
-      status: 'todo',                // Default DB e 'backlog'
-      // user_id FALTANDO (NOT NULL)
-    });
-  }
-}
+**Conteudo do modal (tudo que ja existe no TaskEditDrawer, reorganizado):**
+- Titulo editavel inline
+- Status, Categoria, Prioridade, Datas
+- Descricao com acoes de IA (gramatica, refinar, profissional, checklist, estimar %)
+- Botao "Gerar Plano de Execucao com IA" (usa o ExecutionPlanPanel existente)
+- Secao de Links
+- Secao de Arquivos com upload e preview
+- Botao Excluir
 
-// DEPOIS (correto):
-async function toolCreateTasks(supabase, data, userId) {
-  const tasks = (data.tasks || []);
-  for (const task of tasks) {
-    await supabase.from('tasks').insert({
-      user_id: userId,               // OBRIGATORIO
-      title: task.title,
-      description: task.description || '',
-      priority: task.priority || 'normal',
-      due_date: task.due_date || null,
-      category: task.category || 'operacao',
-      status: task.status || 'backlog',
-      tags: task.tags || [],
-    });
-  }
-}
-```
-
-### Passo 3: Propagar userId para todas as funcoes tool
-Atualizar as chamadas de `toolCreateTasks`, `toolCreateContent`, `toolCreateEvent` e `toolUpsert` para receberem e usarem o `userId` quando necessario.
-
-### Passo 4: Corrigir CORS do polo-ai-execute
-Atualizar os headers CORS para incluir todos os headers necessarios:
-```typescript
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-```
-
-### Passo 5: Corrigir update_status para projetos
-Na funcao `toolUpdateStatus`, quando entity for `project`, atualizar `stage_current` junto com `status` para manter consistencia.
-
-### Passo 6: Corrigir indice do auto-execute
-Usar `setMessages` com callback para encontrar o indice correto da mensagem assistant baseado no conteudo/referencia.
+**Preview de arquivos:**
+- Imagens: thumbnail inline com lightbox ao clicar
+- PDFs: icone + link para abrir
+- Videos: player embed inline com controles nativos
+- Links: favicon + titulo clicavel
 
 ---
 
-## Detalhes Tecnicos - Arquivos a Modificar
+## 2. Secao de Arquivos no Modal
 
-1. **`src/hooks/useAgentChat.tsx`** - Corrigir Authorization header (2 locais) + corrigir auto-execute index
-2. **`supabase/functions/polo-ai-execute/index.ts`** - Corrigir CORS + toolCreateTasks (remover workspace_id/project_id, adicionar user_id) + propagar userId + corrigir update_status para projetos
+Reutilizar a logica existente do TaskEditDrawer (upload para bucket `project-files`, path `task-attachments/{taskId}/`).
 
-## Resultado Esperado
-Apos as correcoes:
-- Chat com Polo AI nao retornara mais 401
-- Criacao de tarefas via agente funcionara corretamente
-- Atualizacao de status de projetos funcionara
-- Todas as acoes do plano de execucao serao executadas sem erros de schema
+Adicionar preview visual:
+- Se `fileType` comeca com `image/`: mostrar `<img>` thumbnail (h-20 rounded)
+- Se `fileType` e `video/`: mostrar `<video>` com controls (h-20)
+- Se `fileType` e `application/pdf`: icone de PDF com link
+- Demais: icone generico com nome do arquivo
+
+---
+
+## 3. IA: Gerar Plano e Acoes
+
+O botao "Gerar Plano de Execucao" ja existe no ExecutionPlanPanel. Sera incluido dentro do modal.
+
+Adicionar tambem um fluxo de "Atualizar com IA":
+- Botao que chama a edge function `refine-task-ai` com action `refine`
+- Mostra o resultado em um preview antes de aplicar
+- Usuario ve o que a IA identificou/corrigiu e clica "Aplicar" ou "Cancelar"
+
+---
+
+## 4. Layout Grid 6 Colunas no Backlog
+
+Quando o `expandedColumn === 'backlog'` no TasksBoardView, renderizar as tarefas em um grid de 6 colunas (`grid-cols-2 md:grid-cols-3 xl:grid-cols-6`) com cards individuais em vez da lista vertical atual.
+
+Cada card no grid tera:
+- Checkbox
+- Titulo (2 linhas max)
+- Descricao truncada
+- Badge de categoria
+- Tags (max 2)
+- Data limite (se houver)
+
+---
+
+## 5. Integracao
+
+**TasksPage.tsx:**
+- Substituir `TaskEditDrawer` por `TaskDetailModal`
+- Manter a mesma logica de `handleEditTask` / `onUpdate` / `onDelete`
+
+**TasksBoardView.tsx:**
+- Clicar em qualquer task row chama `onEditTask` (ja funciona assim)
+- Adicionar renderizacao grid quando coluna expandida for `backlog`
+
+**TasksBoard.tsx (kanban):**
+- Clicar no card abre o modal em vez do drawer
+
+---
+
+## Detalhes Tecnicos
+
+### Arquivos a criar:
+1. `src/components/tasks/TaskDetailModal.tsx` -- Modal principal com animacao framer-motion
+
+### Arquivos a modificar:
+1. `src/pages/TasksPage.tsx` -- Trocar TaskEditDrawer por TaskDetailModal
+2. `src/components/tasks/TasksBoardView.tsx` -- Grid 6 cols para backlog expandido
+3. `src/components/tasks/TasksBoard.tsx` -- Click no card abre modal (ja conectado via onEditTask)
+
+### Dependencias:
+- Nenhuma nova -- usa framer-motion (ja instalado), lucide-react, componentes UI existentes
+
+### Banco de dados:
+- Nenhuma alteracao -- `attachments` e `links` ja existem como JSONB na tabela tasks
+
+### Edge functions:
+- Nenhuma alteracao -- `refine-task-ai` e `generate-execution-plan` ja existem e funcionam
