@@ -165,33 +165,13 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                 </div>
 
                 {plan && !isLoading && !error && (
-                  <>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{completedTasks.size}/{totalTasks} tarefas</span>
-                        <span>~{formatTime(plan.total_estimated_minutes * 60)} estimado</span>
-                      </div>
-                      <Progress value={progressPct} className="h-2" />
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{completedTasks.size}/{totalTasks} tarefas</span>
+                      <span>~{formatTime(plan.total_estimated_minutes * 60)} estimado</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 text-xs" disabled={isExportingPdf}>
-                            {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                            Exportar PDF
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => handleExportPdf('landscape')}>A4 Horizontal (Paisagem)</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleExportPdf('portrait')}>A4 Vertical (Retrato)</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleSavePlan} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                        Salvar Plano
-                      </Button>
-                    </div>
-                  </>
+                    <Progress value={progressPct} className="h-2" />
+                  </div>
                 )}
               </div>
 
@@ -282,6 +262,27 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                   </div>
                 ) : null}
               </div>
+              {/* Fixed Footer with actions */}
+              {plan && !isLoading && !error && (
+                <div className="shrink-0 p-4 border-t border-border flex items-center gap-2 bg-background rounded-b-2xl">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1.5 text-xs" disabled={isExportingPdf}>
+                        {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                        Exportar PDF
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="z-[60]">
+                      <DropdownMenuItem onClick={() => handleExportPdf('landscape')}>A4 Horizontal (Paisagem)</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportPdf('portrait')}>A4 Vertical (Retrato)</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleSavePlan} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    Salvar Plano
+                  </Button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
