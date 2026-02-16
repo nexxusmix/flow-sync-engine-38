@@ -1,39 +1,32 @@
 
-# Melhorar Visualizacao da Analise de Tarefas
 
-## Problema
-1. **Insights/Recomendacoes**: Blocos de texto densos, sem hierarquia visual -- tudo parece igual
-2. **Modal estreito**: `max-w-2xl` (672px) nao aproveita o espaco horizontal disponivel
-3. **Conteudo cortado**: O modal pode ultrapassar os limites da pagina
+# Fix: Erro ao exportar PDF do Modo Foco
 
-## Correcoes
+## Causa raiz
 
-### 1. Expandir modal horizontalmente
-- Mudar `max-w-2xl` para `max-w-5xl` (1024px) para aproveitar a tela
-- Manter `max-h-[85vh]` e `p-4` para respeitar margens
+A Edge Function `export-focus-pdf` usa o caractere `○` (U+25CB, circulo branco) para marcar tarefas. A fonte `Helvetica` do pdf-lib so suporta caracteres WinAnsi (Latin-1), e esse simbolo nao faz parte do conjunto. O erro exato nos logs:
 
-### 2. Insights e Recomendacoes em cards visuais (nao blocos de texto)
-Transformar cada insight/recomendacao de um simples `<p>` em um **card compacto** com:
-- Icone lateral colorido (lampada para insights, check para recomendacoes)
-- Titulo curto extraido da primeira frase
-- Texto secundario menor
-- Borda sutil com cor diferenciada (azul para insights, verde para recomendacoes)
-- Layout em **grid de 2 colunas** no desktop para reduzir altura vertical
+```
+WinAnsi cannot encode "○" (0x25cb)
+```
 
-### 3. Separar Insights de Recomendacoes visualmente
-- Duas secoes distintas com headers proprios
-- Insights: icone lampada, borda azul/purple
-- Recomendacoes: icone target, borda verde/emerald
+## Correcao
 
-## Detalhes Tecnicos
+**Arquivo:** `supabase/functions/export-focus-pdf/index.ts`
 
-**Arquivo:** `src/components/tasks/TaskAnalysisPanel.tsx`
+Substituir o caractere `○` por `-` (hifen) na linha que desenha o marcador de cada tarefa. O hifen e totalmente compativel com WinAnsi.
 
-Mudancas:
-- Linha 98: `max-w-2xl` → `max-w-5xl`
-- Linhas 265-293: Refatorar secao de insights/recomendacoes
-  - Substituir `<p>` simples por cards com icone + texto truncado
-  - Grid `grid-cols-1 md:grid-cols-2` para layout horizontal
-  - Cards com `rounded-lg border bg-muted/30 p-3 flex items-start gap-3`
-  - Icones `Lightbulb` (insights) e `Target` (recomendacoes) com cores distintas
-- KPIs: ajustar grid para `grid-cols-4 md:grid-cols-6` se houver mais status
+Linha atual:
+```typescript
+page.drawText('○', { x: MARGIN + 16, y: taskY, size: 8, font, color: DIM });
+```
+
+Corrigida:
+```typescript
+page.drawText('-', { x: MARGIN + 16, y: taskY, size: 8, font, color: DIM });
+```
+
+Tambem verificar a funcao `sanitize()` que ja remove caracteres fora do range Latin-1, mas o `○` esta hardcoded no codigo, nao vem de dados do usuario -- por isso o sanitize nao o captura.
+
+Apenas 1 linha precisa mudar. Apos o deploy automatico, a exportacao de PDF do Modo Foco voltara a funcionar.
+
