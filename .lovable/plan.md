@@ -1,70 +1,35 @@
 
 
-# Redesign: Modal Modo Foco - Estilo Glass Morphism Premium
+# Quadro de Tarefas - Mostrar todas as tarefas individuais
 
-## Visao Geral
-Redesign completo do modal `TaskExecutionGuide` para replicar fielmente o layout "Liquid Glass" do template de referencia, mantendo toda a funcionalidade existente (completar tarefas, salvar plano, exportar PDF, timer).
+## Problema Atual
+Na view "Quadro" (`TasksBoardView`), cada coluna mostra apenas 3 tarefas como preview e um link "+N mais" que expande uma secao abaixo. O usuario quer que **todas** as tarefas aparecam diretamente nos cards das colunas, sem precisar expandir.
 
-## Mudancas Visuais
+## Mudancas
 
-### 1. Container do Modal
-- **De:** `max-w-lg` (512px) com cards coloridos
-- **Para:** `max-w-5xl` (~1024px) com glass-morphism escuro
-- Fundo: `bg-black/90 backdrop-blur-[20px]` com borda `border-[rgba(0,115,153,0.25)]`
-- Cantos: `rounded-3xl`
-- Pattern sutil de dots no fundo (radial-gradient)
+**Arquivo:** `src/components/tasks/TasksBoardView.tsx`
 
-### 2. Header Premium
-- Subtitulo: "MODO FOCO . BLOCOS OTIMIZADOS COM IA // HUB . DATA" em tracking ultra-wide, cor primary/70
-- Titulo grande: "PLANO DE EXECUCAO" em gradient branco, bold, uppercase
-- Caixa de stats flutuante a direita com 3 metricas separadas por dividers verticais: Blocos | Tarefas | Tempo Estimado
-- Botao X reposicionado no canto superior direito absoluto
+### 1. Mostrar todas as tarefas no card (nao apenas 3)
+- Remover o `slice(0, 3)` da lista de tarefas dentro de cada coluna
+- Remover o texto "+N mais" 
+- Adicionar `max-h` com scroll interno para colunas com muitas tarefas
+- Manter os checkboxes, badges de categoria e interacao de click para editar
 
-### 3. Tabela de Blocos (substituindo cards)
-- Header de colunas: EXECUCAO ESTRATEGICA | METODO | DURACAO | PROGRESSO
-- Tipografia: `text-[9px] uppercase tracking-[0.25em]` mono
-- Cada bloco vira uma linha com:
-  - Status indicator dot (cor varia: primary para deep_work, slate para shallow, amber para break)
-  - Titulo do bloco em `text-[13px] font-medium text-white/90`
-  - Subtitulo com nomes das tarefas em `text-[9px] uppercase tracking-widest text-slate-500`
-  - Metodo: "DEEP WORK" ou "SHALLOW WORK" em mono
-  - Duracao: "{technique} {duration}min" em mono
-  - Progresso: Active/Queued/Pending/Scheduled/Done
-- Hover effect sutil com fundo azul glass
-- Clique na linha expande para mostrar as tarefas individuais com checkboxes (funcionalidade mantida)
+### 2. Manter header visual (preview area + count circle)
+- Manter o header gradient com label colorido (BACKLOG, ESTA SEMANA, etc.)
+- Manter os 2 mini-previews no header e o circulo com contagem
+- Manter titulo, descricao e CTA no footer do card
 
-### 4. Footer Premium
-- Secao "DICAS DE PRODUTIVIDADE" com tips em grid de 3 colunas
-- Cada tip com `>` em cor primary
-- Botoes de acao (Exportar PDF, Salvar Plano) reposicionados no canto direito do footer
-- Branding "powered by SQUAD///FILM" no canto inferior direito
+### 3. Area de tarefas com scroll
+- A lista de tarefas tera `max-h-[200px] overflow-y-auto` para nao estourar o layout
+- Cada tarefa mantem: checkbox + titulo + badge de categoria
+- Estilo identico ao da referencia
 
-### 5. Estados (Loading/Error)
-- Loading: manter spinner centralizado mas com estilo glass
-- Error: manter botao retry com estilo atualizado
+### Detalhes Tecnicos
 
-## Arquivo Modificado
-- `src/components/tasks/TaskExecutionGuide.tsx` - Reescrita completa do JSX do modal (logica/state inalterados)
-
-## Detalhes Tecnicos
-
-### Estilos inline (sem CSS externo)
-Todos os estilos glass-morphism serao aplicados via Tailwind classes e `style={{}}` quando necessario:
-- Glass bg: `bg-[rgba(0,115,153,0.12)] backdrop-blur-[20px] border border-[rgba(0,115,153,0.25)] shadow-[0_8px_32px_0_rgba(0,0,0,0.8)]`
-- Data pattern: `style={{ backgroundImage: 'radial-gradient(rgba(0,115,153,0.05) 1px, transparent 1px)', backgroundSize: '24px 24px' }}`
-- Chromatic text: `style={{ textShadow: '1px 0 0 rgba(255,255,255,0.05), -1px 0 0 rgba(0,115,153,0.3)' }}`
-
-### Expansao de bloco
-Ao clicar em uma linha de bloco, ela expande para mostrar as tarefas individuais abaixo (com animacao framer-motion). Cada tarefa mantem o checkbox circular + titulo + duracao + timer.
-
-### Mapeamento de status por indice
-- `bIdx === activeBlockIdx` -> "Active" (texto branco)
-- `bIdx < activeBlockIdx` e todas tarefas completas -> "Done" (verde)
-- `bIdx === activeBlockIdx + 1` -> "Queued"
-- Demais -> "Scheduled"
-
-### Cores do status indicator
-- `deep_work`: `bg-primary shadow-[0_0_6px_rgba(0,115,153,0.5)]`
-- `shallow_work`: `bg-slate-600`
-- `break`: `bg-amber-500/50`
+Na secao de "Mini task list preview" (linha ~232):
+- Trocar `preview.slice(0, 3)` por todas as tarefas daquele status
+- Remover o bloco `{count > 3 && ...}` que mostra "+N mais"
+- Adicionar scroll container: `max-h-[180px] overflow-y-auto custom-scrollbar`
+- Usar `tasks.filter(t => t.status === col.key)` em vez de `preview`
 
