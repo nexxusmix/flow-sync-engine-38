@@ -1,48 +1,50 @@
 
+# Unificar Plataforma: Remover Separacao de Modulos
 
-# Fix: Botoes de Salvar e Exportar PDF nao aparecem no Modo Foco
+A plataforma deixa de ter "Produtora" e "Marketing" como modulos separados. Tudo vira uma unica plataforma integrada.
 
-## Diagnostico
+## Resumo das Mudancas
 
-Os botoes "Salvar Plano" e "Exportar PDF" estao condicionados a `plan && !isLoading && !error`. Isso significa que so aparecem **depois** que o plano e gerado com sucesso. Se a geracao falhar (como vinha acontecendo com os erros de JSON truncado e 502), os botoes nunca aparecem.
+1. **Remover ModuleSwitcher da Sidebar** - O switcher Produtora/Marketing/Completo some do menu lateral
+2. **Mostrar todos os itens de menu sempre** - Sem filtro por modulo, tudo visivel
+3. **Remover PlatformSelectorPage** - A pagina de "Escolha sua Area" deixa de existir
+4. **Simplificar useProductContext** - Sempre retorna 'full', mantendo compatibilidade com codigo existente
+5. **Remover filtro de projetos por modulo** - `useProjects` busca todos os projetos sem filtrar por `product_type`
+6. **Limpar rotas** - Redirecionar `/plataforma` para `/` e remover item "Plataforma" das configuracoes
 
-Alem disso, mesmo quando o plano carrega, os botoes ficam no header fixo que pode nao ser visualmente claro.
+## Detalhes Tecnicos
 
-## Correcoes
+### Arquivos modificados:
 
-### 1. `TaskExecutionGuide.tsx` - Tornar botoes sempre visiveis quando o modal esta aberto
+**1. `src/hooks/useProductContext.tsx`**
+- Simplificar para sempre retornar `activeModule = 'full'`
+- Manter a interface para nao quebrar imports existentes
+- `hasAccess()` sempre retorna `true`
+- Remover logica de localStorage
 
-- Mover os botoes "Exportar PDF" e "Salvar Plano" para **dentro da area de conteudo**, logo abaixo dos blocos de execucao (nao mais no header)
-- Assim ficam visiveis quando o usuario faz scroll ate o final
-- Tambem manter uma versao no header para acesso rapido
-- Adicionar um **footer fixo** no modal com os botoes de acao quando o plano esta carregado
-- Garantir que o DropdownMenu do PDF tenha `z-index` alto o suficiente para funcionar dentro do modal (`z-[60]`)
+**2. `src/components/layout/Sidebar.tsx`**
+- Remover import e uso do `ModuleSwitcher`
+- Remover import do `useProductContext`
+- Remover a propriedade `modules` dos `MenuItem`
+- Mostrar todos os `mainMenuItems` sem filtro
+- Remover o bloco `<ModuleSwitcher collapsed={collapsed} />`
 
-### 2. Estrutura do modal refatorado
+**3. `src/components/layout/ModuleSwitcher.tsx`**
+- Manter arquivo mas esvaziar (retorna null) para nao quebrar imports residuais
 
-```text
-+----------------------------------+
-| [Brain] Modo Foco          [X]  |  <- header fixo
-| [===== progress bar =====]      |
-+----------------------------------+
-|                                  |
-|  [Bloco 1 - Deep Work]          |
-|  [Pausa Curta]                   |  <- area scrollavel
-|  [Bloco 2 - Shallow Work]       |
-|  ...                             |
-+----------------------------------+
-| [Exportar PDF v] [Salvar Plano] |  <- footer fixo com botoes
-+----------------------------------+
-```
+**4. `src/hooks/useProjects.tsx`**
+- Remover uso de `useProductContext`
+- Remover filtro `.eq('product_type', activeModule)`
+- Remover `activeModule` da queryKey
 
-### 3. Detalhes tecnicos
+**5. `src/App.tsx`**
+- Redirecionar rota `/plataforma` para `/` ao inves de renderizar `PlatformSelectorPage`
+- Remover import de `PlatformSelectorPage`
 
-**Arquivo:** `src/components/tasks/TaskExecutionGuide.tsx`
+**6. `src/pages/settings/SettingsDashboard.tsx`**
+- Remover o item "Plataforma" (id: 'platform') da lista de configuracoes
 
-Mudancas especificas:
-- Remover os botoes do bloco condicional no header (linhas 176-193)
-- Criar um footer fixo (`shrink-0 border-t`) abaixo da area scrollavel
-- O footer fica visivel sempre que `plan` existe, independente do scroll
-- Adicionar `portal` ao DropdownMenuContent para evitar clipping: `<DropdownMenuContent className="z-[60]">`
-- Manter progress bar no header
-
+### Arquivos NAO modificados (mantem compatibilidade):
+- Todas as paginas de marketing continuam funcionando nas mesmas rotas
+- Marketing Hub (`/m/*`) continua existindo
+- Nenhuma rota e removida, apenas o filtro de visibilidade
