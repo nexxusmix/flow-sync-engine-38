@@ -1,6 +1,6 @@
 import { RefObject } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Clapperboard, Palette } from "lucide-react";
 import { AnimatedCounter } from "./AnimatedCounter";
@@ -11,9 +11,6 @@ interface LandingHeroProps {
 
 export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
   const navigate = useNavigate();
-  const { scrollYProgress } = useScroll({ container: scrollContainerRef as any });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
   const wordVariants = {
     hidden: { opacity: 0, y: 40, filter: "blur(4px)" },
@@ -26,9 +23,8 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
   const words = ["Construa.", "Gerencie.", "Execute.", "Venda."];
 
   return (
-    <motion.section
+    <section
       className="relative z-10 px-6 md:px-12 pt-32 pb-12 md:pt-44 md:pb-28 min-h-screen flex items-center"
-      style={{ y: heroY, opacity: heroOpacity }}
     >
       <div className="max-w-7xl mx-auto w-full">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -165,6 +161,6 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
           </motion.div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }

@@ -146,8 +146,9 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
       const filePath = `task-attachments/${task.id}/${Date.now()}-${file.name}`;
       const { error } = await supabase.storage.from('project-files').upload(filePath, file);
       if (error) { toast.error(`Erro ao enviar ${file.name}`); continue; }
-      const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(filePath);
-      const att: TaskAttachment = { fileUrl: urlData.publicUrl, fileName: file.name, fileType: file.type, size: file.size };
+      const { data: signedData } = await supabase.storage.from('project-files').createSignedUrl(filePath, 60 * 60 * 24 * 7);
+      const fileUrl = signedData?.signedUrl || '';
+      const att: TaskAttachment = { fileUrl, fileName: file.name, fileType: file.type, size: file.size };
       const updated = [...attachments, att];
       setAttachments(updated);
       save('attachments', updated);
@@ -289,23 +290,25 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
-            <button
-              onClick={() => onOpenChange(false)}
-              className="absolute right-4 top-4 z-20 rounded-full p-1.5 bg-white/[0.06] hover:bg-white/[0.12] transition-colors"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
 
-            <div className="p-5 md:p-6 space-y-5">
-              {/* Title */}
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-white/[0.06] px-5 md:px-6 py-3 flex items-center gap-3">
               <Input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 onBlur={handleTitleBlur}
-                className="text-lg font-semibold border-none px-0 focus-visible:ring-0 shadow-none bg-transparent"
+                className="text-lg font-semibold border-none px-0 focus-visible:ring-0 shadow-none bg-transparent flex-1"
                 placeholder="Título da tarefa"
               />
+              <button
+                onClick={() => onOpenChange(false)}
+                className="rounded-full p-1.5 bg-white/[0.06] hover:bg-white/[0.12] transition-colors shrink-0"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="p-5 md:p-6 space-y-5">
 
               {/* Priority + Progress */}
               <div className="flex items-center gap-3">
