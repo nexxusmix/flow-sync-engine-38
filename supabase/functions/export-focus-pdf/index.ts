@@ -195,7 +195,7 @@ serve(async (req) => {
       // Tasks
       let taskY = headerY - 36;
       for (const task of blockTasks) {
-        page.drawText('○', { x: MARGIN + 16, y: taskY, size: 8, font, color: DIM });
+        page.drawText('-', { x: MARGIN + 16, y: taskY, size: 8, font, color: DIM });
         const taskTitle = sanitize(task.title);
         const truncated = font.widthOfTextAtSize(taskTitle, 9) > CONTENT_W - 100 
           ? taskTitle.substring(0, 60) + '...' 
