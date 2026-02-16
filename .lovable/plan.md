@@ -1,38 +1,29 @@
 
+# Fix: Modo Foco Travando (Erro 502 + JSON Truncado)
 
-# Fix: Modo Foco "Edge Function returned a non-2xx status code"
+## Causa Raiz
 
-## Root Cause
+Dois problemas combinados:
 
-The edge function `generate-execution-blocks` crashes at line 115 with:
-```
-SyntaxError: Expected double-quoted property name in JSON at position 10488
-```
+1. **73 tarefas enviadas de uma vez** com `max_tokens: 4096` -- a IA gera um JSON enorme que estoura o limite de tokens e fica truncado no meio de uma string, causando "Unterminated string in JSON"
+2. **Gateway 502** -- o prompt com 73 tarefas e muito grande, causando timeout no gateway
+3. **Modal vazio** -- quando da erro, o componente mostra nada (sem estado de erro, sem botao de retry)
 
-The AI model sometimes returns JSON with single quotes, trailing commas, or comments -- causing `JSON.parse` to fail and the function to return a 500 error.
+## Correcoes
 
-## Fix
+### 1. Edge Function `generate-execution-blocks/index.ts`
 
-Modify `supabase/functions/generate-execution-blocks/index.ts`:
+- **Limitar tarefas a no maximo 20** (as mais urgentes/com prazo proximo primeiro, depois as mais recentes)
+- **Aumentar `max_tokens` de 4096 para 8192** para dar margem ao JSON
+- **Adicionar regra no prompt**: "Maximo 6 blocos, maximo 4 tarefas por bloco" (limita o tamanho da resposta)
+- **Adicionar retry**: se o parse falhar, tentar uma segunda chamada com prompt mais curto pedindo apenas os top 10 tasks
 
-1. **Sanitize the AI response** before parsing: strip single quotes to double quotes, remove trailing commas before `}` or `]`, remove JS comments
-2. **Add a retry with stricter prompt** if first parse fails -- re-ask the AI to fix the JSON
-3. **Wrap in try/catch** with a descriptive error message instead of crashing
+### 2. Frontend `TaskExecutionGuide.tsx`
 
-Same fix applied to `supabase/functions/analyze-tasks/index.ts` (same vulnerability).
+- **Adicionar estado de erro** com mensagem e botao "Tentar novamente"
+- **Limitar tarefas no frontend** antes de enviar (slice top 20)
+- **Mostrar qual erro ocorreu** no modal ao inves de so toast
 
-## Technical Details
-
-### File: `supabase/functions/generate-execution-blocks/index.ts`
-- Add a `sanitizeJson(str)` helper that:
-  - Removes markdown fences (already done)
-  - Replaces single-quoted keys/values with double quotes
-  - Strips trailing commas before `}` and `]`
-- Wrap `JSON.parse` in try/catch; on failure, attempt sanitization + re-parse
-- If still fails, return a user-friendly error `{ error: "A IA retornou formato invalido. Tente novamente." }` with status 422 instead of crashing with 500
-
-### File: `supabase/functions/analyze-tasks/index.ts`
-- Apply identical sanitization fix
-
-### No frontend changes needed
-- The component already handles errors via `toast.error`
+### Arquivos modificados:
+- `supabase/functions/generate-execution-blocks/index.ts`
+- `src/components/tasks/TaskExecutionGuide.tsx`
