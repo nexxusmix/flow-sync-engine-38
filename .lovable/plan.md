@@ -1,78 +1,83 @@
 
-# Diagnostico Completo e Plano de Correcao
+# Efeitos 3D e Animacoes de Scroll na Plataforma Inteira
 
-## BUGS ENCONTRADOS
+## Situacao Atual
 
-### BUG 1 - CRITICO: Landing Page nao rola (scroll travado)
-**Localizacao:** `src/index.css` (linhas 126-142) + `src/pages/LandingPage.tsx`
-**Causa:** O CSS global aplica `overflow: hidden` e `height: 100vh` em `html` e `body`. A correcao anterior adicionou `h-screen overflow-y-auto` ao container da landing, mas o `useScroll({ container })` do framer-motion nao funciona corretamente quando o container nao tem conteudo visivel alem da viewport no momento do mount. Alem disso, o hero tem `opacity` vinculada ao scroll que o faz desaparecer rapido demais, e a section hero tem `min-h-screen` que empurra todo o conteudo para fora da viewport inicial.
-**Correcao:**
-1. Remover o efeito de scroll parallax do hero (`heroOpacity` e `heroY`) que causa o hero desaparecer ao rolar
-2. Simplificar: remover `style={{ y: heroY, opacity: heroOpacity }}` do section do hero
-3. Manter o container `h-screen overflow-y-auto` pois funciona (confirmado no portal)
+A plataforma ja possui um sistema de animacoes robusto no CSS (`index.css`) com hover-3d, hover-lift, depth-in, blur-in, e componentes como `ScrollMotion` e `PortalAnimations`. Porem, esses efeitos nao estao aplicados consistentemente em todas as paginas e funcionalidades.
 
-### BUG 2 - MEDIO: App.css restringe largura do #root
-**Localizacao:** `src/App.css` (linhas 1-3)
-**Causa:** `#root { max-width: 1280px; margin: 0 auto; padding: 2rem; }` e codigo boilerplate do Vite que limita a largura da aplicacao inteira, causando margens indesejadas em paginas como o portal e landing page que precisam ser full-width.
-**Correcao:** Remover ou neutralizar essas regras no `App.css`
-
-### BUG 3 - MEDIO: Portal do Cliente nao exibe logo/banner do projeto no header
-**Localizacao:** `src/pages/ClientPortalPageNew.tsx` (linha ~418-424)
-**Causa:** O `PortalHeaderPremium` nao recebe o `portal` com dados como `project_name` e `client_name`, e o portal nao mostra a logo do projeto no header quando disponivel.
-**Status:** Funcional mas sem branding visual completo.
-
-### BUG 4 - BAIXO: Erro 400 em portal_change_requests no Dashboard
-**Localizacao:** Requisicao GET `portal_change_requests` com filtros
-**Causa:** A query busca `portal_change_requests` com colunas que podem nao existir ou filtros invalidos. Nao impacta funcionalidade principal mas gera erros no console.
-**Correcao:** Verificar a query e alinhar com o schema real da tabela.
-
-### BUG 5 - MEDIO: Task Detail Modal nao mostra titulo visivel
-**Localizacao:** `src/components/tasks/TaskDetailModal.tsx` (linha 302-308)
-**Causa:** O titulo da tarefa e renderizado como Input sem borda e sem fundo (`border-none px-0 bg-transparent`), mas no primeiro render o titulo aparece fora da viewport visivel do modal porque o Priority/Progress selector aparece antes. O modal precisa scroll para ver o titulo.
-**Correcao:** Adicionar um header fixo com o titulo e botao de fechar, e garantir scroll a partir do conteudo abaixo.
-
-### BUG 6 - BAIXO: Storage bucket `project-files` e privado
-**Localizacao:** Bucket `project-files` configurado como privado
-**Causa:** Em `handleFileUpload` no TaskDetailModal (linha 149), o codigo usa `getPublicUrl()` para gerar a URL do arquivo, mas o bucket e privado, entao a URL nao funcionara para preview.
-**Correcao:** Usar `createSignedUrl()` em vez de `getPublicUrl()`, ou garantir que as policies de storage permitam leitura autenticada.
+**O que falta:**
+1. Transicoes animadas entre paginas (route transitions) -- ao navegar de uma pagina para outra, o conteudo simplesmente aparece sem efeito
+2. Efeito 3D de scroll no conteudo principal -- conforme o usuario rola, os elementos nao reagem com perspectiva/profundidade
+3. Cards, tabelas, tabs e menus nao usam consistentemente os efeitos 3D ja disponiveis no CSS
 
 ---
 
-## PLANO DE CORRECAO
+## Plano de Implementacao
 
-### Passo 1: Corrigir App.css (remover boilerplate Vite)
-Limpar `src/App.css` removendo `max-width: 1280px`, `margin: 0 auto`, `padding: 2rem` e `text-align: center` do `#root` que restringem o layout.
+### 1. Page Transition System (Transicao entre Paginas)
 
-### Passo 2: Corrigir Landing Page scroll
-Em `src/components/landing/LandingHero.tsx`:
-- Remover `style={{ y: heroY, opacity: heroOpacity }}` da section hero
-- Remover o `useScroll` e `useTransform` que causam o hero desaparecer
-- Manter as animacoes de entrada (wordVariants, floating video, etc.)
+Criar um componente `PageTransition` que envolve o conteudo de cada pagina no `DashboardLayout`, aplicando animacao de entrada/saida com framer-motion `AnimatePresence` baseada na rota atual.
 
-### Passo 3: Corrigir Task Detail Modal
-Em `src/components/tasks/TaskDetailModal.tsx`:
-- Adicionar header sticky dentro do modal com titulo e botao fechar
-- Garantir que o titulo seja visivel logo que o modal abre (scroll to top)
-- Manter as animacoes de scale-in/scale-out
+**Efeito:** Ao mudar de pagina, o conteudo atual sai com fade + scale-down + blur, e o novo entra com fade + scale-up + deblur, dando sensacao de profundidade 3D.
 
-### Passo 4: Corrigir query portal_change_requests
-Identificar e corrigir a query que gera erro 400 no dashboard para `portal_change_requests`.
+**Arquivo:** `src/components/layout/PageTransition.tsx` (novo)
+**Modificar:** `src/components/layout/DashboardLayout.tsx` -- envolver `{children}` com `PageTransition`
 
-### Passo 5: Corrigir file preview no TaskDetailModal
-Trocar `getPublicUrl()` por `createSignedUrl()` para bucket privado, garantindo que previews de arquivos funcionem.
+### 2. Scroll-Linked 3D Perspective no Main Content
+
+Adicionar um efeito sutil de perspectiva 3D vinculado ao scroll no container `<main>` do DashboardLayout. Conforme o usuario rola para baixo, o conteudo ganha uma leve inclinacao `rotateX` que volta ao normal, criando sensacao cinematografica de profundidade.
+
+**Arquivo:** `src/components/layout/DashboardLayout.tsx` -- adicionar hook `useScroll` + `useTransform` no `<main>` para aplicar `rotateX` e `translateZ` sutis baseados na posicao do scroll
+
+### 3. CSS Global: Aplicar 3D Auto em Todos os Elementos Comuns
+
+Expandir a secao "GLOBAL AUTO-ANIMATIONS" no `index.css` para cobrir mais elementos:
+
+- **Todos os `Card` (shadcn):** Adicionar `transform-style: preserve-3d` e hover com `translateZ` sutil
+- **TabsTrigger:** Hover com scale + translateZ
+- **Linhas de tabela:** Hover com translateZ sutil
+- **Sidebar menu items:** Hover com translateX + translateZ (ja parcialmente implementado)
+- **Inputs/Selects em foco:** Sutil scale + glow
+- **Accordion items:** Abertura com `depthIn` animation
+- **ScrollArea content:** `perspective` no container
+
+### 4. Scroll Reveal Automatico nas Paginas Principais
+
+Criar um componente `ScrollRevealSection` leve que aplica `whileInView` com fade+blur+translateZ em qualquer secao da plataforma. Aplicar nas paginas principais:
+
+- Dashboard (KPIs, graficos, tabelas)
+- CRM (pipeline stages, cards)
+- Financeiro (KPIs, tabelas)
+- Projetos (grid de projetos)
+- Tarefas (board view, list view)
+
+**Arquivo:** `src/components/layout/ScrollRevealSection.tsx` (novo) -- wrapper generico que aplica `whileInView` com `translateZ` e `blur`
+
+### 5. Menu/Submenu 3D Effects
+
+Aprimorar as transicoes dos submenus e dropdowns:
+- Sidebar expand/collapse: ja tem spring animation (manter)
+- Quick Actions Menu: adicionar `depthRotateIn` na abertura
+- Role Switcher dropdown: ja tem scale animation (aprimorar com rotateX)
+- Notification dropdown: adicionar `depthIn`
 
 ---
 
-## Arquivos a Modificar
+## Detalhes Tecnicos
 
-1. **`src/App.css`** -- Limpar boilerplate Vite (#root constraints)
-2. **`src/components/landing/LandingHero.tsx`** -- Remover scroll-linked opacity/transform
-3. **`src/components/tasks/TaskDetailModal.tsx`** -- Header sticky + fix file URL
-4. **Investigar query** `portal_change_requests` no dashboard hooks
+### Arquivos a criar:
+1. `src/components/layout/PageTransition.tsx` -- Wrapper AnimatePresence para transicoes de rota com efeito 3D
+2. `src/components/layout/ScrollRevealSection.tsx` -- Wrapper whileInView generico com perspectiva 3D
 
-## Resultado Esperado
-- Landing page rola normalmente mostrando todas as secoes
-- Portal do cliente carrega e funciona 100%
-- Task modal abre com titulo visivel e animacao fluida
-- Preview de arquivos funciona no modal de tarefas
-- Zero erros no console
+### Arquivos a modificar:
+1. `src/components/layout/DashboardLayout.tsx` -- Integrar PageTransition + scroll-linked perspective no main
+2. `src/index.css` -- Expandir auto-animations para Card, TabsTrigger, table rows, inputs, accordion, scroll areas
+
+### Dependencias:
+- Nenhuma nova -- usa framer-motion (ja instalado) e CSS puro
+
+### Performance:
+- Todos os efeitos 3D desativados em mobile (via media query ja existente em `index.css`)
+- `will-change: transform` apenas em elementos ativos
+- `useReducedMotion` respeitado nos componentes framer-motion
+- Transformacoes CSS puras para hover (sem JS)
