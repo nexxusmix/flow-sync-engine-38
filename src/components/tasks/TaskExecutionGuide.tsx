@@ -45,10 +45,9 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
     setIsLoading(true);
     setError(null);
     try {
-      const topTasks = pendingTasks.slice(0, 20);
       const { data, error: fnError } = await supabase.functions.invoke('generate-execution-blocks', {
         body: {
-          tasks: topTasks.map(t => ({
+          tasks: pendingTasks.map(t => ({
             id: t.id,
             title: t.title,
             description: t.description,
@@ -124,7 +123,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground animate-pulse">Gerando plano de execução com IA...</p>
-                  <p className="text-[10px] text-muted-foreground">Analisando até {Math.min(pendingTasks.length, 20)} tarefas • Neurociência + Produtividade</p>
+                  <p className="text-[10px] text-muted-foreground">Analisando {pendingTasks.length} tarefas • Neurociência + Produtividade</p>
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
