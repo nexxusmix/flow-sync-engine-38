@@ -248,7 +248,7 @@ export function useAgentChat() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           messages: apiMessages,
@@ -348,7 +348,14 @@ export function useAgentChat() {
 
       // Auto-execute low-risk plans
       if (plan && plan.risk_level === 'low' && !plan.needs_confirmation) {
-        await autoExecutePlan(plan, messages.length, convId);
+        // Use current messages length (after adding user + assistant = +2)
+        setMessages(prev => {
+          const lastIdx = prev.length - 1;
+          if (lastIdx >= 0) {
+            autoExecutePlan(plan, lastIdx, convId!);
+          }
+          return prev;
+        });
       }
 
     } catch (error) {
@@ -513,7 +520,7 @@ export function useAgentChat() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           messages: apiMessages,
