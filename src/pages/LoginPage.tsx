@@ -223,7 +223,7 @@ export default function LoginPage() {
 
         {/* Footer Support */}
         <div className="mt-12 text-center">
-          <p className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-[0.3em]">© 2024 SQUAD FILM GLOBAL • TODOS OS DIREITOS RESERVADOS</p>
+          <p className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-[0.3em]">© {new Date().getFullYear()} SQUAD FILM GLOBAL • TODOS OS DIREITOS RESERVADOS</p>
         </div>
       </div>
       

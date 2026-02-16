@@ -167,7 +167,8 @@ function CampaignCard({
       </div>
 
       <div className="flex gap-2 mt-4">
-        <Button variant="outline" className="flex-1" size="sm">
+        <Button variant="outline" className="flex-1" size="sm"
+          onClick={() => window.location.href = `/marketing/pipeline?campaign=${campaign.id}`}>
           Ver Conteúdos
         </Button>
         <Button 
