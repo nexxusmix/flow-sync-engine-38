@@ -1,5 +1,6 @@
 import { formatCurrencyBRL } from "@/utils/format";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { OnboardingTutorial } from "@/components/onboarding/OnboardingTutorial";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { ProjectQuickAccessGrid } from "@/components/dashboard/ProjectQuickAccessGrid";
@@ -109,6 +110,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Dashboard">
+      <OnboardingTutorial />
       <div className="space-y-10 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
         <motion.div 

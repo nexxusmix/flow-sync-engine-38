@@ -150,3 +150,6 @@ verify_jwt = false
 
 [functions.ai-task-search]
 verify_jwt = false
+
+[functions.seed-demo-user]
+verify_jwt = false
