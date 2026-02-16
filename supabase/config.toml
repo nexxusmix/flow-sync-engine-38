@@ -141,3 +141,6 @@ verify_jwt = false
 
 [functions.export-panorama-pdf]
 verify_jwt = false
+
+[functions.export-focus-pdf]
+verify_jwt = false

@@ -9,13 +9,14 @@ import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskBulkActions } from "@/components/tasks/TaskBulkActions";
 import { TaskAnalysisPanel } from "@/components/tasks/TaskAnalysisPanel";
 import { TaskExecutionGuide } from "@/components/tasks/TaskExecutionGuide";
+import { SavedFocusPlans } from "@/components/tasks/SavedFocusPlans";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
-  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music
+  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain
 } from "lucide-react";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ const defaultTaskForm: TaskFormData = {
   start_date: '',
 };
 
-type ViewMode = 'board' | 'kanban' | 'timeline' | 'dashboard';
+type ViewMode = 'board' | 'kanban' | 'timeline' | 'dashboard' | 'focus';
 
 export default function TasksPage() {
   const {
@@ -292,6 +293,10 @@ export default function TasksPage() {
                   <LayoutDashboard className="w-4 h-4" />
                   <span className="hidden sm:inline">Dashboard</span>
                 </TabsTrigger>
+                <TabsTrigger value="focus" className="gap-1.5">
+                  <Brain className="w-4 h-4" />
+                  <span className="hidden sm:inline">Foco</span>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="hidden md:flex items-center gap-3">
@@ -331,6 +336,8 @@ export default function TasksPage() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
+        ) : viewMode === 'focus' ? (
+          <SavedFocusPlans />
         ) : viewMode === 'board' ? (
           <TasksBoardView
             tasks={tasks}

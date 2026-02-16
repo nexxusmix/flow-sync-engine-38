@@ -6066,6 +6066,39 @@ export type Database = {
           },
         ]
       }
+      saved_focus_plans: {
+        Row: {
+          completed_tasks: Json
+          created_at: string
+          id: string
+          plan_data: Json
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_tasks?: Json
+          created_at?: string
+          id?: string
+          plan_data?: Json
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_tasks?: Json
+          created_at?: string
+          id?: string
+          plan_data?: Json
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scout_audio_assets: {
         Row: {
           content_hash: string | null
