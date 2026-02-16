@@ -1,142 +1,114 @@
 
-# Diagnostico Completo: Marketing, Conteudo e Studio Criativo
+# Criar Usuario Demo + Tutorial Interativo de Onboarding
 
-## Bugs Encontrados
+## Parte 1: Criar usuario e popular com dados demo
 
-### BUG 1 - CRITICO: Badge ref warning no MarketingDashboard
-O console mostra "Function components cannot be given refs" no componente `Badge` dentro de `MarketingDashboard.tsx`. Isso ocorre porque o `Badge` (linha 25 de badge.tsx) e um `div`, nao usa `forwardRef`, mas esta sendo usado como child de um componente que tenta passar ref (provavelmente via Tooltip ou DropdownMenu).
-- **Arquivo**: `src/components/ui/badge.tsx`
-- **Correcao**: Adicionar `React.forwardRef` ao componente Badge
+### Criar usuario via Edge Function `seed-demo-user`
+Uma Edge Function que:
+1. Cria o usuario `gabrielvalledesign@gmail.com` com senha `123456789` via Supabase Admin API
+2. Insere dados ficticios completos em todas as tabelas principais
 
-### BUG 2 - CRITICO: N+1 queries no fetchContentItems
-O `marketingStore.ts` (linhas 226-248) faz uma query separada de `content_comments` e `content_checklist` para **cada** content item usando `Promise.all`. Com 50 itens, isso gera 100+ queries ao banco. Causa lentidao perceptivel ao carregar Pipeline, Dashboard e Calendario.
-- **Arquivo**: `src/stores/marketingStore.ts`
-- **Correcao**: Buscar comments e checklist em batch (um SELECT para todos os IDs) em vez de N queries individuais
+### Dados ficticios a serem criados:
 
-### BUG 3: getContentByStatus ignora filtros de busca
-No Pipeline (Kanban), `getContentByStatus` (linha 442-444) retorna todos os itens daquele status sem aplicar o filtro de busca. Digitar algo na busca nao filtra os cards nas colunas.
-- **Arquivo**: `src/stores/marketingStore.ts`
-- **Correcao**: Aplicar `contentFilters.search` dentro de `getContentByStatus`
+**CRM (8 contatos + 6 deals)**
+- Contatos: Studio Aurora, Maria Design, Empresa Nexus, Cafe Artesanal, Clinica Vida, Tech Solutions, Imobiliaria Prime, Restaurante Sabor
+- Deals em varios estagios do funil (lead, qualificacao, proposta, negociacao, fechado, onboarding)
 
-### BUG 4: Pagina "Conteudo" vazia (placeholder)
-`ContentPage.tsx` mostra apenas "Em desenvolvimento" sem funcionalidade. Deveria redirecionar para `/marketing/pipeline` ou ser removida da navegacao.
-- **Arquivo**: `src/pages/ContentPage.tsx`
+**Projetos (5 projetos em estagios diferentes)**
+- "Filme Institucional - Studio Aurora" (em producao, 80% concluido)
+- "Pacote Reels - Cafe Artesanal" (em edicao)
+- "Ensaio Fotografico - Clinica Vida" (em aprovacao)
+- "Motion Vinheta - Tech Solutions" (briefing)
+- "Tour 360 - Imobiliaria Prime" (concluido)
+- Cada projeto com etapas (`project_stages`) preenchidas
 
-### BUG 5: "Ver Conteudos" no CampaignCard nao faz nada
-Na pagina de Campanhas, o botao "Ver Conteudos" (linha 170) nao tem onClick - e apenas um `Button` sem acao.
-- **Arquivo**: `src/pages/marketing/CampaignsPage.tsx` (linha 170)
-- **Correcao**: Navegar para pipeline filtrado por campanha
+**Financeiro**
+- 8 receitas (mix de recebidas, pendentes e atrasadas)
+- 6 despesas (equipamento, software, freelancers, etc.)
 
-### BUG 6: "Exportar PDF" no StudioCopilot mostra toast placeholder
-No painel Copilot do Studio Criativo (linha 221), clicar em "Exportar PDF" mostra `toast.info('Export PDF em breve')` em vez de realmente exportar.
-- **Arquivo**: `src/components/creative-studio/StudioCopilot.tsx` (linha 221)
-- **Correcao**: Implementar export real ou remover botao
+**Marketing (10 content_items)**
+- Conteudos em todos os status: idea, draft, review, approved, scheduled, published
+- Canais: Instagram, YouTube, TikTok, LinkedIn
+- 1 campanha ativa "Lancamento Verao 2026"
 
-### BUG 7: Studio Criativo auto-cria trabalho ao acessar sem ID
-`CreativeStudioPage.tsx` (linhas 131-135) cria automaticamente um novo trabalho criativo toda vez que o usuario acessa `/marketing/studio` sem ID. Isso gera trabalhos "fantasma" sem conteudo.
-- **Arquivo**: `src/pages/marketing/CreativeStudioPage.tsx`
-- **Correcao**: Mostrar tela de selecao/listagem em vez de criar automaticamente
+**Tarefas (8 tarefas)**
+- Mix de todo, in_progress, done
+- Com tags, prioridades e datas
 
-### BUG 8: Calendario - view "Semana" nao funciona
-O `CalendarPage.tsx` tem um seletor "Mes/Semana" (linhas 193-200) mas nao implementa a view de semana - sempre mostra o mes completo.
-- **Arquivo**: `src/pages/marketing/CalendarPage.tsx`
-- **Correcao**: Implementar view semanal ou remover opcao
+**Propostas (2)**
+- Uma enviada, outra aprovada
 
-### BUG 9: LoginPage footer com ano 2024 hardcoded
-A tela de login mostra "2024 SQUAD FILM GLOBAL" no footer (visivel no screenshot).
-- **Arquivo**: Tela de login
-- **Correcao**: Usar `new Date().getFullYear()`
+**Eventos de Calendario (5)**
+- Reunioes, entregas e marcos nos proximos 30 dias
 
-## Problemas de UX
+## Parte 2: Tutorial Dinamico de Onboarding
 
-### UX 1: Transcrições nao persistem
-`TranscribePage.tsx` armazena transcrições apenas em `useState`. Ao navegar para outra pagina e voltar, todas as transcrições sao perdidas. Deveria salvar no banco.
+### Componente `OnboardingTutorial.tsx`
+Um overlay animado (framer-motion) que aparece na primeira vez que o usuario acessa o Dashboard.
 
-### UX 2: Instagram Page - MVP limitado sem feedback claro
-A pagina mostra informacao tecnica sobre "access_token" e "Meta Graph API" que confunde usuarios nao-tecnicos. Deveria esconder detalhes tecnicos.
+**Mecanismo de controle:**
+- Usa tabela `ui_state` com scope `onboarding_completed` para verificar se ja viu
+- Se nao existe registro, mostra o tutorial
+- Ao finalizar, salva `{ completed: true }` no `ui_state`
 
-### UX 3: Dois Studios Criativos duplicados
-Existem duas paginas de studio: `StudioCreativoPage.tsx` (antigo, baseado em briefs) e `CreativeStudioPage.tsx` (novo, modular com blocos). Isso pode confundir rotas e manutenção.
+**Fluxo do tutorial (6-8 passos):**
+1. **Boas-vindas** - "Bem-vindo ao Hub!" com animacao de entrada
+2. **Dashboard** - Destaque nos KPIs e acesso rapido a projetos
+3. **Projetos** - Explica o fluxo de producao e etapas
+4. **CRM** - Pipeline de vendas e contatos
+5. **Financeiro** - Receitas, despesas e fluxo de caixa
+6. **Marketing** - Pipeline de conteudo e calendario
+7. **Tarefas** - Quadro Kanban e organizacao
+8. **Pronto!** - "Explore a vontade. Tudo ja esta com dados de exemplo."
 
-### UX 4: Acoes rapidas no Copilot sem bloco selecionado
-No Studio Criativo, as acoes rapidas (Resumir, Expandir, etc.) ficam desabilitadas quando nao ha bloco com conteudo, mas nao explicam por que estao desabilitadas.
+**Design:**
+- Modal fullscreen com backdrop blur
+- Cada passo tem icone, titulo, descricao curta e ilustracao/animacao
+- Barra de progresso com dots
+- Botoes "Pular" e "Proximo"
+- Animacoes de fade + slide entre passos (framer-motion)
 
-### UX 5: Delete de brief sem confirmação
-`StudioCreativoPage.tsx` (linha 452-462) deleta briefs sem dialogo de confirmacao, gerando risco de perda acidental.
+### Aplicar tutorial ao Matheus Filipe
+- Deletar o registro de `ui_state` com scope `onboarding_completed` do usuario Matheus (se existir)
+- Na proxima vez que ele acessar o Dashboard, o tutorial aparecera automaticamente
 
-## Plano de Correcao (Priorizado)
+## Arquivos a criar/modificar
 
-### Alta Prioridade
-1. **Badge forwardRef** - Corrigir warning no `badge.tsx` adicionando `React.forwardRef`
-2. **N+1 queries** - Refatorar `fetchContentItems` no `marketingStore.ts` para buscar comments/checklist em batch
-3. **Pipeline search** - Fazer `getContentByStatus` respeitar filtro de busca
-4. **CampaignCard "Ver Conteudos"** - Adicionar navegacao com filtro
+### Criar:
+1. `supabase/functions/seed-demo-user/index.ts` - Edge Function para criar usuario e dados
+2. `src/components/onboarding/OnboardingTutorial.tsx` - Componente do tutorial animado
+3. `src/components/onboarding/OnboardingStep.tsx` - Componente individual de cada passo
 
-### Media Prioridade
-5. **Studio auto-create** - Mostrar lista de trabalhos existentes ao acessar `/marketing/studio`
-6. **Transcrições persistencia** - Salvar resultados no banco
-7. **Exportar PDF no Copilot** - Conectar ao export real ou remover
+### Modificar:
+4. `src/pages/Dashboard.tsx` - Importar e renderizar `OnboardingTutorial`
+5. `supabase/config.toml` - Registrar nova Edge Function
 
-### Baixa Prioridade
-8. **ContentPage redirect** - Redirecionar para pipeline
-9. **Calendario view semana** - Implementar ou remover opcao
-10. **Instagram UX** - Esconder detalhes tecnicos da API
-11. **Login footer ano** - Dinamico
-12. **Delete confirmation** - Dialogo antes de excluir briefs
+## Detalhes Tecnicos
 
-### Detalhes Tecnicos
-
-**badge.tsx** - Mudar de:
-```tsx
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div ... />;
-}
+### Edge Function `seed-demo-user`
 ```
-Para:
-```tsx
-const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
-  ({ className, variant, ...props }, ref) => {
-    return <div ref={ref} ... />;
-  }
-);
-Badge.displayName = "Badge";
+- Usa SUPABASE_SERVICE_ROLE_KEY para criar usuario via admin API
+- Insere profile, role assignment (admin), e todos os dados demo
+- Retorna sucesso com resumo dos dados criados
 ```
 
-**marketingStore.ts - fetchContentItems** - Mudar de N queries individuais para:
+### OnboardingTutorial - Logica de exibicao
 ```tsx
-const itemIds = data.map(i => i.id);
-const { data: allComments } = await supabase
-  .from('content_comments').select('*').in('content_item_id', itemIds);
-const { data: allChecklist } = await supabase
-  .from('content_checklist').select('*').in('content_item_id', itemIds);
-// Depois mapear por item
+// No Dashboard.tsx
+const { data: onboardingState } = useQuery({
+  queryKey: ['onboarding-state', user?.id],
+  queryFn: async () => {
+    const { data } = await supabase.from('ui_state')
+      .select('state')
+      .eq('user_id', user.id)
+      .eq('scope', 'onboarding_completed')
+      .single();
+    return data?.state?.completed ?? false;
+  },
+});
+
+// Mostrar tutorial se onboardingState === false
 ```
 
-**marketingStore.ts - getContentByStatus** - Adicionar filtro:
-```tsx
-getContentByStatus: (status) => {
-  const { contentItems, contentFilters } = get();
-  return contentItems.filter((i) => {
-    if (i.status !== status) return false;
-    if (contentFilters.search && !i.title.toLowerCase().includes(contentFilters.search.toLowerCase())) return false;
-    return true;
-  });
-},
-```
-
-**CampaignsPage.tsx** - Botao "Ver Conteudos":
-```tsx
-<Button variant="outline" className="flex-1" size="sm"
-  onClick={() => navigate(`/marketing/pipeline?campaign=${campaign.id}`)}>
-  Ver Conteudos
-</Button>
-```
-
-### Arquivos a modificar:
-1. `src/components/ui/badge.tsx`
-2. `src/stores/marketingStore.ts`
-3. `src/pages/marketing/CampaignsPage.tsx`
-4. `src/pages/marketing/CreativeStudioPage.tsx`
-5. `src/components/creative-studio/StudioCopilot.tsx`
-6. `src/pages/marketing/CalendarPage.tsx`
-7. `src/pages/ContentPage.tsx`
+### Marcacao de conclusao para Matheus
+- Inserir via SQL direto: deletar qualquer registro de `ui_state` com scope `onboarding_completed` para o user_id do Matheus
