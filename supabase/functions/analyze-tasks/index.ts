@@ -56,7 +56,21 @@ ${JSON.stringify(tasks, null, 2)}`;
     if (content.startsWith('```json')) content = content.replace(/^```json\s*/, '').replace(/```\s*$/, '');
     else if (content.startsWith('```')) content = content.replace(/^```\s*/, '').replace(/```\s*$/, '');
 
-    const result = JSON.parse(content);
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch {
+      content = content
+        .replace(/,\s*([}\]])/g, '$1')
+        .replace(/\/\/[^\n]*/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '');
+      try {
+        result = JSON.parse(content);
+      } catch (e2) {
+        console.error('JSON parse failed after sanitization:', e2, 'Content:', content.substring(0, 500));
+        return new Response(JSON.stringify({ error: 'A IA retornou formato inválido. Tente novamente.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
     return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('Error:', error);
