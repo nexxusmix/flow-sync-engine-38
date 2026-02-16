@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       { name: 'Pacote Reels - Café Artesanal', client_name: 'Café Artesanal', status: 'active', stage_current: 'edicao', health_score: 90, contract_value: 4500, start_date: '2026-02-01', due_date: '2026-03-01', owner_name: 'Gabriel Valle', owner_id: userId, workspace_id: wsId, created_by: userId, product_type: 'production' },
       { name: 'Ensaio Fotográfico - Clínica Vida', client_name: 'Clínica Vida', status: 'active', stage_current: 'aprovacao', health_score: 70, contract_value: 3200, start_date: '2026-01-20', due_date: '2026-02-28', owner_name: 'Gabriel Valle', owner_id: userId, workspace_id: wsId, created_by: userId, product_type: 'production' },
       { name: 'Motion Vinheta - Tech Solutions', client_name: 'Tech Solutions', status: 'active', stage_current: 'briefing', health_score: 100, contract_value: 8000, start_date: '2026-02-15', due_date: '2026-04-15', owner_name: 'Gabriel Valle', owner_id: userId, workspace_id: wsId, created_by: userId, product_type: 'production' },
-      { name: 'Tour 360 - Imobiliária Prime', client_name: 'Imobiliária Prime', status: 'concluido', stage_current: 'concluido', health_score: 100, contract_value: 6000, start_date: '2025-11-01', due_date: '2026-01-30', owner_name: 'Gabriel Valle', owner_id: userId, workspace_id: wsId, created_by: userId, product_type: 'production' },
+      { name: 'Tour 360 - Imobiliária Prime', client_name: 'Imobiliária Prime', status: 'completed', stage_current: 'concluido', health_score: 100, contract_value: 6000, start_date: '2025-11-01', due_date: '2026-01-30', owner_name: 'Gabriel Valle', owner_id: userId, workspace_id: wsId, created_by: userId, product_type: 'production' },
     ];
 
     const { data: insertedProjects } = await supabase.from('projects').insert(projects).select('id, name');
@@ -169,12 +169,12 @@ Deno.serve(async (req) => {
 
     // ===== TASKS =====
     const tasks = [
-      { user_id: userId, title: 'Revisar corte final - Studio Aurora', description: 'Assistir o corte final e anotar ajustes', status: 'today', category: 'projeto', tags: ['video', 'revisao'], due_date: '2026-02-17', priority: 'high', position: 0 },
-      { user_id: userId, title: 'Enviar proposta para Nexus', description: 'Preparar e enviar proposta de vídeo corporativo', status: 'today', category: 'operacao', tags: ['proposta', 'crm'], due_date: '2026-02-18', priority: 'high', position: 1 },
+      { user_id: userId, title: 'Revisar corte final - Studio Aurora', description: 'Assistir o corte final e anotar ajustes', status: 'today', category: 'projeto', tags: ['video', 'revisao'], due_date: '2026-02-17', priority: 'alta', position: 0 },
+      { user_id: userId, title: 'Enviar proposta para Nexus', description: 'Preparar e enviar proposta de vídeo corporativo', status: 'today', category: 'operacao', tags: ['proposta', 'crm'], due_date: '2026-02-18', priority: 'urgente', position: 1 },
       { user_id: userId, title: 'Gravar reels Café Artesanal', description: 'Sessão de gravação de 4 reels', status: 'week', category: 'projeto', tags: ['reels', 'gravacao'], due_date: '2026-02-22', priority: 'normal', position: 0 },
       { user_id: userId, title: 'Editar vinheta motion Tech Solutions', description: 'Primeira versão da vinheta animada', status: 'week', category: 'projeto', tags: ['motion', 'edicao'], due_date: '2026-02-25', priority: 'normal', position: 1 },
-      { user_id: userId, title: 'Postar case Tour 360 no YouTube', description: 'Upload e configurar SEO do vídeo', status: 'backlog', category: 'operacao', tags: ['youtube', 'marketing'], priority: 'low', position: 0 },
-      { user_id: userId, title: 'Atualizar portfólio no site', description: 'Adicionar últimos 3 projetos concluídos', status: 'backlog', category: 'pessoal', tags: ['portfolio', 'site'], priority: 'low', position: 1 },
+      { user_id: userId, title: 'Postar case Tour 360 no YouTube', description: 'Upload e configurar SEO do vídeo', status: 'backlog', category: 'operacao', tags: ['youtube', 'marketing'], priority: 'normal', position: 0 },
+      { user_id: userId, title: 'Atualizar portfólio no site', description: 'Adicionar últimos 3 projetos concluídos', status: 'backlog', category: 'pessoal', tags: ['portfolio', 'site'], priority: 'normal', position: 1 },
       { user_id: userId, title: 'Reunião com Maria Design', description: 'Alinhamento sobre vídeo de portfólio', status: 'done', category: 'operacao', tags: ['reuniao', 'crm'], completed_at: '2026-02-14T15:00:00Z', priority: 'normal', position: 0 },
       { user_id: userId, title: 'Backup de arquivos do mês', description: 'Backup completo dos projetos de janeiro', status: 'done', category: 'pessoal', tags: ['backup', 'organizacao'], completed_at: '2026-02-10T18:00:00Z', priority: 'normal', position: 1 },
     ];
