@@ -142,8 +142,8 @@ function PortalMaterialsTabComponent({
     setQuickRevisionMaterial(null);
   };
 
-  // Filter only manager-uploaded materials (not client uploads)
-  const allMaterials = deliverables.filter(d => !d.uploaded_by_client && d.visible_in_portal);
+  // Show all materials (both team and client uploads)
+  const allMaterials = deliverables.filter(d => d.visible_in_portal);
   
   const categories = useMemo(() => {
     const cats = new Set<string>();
