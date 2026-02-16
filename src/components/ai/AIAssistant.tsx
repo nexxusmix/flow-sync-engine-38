@@ -251,6 +251,17 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                 )}
               </div>
 
+              {/* Auto-executing indicator */}
+              {msg.isAutoExecuting && (
+                <div className="max-w-[90%] mt-2 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-sm">
+                  <span className="material-symbols-outlined text-primary text-lg animate-spin">sync</span>
+                  <div>
+                    <p className="font-semibold text-primary text-xs">Polo AI executando plano...</p>
+                    <p className="text-[10px] text-muted-foreground">Execução automática em andamento</p>
+                  </div>
+                </div>
+              )}
+
               {/* Execution Plan */}
               {msg.plan && (
                 <div className="max-w-[90%] mt-2">
@@ -288,7 +299,6 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                       </button>
                     </div>
                   )}
-                  {/* Show prominent regenerate button after execution with errors */}
                   {msg.plan && msg.results && msg.results.some((r: any) => r.status === 'error') && !isExecuting && (
                     <button
                       onClick={() => regeneratePlan(i, location.pathname)}

@@ -346,16 +346,11 @@ export function useAgentChat() {
       // Save assistant message to DB
       await saveMessage(convId, 'assistant', assistantContent, { plan: plan || undefined });
 
-      // Auto-execute low-risk plans
+      // Auto-execute low-risk plans (OUTSIDE setMessages to avoid React anti-pattern)
       if (plan && plan.risk_level === 'low' && !plan.needs_confirmation) {
-        // Use current messages length (after adding user + assistant = +2)
-        setMessages(prev => {
-          const lastIdx = prev.length - 1;
-          if (lastIdx >= 0) {
-            autoExecutePlan(plan, lastIdx, convId!);
-          }
-          return prev;
-        });
+        setTimeout(() => {
+          autoExecutePlan(plan, convId!);
+        }, 0);
       }
 
     } catch (error) {
@@ -371,40 +366,68 @@ export function useAgentChat() {
     }
   }, [user, session, activeConversationId, messages, memories, isLoading, createConversation, saveMessage, updateConversationTitle, parseExecutionPlan]);
 
-  // ── Auto-execute plan ──
-  const autoExecutePlan = useCallback(async (plan: ExecutionPlan, msgIndex: number, conversationId: string) => {
+  // ── Auto-execute plan (with full feedback in chat) ──
+  const autoExecutePlan = useCallback(async (plan: ExecutionPlan, conversationId: string) => {
+    // Add "executing" indicator message
+    setMessages(prev => {
+      const lastAssistantIdx = prev.length - 1;
+      const newMsgs = [...prev];
+      if (lastAssistantIdx >= 0 && newMsgs[lastAssistantIdx].role === 'assistant') {
+        newMsgs[lastAssistantIdx] = { ...newMsgs[lastAssistantIdx], isAutoExecuting: true };
+      }
+      return newMsgs;
+    });
+
     const runId = await createRun('Auto-execução Polo AI', [], {});
     if (!runId) return;
 
     await updateRunPlan(runId, plan);
     
-    // Update message with runId
+    // Update the last assistant message with runId
     setMessages(prev => {
       const newMsgs = [...prev];
-      if (newMsgs[msgIndex + 1]) {
-        newMsgs[msgIndex + 1] = { ...newMsgs[msgIndex + 1], runId };
+      const lastAssistantIdx = newMsgs.map(m => m.role).lastIndexOf('assistant');
+      if (lastAssistantIdx >= 0) {
+        newMsgs[lastAssistantIdx] = { ...newMsgs[lastAssistantIdx], runId };
       }
       return newMsgs;
     });
 
     const result = await executePlan(runId, plan);
-    if (result) {
-      setMessages(prev => {
-        const newMsgs = [...prev];
-        const idx = newMsgs.findIndex(m => m.runId === runId);
-        if (idx >= 0) {
-          newMsgs[idx] = { ...newMsgs[idx], results: result.actions, needsConfirmation: false };
-        }
-        return newMsgs;
-      });
+    
+    // Remove executing indicator
+    setMessages(prev => {
+      const newMsgs = [...prev];
+      const idx = newMsgs.findIndex(m => m.runId === runId);
+      if (idx >= 0) {
+        newMsgs[idx] = { ...newMsgs[idx], isAutoExecuting: false, results: result?.actions, needsConfirmation: false };
+      }
+      return newMsgs;
+    });
 
-      if (result.errors.length === 0) {
+    if (result) {
+      const successCount = result.actions.filter((a: any) => a.status === 'success').length;
+      const failedActions = result.actions.filter((a: any) => a.status === 'error');
+
+      if (failedActions.length === 0) {
         toast.success('✔️ Execução automática concluída!');
+        // Post success feedback message
+        const feedbackContent = `✅ **Execução automática concluída!** Todas as ${successCount} ações foram executadas com sucesso.`;
+        setMessages(prev => [...prev, { role: 'assistant' as const, content: feedbackContent }]);
+        await saveMessage(conversationId, 'assistant', feedbackContent);
       } else {
-        toast.warning(`Execução com ${result.errors.length} erro(s)`);
+        const errorLines = failedActions.map((a: any) => {
+          const actionName = a.action_type || 'ação';
+          const entityName = a.entity_type || '';
+          return `- **${actionName}** ${entityName}: ${a.error_message}`;
+        }).join('\n');
+        const feedbackContent = `⚠️ **Execução com ${failedActions.length} erro(s)**\n\n${successCount} ações ok, ${failedActions.length} falharam:\n\n${errorLines}\n\nClique em **Regenerar Plano** acima para corrigir.`;
+        setMessages(prev => [...prev, { role: 'assistant' as const, content: feedbackContent }]);
+        await saveMessage(conversationId, 'assistant', feedbackContent);
+        toast.warning(`Execução com ${failedActions.length} erro(s)`);
       }
     }
-  }, [createRun, updateRunPlan, executePlan]);
+  }, [createRun, updateRunPlan, executePlan, saveMessage]);
 
   // ── Manual execute plan ──
   const handleExecutePlan = useCallback(async (messageIndex: number) => {

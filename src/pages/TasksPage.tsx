@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTasksUnified, Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
@@ -7,13 +7,15 @@ import { TasksDashboardBI } from "@/components/tasks/TasksDashboardBI";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskBulkActions } from "@/components/tasks/TaskBulkActions";
+import { TaskAnalysisPanel } from "@/components/tasks/TaskAnalysisPanel";
+import { TaskExecutionGuide } from "@/components/tasks/TaskExecutionGuide";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
-  Mic, Square as StopIcon, CheckSquare
+  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music
 } from "lucide-react";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { Button } from "@/components/ui/button";
@@ -80,6 +82,9 @@ export default function TasksPage() {
   const [aiCategory, setAiCategory] = useState<Task['category']>('operacao');
   const [aiColumn, setAiColumn] = useState<Task['status']>('backlog');
   const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<{ file: File; status: 'pending' | 'processing' | 'done' | 'error'; extractedText?: string }[]>([]);
+  const [isProcessingUploads, setIsProcessingUploads] = useState(false);
+  const aiFileInputRef = useRef<HTMLInputElement>(null);
 
   // Persist AI text to localStorage
   useEffect(() => {
@@ -167,12 +172,70 @@ export default function TasksPage() {
     setIsEditDrawerOpen(true);
   };
 
+  // File upload handler for AI sheet
+  const handleAIFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newFiles = Array.from(files).map(f => ({ file: f, status: 'pending' as const }));
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    setIsProcessingUploads(true);
+
+    for (let i = 0; i < newFiles.length; i++) {
+      const entry = newFiles[i];
+      const file = entry.file;
+      setUploadedFiles(prev => prev.map(f => f.file === file ? { ...f, status: 'processing' } : f));
+
+      try {
+        let extractedText = '';
+        if (file.type.startsWith('audio/')) {
+          // Transcribe audio
+          const filePath = `ai-uploads/${Date.now()}-${file.name}`;
+          await supabase.storage.from('project-files').upload(filePath, file);
+          const { data: signedData } = await supabase.storage.from('project-files').createSignedUrl(filePath, 600);
+          if (signedData?.signedUrl) {
+            const { data } = await supabase.functions.invoke('transcribe-media', { body: { fileUrl: signedData.signedUrl, fileName: file.name } });
+            extractedText = data?.text || data?.content || '';
+          }
+        } else if (file.type === 'application/pdf' || file.type.includes('word') || file.name.endsWith('.txt') || file.name.endsWith('.rtf')) {
+          // Text extraction - for txt read directly, for others use transcribe-media
+          if (file.name.endsWith('.txt') || file.name.endsWith('.md') || file.name.endsWith('.csv')) {
+            extractedText = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsText(file);
+            });
+          } else {
+            const filePath = `ai-uploads/${Date.now()}-${file.name}`;
+            await supabase.storage.from('project-files').upload(filePath, file);
+            const { data: signedData } = await supabase.storage.from('project-files').createSignedUrl(filePath, 600);
+            if (signedData?.signedUrl) {
+              const { data } = await supabase.functions.invoke('transcribe-media', { body: { fileUrl: signedData.signedUrl, fileName: file.name } });
+              extractedText = data?.text || data?.content || '';
+            }
+          }
+        } else if (file.type.startsWith('image/')) {
+          extractedText = `[Imagem: ${file.name}]`;
+        }
+        setUploadedFiles(prev => prev.map(f => f.file === file ? { ...f, status: 'done', extractedText } : f));
+      } catch {
+        setUploadedFiles(prev => prev.map(f => f.file === file ? { ...f, status: 'error' } : f));
+        toast.error(`Erro ao processar ${file.name}`);
+      }
+    }
+    setIsProcessingUploads(false);
+    if (aiFileInputRef.current) aiFileInputRef.current.value = '';
+  };
+
+  const removeUploadedFile = (idx: number) => setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
+
   const handleGenerateFromAI = async () => {
-    if (!aiText.trim()) { toast.error('Cole ou digite o texto com as tarefas'); return; }
+    if (!aiText.trim() && uploadedFiles.length === 0) { toast.error('Cole ou digite o texto com as tarefas'); return; }
     setIsGeneratingLocal(true);
     try {
+      const extractedTexts = uploadedFiles.filter(f => f.extractedText).map(f => f.extractedText!);
       const { data, error } = await supabase.functions.invoke('generate-tasks-from-text', {
-        body: { rawText: aiText, defaultCategory: aiCategory, defaultColumn: aiColumn },
+        body: { rawText: aiText, extractedTexts, defaultCategory: aiCategory, defaultColumn: aiColumn },
       });
       if (error) throw error;
       if (!data?.tasks || data.tasks.length === 0) { toast.error('Nenhuma tarefa identificada no texto'); return; }
@@ -180,6 +243,7 @@ export default function TasksPage() {
       toast.success(`${newTasks.length} tarefas criadas!`);
       setIsAISheetOpen(false);
       setAiText('');
+      setUploadedFiles([]);
     } catch (err: any) {
       console.error('Error generating tasks:', err);
       toast.error(err.message || 'Erro ao gerar tarefas');
@@ -242,6 +306,14 @@ export default function TasksPage() {
                 {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
                 Exportar PDF
               </Button>
+              <TaskAnalysisPanel tasks={tasks} />
+              <TaskExecutionGuide
+                tasks={tasks}
+                onComplete={(id) => {
+                  const t = tasks.find(t => t.id === id);
+                  if (t) updateTask(id, { status: 'done', completed_at: new Date().toISOString() } as any);
+                }}
+              />
               <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
                 <Sparkles className="w-4 h-4 mr-2" />
                 Criar com IA
@@ -383,8 +455,40 @@ export default function TasksPage() {
             </SheetHeader>
             <div className="space-y-4 py-6">
               <p className="text-sm text-muted-foreground">
-                Cole uma lista de tarefas, um e-mail, ou qualquer texto — ou use o <strong>microfone</strong> para ditar.
+                Cole uma lista de tarefas, um e-mail, ou qualquer texto — ou use o <strong>microfone</strong> para ditar. Você também pode <strong>enviar arquivos</strong> (PDF, áudio, imagens, documentos).
               </p>
+
+              {/* File Upload */}
+              <div>
+                <input
+                  ref={aiFileInputRef}
+                  type="file"
+                  multiple
+                  accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.txt,.rtf,.mp3,.wav,.m4a,.ogg,.csv"
+                  onChange={handleAIFileUpload}
+                  className="hidden"
+                />
+                <Button variant="outline" size="sm" onClick={() => aiFileInputRef.current?.click()} disabled={isProcessingUploads} className="gap-1.5 w-full">
+                  {isProcessingUploads ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  Enviar Arquivos
+                </Button>
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {uploadedFiles.map((uf, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border text-xs">
+                        {uf.file.type.startsWith('image/') ? <Image className="w-3.5 h-3.5 text-blue-500 shrink-0" /> :
+                         uf.file.type.startsWith('audio/') ? <Music className="w-3.5 h-3.5 text-purple-500 shrink-0" /> :
+                         <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                        <span className="truncate flex-1">{uf.file.name}</span>
+                        {uf.status === 'processing' && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+                        {uf.status === 'done' && <span className="text-green-500 text-[10px] font-medium">✓</span>}
+                        {uf.status === 'error' && <span className="text-destructive text-[10px] font-medium">✗</span>}
+                        <button onClick={() => removeUploadedFile(idx)} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <Label>Texto com tarefas</Label>

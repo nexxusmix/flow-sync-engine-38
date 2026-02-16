@@ -16,11 +16,12 @@ import {
 import {
   Sparkles, Loader2, Type, PenLine, FileText, BarChart3,
   ListChecks, Link2, Paperclip, X, ExternalLink, Trash2,
-  AlertTriangle, Flame, Image, FileVideo, FileIcon, CheckCircle,
+  AlertTriangle, Flame, Image, FileVideo, FileIcon, CheckCircle, Timer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { TaskTimer } from "./TaskTimer";
 
 export type TaskPriority = 'normal' | 'alta' | 'urgente';
 
@@ -337,7 +338,11 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
               </div>
               <Progress value={progress} className="h-1.5" />
 
-              {/* Status + Category */}
+              {/* Task Timer */}
+              <TaskTimer
+                initialSeconds={(task as any).time_spent_seconds || 0}
+                onTimeUpdate={(secs) => save('time_spent_seconds', secs)}
+              />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Status</Label>

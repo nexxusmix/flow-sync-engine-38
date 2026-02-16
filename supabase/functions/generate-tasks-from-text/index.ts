@@ -8,6 +8,7 @@ const corsHeaders = {
 
 interface TaskInput {
   rawText: string;
+  extractedTexts?: string[];
   defaultCategory?: string;
   defaultColumn?: string;
 }
@@ -36,16 +37,20 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authErr } = await sbAuth.auth.getUser();
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { rawText, defaultCategory = 'operacao', defaultColumn = 'backlog' } = await req.json() as TaskInput;
+    const { rawText, extractedTexts, defaultCategory = 'operacao', defaultColumn = 'backlog' } = await req.json() as TaskInput;
 
-    if (!rawText || rawText.trim().length === 0) {
+    // Combine rawText with any extracted texts from uploaded files
+    const allTexts = [rawText, ...(extractedTexts || [])].filter(t => t && t.trim().length > 0);
+    const combinedText = allTexts.join('\n\n---\n\n');
+
+    if (!combinedText || combinedText.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: 'rawText is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Generating tasks from text:', rawText.substring(0, 100) + '...');
+    console.log('Generating tasks from text:', combinedText.substring(0, 100) + '...');
 
     const systemPrompt = `Você é um assistente especializado em organização de tarefas. 
 Sua função é transformar texto livre em tarefas estruturadas.
@@ -69,7 +74,7 @@ Categoria padrão: ${defaultCategory}
 Status/Coluna padrão: ${defaultColumn}
 
 TEXTO:
-${rawText}
+${combinedText}
 
 Retorne um array JSON com as tarefas no formato:
 [
