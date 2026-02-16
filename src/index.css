@@ -1151,6 +1151,86 @@
   }
 
   /* ========================================
+     ENHANCED 3D AUTO-ANIMATIONS
+     Cards, Tabs, Tables, Inputs, Accordion
+     ======================================== */
+
+  /* All shadcn Cards - 3D hover lift */
+  [data-slot="card"],
+  .rounded-lg.border.bg-card,
+  .glass-card {
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.4s ease;
+  }
+
+  [data-slot="card"]:hover,
+  .rounded-lg.border.bg-card:hover,
+  .glass-card:hover {
+    transform: perspective(800px) translateZ(6px) rotateX(-0.5deg);
+    box-shadow: 0 16px 40px -16px hsl(var(--primary) / 0.12);
+  }
+
+  /* TabsTrigger - scale + lift on hover */
+  [role="tab"] {
+    transform-style: preserve-3d;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [role="tab"]:hover {
+    transform: scale(1.04) translateZ(3px);
+  }
+
+  [role="tab"][data-state="active"] {
+    transform: scale(1.02) translateZ(5px);
+  }
+
+  /* Table rows - subtle lift on hover */
+  tbody tr {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.3s ease,
+                box-shadow 0.3s ease;
+    transform-style: preserve-3d;
+  }
+
+  tbody tr:hover {
+    transform: translateZ(3px) translateX(2px);
+    box-shadow: 0 4px 16px -8px hsl(var(--primary) / 0.1);
+  }
+
+  /* Inputs & Selects - focus glow + scale */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  [role="combobox"]:focus {
+    transform: scale(1.005);
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.15),
+                0 4px 12px -4px hsl(var(--primary) / 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  /* Accordion content - depth reveal */
+  [data-state="open"][data-radix-accordion-content] {
+    animation: depthIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* ScrollArea viewport - perspective container */
+  [data-radix-scroll-area-viewport] {
+    perspective: 1000px;
+  }
+
+  /* Sidebar nav items - 3D hover */
+  nav a, nav button {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.25s ease;
+    transform-style: preserve-3d;
+  }
+
+  nav a:hover, nav button:hover {
+    transform: translateX(3px) translateZ(4px);
+  }
+
+  /* ========================================
      NEON & LANDING PAGE EFFECTS
      ======================================== */
 
