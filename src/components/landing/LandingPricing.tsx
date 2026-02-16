@@ -113,7 +113,7 @@ export function LandingPricing() {
             emoji="⚡"
             name="Hub Completo"
             ideal="Produtora + Marketing integrados. Fluxo completo."
-            price="R$ 149,90"
+            price="R$ 129"
             recommended
             features={[
               "Acesso às duas plataformas",
@@ -130,7 +130,7 @@ export function LandingPricing() {
             emoji="🎨"
             name="Marketing & Design"
             ideal="Ideal para agências, social media e designers."
-            price="R$ 97,90"
+            price="R$ 99"
             accent="hsl(210,100%,55%)"
             features={[
               "Planejamento de conteúdo",
