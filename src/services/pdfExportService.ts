@@ -269,6 +269,21 @@ export async function exportContentPDF(contentItemId: string, options?: ExportOp
   return invokeAndDownload("export-content-pdf", { content_item_id: contentItemId }, "content", "", "PDF do conteúdo pronto!", options);
 }
 
+export async function exportFocusPDF(
+  plan: { blocks: any[]; total_estimated_minutes: number; tips: string[] },
+  orientation: "landscape" | "portrait" = "portrait",
+  options?: ExportOptions
+): Promise<ExportResult> {
+  return invokeAndDownload(
+    "export-focus-pdf",
+    { blocks: plan.blocks, total_estimated_minutes: plan.total_estimated_minutes, tips: plan.tips, orientation },
+    "tasks",
+    "FOCO",
+    "PDF do plano de foco pronto!",
+    options
+  );
+}
+
 // Default export
 const pdfExportService = {
   exportProjectPDF,
@@ -280,6 +295,7 @@ const pdfExportService = {
   exportCreativePDF,
   exportCampaignPDF,
   exportContentPDF,
+  exportFocusPDF,
 };
 
 export default pdfExportService;
