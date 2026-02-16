@@ -1,11 +1,12 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SearchModal } from "../search/SearchModal";
 import { AICommandButton } from "../ai/AICommandButton";
 import { PoweredByFooter } from "./PoweredByFooter";
+import { PageTransition } from "./PageTransition";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
@@ -18,6 +19,11 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const mainRef = useRef<HTMLElement>(null);
+
+  const { scrollYProgress } = useScroll({ container: mainRef });
+  const scrollRotateX = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, -0.8, -0.8, 0]);
+  const scrollPerspectiveZ = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0, -5, -5, 0]);
 
   // Cmd+K handler
   useEffect(() => {
@@ -111,20 +117,26 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
           onOpenMobileSidebar={isMobile ? () => setMobileSidebarOpen(true) : undefined}
         />
         <main 
+          ref={mainRef}
           className={cn(
             "flex-1 overflow-y-auto py-6 flex flex-col",
             isMobile ? "px-4" : "px-4 md:px-6 lg:px-8"
           )} 
-          style={isMobile ? undefined : { zoom: 1.2 }}
+          style={isMobile ? undefined : { zoom: 1.2, perspective: 1200 }}
         >
           <motion.div 
             className="w-full flex-1"
-            initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.6, type: "spring", stiffness: 80, damping: 18 }}
-            style={isMobile ? undefined : { transformStyle: "preserve-3d" }}
+            style={isMobile ? undefined : { 
+              transformStyle: "preserve-3d",
+              rotateX: scrollRotateX,
+              translateZ: scrollPerspectiveZ,
+            }}
           >
-            {children}
+            <AnimatePresence mode="wait">
+              <PageTransition>
+                {children}
+              </PageTransition>
+            </AnimatePresence>
           </motion.div>
           <PoweredByFooter />
         </main>
