@@ -3,6 +3,7 @@ import {
   BarChart3, Loader2, AlertTriangle, Clock, Copy, TrendingUp, X,
   Send, Trash2, Archive, ArrowUpDown, CalendarDays, Zap, Undo2,
   Sparkles, CheckCircle2, XCircle, ChevronDown, ChevronUp,
+  Lightbulb, Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,7 +96,7 @@ export function TaskAnalysisPanel({ tasks }: TaskAnalysisPanelProps) {
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
             <motion.div
-              className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-border bg-background shadow-2xl"
+              className="relative z-10 w-full max-w-5xl max-h-[85vh] flex flex-col rounded-2xl border border-border bg-background shadow-2xl"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -262,14 +263,14 @@ export function TaskAnalysisPanel({ tasks }: TaskAnalysisPanelProps) {
                       </div>
                     )}
 
-                    {/* Insights (collapsible) */}
-                    {(analysis.insights.length > 0 || analysis.recommendations.length > 0) && (
+                    {/* Insights */}
+                    {analysis.insights.length > 0 && (
                       <div className="space-y-2">
                         <button
                           className="flex items-center gap-1 text-xs font-semibold uppercase text-muted-foreground hover:text-foreground transition-colors w-full"
                           onClick={() => setShowInsights(!showInsights)}
                         >
-                          <TrendingUp className="w-3 h-3" /> Insights & Recomendações
+                          <Lightbulb className="w-3 h-3 text-blue-400" /> Insights
                           {showInsights ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />}
                         </button>
                         <AnimatePresence>
@@ -278,17 +279,34 @@ export function TaskAnalysisPanel({ tasks }: TaskAnalysisPanelProps) {
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              className="space-y-2 overflow-hidden"
+                              className="grid grid-cols-1 md:grid-cols-2 gap-2 overflow-hidden"
                             >
                               {analysis.insights.map((ins, i) => (
-                                <p key={`i-${i}`} className="text-sm text-foreground">💡 {ins}</p>
-                              ))}
-                              {analysis.recommendations.map((rec, i) => (
-                                <p key={`r-${i}`} className="text-sm text-foreground">✅ {rec}</p>
+                                <div key={`i-${i}`} className="flex items-start gap-3 p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
+                                  <Lightbulb className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                                  <p className="text-sm text-foreground leading-snug">{ins}</p>
+                                </div>
                               ))}
                             </motion.div>
                           )}
                         </AnimatePresence>
+                      </div>
+                    )}
+
+                    {/* Recomendações */}
+                    {analysis.recommendations.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="flex items-center gap-1 text-xs font-semibold uppercase text-muted-foreground">
+                          <Target className="w-3 h-3 text-emerald-400" /> Recomendações
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {analysis.recommendations.map((rec, i) => (
+                            <div key={`r-${i}`} className="flex items-start gap-3 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+                              <Target className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                              <p className="text-sm text-foreground leading-snug">{rec}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </>
