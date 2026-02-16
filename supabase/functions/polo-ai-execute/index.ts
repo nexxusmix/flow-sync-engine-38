@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -199,7 +199,14 @@ async function toolUpdateStatus(
   if (!table) return { data: null, before: null, error: `Entidade desconhecida: ${entity}` };
 
   const { data: before } = await supabase.from(table).select('*').eq('id', entityId).single();
-  const { data: updated, error } = await supabase.from(table).update({ status }).eq('id', entityId).select().single();
+
+  // For projects, update both status and stage_current for consistency
+  const updatePayload: Record<string, unknown> = { status };
+  if (table === 'projects') {
+    updatePayload.stage_current = status;
+  }
+
+  const { data: updated, error } = await supabase.from(table).update(updatePayload).eq('id', entityId).select().single();
   return { data: updated, before, error: error?.message || null };
 }
 
@@ -240,19 +247,20 @@ async function toolSyncFinancial(
 
 async function toolCreateTasks(
   supabase: ReturnType<typeof createClient>,
-  data: Record<string, unknown>, workspaceId: string,
+  data: Record<string, unknown>, userId: string,
 ): Promise<{ created: number; error: string | null }> {
-  const tasks = (data.tasks || []) as { title: string; description?: string; priority?: string; due_date?: string }[];
+  const tasks = (data.tasks || []) as { title: string; description?: string; priority?: string; due_date?: string; category?: string; status?: string; tags?: string[] }[];
   let created = 0;
   for (const task of tasks) {
     const { error } = await supabase.from('tasks').insert({
-      workspace_id: workspaceId,
-      project_id: data.project_id,
+      user_id: userId,
       title: task.title,
       description: task.description || '',
-      priority: task.priority || 'medium',
+      priority: task.priority || 'normal',
       due_date: task.due_date || null,
-      status: 'todo',
+      category: task.category || 'operacao',
+      status: task.status || 'backlog',
+      tags: task.tags || [],
     });
     if (!error) created++;
   }
@@ -403,7 +411,7 @@ serve(async (req) => {
             if (!taskData.project_id && resolvedProjectId) {
               taskData.project_id = resolvedProjectId;
             }
-            const r = await toolCreateTasks(supabase, taskData, workspaceId);
+            const r = await toolCreateTasks(supabase, taskData, userId);
             result = { step_index: i, action_type: 'create_tasks', entity_type: 'task', status: r.error ? 'error' : 'success', after_json: { created: r.created }, error_message: r.error || undefined, duration_ms: Date.now() - t0 };
             break;
           }
