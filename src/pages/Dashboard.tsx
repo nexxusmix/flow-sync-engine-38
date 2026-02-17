@@ -146,7 +146,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, x: 30, filter: "blur(4px)" }}
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-            whileHover={{ scale: 1.02, borderColor: "rgba(0, 163, 211, 0.2)", rotateY: 2 }}
+            whileHover={{ scale: 1.02 }}
             style={{ transformStyle: "preserve-3d", perspective: 800 }}
           >
             <motion.span 
