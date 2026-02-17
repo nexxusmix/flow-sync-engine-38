@@ -71,11 +71,11 @@ export default function UsersSettingsPage() {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users-list"],
     queryFn: async () => {
-      // Get profiles
+      // Get profiles (cast to any to handle stale generated types)
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
         .select("id, user_id, full_name, avatar_url, created_at, email")
-        .order("created_at");
+        .order("created_at") as { data: any[] | null; error: any };
 
       if (pErr) throw pErr;
 
@@ -93,7 +93,7 @@ export default function UsersSettingsPage() {
         ])
       );
 
-      return (profiles || []).map((p) => {
+      return (profiles || []).map((p: any) => {
         const assignment = roleMap.get(p.user_id);
         return {
           id: p.user_id,
