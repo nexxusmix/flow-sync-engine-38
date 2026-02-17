@@ -23,12 +23,8 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
         damping: 18,
       }}
       whileHover={{ 
-        y: -8,
-        scale: 1.02,
-        borderColor: "rgba(0, 163, 211, 0.2)",
-        boxShadow: "0 20px 50px -20px rgba(0, 163, 211, 0.3)",
-        rotateX: -2,
-        rotateY: 2,
+        y: -4,
+        scale: 1.01,
       }}
       whileTap={{ scale: 0.98 }}
       style={{ transformStyle: "preserve-3d", perspective: 800 }}
