@@ -1,85 +1,40 @@
 
-# Isolar Dados por Usuario: Cada um ve apenas o seu
+# Remover dados falsos da conta do Matheus
 
-## Problema Atual
+## Problema
 
-As tabelas `revenues`, `expenses`, `campaigns` e `content_items` nao possuem coluna `created_by`. As politicas RLS dessas tabelas apenas verificam `auth.uid() IS NOT NULL`, ou seja, qualquer usuario logado ve TODOS os dados dessas tabelas. Isso faz com que os dados ficticios do Gabriel aparecam para o Matheus e vice-versa.
-
-Alem disso, existem 18 expenses duplicados (3 execucoes do seed criaram 3x os mesmos 6 registros).
+Durante a migracao anterior, ao executar `UPDATE expenses SET created_by = matheus_id WHERE created_by IS NULL`, os 6 registros de despesas que eram do seed do Gabriel (Aluguel de lente, Adobe Creative Cloud, Editor freelancer, Uber, Boost Instagram, Seguro equipamento) foram erroneamente atribuidos ao Matheus.
 
 ## O que sera feito
 
-### 1. Migracoes no banco de dados
+Deletar as 6 expenses falsas da conta do Matheus. Os demais dados (4 revenues do Porto 153 e 16 content items) sao reais e serao mantidos.
 
-Adicionar coluna `created_by UUID REFERENCES auth.users(id)` nas tabelas:
-- `revenues`
-- `expenses`
-- `campaigns`
-- `content_items`
+### Registros a deletar
 
-Atualizar as politicas RLS de SELECT/UPDATE/DELETE para filtrar por `created_by = auth.uid()` e as de INSERT para setar `created_by = auth.uid()` no `WITH CHECK`.
+| Descricao | Valor | Categoria |
+|-----------|-------|-----------|
+| Aluguel de lente 24-70mm | R$ 350 | equipamento |
+| Adobe Creative Cloud - Mensal | R$ 290 | software |
+| Editor freelancer - Reels | R$ 1.500 | freelancer |
+| Uber - Sessao fotografica | R$ 85 | transporte |
+| Boost Instagram - Fevereiro | R$ 500 | marketing |
+| Seguro equipamento | R$ 180 | other |
 
-### 2. Atribuir dados existentes ao Matheus
+## Detalhes tecnicos
 
-Executar UPDATE para setar `created_by` dos registros existentes (Porto 153 revenues, content_items existentes, etc.) para o user_id do Matheus (`5bdb380c-6d49-4f80-b42b-856484360bd5`).
+Executar um unico DELETE via SQL:
 
-### 3. Limpar duplicatas
-
-Deletar as 12 expenses duplicadas (manter apenas 6 unicos).
-
-### 4. Atualizar Edge Function `seed-demo-user`
-
-Adicionar `created_by: userId` em todos os inserts de revenues, expenses, campaigns e content_items. Tambem limpar dados antigos do Gabriel antes de re-inserir (evitar duplicatas em futuras execucoes).
-
-### 5. Atualizar frontend
-
-Modificar os stores e hooks que criam registros nessas tabelas para incluir `created_by` automaticamente:
-- `src/stores/financialStore.ts` - createRevenue, createExpense
-- `src/stores/marketingStore.ts` - createContentItem, createCampaign (se aplicavel)
-- `src/hooks/useProjects.tsx` - onde cria revenues vinculadas a projetos
-
-### 6. Re-executar seed do Gabriel
-
-Chamar a Edge Function novamente para popular os dados do Gabriel com o campo `created_by` corretamente preenchido.
-
-## Arquivos a modificar
-
-1. **Migracao SQL** - Adicionar coluna `created_by` + atualizar RLS em `revenues`, `expenses`, `campaigns`, `content_items`
-2. **`supabase/functions/seed-demo-user/index.ts`** - Adicionar `created_by` em todos os inserts + limpeza previa
-3. **`src/stores/financialStore.ts`** - Incluir `created_by` nos inserts de revenue/expense
-4. **`src/stores/marketingStore.ts`** - Incluir `created_by` nos inserts de content_items/campaigns
-5. **`src/hooks/useProjects.tsx`** - Incluir `created_by` nos inserts de revenues
-6. **SQL de dados** - Atribuir registros existentes ao Matheus + limpar duplicatas
-
-## Detalhes Tecnicos
-
-### Migracao SQL
 ```sql
-ALTER TABLE revenues ADD COLUMN created_by UUID REFERENCES auth.users(id) DEFAULT auth.uid();
-ALTER TABLE expenses ADD COLUMN created_by UUID REFERENCES auth.users(id) DEFAULT auth.uid();
-ALTER TABLE campaigns ADD COLUMN created_by UUID REFERENCES auth.users(id) DEFAULT auth.uid();
-ALTER TABLE content_items ADD COLUMN created_by UUID REFERENCES auth.users(id);
-
--- Atualizar RLS para filtrar por created_by
-DROP POLICY auth_select_revenues ON revenues;
-CREATE POLICY auth_select_revenues ON revenues FOR SELECT USING (created_by = auth.uid());
--- (repetir para UPDATE, DELETE, INSERT em todas as 4 tabelas)
+DELETE FROM expenses 
+WHERE created_by = '5bdb380c-6d49-4f80-b42b-856484360bd5'
+AND id IN (
+  '5766ba48-9432-49d1-aede-a4fc34648b37',
+  'f9c33f47-7d74-4879-be5d-7fba73c5b8f2',
+  '53584653-30ad-4edf-8a03-9bf9051b0862',
+  'e0f6f26c-2c59-4a9c-946f-2a406138a3c5',
+  'cf468f62-5e06-44e1-96b4-e2b945bb5840',
+  'd8ed5ee1-70a3-4489-9f41-da77531b1753'
+);
 ```
 
-### Frontend - financialStore.ts
-```typescript
-createRevenue: async (data) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  const insertData = { ...data, created_by: user?.id };
-  // ...insert
-}
-```
-
-### Seed - limpeza previa
-```typescript
-// Limpar dados antigos do Gabriel antes de re-inserir
-await supabase.from('revenues').delete().eq('created_by', userId);
-await supabase.from('expenses').delete().eq('created_by', userId);
-await supabase.from('content_items').delete().eq('created_by', userId);
-await supabase.from('campaigns').delete().eq('created_by', userId);
-```
+Nenhuma alteracao de codigo e necessaria. Apenas limpeza de dados.
