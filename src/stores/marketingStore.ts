@@ -127,7 +127,8 @@ export const useMarketingStore = create<MarketingState>((set, get) => ({
   },
 
   createIdea: async (data) => {
-    const insertData = { title: data.title || 'Nova Ideia', ...data };
+    const { data: { user } } = await supabase.auth.getUser();
+    const insertData = { title: data.title || 'Nova Ideia', ...data, created_by: user?.id };
     const { data: newIdea, error } = await supabase
       .from('content_ideas')
       .insert([insertData as any])
@@ -187,7 +188,8 @@ export const useMarketingStore = create<MarketingState>((set, get) => ({
   },
 
   createCampaign: async (data) => {
-    const insertData = { name: data.name || 'Nova Campanha', ...data };
+    const { data: { user } } = await supabase.auth.getUser();
+    const insertData = { name: data.name || 'Nova Campanha', ...data, created_by: user?.id };
     const { data: newCampaign, error } = await supabase
       .from('campaigns')
       .insert([insertData as any])
@@ -255,7 +257,8 @@ export const useMarketingStore = create<MarketingState>((set, get) => ({
   },
 
   createContentItem: async (data) => {
-    const insertData = { title: data.title || 'Novo Conteúdo', ...data };
+    const { data: { user } } = await supabase.auth.getUser();
+    const insertData = { title: data.title || 'Novo Conteúdo', ...data, created_by: user?.id };
     const { data: newItem, error } = await supabase
       .from('content_items')
       .insert([insertData as any])

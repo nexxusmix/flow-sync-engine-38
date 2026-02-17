@@ -92,7 +92,8 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
   },
 
   createRevenue: async (data) => {
-    const insertData = { description: data.description || 'Receita', amount: data.amount || 0, due_date: data.due_date, ...data };
+    const { data: { user } } = await supabase.auth.getUser();
+    const insertData = { description: data.description || 'Receita', amount: data.amount || 0, due_date: data.due_date, ...data, created_by: user?.id };
     const { data: newRevenue, error } = await supabase
       .from('revenues')
       .insert([insertData as any])
@@ -141,7 +142,8 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
   },
 
   createExpense: async (data) => {
-    const insertData = { description: data.description || 'Despesa', amount: data.amount || 0, due_date: data.due_date, category: data.category || 'other', ...data };
+    const { data: { user } } = await supabase.auth.getUser();
+    const insertData = { description: data.description || 'Despesa', amount: data.amount || 0, due_date: data.due_date, category: data.category || 'other', ...data, created_by: user?.id };
     const { data: newExpense, error } = await supabase
       .from('expenses')
       .insert([insertData as any])

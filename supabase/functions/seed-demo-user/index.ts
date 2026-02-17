@@ -41,6 +41,10 @@ Deno.serve(async (req) => {
     const wsId = 'default';
 
     // Clean existing demo data for this user
+    await supabase.from('content_items').delete().eq('created_by', userId);
+    await supabase.from('campaigns').delete().eq('created_by', userId);
+    await supabase.from('revenues').delete().eq('created_by', userId);
+    await supabase.from('expenses').delete().eq('created_by', userId);
     await supabase.from('tasks').delete().eq('user_id', userId);
     await supabase.from('calendar_events').delete().eq('owner_user_id', userId);
 
@@ -117,25 +121,25 @@ Deno.serve(async (req) => {
     const pIdPrime = projectMap['Tour 360 - Imobiliária Prime'];
 
     const revenues = [
-      { project_id: pIdAurora, description: 'Entrada - Filme Institucional', amount: 7500, due_date: '2026-01-15', received_date: '2026-01-15', status: 'received', payment_method: 'pix' },
-      { project_id: pIdAurora, description: 'Parcela 2 - Filme Institucional', amount: 7500, due_date: '2026-03-15', status: 'pending', payment_method: 'pix' },
-      { project_id: pIdCafe, description: 'Pacote Reels - Fevereiro', amount: 4500, due_date: '2026-02-05', received_date: '2026-02-05', status: 'received', payment_method: 'transferencia' },
-      { project_id: pIdClinica, description: 'Ensaio Fotográfico - Entrada', amount: 1600, due_date: '2026-01-25', received_date: '2026-01-26', status: 'received', payment_method: 'pix' },
-      { project_id: pIdClinica, description: 'Ensaio Fotográfico - Final', amount: 1600, due_date: '2026-02-28', status: 'pending', payment_method: 'boleto' },
-      { project_id: pIdTech, description: 'Sinal - Motion Vinheta', amount: 4000, due_date: '2026-02-20', status: 'pending', payment_method: 'pix' },
-      { project_id: pIdPrime, description: 'Tour 360 - Pagamento', amount: 6000, due_date: '2026-01-30', received_date: '2026-01-30', status: 'received', payment_method: 'pix' },
-      { description: 'Freelance - Edição avulsa', amount: 1200, due_date: '2026-01-10', status: 'overdue', payment_method: 'pix' },
+      { project_id: pIdAurora, description: 'Entrada - Filme Institucional', amount: 7500, due_date: '2026-01-15', received_date: '2026-01-15', status: 'received', payment_method: 'pix', created_by: userId },
+      { project_id: pIdAurora, description: 'Parcela 2 - Filme Institucional', amount: 7500, due_date: '2026-03-15', status: 'pending', payment_method: 'pix', created_by: userId },
+      { project_id: pIdCafe, description: 'Pacote Reels - Fevereiro', amount: 4500, due_date: '2026-02-05', received_date: '2026-02-05', status: 'received', payment_method: 'transferencia', created_by: userId },
+      { project_id: pIdClinica, description: 'Ensaio Fotográfico - Entrada', amount: 1600, due_date: '2026-01-25', received_date: '2026-01-26', status: 'received', payment_method: 'pix', created_by: userId },
+      { project_id: pIdClinica, description: 'Ensaio Fotográfico - Final', amount: 1600, due_date: '2026-02-28', status: 'pending', payment_method: 'boleto', created_by: userId },
+      { project_id: pIdTech, description: 'Sinal - Motion Vinheta', amount: 4000, due_date: '2026-02-20', status: 'pending', payment_method: 'pix', created_by: userId },
+      { project_id: pIdPrime, description: 'Tour 360 - Pagamento', amount: 6000, due_date: '2026-01-30', received_date: '2026-01-30', status: 'received', payment_method: 'pix', created_by: userId },
+      { description: 'Freelance - Edição avulsa', amount: 1200, due_date: '2026-01-10', status: 'overdue', payment_method: 'pix', created_by: userId },
     ];
     await supabase.from('revenues').insert(revenues);
 
     // ===== EXPENSES =====
     const expenses = [
-      { category: 'equipamento', description: 'Aluguel de lente 24-70mm', amount: 350, due_date: '2026-02-10', status: 'paid', paid_date: '2026-02-10', supplier: 'LensRent' },
-      { category: 'software', description: 'Adobe Creative Cloud - Mensal', amount: 290, due_date: '2026-02-15', status: 'pending', supplier: 'Adobe' },
-      { category: 'freelancer', description: 'Editor freelancer - Reels', amount: 1500, due_date: '2026-02-20', status: 'pending', supplier: 'Lucas Editor' },
-      { category: 'transporte', description: 'Uber - Sessão fotográfica', amount: 85, due_date: '2026-02-08', status: 'paid', paid_date: '2026-02-08', supplier: 'Uber' },
-      { category: 'marketing', description: 'Boost Instagram - Fevereiro', amount: 500, due_date: '2026-02-01', status: 'paid', paid_date: '2026-02-01', supplier: 'Meta Ads' },
-      { category: 'other', description: 'Seguro equipamento', amount: 180, due_date: '2026-03-01', status: 'pending', supplier: 'SeguraPro' },
+      { category: 'equipamento', description: 'Aluguel de lente 24-70mm', amount: 350, due_date: '2026-02-10', status: 'paid', paid_date: '2026-02-10', supplier: 'LensRent', created_by: userId },
+      { category: 'software', description: 'Adobe Creative Cloud - Mensal', amount: 290, due_date: '2026-02-15', status: 'pending', supplier: 'Adobe', created_by: userId },
+      { category: 'freelancer', description: 'Editor freelancer - Reels', amount: 1500, due_date: '2026-02-20', status: 'pending', supplier: 'Lucas Editor', created_by: userId },
+      { category: 'transporte', description: 'Uber - Sessão fotográfica', amount: 85, due_date: '2026-02-08', status: 'paid', paid_date: '2026-02-08', supplier: 'Uber', created_by: userId },
+      { category: 'marketing', description: 'Boost Instagram - Fevereiro', amount: 500, due_date: '2026-02-01', status: 'paid', paid_date: '2026-02-01', supplier: 'Meta Ads', created_by: userId },
+      { category: 'other', description: 'Seguro equipamento', amount: 180, due_date: '2026-03-01', status: 'pending', supplier: 'SeguraPro', created_by: userId },
     ];
     await supabase.from('expenses').insert(expenses);
 
@@ -149,21 +153,22 @@ Deno.serve(async (req) => {
       end_date: '2026-03-31',
       budget: 2000,
       workspace_id: wsId,
+      created_by: userId,
     }).select('id').single();
 
     // ===== CONTENT ITEMS =====
     const campaignId = campaignData?.id;
     const contentItems = [
-      { title: 'Bastidores: Filmagem Institucional', status: 'published', channel: 'instagram', format: 'reels', hook: 'Olha como foi gravar esse institucional!', pillar: 'autoridade', published_at: '2026-02-10T10:00:00Z', campaign_id: campaignId, workspace_id: wsId },
-      { title: 'Dicas de Iluminação para Reels', status: 'scheduled', channel: 'instagram', format: 'carrossel', hook: '5 dicas pro para iluminar seus reels', pillar: 'educacao', scheduled_at: '2026-02-20T14:00:00Z', campaign_id: campaignId, workspace_id: wsId },
-      { title: 'Case Study: Tour 360 Imobiliária', status: 'approved', channel: 'youtube', format: 'video', hook: 'Como criamos um tour virtual completo', pillar: 'case', workspace_id: wsId },
-      { title: 'Tendências de Vídeo 2026', status: 'review', channel: 'linkedin', format: 'artigo', hook: 'O futuro do conteúdo audiovisual', pillar: 'tendencia', workspace_id: wsId },
-      { title: 'Motion Design: Antes e Depois', status: 'draft', channel: 'tiktok', format: 'reels', hook: 'Transformação incrível em motion', pillar: 'portfolio', workspace_id: wsId },
-      { title: 'Equipamentos que Uso em 2026', status: 'idea', channel: 'youtube', format: 'video', hook: 'Setup completo de câmera e lentes', pillar: 'educacao', workspace_id: wsId },
-      { title: 'Depoimento: Cliente Café Artesanal', status: 'published', channel: 'instagram', format: 'stories', hook: 'Veja o que nosso cliente achou', pillar: 'prova_social', published_at: '2026-02-12T16:00:00Z', workspace_id: wsId },
-      { title: 'Workflow de Edição Profissional', status: 'draft', channel: 'youtube', format: 'video', hook: 'Do bruto ao final em 10 passos', pillar: 'educacao', workspace_id: wsId },
-      { title: 'Reels: Dia de Gravação', status: 'scheduled', channel: 'tiktok', format: 'reels', hook: 'Um dia inteiro de gravação em 60s', pillar: 'bastidores', scheduled_at: '2026-02-25T12:00:00Z', campaign_id: campaignId, workspace_id: wsId },
-      { title: 'Como Precificar Serviços Criativos', status: 'idea', channel: 'linkedin', format: 'artigo', hook: 'Guia prático de precificação', pillar: 'educacao', workspace_id: wsId },
+      { title: 'Bastidores: Filmagem Institucional', status: 'published', channel: 'instagram', format: 'reels', hook: 'Olha como foi gravar esse institucional!', pillar: 'autoridade', published_at: '2026-02-10T10:00:00Z', campaign_id: campaignId, workspace_id: wsId, created_by: userId },
+      { title: 'Dicas de Iluminação para Reels', status: 'scheduled', channel: 'instagram', format: 'carrossel', hook: '5 dicas pro para iluminar seus reels', pillar: 'educacao', scheduled_at: '2026-02-20T14:00:00Z', campaign_id: campaignId, workspace_id: wsId, created_by: userId },
+      { title: 'Case Study: Tour 360 Imobiliária', status: 'approved', channel: 'youtube', format: 'video', hook: 'Como criamos um tour virtual completo', pillar: 'case', workspace_id: wsId, created_by: userId },
+      { title: 'Tendências de Vídeo 2026', status: 'review', channel: 'linkedin', format: 'artigo', hook: 'O futuro do conteúdo audiovisual', pillar: 'tendencia', workspace_id: wsId, created_by: userId },
+      { title: 'Motion Design: Antes e Depois', status: 'draft', channel: 'tiktok', format: 'reels', hook: 'Transformação incrível em motion', pillar: 'portfolio', workspace_id: wsId, created_by: userId },
+      { title: 'Equipamentos que Uso em 2026', status: 'idea', channel: 'youtube', format: 'video', hook: 'Setup completo de câmera e lentes', pillar: 'educacao', workspace_id: wsId, created_by: userId },
+      { title: 'Depoimento: Cliente Café Artesanal', status: 'published', channel: 'instagram', format: 'stories', hook: 'Veja o que nosso cliente achou', pillar: 'prova_social', published_at: '2026-02-12T16:00:00Z', workspace_id: wsId, created_by: userId },
+      { title: 'Workflow de Edição Profissional', status: 'draft', channel: 'youtube', format: 'video', hook: 'Do bruto ao final em 10 passos', pillar: 'educacao', workspace_id: wsId, created_by: userId },
+      { title: 'Reels: Dia de Gravação', status: 'scheduled', channel: 'tiktok', format: 'reels', hook: 'Um dia inteiro de gravação em 60s', pillar: 'bastidores', scheduled_at: '2026-02-25T12:00:00Z', campaign_id: campaignId, workspace_id: wsId, created_by: userId },
+      { title: 'Como Precificar Serviços Criativos', status: 'idea', channel: 'linkedin', format: 'artigo', hook: 'Guia prático de precificação', pillar: 'educacao', workspace_id: wsId, created_by: userId },
     ];
     await supabase.from('content_items').insert(contentItems);
 
