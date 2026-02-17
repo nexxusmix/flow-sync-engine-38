@@ -1261,6 +1261,7 @@ export type Database = {
           audience: string | null
           budget: number | null
           created_at: string
+          created_by: string | null
           end_date: string | null
           id: string
           kpis: Json | null
@@ -1276,6 +1277,7 @@ export type Database = {
           audience?: string | null
           budget?: number | null
           created_at?: string
+          created_by?: string | null
           end_date?: string | null
           id?: string
           kpis?: Json | null
@@ -1291,6 +1293,7 @@ export type Database = {
           audience?: string | null
           budget?: number | null
           created_at?: string
+          created_by?: string | null
           end_date?: string | null
           id?: string
           kpis?: Json | null
@@ -1613,6 +1616,7 @@ export type Database = {
           caption_short: string | null
           channel: string | null
           created_at: string
+          created_by: string | null
           cta: string | null
           due_at: string | null
           format: string | null
@@ -1646,6 +1650,7 @@ export type Database = {
           caption_short?: string | null
           channel?: string | null
           created_at?: string
+          created_by?: string | null
           cta?: string | null
           due_at?: string | null
           format?: string | null
@@ -1679,6 +1684,7 @@ export type Database = {
           caption_short?: string | null
           channel?: string | null
           created_at?: string
+          created_by?: string | null
           cta?: string | null
           due_at?: string | null
           format?: string | null
@@ -2962,6 +2968,7 @@ export type Database = {
           amount: number
           category: string
           created_at: string
+          created_by: string | null
           description: string
           due_date: string
           id: string
@@ -2977,6 +2984,7 @@ export type Database = {
           amount: number
           category?: string
           created_at?: string
+          created_by?: string | null
           description: string
           due_date: string
           id?: string
@@ -2992,6 +3000,7 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
+          created_by?: string | null
           description?: string
           due_date?: string
           id?: string
@@ -6012,6 +6021,7 @@ export type Database = {
           amount: number
           contract_id: string | null
           created_at: string
+          created_by: string | null
           description: string
           due_date: string
           id: string
@@ -6028,6 +6038,7 @@ export type Database = {
           amount: number
           contract_id?: string | null
           created_at?: string
+          created_by?: string | null
           description: string
           due_date: string
           id?: string
@@ -6044,6 +6055,7 @@ export type Database = {
           amount?: number
           contract_id?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string
           due_date?: string
           id?: string
