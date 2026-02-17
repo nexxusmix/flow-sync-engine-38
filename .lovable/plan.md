@@ -1,40 +1,44 @@
 
-# Remover dados falsos da conta do Matheus
+# Pagina de Gerenciamento de Usuarios
 
-## Problema
+## O que sera criado
 
-Durante a migracao anterior, ao executar `UPDATE expenses SET created_by = matheus_id WHERE created_by IS NULL`, os 6 registros de despesas que eram do seed do Gabriel (Aluguel de lente, Adobe Creative Cloud, Editor freelancer, Uber, Boost Instagram, Seguro equipamento) foram erroneamente atribuidos ao Matheus.
+Uma pagina em `/configuracoes/usuarios` onde o admin pode:
+- Ver lista de todos os usuarios com nome, email, avatar, role atual e data de criacao
+- Editar o role de cada usuario (admin, comercial, operacao, financeiro)
+- Remover contas de usuarios (com confirmacao)
 
-## O que sera feito
+## Estrutura
 
-Deletar as 6 expenses falsas da conta do Matheus. Os demais dados (4 revenues do Porto 153 e 16 content items) sao reais e serao mantidos.
+### 1. Nova pagina: `src/pages/settings/UsersSettingsPage.tsx`
 
-### Registros a deletar
+Seguindo o mesmo padrao visual das outras paginas de settings (ex: RolesSettingsPage):
+- Header com botao "Voltar" para `/configuracoes`
+- Tabela com colunas: Avatar + Nome, Email, Role (com Select editavel), Data de criacao, Acoes
+- Botao de alterar role abre um Select inline com as 4 opcoes do enum `app_role`
+- Botao de remover usuario com AlertDialog de confirmacao
+- Admin nao pode remover a si mesmo
+- Protecao: somente admin pode acessar (redirect se nao for admin)
 
-| Descricao | Valor | Categoria |
-|-----------|-------|-----------|
-| Aluguel de lente 24-70mm | R$ 350 | equipamento |
-| Adobe Creative Cloud - Mensal | R$ 290 | software |
-| Editor freelancer - Reels | R$ 1.500 | freelancer |
-| Uber - Sessao fotografica | R$ 85 | transporte |
-| Boost Instagram - Fevereiro | R$ 500 | marketing |
-| Seguro equipamento | R$ 180 | other |
+### 2. Rota no App.tsx
 
-## Detalhes tecnicos
+Adicionar rota `/configuracoes/usuarios` apontando para `UsersSettingsPage`.
 
-Executar um unico DELETE via SQL:
+### 3. Edge Function: `delete-user`
 
-```sql
-DELETE FROM expenses 
-WHERE created_by = '5bdb380c-6d49-4f80-b42b-856484360bd5'
-AND id IN (
-  '5766ba48-9432-49d1-aede-a4fc34648b37',
-  'f9c33f47-7d74-4879-be5d-7fba73c5b8f2',
-  '53584653-30ad-4edf-8a03-9bf9051b0862',
-  'e0f6f26c-2c59-4a9c-946f-2a406138a3c5',
-  'cf468f62-5e06-44e1-96b4-e2b945bb5840',
-  'd8ed5ee1-70a3-4489-9f41-da77531b1753'
-);
-```
+Para deletar usuarios do `auth.users` e necessario usar o service role key, que so pode ser usado no backend. A edge function:
+- Recebe `user_id` no body
+- Valida que o chamador e admin (via `has_app_role`)
+- Impede que o admin delete a si mesmo
+- Usa `supabase.auth.admin.deleteUser(user_id)` para remover
+- O cascade no profiles e user_role_assignments limpa automaticamente
 
-Nenhuma alteracao de codigo e necessaria. Apenas limpeza de dados.
+### Detalhes tecnicos
+
+**Consulta de usuarios:** Query em `profiles` com JOIN em `user_role_assignments` para montar a lista. Usa React Query.
+
+**Edicao de role:** UPDATE direto em `user_role_assignments` via Supabase client. Se o usuario nao tem assignment, faz INSERT.
+
+**Delecao:** Chama edge function `delete-user` que usa service role para `auth.admin.deleteUser()`.
+
+**Componentes reutilizados:** DashboardLayout, Table, Select, AlertDialog, Avatar, Badge, Button, toast (sonner).
