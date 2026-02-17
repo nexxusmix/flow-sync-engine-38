@@ -49,12 +49,8 @@ export function KPICards() {
             key={kpi.label} 
             variants={item}
             whileHover={{ 
-              y: -8, 
-              scale: 1.02,
-              boxShadow: "0 20px 50px -20px rgba(0, 163, 211, 0.3)",
-              borderColor: "rgba(0, 163, 211, 0.3)",
-              rotateX: -2,
-              rotateY: 2,
+              y: -4, 
+              scale: 1.01,
             }}
             whileTap={{ scale: 0.98 }}
             className="glass-card p-8 rounded-[2rem] transition-colors duration-500 group cursor-pointer min-h-[160px] border border-transparent"
