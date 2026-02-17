@@ -230,6 +230,7 @@ export function useProjects() {
               amount: m.amount || (m.percentage && input.contract_value ? Math.round((m.percentage / 100) * input.contract_value * 100) / 100 : 0),
               due_date: m.dueDate || new Date().toISOString().split('T')[0],
               status: 'pending' as const,
+              created_by: user?.id,
             }));
             await supabase.from('revenues').insert(revenueInserts);
           } else {
@@ -243,6 +244,7 @@ export function useProjects() {
                 amount: entryAmount,
                 due_date: new Date().toISOString().split('T')[0],
                 status: 'pending',
+                created_by: user?.id,
               },
               {
                 project_id: project.id,
@@ -251,6 +253,7 @@ export function useProjects() {
                 amount: (input.contract_value || 0) * 0.5,
                 due_date: input.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 status: 'pending',
+                created_by: user?.id,
               },
             ]);
           }
@@ -338,6 +341,7 @@ export function useProjects() {
               amount: entryAmount,
               due_date: new Date().toISOString().split('T')[0],
               status: 'pending',
+              created_by: user?.id,
             },
             {
               project_id: id,
@@ -345,6 +349,7 @@ export function useProjects() {
               amount: deliveryAmount,
               due_date: deliveryDate,
               status: 'pending',
+              created_by: user?.id,
             },
           ]);
         } else {
