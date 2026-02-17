@@ -1,44 +1,29 @@
 
-# Pagina de Gerenciamento de Usuarios
+# Fix: Overview Cards Dark/Glow Bug
 
-## O que sera criado
+## Problem
+The Overview dashboard cards appear overly dark and have a distracting blue glow effect. Multiple CSS layers are conflicting.
 
-Uma pagina em `/configuracoes/usuarios` onde o admin pode:
-- Ver lista de todos os usuarios com nome, email, avatar, role atual e data de criacao
-- Editar o role de cada usuario (admin, comercial, operacao, financeiro)
-- Remover contas de usuarios (com confirmacao)
+## Root Causes
 
-## Estrutura
+1. **MetricCard inline glow**: The `MetricCard` component has a `whileHover` with `boxShadow: "0 20px 50px -20px rgba(0, 163, 211, 0.3)"` creating a huge blue glow on hover.
+2. **Duplicate CSS hover rule**: At lines 1167-1171 of `index.css`, there's a generic `.glass-card:hover` rule adding `box-shadow: 0 16px 40px -16px hsl(var(--primary) / 0.12)` which stacks on top of the component-level styles.
+3. **Card backgrounds too transparent**: `rgba(255, 255, 255, 0.02)` on a black background makes cards nearly invisible -- they need slightly higher opacity (around 0.03-0.04) to be readable.
+4. **`--shadow-deep` variable**: Still defined with heavy values at line 116 (`0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 10px ...`), potentially used elsewhere.
 
-### 1. Nova pagina: `src/pages/settings/UsersSettingsPage.tsx`
+## Changes
 
-Seguindo o mesmo padrao visual das outras paginas de settings (ex: RolesSettingsPage):
-- Header com botao "Voltar" para `/configuracoes`
-- Tabela com colunas: Avatar + Nome, Email, Role (com Select editavel), Data de criacao, Acoes
-- Botao de alterar role abre um Select inline com as 4 opcoes do enum `app_role`
-- Botao de remover usuario com AlertDialog de confirmacao
-- Admin nao pode remover a si mesmo
-- Protecao: somente admin pode acessar (redirect se nao for admin)
+### 1. `src/components/dashboard/MetricCard.tsx`
+- Remove the heavy `boxShadow` from the `whileHover` prop (the `"0 20px 50px..."` blue glow)
+- Keep the subtle scale/translate hover effects
 
-### 2. Rota no App.tsx
+### 2. `src/index.css`
+- Increase `.dark .glass-card` background from `0.02` to `0.035` for better visibility
+- Tone down the generic `.glass-card:hover` box-shadow at line 1171 to a much subtler value
+- Clean up `--shadow-deep` variable to remove inset glow
 
-Adicionar rota `/configuracoes/usuarios` apontando para `UsersSettingsPage`.
+### 3. `src/pages/Dashboard.tsx`
+- The Visual Board `glass-card` container (line 209) has inline `transformStyle: "preserve-3d"` which can amplify the depth effect -- will keep but ensure shadows are clean
 
-### 3. Edge Function: `delete-user`
-
-Para deletar usuarios do `auth.users` e necessario usar o service role key, que so pode ser usado no backend. A edge function:
-- Recebe `user_id` no body
-- Valida que o chamador e admin (via `has_app_role`)
-- Impede que o admin delete a si mesmo
-- Usa `supabase.auth.admin.deleteUser(user_id)` para remover
-- O cascade no profiles e user_role_assignments limpa automaticamente
-
-### Detalhes tecnicos
-
-**Consulta de usuarios:** Query em `profiles` com JOIN em `user_role_assignments` para montar a lista. Usa React Query.
-
-**Edicao de role:** UPDATE direto em `user_role_assignments` via Supabase client. Se o usuario nao tem assignment, faz INSERT.
-
-**Delecao:** Chama edge function `delete-user` que usa service role para `auth.admin.deleteUser()`.
-
-**Componentes reutilizados:** DashboardLayout, Table, Select, AlertDialog, Avatar, Badge, Button, toast (sonner).
+## Result
+Cards will be slightly more visible against the dark background, with no distracting blue glow on hover. Clean, cinema-grade glass aesthetic preserved.
