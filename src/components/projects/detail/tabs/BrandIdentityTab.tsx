@@ -810,6 +810,8 @@ function BrandKitPanel({
   fonts,
   squadColorsFound,
   onExportColors,
+  onMarkAsSquad,
+  manuallyExcluded,
 }: {
   brandNames: string[];
   allColors: string[];
@@ -817,6 +819,8 @@ function BrandKitPanel({
   fonts: string[];
   squadColorsFound: boolean;
   onExportColors: () => void;
+  onMarkAsSquad: (color: string) => void;
+  manuallyExcluded: Set<string>;
 }) {
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -1040,20 +1044,25 @@ function BrandKitPanel({
                   <TooltipProvider key={i}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button
-                          onClick={() => { navigator.clipboard?.writeText(c); toast.success(`${c} copiada!`); }}
-                          className="flex flex-col items-center gap-1.5 group"
-                        >
-                          <div
+                        <div className="flex flex-col items-center gap-1 group relative">
+                          <button
+                            onClick={() => { navigator.clipboard?.writeText(c); toast.success(`${c} copiada!`); }}
                             className="w-full h-10 rounded-lg border-2 border-border/30 group-hover:scale-105 group-hover:-translate-y-0.5 transition-all shadow-sm"
                             style={{ backgroundColor: c }}
                           />
                           <span className="text-[9px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
                             {c}
                           </span>
-                        </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onMarkAsSquad(c); }}
+                            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive/80 hover:bg-destructive border border-background opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            title="Marcar como cor SQUAD (excluir da paleta)"
+                          >
+                            <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                          </button>
+                        </div>
                       </TooltipTrigger>
-                      <TooltipContent className="text-xs font-mono">Copiar {c}</TooltipContent>
+                      <TooltipContent className="text-xs font-mono">Clique para copiar · ✕ para excluir da paleta</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ))}
@@ -1149,7 +1158,28 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const [studioAsset, setStudioAsset] = useState<ProjectAsset | null>(null);
   const [exportColorsOpen, setExportColorsOpen] = useState(false);
 
-  // Selection state
+  // Manually excluded colors (persisted in localStorage per project)
+  const storageKey = `squad-excluded-colors-${project.id}`;
+  const [manuallyExcluded, setManuallyExcluded] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  const handleMarkAsSquad = (color: string) => {
+    setManuallyExcluded(prev => {
+      const next = new Set(prev);
+      next.add(color.toLowerCase());
+      localStorage.setItem(storageKey, JSON.stringify([...next]));
+      return next;
+    });
+    toast.success(`${color} excluída da paleta do cliente.`, {
+      description: 'Marcada como cor da plataforma SQUAD.',
+    });
+  };
+
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1202,7 +1232,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
         const entities = a.ai_entities as any;
         return (entities?.color_palette as string[] | undefined) || [];
       })
-    )
+    ).filter(c => !manuallyExcluded.has(c.toLowerCase()))
   )];
 
   // Signature / seal assets
@@ -1368,6 +1398,8 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
           fonts={allFonts}
           squadColorsFound={squadColorsFound}
           onExportColors={() => setExportColorsOpen(true)}
+          onMarkAsSquad={handleMarkAsSquad}
+          manuallyExcluded={manuallyExcluded}
         />
       )}
 
