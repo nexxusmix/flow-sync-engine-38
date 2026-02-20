@@ -1,157 +1,104 @@
 
-# Criar Contrato com IA via Upload de Arquivo
+# Diagnóstico e Solução Completa
 
-## O que será construído
+## Problema 1: Erro no "Sincronizar Financeiro"
 
-Uma nova opção **"Criar com IA"** nos dois lugares onde contratos são criados:
-1. No modal de financeiro do projeto (`ProjectFinanceDetailPanel` → `ProjectContractModal`)
-2. Na página de lista de contratos (`ContractsListPage`)
+**Causa raiz confirmada:** O projeto "Identidade Visual Porto 153" tem `contract_value = 0` no banco. A edge function `sync-project-finances` retorna HTTP 400 com a mensagem `"Projeto sem valor de contrato definido."`. O frontend captura esse erro e exibe o toast genérico do Lovable SDK como "Edge Function returned a non-2xx status code".
 
-O fluxo: usuário sobe um arquivo (contrato existente em PDF/DOCX ou proposta comercial), a IA extrai todos os dados relevantes (valor, cliente, condições de pagamento, datas, escopo), preenche o contrato automaticamente e gera as parcelas financeiras no banco.
+**O que falta:** O `handleSyncFinance` em `ProjectHeader.tsx` já trata o erro com `toast.error`, mas o SDK do Supabase às vezes lança o erro antes de o body ser lido, perdendo a mensagem específica. Além disso, não há nenhum aviso proativo ao usuário de que o projeto precisa de um valor de contrato antes de sincronizar.
+
+**Correções:**
+- Melhorar o tratamento de erro em `ProjectHeader.tsx` e `ProjectActionsMenu.tsx` para extrair a mensagem do body da resposta mesmo em erros não-2xx
+- Adicionar validação visual: se `project.contract_value === 0`, o botão mostra aviso amigável e abre o modal de edição em vez de chamar a edge function
+- Corrigir a edge function `sync-project-finances` para aceitar `force_regenerate` via UI (já tem suporte, mas não é exposto)
 
 ---
 
-## Arquitetura do Fluxo
+## Problema 2: Botão de "Auto-Sync Inteligente" sem abrir chat
+
+O usuário quer uma ação que, ao clicar, a IA analisa o estado atual do projeto e executa tudo que for necessário automaticamente — sem precisar abrir o Command Center / chat.
+
+**Solução: Novo botão "Auto Sync IA" com Edge Function dedicada**
+
+### Nova Edge Function: `auto-update-project`
+
+Recebe o `project_id`, lê todos os dados do projeto (tarefas, etapas, financeiro, calendário) e executa um plano de ações de forma autônoma:
+1. Se `contract_value > 0` e não há contrato → cria contrato + parcelas
+2. Se não há tarefas → gera tarefas com base no template e etapa atual
+3. Se não há próximas entregas no calendário → gera evento de entrega
+4. Se etapa atual não tem tarefas concluídas → sugere próxima etapa (opcional)
+5. Retorna um resumo das ações executadas
+
+### UI: Botão "Auto Update" em `ProjectHeader.tsx`
+
+- Substitui o atual "Atualizar com IA" (que abre chat) por um botão que executa automaticamente
+- Mantém o "Atualizar com IA" como opção secundária no menu
+- Durante a execução: loading spinner + toast "Analisando projeto..."
+- Ao concluir: toast com resumo "✓ 3 ações executadas: contrato criado, 5 tarefas geradas, entrega agendada"
+
+---
+
+## Implementação Técnica
+
+### Arquivos a modificar
+
+**`src/components/projects/detail/ProjectHeader.tsx`**
+- Corrigir `handleSyncFinance`: validar `contract_value > 0` antes de chamar a edge function; se zero, abrir modal de edição com aviso claro
+- Melhorar extração da mensagem de erro da resposta da edge function
+- Adicionar botão "Auto Update" com ícone `Wand2` e loading state
+- Mover "Atualizar com IA" para o menu secundário (`ProjectActionsMenu`)
+
+**`src/components/projects/ProjectActionsMenu.tsx`**
+- Adicionar opção "Atualizar com IA" (abre Command Center)
+- Adicionar opção "Auto Sync IA" (chama a nova edge function)
+
+**`supabase/functions/auto-update-project/index.ts`** *(novo)*
+- Autenticação via `getClaims()` (padrão da plataforma)
+- Lê: projeto, tarefas existentes, contrato, revenues, próximos eventos
+- Executa ações paralelas via `Promise.allSettled`:
+  - Sync financeiro (se `contract_value > 0`)
+  - Geração de tarefas via IA (se não há tarefas)
+  - Criação de evento de entrega (se `due_date` existe e não há evento)
+- Usa modelo `google/gemini-3-flash-preview` para gerar tarefas contextuais
+- Retorna JSON com lista de ações executadas e contagem de sucesso/erro
+
+**`supabase/config.toml`**
+- Registrar `auto-update-project` com `verify_jwt = false` (validação no código)
+
+### Fluxo visual do Auto Update
 
 ```text
-Usuário faz upload do arquivo (PDF/DOCX/imagem)
+[Clique em "Auto Update"]
         ↓
-Frontend converte para base64
+Spinner + toast "Analisando projeto..."
         ↓
-Edge Function: extract-contract-from-file
-  1. Recebe base64 + mimeType + project_id (opcional)
-  2. Envia para Gemini 2.5 Flash com prompt especializado
-  3. IA extrai dados estruturados via tool calling:
-     - client_name, client_email, client_document
-     - total_value
-     - payment_terms (string descritiva)
-     - start_date, end_date
-     - notes (escopo resumido)
-  4. Salva contrato na tabela contracts
-  5. Gera parcelas (revenues) via lógica existente de parsePaymentTerms
-  6. Retorna resumo do que foi extraído e criado
+Edge function analisa o estado atual
         ↓
-Frontend exibe preview dos dados extraídos
-Usuário confirma → dados salvos
+Executa ações em paralelo:
+  - Sync financeiro (se aplicável)
+  - Gera tarefas (se aplicável)  
+  - Agenda entrega (se aplicável)
+        ↓
+Invalida todos os React Query caches relevantes
+        ↓
+Toast de sucesso com resumo das ações
 ```
 
----
-
-## Detalhes Técnicos
-
-### Nova Edge Function: `extract-contract-from-file`
+### Validação no botão "Sincronizar Financeiro"
 
 ```text
-POST /functions/v1/extract-contract-from-file
-Body: {
-  fileBase64: string,        // arquivo em base64
-  mimeType: string,          // "application/pdf", "image/jpeg", etc.
-  fileName: string,          // nome do arquivo
-  project_id?: string,       // se veio de dentro de um projeto
-  workspace_id?: string
-}
-
-Resposta: {
-  extracted: {
-    client_name, client_email, total_value,
-    payment_terms, start_date, end_date, notes
-  },
-  contract_id: string,
-  created_revenues: number,
-  message: string
-}
-```
-
-**Prompt para a IA:** Especializado em extrair dados de contratos e propostas comerciais brasileiras. Usa **tool calling** (função `extract_contract_data`) para garantir output estruturado, sem alucinações de formato.
-
-**Modelo:** `google/gemini-2.5-flash` — suporta multimodal (PDF como imagem de alta fidelidade).
-
-### Reutilização da lógica existente
-
-A função `parsePaymentTerms` já existe em `sync-project-finances/index.ts` e será **duplicada** na nova edge function (Deno não permite importação entre functions). Isso garante geração consistente de parcelas.
-
----
-
-## Componentes de UI
-
-### 1. Novo componente: `ContractAiUploadDialog`
-Arquivo: `src/components/finance/ContractAiUploadDialog.tsx`
-
-Um Dialog independente com:
-- **Área de upload** (drag & drop ou clique) — aceita PDF, DOCX, PNG, JPG
-- Limite de arquivo: 20MB
-- **Estado de processamento** com spinner e texto "Analisando documento com IA..."
-- **Preview dos dados extraídos** (antes de confirmar):
-  - Cliente, email, valor, condições, datas, notas
-  - Campos editáveis para correção manual antes de salvar
-- **Botão Confirmar e Criar Contrato** → persiste e fecha
-
-### 2. Modificação: `ProjectFinanceDetailPanel.tsx`
-
-Onde hoje tem o botão "Criar Contrato", adicionar dois botões:
-```
-[ + Criar Contrato ]  [ ✨ Criar com IA ]
-```
-O botão "Criar com IA" abre o `ContractAiUploadDialog`.
-
-### 3. Modificação: `ContractsListPage.tsx`
-
-No modal "Novo Contrato", adicionar um tab ou botão alternativo:
-```
-[ Preencher Manualmente ]  [ ✨ Enviar Arquivo com IA ]
-```
-Ao clicar em "Enviar Arquivo com IA", substitui o conteúdo do dialog pelo `ContractAiUploadDialog`.
-
----
-
-## Arquivos a Criar
-
-- `supabase/functions/extract-contract-from-file/index.ts` — edge function principal
-- `src/components/finance/ContractAiUploadDialog.tsx` — dialog de upload + preview
-
-## Arquivos a Modificar
-
-- `src/components/finance/ProjectFinanceDetailPanel.tsx` — adicionar botão "Criar com IA"
-- `src/pages/contracts/ContractsListPage.tsx` — adicionar opção "Enviar Arquivo com IA" no modal
-- `supabase/config.toml` — registrar nova edge function
-
----
-
-## Tipos de Arquivo Suportados
-
-| Formato | Como a IA processa |
-|---|---|
-| PDF | Via multimodal (renderizado como imagem de alta fidelidade pelo Gemini) |
-| DOCX | Texto extraído e enviado como conteúdo |
-| PNG / JPG | Diretamente como imagem |
-| Proposta comercial (qualquer formato) | Idem — a IA identifica os campos financeiros relevantes |
-
----
-
-## Sequência de Implementação
-
-```text
-1. Criar edge function extract-contract-from-file
-   (upload → Gemini 2.5 Flash com tool calling → contrato + parcelas)
-   ↓
-2. Criar ContractAiUploadDialog
-   (upload UI → loading → preview dos dados extraídos → confirmar)
-   ↓
-3. Modificar ProjectFinanceDetailPanel
-   (botão "Criar com IA" ao lado de "Criar Contrato")
-   ↓
-4. Modificar ContractsListPage
-   (opção "Enviar Arquivo com IA" no modal de novo contrato)
-   ↓
-5. Registrar function no config.toml
+contract_value === 0?
+   ↓ SIM → toast.warning + abre EditProjectModal
+   ↓ NÃO → chama edge function normalmente
 ```
 
 ---
 
-## Garantias de Qualidade
+## Resumo das mudanças
 
-- **Idempotência:** se o projeto já tiver contrato, a function avisa sem duplicar
-- **Fallback:** se a IA não conseguir extrair um campo (ex: email não mencionado), o campo fica vazio e editável no preview
-- **Rate limit / créditos:** erros 429 e 402 são tratados com mensagens amigáveis
-- **Limite de arquivo:** validado no frontend antes do upload (max 20MB)
-- **Tipos inválidos:** validação frontend com mensagem de erro antes de enviar
+| Arquivo | Tipo | O que muda |
+|---|---|---|
+| `src/components/projects/detail/ProjectHeader.tsx` | Modificação | Validação pre-sync, botão Auto Update |
+| `src/components/projects/ProjectActionsMenu.tsx` | Modificação | Adiciona "Auto Sync IA" no menu |
+| `supabase/functions/auto-update-project/index.ts` | Criação | Engine de auto-atualização com IA |
+| `supabase/config.toml` | Modificação | Registra nova edge function |
