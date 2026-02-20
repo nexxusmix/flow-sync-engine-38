@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { ProjectQuickAccessGrid } from "@/components/dashboard/ProjectQuickAccessGrid";
+import { KPIStrip } from "@/components/dashboard/KPIStrip";
 import { ActionHubRail } from "@/components/action-hub/ActionHubRail";
 import { ActionHubOverviewCard } from "@/components/action-hub/ActionHubOverviewCard";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
@@ -201,6 +202,9 @@ export default function Dashboard() {
             />
           ))}
         </motion.div>
+
+        {/* KPI Strip — dados operacionais em tempo real */}
+        <KPIStrip />
 
         {/* Projetos Ativos - Quick Access */}
         <ProjectQuickAccessGrid projects={recentProjects} isLoading={isLoading} />
