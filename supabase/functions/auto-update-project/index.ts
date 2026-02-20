@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -6,13 +5,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -20,40 +22,52 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
-    // Validate user
+    // Validate user via getClaims
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     const userId = claimsData.claims.sub;
 
-    // Service client for writes
+    // Service client for reads/writes
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const { project_id } = await req.json();
     if (!project_id) {
-      return new Response(JSON.stringify({ error: "project_id é obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "project_id é obrigatório" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const actions: { action: string; status: "ok" | "skipped" | "error"; detail?: string }[] = [];
 
     // --- Read project state in parallel ---
-    const [projectRes, tasksRes, contractRes, revenuesRes, eventsRes] = await Promise.all([
+    const [projectRes, tasksRes, contractRes, eventsRes] = await Promise.all([
       adminClient.from("projects").select("*").eq("id", project_id).single(),
-      adminClient.from("tasks").select("id, title, status").eq("user_id", userId).limit(5),
-      adminClient.from("contracts").select("id, status").eq("project_id", project_id).limit(1),
-      adminClient.from("revenues").select("id, status, amount, due_date").eq("project_id", project_id).limit(20),
-      adminClient.from("calendar_events").select("id, title, event_type, start_at").eq("project_id", project_id)
-        .gte("start_at", new Date().toISOString()).limit(10),
+      adminClient.from("tasks").select("id").eq("user_id", userId).limit(1),
+      adminClient.from("contracts").select("id, status, total_value").eq("project_id", project_id).limit(1),
+      adminClient
+        .from("calendar_events")
+        .select("id, event_type")
+        .eq("project_id", project_id)
+        .gte("start_at", new Date().toISOString())
+        .limit(10),
     ]);
 
     const project = projectRes.data;
     if (!project) {
-      return new Response(JSON.stringify({ error: "Projeto não encontrado" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Projeto não encontrado" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const hasContract = (contractRes.data?.length ?? 0) > 0;
@@ -61,25 +75,136 @@ serve(async (req) => {
     const hasDeliveryEvent = (eventsRes.data ?? []).some(
       (e) => e.event_type === "delivery" || e.event_type === "entrega"
     );
-    const contractValue = project.contract_value ?? 0;
+    const contractValue = Number(project.contract_value) ?? 0;
 
-    // --- Action 1: Sync finances if contract_value > 0 ---
+    // --- Action 1: Sync finances using service role directly (bypass user auth) ---
     if (contractValue > 0) {
       try {
-        const syncRes = await fetch(`${supabaseUrl}/functions/v1/sync-project-finances`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceRoleKey}`,
-            "Content-Type": "application/json",
-            apikey: anonKey,
-          },
-          body: JSON.stringify({ project_id, force_regenerate: !hasContract }),
-        });
-        const syncData = await syncRes.json();
-        if (!syncRes.ok && syncData?.error) {
-          actions.push({ action: "Sincronizar financeiro", status: "error", detail: syncData.error });
-        } else {
-          actions.push({ action: "Financeiro sincronizado", status: "ok", detail: syncData?.message });
+        // Call sync-project-finances logic directly instead of via HTTP
+        // to avoid the user-token validation issue when called internally
+        const forceRegenerate = !hasContract;
+
+        // Check/create contract
+        const { data: existingContracts } = await adminClient
+          .from("contracts")
+          .select("*")
+          .eq("project_id", project_id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        let contract = existingContracts?.[0] || null;
+        let contractCreated = false;
+
+        if (!contract) {
+          // Generate payment terms with AI
+          let paymentTerms = "50% na assinatura + 50% na entrega";
+          try {
+            const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash-lite",
+                messages: [{
+                  role: "user",
+                  content: `Retorne APENAS uma string curta com condições de pagamento para uma produtora audiovisual brasileira, tipo de projeto: ${project.template || "audiovisual"}, valor: R$ ${contractValue}. Exemplo: "50% na assinatura + 50% na entrega". Só o texto, sem explicações.`,
+                }],
+                max_tokens: 60,
+              }),
+            });
+            if (aiRes.ok) {
+              const aiData = await aiRes.json();
+              const generated = aiData.choices?.[0]?.message?.content?.trim();
+              if (generated) paymentTerms = generated;
+            }
+          } catch { /* fallback to default */ }
+
+          const { data: newContract, error: createErr } = await adminClient
+            .from("contracts")
+            .insert({
+              project_id,
+              project_name: project.name,
+              client_name: project.client_name || null,
+              total_value: contractValue,
+              payment_terms: paymentTerms,
+              status: "active",
+              start_date: project.start_date || new Date().toISOString().split("T")[0],
+              end_date: project.due_date || null,
+            })
+            .select()
+            .single();
+
+          if (createErr || !newContract) {
+            actions.push({ action: "Sincronizar financeiro", status: "error", detail: createErr?.message });
+          } else {
+            contract = newContract;
+            contractCreated = true;
+          }
+        }
+
+        if (contract) {
+          // Check and create revenues
+          const { data: existingRevenues } = await adminClient
+            .from("revenues")
+            .select("id")
+            .eq("contract_id", contract.id);
+
+          const hasRevenues = (existingRevenues?.length || 0) > 0;
+
+          if (hasRevenues && !forceRegenerate) {
+            actions.push({
+              action: contractCreated ? "Contrato criado" : "Financeiro sincronizado",
+              status: "ok",
+              detail: `${existingRevenues?.length} parcela(s) existente(s)`,
+            });
+          } else {
+            if (hasRevenues && forceRegenerate) {
+              await adminClient.from("revenues").delete().eq("contract_id", contract.id);
+            }
+
+            // Parse payment terms and create milestones
+            const startDate = project.start_date || new Date().toISOString().split("T")[0];
+            const terms = contract.payment_terms?.toLowerCase().trim() || "";
+            const milestones: { description: string; amount: number; due_date: string }[] = [];
+
+            const entradaMatch = terms.match(/entrada\s*\+\s*(\d+)\s*parcela/);
+            if (entradaMatch) {
+              const n = parseInt(entradaMatch[1]);
+              const perInstallment = Math.round((contractValue / (n + 1)) * 100) / 100;
+              milestones.push({ description: `Entrada (1/${n + 1})`, amount: contractValue - perInstallment * n, due_date: startDate });
+              for (let i = 1; i <= n; i++) {
+                const d = new Date(startDate); d.setMonth(d.getMonth() + i);
+                milestones.push({ description: `Parcela ${i + 1}/${n + 1}`, amount: perInstallment, due_date: d.toISOString().split("T")[0] });
+              }
+            } else {
+              const half = Math.round((contractValue / 2) * 100) / 100;
+              const d2 = new Date(startDate); d2.setDate(d2.getDate() + 30);
+              milestones.push({ description: "Entrada na assinatura (50%)", amount: half, due_date: startDate });
+              milestones.push({ description: "Parcela final na entrega (50%)", amount: contractValue - half, due_date: d2.toISOString().split("T")[0] });
+            }
+
+            const revenueRows = milestones.map((m) => ({
+              project_id,
+              contract_id: contract!.id,
+              description: `${project.name} — ${m.description}`,
+              amount: m.amount,
+              due_date: m.due_date,
+              status: "pending",
+              installment_group_id: contract!.id,
+              notes: "Gerado automaticamente via Auto Update IA",
+              created_by: userId,
+            }));
+
+            const { data: inserted, error: insertErr } = await adminClient.from("revenues").insert(revenueRows).select();
+            if (insertErr) {
+              actions.push({ action: "Sincronizar financeiro", status: "error", detail: insertErr.message });
+            } else {
+              actions.push({
+                action: contractCreated ? "Contrato criado + parcelas geradas" : "Parcelas regeneradas",
+                status: "ok",
+                detail: `${inserted?.length} parcela(s) • ${contract.payment_terms}`,
+              });
+            }
+          }
         }
       } catch (e: any) {
         actions.push({ action: "Sincronizar financeiro", status: "error", detail: e.message });
@@ -91,26 +216,20 @@ serve(async (req) => {
     // --- Action 2: Generate tasks via AI if no tasks exist ---
     if (!hasTasks) {
       try {
-        const systemPrompt = `Você é um assistente de gestão de projetos criativos. Gere tarefas práticas e objetivas para o projeto descrito.`;
-        const userPrompt = `Projeto: "${project.name}"
-Tipo: ${project.template || "Projeto criativo"}
-Etapa atual: ${project.stage_current || "inicial"}
-Cliente: ${project.client_name || "não informado"}
-Descrição: ${project.description || "sem descrição"}
-
-Gere entre 3 e 5 tarefas essenciais para avançar este projeto. Responda SOMENTE com JSON válido.`;
-
         const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${lovableApiKey}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "google/gemini-2.5-flash-lite",
             messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
+              {
+                role: "system",
+                content: "Você é um assistente de gestão de projetos criativos. Gere tarefas práticas para o projeto descrito.",
+              },
+              {
+                role: "user",
+                content: `Projeto: "${project.name}", Tipo: ${project.template || "Projeto criativo"}, Etapa: ${project.stage_current || "inicial"}, Cliente: ${project.client_name || "não informado"}. Gere entre 3 e 5 tarefas essenciais. Responda SOMENTE com JSON válido.`,
+              },
             ],
             tools: [
               {
@@ -151,7 +270,6 @@ Gere entre 3 e 5 tarefas essenciais para avançar este projeto. Responda SOMENTE
         if (toolCall) {
           const parsed = JSON.parse(toolCall.function.arguments);
           const generatedTasks = parsed?.tasks ?? [];
-
           if (generatedTasks.length > 0) {
             const taskRows = generatedTasks.map((t: any) => ({
               user_id: userId,
@@ -162,7 +280,6 @@ Gere entre 3 e 5 tarefas essenciais para avançar este projeto. Responda SOMENTE
               tags: [],
               position: 0,
             }));
-
             const { error: insertError } = await adminClient.from("tasks").insert(taskRows);
             if (insertError) {
               actions.push({ action: "Gerar tarefas com IA", status: "error", detail: insertError.message });
@@ -211,20 +328,22 @@ Gere entre 3 e 5 tarefas essenciais para avançar este projeto. Responda SOMENTE
         actions.push({ action: "Agendar entrega no calendário", status: "error", detail: e.message });
       }
     } else if (!project.due_date) {
-      actions.push({ action: "Agendar entrega no calendário", status: "skipped", detail: "Data de entrega não definida" });
+      actions.push({ action: "Agendar entrega", status: "skipped", detail: "Data de entrega não definida" });
     } else {
-      actions.push({ action: "Agendar entrega no calendário", status: "skipped", detail: "Evento de entrega já existe" });
+      actions.push({ action: "Agendar entrega", status: "skipped", detail: "Evento de entrega já existe" });
     }
 
     const successCount = actions.filter((a) => a.status === "ok").length;
     const errorCount = actions.filter((a) => a.status === "error").length;
     const skippedCount = actions.filter((a) => a.status === "skipped").length;
 
+    const successLabels = actions.filter((a) => a.status === "ok").map((a) => a.action).join(", ");
+
     const summary =
       successCount > 0
-        ? `✓ ${successCount} ação${successCount > 1 ? "ões" : ""} executada${successCount > 1 ? "s" : ""}${errorCount > 0 ? `, ${errorCount} com erro` : ""}${skippedCount > 0 ? `, ${skippedCount} ignorada${skippedCount > 1 ? "s" : ""}` : ""}`
+        ? `✓ ${successLabels}${errorCount > 0 ? ` • ${errorCount} erro(s)` : ""}${skippedCount > 0 ? ` • ${skippedCount} ignorada(s)` : ""}`
         : errorCount > 0
-        ? `${errorCount} erro${errorCount > 1 ? "s" : ""} encontrado${errorCount > 1 ? "s" : ""}`
+        ? `${errorCount} erro(s) encontrado(s). Verifique as configurações do projeto.`
         : "Projeto já está atualizado — nenhuma ação necessária";
 
     return new Response(
