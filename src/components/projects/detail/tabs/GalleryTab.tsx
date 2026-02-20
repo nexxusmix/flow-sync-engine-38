@@ -320,6 +320,20 @@ function AssetCard({
                     Download
                   </DropdownMenuItem>
                 )}
+                {asset.asset_type === 'image' && (
+                  <DropdownMenuItem onClick={async () => {
+                    toast.info('Reprocessando com IA...');
+                    try {
+                      await supabase.functions.invoke('process-asset', { body: { asset_id: asset.id } });
+                      toast.success('Reprocessamento iniciado!');
+                    } catch (e) {
+                      toast.error('Erro ao reprocessar');
+                    }
+                  }}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Reprocessar com IA
+                  </DropdownMenuItem>
+                )}
                 {asset.url && (
                   <DropdownMenuItem asChild>
                     <a href={asset.url} target="_blank" rel="noopener noreferrer">
