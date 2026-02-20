@@ -125,13 +125,11 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   };
 
   const handleSyncFinance = async () => {
-    // Validate contract_value before calling edge function
+    // Proactive validation: open inline edit if no value defined
     if (!project.contract_value || project.contract_value === 0) {
-      toast.warning('Este projeto não tem valor de contrato definido. Edite o projeto para definir o valor antes de sincronizar o financeiro.', {
-        action: {
-          label: 'Editar projeto',
-          onClick: handleEdit,
-        },
+      toast.warning('Defina o valor do contrato antes de sincronizar.', {
+        description: 'Clique no valor "R$ 0" no header para editar inline.',
+        action: { label: 'Editar inline', onClick: handleStartEditValue },
         duration: 6000,
       });
       return;
@@ -139,21 +137,21 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
     setIsSyncingFinance(true);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-project-finances', {
-        body: { project_id: project.id },
-      });
-      // Try to extract specific error message from response body
-      if (error) {
-        const bodyMsg = (error as any)?.context?.body
-          ? await (error as any).context.body.text?.()?.catch?.(() => null)
-          : null;
-        let parsedMsg: string | null = null;
-        if (bodyMsg) {
-          try { parsedMsg = JSON.parse(bodyMsg)?.error || JSON.parse(bodyMsg)?.message; } catch { /* ignore */ }
+      // Use fetch directly to read body on non-2xx responses
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-project-finances`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ project_id: project.id }),
         }
-        throw new Error(parsedMsg || error.message || 'Erro ao sincronizar financeiro');
-      }
-      if (data?.error) throw new Error(data.error);
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Erro ${res.status}`);
       toast.success(data?.message || 'Financeiro sincronizado!');
       queryClient.invalidateQueries({ queryKey: ['project-finance', project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
