@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useSignedUrlBatch } from "@/hooks/useSignedUrlBatch";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { useProjectAssets, ProjectAsset } from "@/hooks/useProjectAssets";
 import { supabase } from "@/integrations/supabase/client";
@@ -122,16 +123,22 @@ const CATEGORY_BG: Record<string, string> = {
   other: 'from-muted to-muted/30',
 };
 
-function AssetThumbnail({ asset }: { asset: ProjectAsset }) {
+function AssetThumbnail({ asset, preloadedUrl }: { asset: ProjectAsset; preloadedUrl?: string | null }) {
   const [imgError, setImgError] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(
-    asset.thumb_url || asset.og_image_url || asset.preview_url || null
+    preloadedUrl || asset.thumb_url || asset.og_image_url || asset.preview_url || null
   );
   const entities = asset.ai_entities as any;
 
+  useEffect(() => {
+    if (preloadedUrl && preloadedUrl !== resolvedUrl) {
+      setResolvedUrl(preloadedUrl);
+      setImgError(false);
+    }
+  }, [preloadedUrl]);
+
   const handleError = async () => {
-    // Try to generate a signed URL from private storage
-    if (asset.storage_path && asset.asset_type === 'image') {
+    if (!preloadedUrl && asset.storage_path && asset.asset_type === 'image') {
       try {
         const { data } = await supabase.storage
           .from(asset.storage_bucket || 'project-files')
@@ -140,9 +147,7 @@ function AssetThumbnail({ asset }: { asset: ProjectAsset }) {
           setResolvedUrl(data.signedUrl);
           return;
         }
-      } catch {
-        // fallback to placeholder
-      }
+      } catch (e) { /* noop */ }
     }
     setImgError(true);
   };
@@ -204,12 +209,14 @@ function AssetCard({
   selectionMode,
   isSelected,
   onToggle,
+  preloadedUrl,
 }: {
   asset: ProjectAsset;
   onDelete: (id: string) => void;
   selectionMode?: boolean;
   isSelected?: boolean;
   onToggle?: (id: string) => void;
+  preloadedUrl?: string | null;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -273,7 +280,7 @@ function AssetCard({
           className="relative aspect-video bg-muted/40 overflow-hidden cursor-pointer"
           onClick={handleCardClick}
         >
-          <AssetThumbnail asset={asset} />
+          <AssetThumbnail asset={asset} preloadedUrl={preloadedUrl} />
 
           {/* Selection checkbox overlay */}
           {selectionMode && (
@@ -493,6 +500,8 @@ function AssetCard({
 
 export function GalleryTab({ project }: GalleryTabProps) {
   const { assets, isLoading, deleteAsset } = useProjectAssets(project.id);
+  // Batch pre-fetch all signed URLs at once when gallery opens — eliminates per-card delay
+  const signedUrlMap = useSignedUrlBatch(assets);
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<FilterType>('all');
@@ -991,6 +1000,7 @@ export function GalleryTab({ project }: GalleryTabProps) {
               selectionMode={selectionMode}
               isSelected={selectedIds.has(asset.id)}
               onToggle={toggleSelection}
+              preloadedUrl={signedUrlMap.get(asset.id)}
             />
           ))}
         </div>
