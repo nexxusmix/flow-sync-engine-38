@@ -30,6 +30,7 @@ interface ProjectActionsMenuProps {
   projectId?: string;
   projectName?: string;
   projectStatus?: string;
+  contractValue?: number;
   variant?: 'icon' | 'dots';
   showOpenOption?: boolean;
 }
@@ -39,6 +40,7 @@ export function ProjectActionsMenu({
   projectId: propProjectId,
   projectName: propProjectName,
   projectStatus: propProjectStatus,
+  contractValue: propContractValue,
   variant = 'dots',
   showOpenOption = true,
 }: ProjectActionsMenuProps) {
@@ -46,6 +48,7 @@ export function ProjectActionsMenu({
   const projectId = project?.id ?? propProjectId ?? '';
   const projectName = project?.name ?? propProjectName ?? '';
   const projectStatus = project?.status ?? propProjectStatus ?? 'active';
+  const contractValue = project?.contract_value ?? propContractValue ?? 0;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { completeProject, archiveProject, deleteProject } = useProjects();
@@ -85,17 +88,18 @@ export function ProjectActionsMenu({
 
   const handleSyncFinance = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Validate contract_value
-    if (!project?.contract_value || project.contract_value === 0) {
+    // Validate contract_value regardless of how the component was instantiated
+    if (!contractValue || contractValue <= 0) {
       toast.warning('Defina o valor do contrato no projeto antes de sincronizar o financeiro.', {
+        description: 'O valor do contrato deve ser maior que zero para gerar as parcelas financeiras.',
         action: {
-          label: 'Editar',
+          label: 'Editar projeto',
           onClick: () => {
             setSelectedProjectId(projectId);
             setEditProjectModalOpen(true);
           },
         },
-        duration: 5000,
+        duration: 6000,
       });
       return;
     }
