@@ -1,41 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export function useOnboarding() {
   const { user } = useAuth();
   const [dismissed, setDismissed] = useState(() => {
-    return localStorage.getItem("onboarding_dismissed") === "true";
+    if (!user) return false;
+    return localStorage.getItem(`onboarding_dismissed_${user.id}`) === "true";
   });
 
-  const { data: projectCount, isLoading } = useQuery({
-    queryKey: ["onboarding-projects", user?.id],
+  const { data: workspaceData, isLoading } = useQuery({
+    queryKey: ["onboarding-workspace", user?.id],
     queryFn: async () => {
-      const { count } = await (supabase as any)
-        .from("projects")
-        .select("id", { count: "exact", head: true });
-      return count ?? 0;
+      const { data } = await supabase
+        .from("workspace_settings")
+        .select("company_name")
+        .limit(1)
+        .maybeSingle();
+      return data;
     },
     enabled: !!user && !dismissed,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
-  const isNewUser = !!user && (() => {
-    if (!user.created_at) return false;
-    const createdAt = new Date(user.created_at);
-    const hoursSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-    return hoursSinceCreation < 48;
-  })();
+  // Show onboarding if workspace has no company name configured yet
+  const hasCompletedSetup = !!workspaceData?.company_name;
 
-  const shouldShow =
-    !dismissed &&
-    !isLoading &&
-    isNewUser &&
-    (projectCount === 0 || projectCount === null);
+  const shouldShow = !dismissed && !isLoading && !hasCompletedSetup && !!user;
 
   const dismiss = () => {
-    localStorage.setItem("onboarding_dismissed", "true");
+    if (user) localStorage.setItem(`onboarding_dismissed_${user.id}`, "true");
     setDismissed(true);
   };
 
