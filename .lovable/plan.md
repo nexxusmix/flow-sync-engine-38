@@ -1,126 +1,76 @@
 
-## Expandir o Botão "Novo" com Todas as Funcionalidades da Plataforma
+## Diagnóstico completo
 
-### Contexto atual
+### O que os logs mostram
 
-O botão "Novo" no topo da aplicação (`QuickActionsMenu.tsx`) atualmente oferece apenas 2 ações:
-- Novo Lead
-- Nova Proposta
+A função `extract-project-from-document` tem **dois problemas críticos** que causam dados incompletos:
 
-A plataforma possui muito mais fluxos de criação espalhados pelos módulos. O objetivo é centralizar todos eles no botão "Novo" para acesso rápido de qualquer página.
+**Problema 1 — Processamento redundante e ineficiente de imagens**
 
----
+O fluxo atual processa **tanto o PDF quanto 6 imagens das páginas** em sequência:
+- PDF (18MB base64) → Gemini extrai 11.558 chars ✅
+- Imagem 1 (10.7MB) → retorna apenas 674 chars
+- Imagem 2 (11.1MB) → retorna apenas 535 chars
+- Imagem 3 (11.4MB) → retorna apenas 463 chars
+- Imagem 4 (12.5MB) → retorna apenas 652 chars
+- Imagem 5 (10.3MB) → retorna apenas 451 chars
+- Imagem 6 (70KB) → retorna apenas 1.337 chars
 
-### Inventário completo de criações na plataforma
+As imagens de página são imagens enormes (~10MB cada) sendo enviadas para o Gemini via gateway HTTP com o prompt de extração hiper-detalhado, mas o modelo retorna muito pouco por imagem — provavelmente porque cada imagem é tratada isoladamente sem contexto das demais.
 
-Mapeamento de todas as ações de criação encontradas na base de código:
+**Resultado:** Total de apenas 15.784 chars extraídos, sendo que a maioria (11.558) vem do PDF. As imagens contribuem menos de 4.000 chars combinados apesar de consumirem enorme memória.
 
-| Módulo | Ação | Rota de destino |
-|---|---|---|
-| CRM | Novo Lead (Deal) | `/crm` |
-| Comercial | Nova Proposta | `/propostas/:id` |
-| Projetos | Novo Projeto (manual) | Abre modal `NewProjectModal` |
-| Projetos | Novo Projeto com IA | Abre modal `AIProjectModal` |
-| Contratos | Novo Contrato | `/contratos` |
-| Tarefas | Nova Tarefa | `/tarefas` |
-| Marketing | Novo Conteúdo | `/marketing/pipeline` |
-| Marketing | Nova Campanha | `/marketing/campanhas` |
-| Studio | Novo Trabalho Criativo | `/marketing/studio` |
-| Financeiro | Nova Receita | `/financeiro/receitas` |
-| Financeiro | Nova Despesa | `/financeiro/despesas` |
+**Problema 2 — Chamada de estruturação sem `max_tokens`, usando modelo que trunca**
+
+A segunda chamada de IA (estruturação do projeto) usa `gemini-3-flash-preview` com `tool_choice: function` mas sem `max_tokens` definido. O modelo tem limite padrão baixo para tool calls, causando truncamento do `fullScope` (resultado: apenas 1.194 chars para o escopo de todo o projeto).
 
 ---
 
-### Solução: Menu "Novo" expandido com grupos temáticos
+### Solução
 
-O menu será reorganizado em **grupos visuais** para manter a clareza mesmo com mais itens:
+**Mudança 1 — Ignorar as imagens de página quando o PDF já foi extraído com sucesso**
 
-```text
-┌─────────────────────────────────┐
-│  + NOVO                         │
-├─────────────────────────────────┤
-│  COMERCIAL                      │
-│  👤  Novo Lead                  │
-│  📄  Nova Proposta              │
-│  📝  Novo Contrato              │
-├─────────────────────────────────┤
-│  PRODUÇÃO                       │
-│  🗂️  Novo Projeto               │
-│  ✨  Projeto com IA             │
-│  ✅  Nova Tarefa                 │
-├─────────────────────────────────┤
-│  CONTEÚDO & CRIATIVO            │
-│  🎬  Novo Trabalho Criativo     │
-│  📱  Novo Conteúdo              │
-│  🚀  Nova Campanha              │
-├─────────────────────────────────┤
-│  FINANCEIRO                     │
-│  💰  Nova Receita               │
-│  🧾  Nova Despesa               │
-└─────────────────────────────────┘
-```
+Se o PDF foi processado e retornou conteúdo suficiente (>1.000 chars), as imagens das páginas são redundantes. A função deve pular o loop de imagens nesse caso. As imagens devem ser processadas SOMENTE como fallback quando o PDF falha.
 
----
+**Mudança 2 — Quando processar imagens, limitar tamanho e usar streaming sequencial**
 
-### Arquitetura da implementação
+Para imagens grandes (>3MB base64), reduzir para escala antes de enviar. Imagens de página acima de 3MB devem ser ignoradas ou marcadas como "página visual sem texto detectável".
 
-#### 1. Refatoração de `QuickActionsMenu.tsx`
+**Mudança 3 — Aumentar `max_tokens` na chamada de estruturação**
 
-O componente será expandido para:
-- Receber callbacks de criação de projetos (novo e com IA) via props adicionais
-- Usar `DropdownMenuLabel` + `DropdownMenuSeparator` para criar grupos visuais
-- Usar `useNavigate` internamente para as ações que redirecionam para páginas com estado de modal (ex: `/tarefas?new=true`)
-- Manter os modais de Lead e Proposta como estão (inline no Header), pois já funcionam bem
+A segunda chamada deve usar `max_tokens: 16000` para garantir que o `fullScope`, `deliverables` e `paymentMilestones` não sejam truncados. Usar `gemini-2.5-flash` que tem maior janela de output para tool calls.
 
-#### 2. Atualização de `Header.tsx`
+**Mudança 4 — Melhorar o prompt de extração de PDF**
 
-Passará os novos callbacks para o `QuickActionsMenu`:
-- `onNewProject` → abre `NewProjectModal`
-- `onNewAIProject` → abre `AIProjectModal`
-- Estado dos modais `isNewProjectModalOpen` / `isAIProjectModalOpen` gerenciados localmente no Header ou via `useProjectsStore`
-
-#### 3. Estratégia por tipo de ação
-
-Algumas criações abrem modais inline, outras navegam para a página do módulo e disparam o modal via query param (`?new=true`), pois os modais de criação estão acoplados nas páginas dos módulos:
-
-| Ação | Estratégia |
-|---|---|
-| Novo Lead | Modal inline no Header (já existe) |
-| Nova Proposta | Modal inline no Header (já existe) |
-| Novo Projeto | Modal do `useProjectsStore` via `setNewProjectModalOpen(true)` + navegar para `/projetos` |
-| Novo Projeto IA | Modal do `useProjectsStore` via `setAIProjectModalOpen(true)` + navegar para `/projetos` |
-| Novo Contrato | Navegar para `/contratos?new=true` |
-| Nova Tarefa | Navegar para `/tarefas?new=true` |
-| Novo Conteúdo | Navegar para `/marketing/pipeline?new=true` |
-| Nova Campanha | Navegar para `/marketing/campanhas?new=true` |
-| Novo Trabalho Criativo | Navegar para `/marketing/studio` (a página já cria automaticamente) |
-| Nova Receita | Navegar para `/financeiro/receitas?new=true` |
-| Nova Despesa | Navegar para `/financeiro/despesas?new=true` |
-
-Para as páginas que usam query param `?new=true`, será adicionado um `useEffect` que verifica esse param e abre o dialog de criação automaticamente.
+O prompt atual é genérico. Deve incluir instrução explícita para extrair **todos os valores monetários, datas e nomes de entregáveis verbatim**, especialmente para documentos de identidade visual e contratos.
 
 ---
 
 ### Arquivos a modificar
 
-1. **`src/components/layout/QuickActionsMenu.tsx`** — Expandir com todos os grupos e ações, adicionar `useNavigate`, usar `DropdownMenuLabel` e `DropdownMenuSeparator`, ajustar as props com os novos callbacks
-2. **`src/components/layout/Header.tsx`** — Adicionar estado e handlers para os modais de Projeto e Projeto IA, atualizar props passadas ao `QuickActionsMenu`, incluir os componentes `NewProjectModal` e `AIProjectModal`
-3. **`src/pages/contracts/ContractsListPage.tsx`** — Adicionar `useEffect` para ler `?new=true` e abrir o modal de novo contrato
-4. **`src/pages/TasksPage.tsx`** — Adicionar `useEffect` para ler `?new=true` e abrir o dialog de nova tarefa
-5. **`src/pages/marketing/PipelinePage.tsx`** — Adicionar `useEffect` para ler `?new=true` e abrir o dialog de novo conteúdo
-6. **`src/pages/marketing/CampaignsPage.tsx`** — Adicionar `useEffect` para ler `?new=true` e abrir o dialog de nova campanha
-7. **`src/pages/finance/RevenuesPage.tsx`** — Adicionar `useEffect` para ler `?new=true` e abrir o dialog de nova receita
-8. **`src/pages/finance/ExpensesPage.tsx`** — Adicionar `useEffect` para ler `?new=true` e abrir o dialog de nova despesa
+**`supabase/functions/extract-project-from-document/index.ts`**:
 
----
+1. Após extrair o PDF com sucesso (>1.000 chars), **pular completamente o loop de imagens**
+2. No loop de imagens (fallback), **filtrar imagens >3MB** com aviso em log
+3. Na chamada de estruturação: mudar modelo para `gemini-2.5-flash`, adicionar `max_tokens: 16000`
+4. Adicionar log do `rawExtractedContent` length para rastrear truncamento
 
-### Detalhes técnicos do componente expandido
+### Fluxo corrigido
 
-O `QuickActionsMenu` usará:
-- `DropdownMenuLabel` para os cabeçalhos de grupo (COMERCIAL, PRODUÇÃO, etc.)
-- `DropdownMenuSeparator` entre os grupos
-- Ícones específicos por ação (ex: `UserPlus`, `FileText`, `FolderPlus`, `Sparkles`, `CheckSquare`, `Clapperboard`, `Newspaper`, `Megaphone`, `TrendingUp`, `Receipt`)
-- Largura do dropdown expandida para `w-56`
-- Textos em português, maiúsculas com tracking para manter o visual atual
+```text
+ANTES (sempre processa tudo):
+PDF (18MB) → 11k chars
++ Imagem 1 (10MB) → 674 chars   ← desnecessário, OOM risk
++ Imagem 2 (11MB) → 535 chars   ← desnecessário
++ ... 4 imagens mais
+= 15k chars total → estruturação truncada (max_tokens não definido)
+→ fullScope: 1.194 chars ← INCOMPLETO
 
-O menu terá aproximadamente 11 ações organizadas em 4 grupos, com separadores visuais claros entre eles.
+DEPOIS (PDF prioritário, imagens só como fallback):
+PDF (18MB) → 11k chars → sucesso ✅
+→ pula imagens (já temos conteúdo suficiente)
+= 11k chars → estruturação com max_tokens: 16000
+→ fullScope: completo, deliverables: completo ✅
+```
+
+Além disso, o log do `extract-visual-assets` ainda mostra OOM — esse arquivo foi reescrito mas pode não ter sido deployado corretamente. O plano inclui verificar e re-deployar.
