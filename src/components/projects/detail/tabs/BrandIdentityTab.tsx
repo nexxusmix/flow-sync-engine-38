@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { useProjectAssets, ProjectAsset } from "@/hooks/useProjectAssets";
 import { useCreativeWorks } from "@/hooks/useCreativeWorks";
@@ -39,6 +39,8 @@ import {
   PenLine,
   Stamp,
   Camera,
+  Trash2,
+  CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -140,7 +142,19 @@ function ColorSwatch({ color, size = "md" }: { color: string; size?: "sm" | "md"
 
 // ─── Logo Card ─────────────────────────────────────────────────────────────
 
-function LogoCard({ asset, onSendToStudio }: { asset: ProjectAsset; onSendToStudio: (asset: ProjectAsset) => void }) {
+function LogoCard({
+  asset,
+  onSendToStudio,
+  selectionMode,
+  isSelected,
+  onToggle,
+}: {
+  asset: ProjectAsset;
+  onSendToStudio: (asset: ProjectAsset) => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onToggle?: (id: string) => void;
+}) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const entities = asset.ai_entities as any;
   const downloadUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
@@ -155,26 +169,47 @@ function LogoCard({ asset, onSendToStudio }: { asset: ProjectAsset; onSendToStud
     }
   };
 
+  const handleCardClick = () => {
+    if (selectionMode) onToggle?.(asset.id);
+    else setPreviewOpen(true);
+  };
+
   return (
     <>
-      <div className="glass-card rounded-2xl overflow-hidden group hover:ring-2 hover:ring-primary/30 transition-all">
+      <div className={cn(
+        "glass-card rounded-2xl overflow-hidden group transition-all",
+        selectionMode && isSelected
+          ? "ring-2 ring-primary bg-primary/5"
+          : "hover:ring-2 hover:ring-primary/30"
+      )}>
         {/* Preview area */}
         <div
           className="relative aspect-video bg-muted/20 flex items-center justify-center cursor-pointer overflow-hidden"
           style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.3) 0% 25%, transparent 0% 50%) 0 0 / 12px 12px" }}
-          onClick={() => setPreviewOpen(true)}
+          onClick={handleCardClick}
         >
           <BrandAssetThumbnail asset={asset} />
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1">
-              <ImageIcon className="w-3 h-3" />
-              Ver
-            </Button>
-          </div>
+          {/* Selection checkbox overlay */}
+          {selectionMode && (
+            <div className="absolute top-2 left-2 z-20">
+              <div className="w-5 h-5 rounded border-2 border-primary bg-background flex items-center justify-center shadow-sm">
+                {isSelected && <div className="w-3 h-3 rounded-sm bg-primary" />}
+              </div>
+            </div>
+          )}
 
-          {asset.ai_processed && (
+          {/* Hover overlay (only when not in selection mode) */}
+          {!selectionMode && (
+            <div className="absolute inset-0 bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1">
+                <ImageIcon className="w-3 h-3" />
+                Ver
+              </Button>
+            </div>
+          )}
+
+          {asset.ai_processed && !selectionMode && (
             <Badge className="absolute top-2 left-2 h-5 px-1.5 text-[9px] bg-primary/90 text-primary-foreground gap-1">
               <Sparkles className="w-2.5 h-2.5" />
               IA
@@ -508,9 +543,14 @@ function ExportColorsDialog({
 // ─── Main Component ────────────────────────────────────────────────────────
 
 export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
-  const { assets, isLoading } = useProjectAssets(project.id);
+  const { assets, isLoading, deleteAsset } = useProjectAssets(project.id);
   const [studioAsset, setStudioAsset] = useState<ProjectAsset | null>(null);
   const [exportColorsOpen, setExportColorsOpen] = useState(false);
+
+  // Selection state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Detect logo/visual identity assets: images that were AI processed and tagged
   const logoAssets = assets.filter(a => {
@@ -549,6 +589,36 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
       .filter(Boolean)
   )];
 
+  const allVisibleAssets = [...logoAssets, ...signatureAssets];
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedIds(new Set(allVisibleAssets.map(a => a.id)));
+  const clearSelection = () => setSelectedIds(new Set());
+  const exitSelection = () => { setSelectionMode(false); setSelectedIds(new Set()); };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Excluir ${selectedIds.size} item(s)? Esta ação não pode ser desfeita.`)) return;
+    setIsDeleting(true);
+    try {
+      await Promise.all([...selectedIds].map(id => deleteAsset.mutateAsync(id)));
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      toast.success('Itens excluídos com sucesso');
+    } catch {
+      toast.error('Erro ao excluir itens');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -577,17 +647,57 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
             Logos, paletas e assets de marca extraídos automaticamente pela IA
           </p>
         </div>
-        {allColors.length > 0 && (
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => setExportColorsOpen(true)}
-          >
-            <Palette className="w-4 h-4" />
-            Exportar Paleta
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {allVisibleAssets.length > 0 && !selectionMode && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setSelectionMode(true)}
+            >
+              <CheckSquare className="w-4 h-4" />
+              Selecionar
+            </Button>
+          )}
+          {allColors.length > 0 && !selectionMode && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setExportColorsOpen(true)}
+            >
+              <Palette className="w-4 h-4" />
+              Exportar Paleta
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Selection action bar */}
+      {selectionMode && (
+        <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/20 flex-wrap">
+          <span className="text-sm font-medium text-foreground">
+            {selectedIds.size} selecionado{selectedIds.size !== 1 ? 's' : ''}
+          </span>
+          <Button size="sm" variant="outline" onClick={selectAll} className="h-8 text-xs">
+            Selecionar tudo ({allVisibleAssets.length})
+          </Button>
+          <Button size="sm" variant="outline" onClick={clearSelection} className="h-8 text-xs" disabled={selectedIds.size === 0}>
+            Desmarcar tudo
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleBulkDelete}
+            disabled={selectedIds.size === 0 || isDeleting}
+            className="h-8 text-xs gap-1.5 ml-auto"
+          >
+            {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            Excluir {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={exitSelection} className="h-8 text-xs">
+            Cancelar
+          </Button>
+        </div>
+      )}
 
       {!hasAnyData ? (
         /* Empty state */
@@ -627,6 +737,9 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
                     key={asset.id}
                     asset={asset}
                     onSendToStudio={(a) => setStudioAsset(a)}
+                    selectionMode={selectionMode}
+                    isSelected={selectedIds.has(asset.id)}
+                    onToggle={toggleSelection}
                   />
                 ))}
               </div>
@@ -713,6 +826,9 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
                     key={asset.id}
                     asset={asset}
                     onSendToStudio={(a) => setStudioAsset(a)}
+                    selectionMode={selectionMode}
+                    isSelected={selectedIds.has(asset.id)}
+                    onToggle={toggleSelection}
                   />
                 ))}
               </div>

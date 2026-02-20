@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { useProjectAssets, ProjectAsset } from "@/hooks/useProjectAssets";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Upload, 
   Loader2, 
@@ -43,6 +44,7 @@ import {
   RotateCw,
   ChevronLeft,
   ChevronRight,
+  CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -175,7 +177,19 @@ function AssetThumbnail({ asset }: { asset: ProjectAsset }) {
   );
 }
 
-function AssetCard({ asset, onDelete }: { asset: ProjectAsset; onDelete: (id: string) => void }) {
+function AssetCard({
+  asset,
+  onDelete,
+  selectionMode,
+  isSelected,
+  onToggle,
+}: {
+  asset: ProjectAsset;
+  onDelete: (id: string) => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onToggle?: (id: string) => void;
+}) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -202,27 +216,50 @@ function AssetCard({ asset, onDelete }: { asset: ProjectAsset; onDelete: (id: st
     }
   }, [isPdf, asset.storage_path, pdfUrl]);
 
+  const handleCardClick = () => {
+    if (selectionMode) {
+      onToggle?.(asset.id);
+    } else {
+      openPreview();
+    }
+  };
 
   return (
     <>
-      <div className="glass-card rounded-xl overflow-hidden group hover:ring-2 hover:ring-primary/30 transition-all">
+      <div className={cn(
+        "glass-card rounded-xl overflow-hidden group transition-all",
+        selectionMode && isSelected
+          ? "ring-2 ring-primary bg-primary/5"
+          : "hover:ring-2 hover:ring-primary/30"
+      )}>
         {/* Thumbnail */}
         <div 
           className="relative aspect-video bg-muted/40 overflow-hidden cursor-pointer"
-          onClick={openPreview}
+          onClick={handleCardClick}
         >
           <AssetThumbnail asset={asset} />
 
-          {/* Overlay on hover */}
-          <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <Button size="sm" variant="secondary" className="h-8 gap-1 text-xs">
-              <Eye className="w-3 h-3" />
-              Ver
-            </Button>
-          </div>
+          {/* Selection checkbox overlay */}
+          {selectionMode && (
+            <div className="absolute top-2 left-2 z-20">
+              <div className="w-5 h-5 rounded border-2 border-primary bg-background flex items-center justify-center shadow-sm">
+                {isSelected && <div className="w-3 h-3 rounded-sm bg-primary" />}
+              </div>
+            </div>
+          )}
+
+          {/* Overlay on hover (only when not in selection mode) */}
+          {!selectionMode && (
+            <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <Button size="sm" variant="secondary" className="h-8 gap-1 text-xs">
+                <Eye className="w-3 h-3" />
+                Ver
+              </Button>
+            </div>
+          )}
 
           {/* AI badge */}
-          {asset.ai_processed && (
+          {asset.ai_processed && !selectionMode && (
             <div className="absolute top-2 left-2">
               <Badge className="h-5 px-1.5 text-[9px] bg-primary/90 text-primary-foreground gap-1">
                 <Cpu className="w-2.5 h-2.5" />
@@ -416,6 +453,11 @@ export function GalleryTab({ project }: GalleryTabProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
+  // Selection state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const filteredAssets = assets.filter(a => {
     if (filter === 'all') return true;
     return a.asset_type === filter;
@@ -515,6 +557,38 @@ export function GalleryTab({ project }: GalleryTabProps) {
     await deleteAsset.mutateAsync(assetId);
   };
 
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedIds(new Set(filteredAssets.map(a => a.id)));
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Excluir ${selectedIds.size} item(s)? Esta ação não pode ser desfeita.`)) return;
+    setIsDeleting(true);
+    try {
+      await Promise.all([...selectedIds].map(id => deleteAsset.mutateAsync(id)));
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      toast.success(`Itens excluídos com sucesso`);
+    } catch {
+      toast.error('Erro ao excluir itens');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const exitSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -541,17 +615,27 @@ export function GalleryTab({ project }: GalleryTabProps) {
             onChange={handleFileSelect}
             accept="image/*,.pdf,.doc,.docx"
           />
+          {assets.length > 0 && !selectionMode && (
+            <Button
+              variant="outline"
+              onClick={() => setSelectionMode(true)}
+              className="gap-2"
+            >
+              <CheckSquare className="w-4 h-4" />
+              Selecionar
+            </Button>
+          )}
           <Button 
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isExtracting}
+            disabled={isExtracting || selectionMode}
           >
             <Upload className="w-4 h-4 mr-2" />
             Upload de Arquivo
           </Button>
           <Button 
             onClick={() => fileInputRef.current?.click()}
-            disabled={isExtracting}
+            disabled={isExtracting || selectionMode}
             className="gap-2"
           >
             {isExtracting ? (
@@ -563,6 +647,34 @@ export function GalleryTab({ project }: GalleryTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* Selection action bar */}
+      {selectionMode && (
+        <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/20 flex-wrap">
+          <span className="text-sm font-medium text-foreground">
+            {selectedIds.size} selecionado{selectedIds.size !== 1 ? 's' : ''}
+          </span>
+          <Button size="sm" variant="outline" onClick={selectAll} className="h-8 text-xs">
+            Selecionar tudo ({filteredAssets.length})
+          </Button>
+          <Button size="sm" variant="outline" onClick={clearSelection} className="h-8 text-xs" disabled={selectedIds.size === 0}>
+            Desmarcar tudo
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleBulkDelete}
+            disabled={selectedIds.size === 0 || isDeleting}
+            className="h-8 text-xs gap-1.5 ml-auto"
+          >
+            {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            Excluir {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={exitSelection} className="h-8 text-xs">
+            Cancelar
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       {assets.length > 0 && (
@@ -608,7 +720,14 @@ export function GalleryTab({ project }: GalleryTabProps) {
       {filteredAssets.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredAssets.map(asset => (
-            <AssetCard key={asset.id} asset={asset} onDelete={handleDelete} />
+            <AssetCard
+              key={asset.id}
+              asset={asset}
+              onDelete={handleDelete}
+              selectionMode={selectionMode}
+              isSelected={selectedIds.has(asset.id)}
+              onToggle={toggleSelection}
+            />
           ))}
         </div>
       ) : (
@@ -671,3 +790,4 @@ export function GalleryTab({ project }: GalleryTabProps) {
     </div>
   );
 }
+
