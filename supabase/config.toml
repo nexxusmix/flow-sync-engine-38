@@ -156,3 +156,6 @@ verify_jwt = false
 
 [functions.delete-user]
 verify_jwt = false
+
+[functions.invite-user]
+verify_jwt = false

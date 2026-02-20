@@ -5,8 +5,10 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole, AppRole } from "@/hooks/useUserRole";
-import { ArrowLeft, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Trash2, Users, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,6 +29,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -67,6 +77,9 @@ export default function UsersSettingsPage() {
   const { user } = useAuth();
   const { isAdmin, isLoading: roleLoading } = useUserRole();
   const queryClient = useQueryClient();
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<AppRole>("operacao");
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users-list"],
@@ -169,6 +182,39 @@ export default function UsersSettingsPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const inviteUserMutation = useMutation({
+    mutationFn: async ({ email, role }: { email: string; role: AppRole }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ email, role }),
+        }
+      );
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Erro ao enviar convite");
+      }
+    },
+    onSuccess: (_, { email }) => {
+      toast.success(`Convite enviado para ${email}`);
+      setInviteOpen(false);
+      setInviteEmail("");
+      setInviteRole("operacao");
+      queryClient.invalidateQueries({ queryKey: ["admin-users-list"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const getInitials = (name: string | null) => {
     if (!name) return "?";
     return name
@@ -196,25 +242,89 @@ export default function UsersSettingsPage() {
   return (
     <DashboardLayout title="Gerenciamento de Usuários">
       <div className="space-y-6">
+        {/* Invite Dialog */}
+        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>Convidar Usuário</DialogTitle>
+              <DialogDescription>
+                Um link de acesso será enviado para o email informado.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="invite-email">Email</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="usuario@empresa.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invite-role">Role</Label>
+                <Select
+                  value={inviteRole}
+                  onValueChange={(v) => setInviteRole(v as AppRole)}
+                >
+                  <SelectTrigger id="invite-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(ROLE_LABELS) as AppRole[]).map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {ROLE_LABELS[role]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setInviteOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() =>
+                  inviteUserMutation.mutate({
+                    email: inviteEmail,
+                    role: inviteRole,
+                  })
+                }
+                disabled={!inviteEmail || inviteUserMutation.isPending}
+              >
+                {inviteUserMutation.isPending ? "Enviando..." : "Enviar Convite"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/configuracoes")}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <div>
-            <h1 className="text-2xl font-light text-foreground flex items-center gap-2">
-              <Users className="w-6 h-6" />
-              Gerenciamento de Usuários
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Visualize, edite roles e remova contas
-            </p>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/configuracoes")}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-2xl font-light text-foreground flex items-center gap-2">
+                <Users className="w-6 h-6" />
+                Gerenciamento de Usuários
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Visualize, edite roles e remova contas
+              </p>
+            </div>
           </div>
+          <Button onClick={() => setInviteOpen(true)} size="sm">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Convidar Usuário
+          </Button>
         </div>
 
         {/* Table */}

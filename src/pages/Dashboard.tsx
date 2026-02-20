@@ -9,6 +9,8 @@ import { ActionHubOverviewCard } from "@/components/action-hub/ActionHubOverview
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
 import { DollarSign, TrendingUp, Users, Clapperboard, ArrowRight, Calendar, Zap, Activity, Inbox, Eye, HardDrive, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import squadLogo from "@/assets/squad-hub-logo.png";
@@ -16,8 +18,9 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, user } = useAuth();
   const { data, isLoading: dataLoading } = useDashboardMetrics();
+  const { shouldShow, dismiss } = useOnboarding();
   
   // Loading during auth check or data fetch (hooks handle user existence internally)
   const isLoading = authLoading || dataLoading;
@@ -110,6 +113,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Dashboard">
+      <OnboardingDialog open={shouldShow} onClose={dismiss} />
       
       <div className="space-y-10 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
@@ -147,7 +151,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
             whileHover={{ scale: 1.02 }}
-            style={{ transformStyle: "preserve-3d", perspective: 800 }}
+            
           >
             <motion.span 
               className="material-symbols-outlined text-primary"
@@ -211,7 +215,7 @@ export default function Dashboard() {
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ delay: 0.35, type: "spring", stiffness: 70, damping: 18 }}
-          style={{ transformStyle: "preserve-3d" }}
+          
         >
           <div className="flex items-center justify-between mb-6">
             <div>
