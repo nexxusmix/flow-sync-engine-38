@@ -49,12 +49,7 @@ function HoloStatCard({
       initial={{ opacity: 0, filter: "blur(16px)", scale: 1.05 }}
       animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
       transition={{ duration: 0.8, delay, ease: [0.23, 1, 0.32, 1] }}
-      whileHover={{ 
-        translateZ: 20,
-        rotateX: -2,
-        rotateY: 5,
-        transition: { duration: 0.6 }
-      }}
+      whileHover={{ scale: 1.02, transition: { duration: 0.3 } }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">

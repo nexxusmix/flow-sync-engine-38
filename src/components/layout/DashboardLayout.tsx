@@ -122,15 +122,11 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
             "flex-1 overflow-y-auto py-6 flex flex-col",
             isMobile ? "px-4" : "px-4 md:px-6 lg:px-8"
           )} 
-          style={isMobile ? undefined : { zoom: 1.2, perspective: 1200 }}
+          style={isMobile ? undefined : { zoom: 1.2 }}
         >
           <motion.div 
             className="w-full flex-1"
-            style={isMobile ? undefined : { 
-              transformStyle: "preserve-3d",
-              rotateX: scrollRotateX,
-              translateZ: scrollPerspectiveZ,
-            }}
+            style={undefined}
           >
             <AnimatePresence mode="wait">
               <PageTransition>
