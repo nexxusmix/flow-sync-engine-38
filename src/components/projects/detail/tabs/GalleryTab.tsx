@@ -198,6 +198,21 @@ function AssetCard({
   const displayUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
   const isPdf = asset.asset_type === 'pdf';
 
+  const handleDownload = async () => {
+    if (!asset.storage_path) return;
+    const { data } = await supabase.storage
+      .from(asset.storage_bucket || 'project-files')
+      .createSignedUrl(asset.storage_path, 300);
+    if (data?.signedUrl) {
+      const a = document.createElement('a');
+      a.href = data.signedUrl;
+      a.download = asset.file_name || asset.title;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   const openPreview = useCallback(async () => {
     setPreviewOpen(true);
     if (isPdf && asset.storage_path && !pdfUrl) {
@@ -299,12 +314,10 @@ function AssetCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {asset.storage_path && (
-                  <DropdownMenuItem asChild>
-                    <a href={asset.thumb_url || '#'} target="_blank" rel="noopener noreferrer" download>
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </a>
+                {asset.source_type === 'file' && asset.storage_path && (
+                  <DropdownMenuItem onClick={handleDownload}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
                   </DropdownMenuItem>
                 )}
                 {asset.url && (
@@ -457,6 +470,7 @@ export function GalleryTab({ project }: GalleryTabProps) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const filteredAssets = assets.filter(a => {
     if (filter === 'all') return true;
@@ -589,6 +603,39 @@ export function GalleryTab({ project }: GalleryTabProps) {
     setSelectedIds(new Set());
   };
 
+  const handleBulkDownload = async () => {
+    const toDownload = [...selectedIds]
+      .map(id => assets.find(a => a.id === id))
+      .filter((a): a is ProjectAsset => !!(a && a.source_type === 'file' && a.storage_path));
+
+    if (toDownload.length === 0) {
+      toast.info('Nenhum arquivo para baixar (links são ignorados)');
+      return;
+    }
+
+    setIsDownloading(true);
+    toast.info(`Baixando ${toDownload.length} arquivo(s)...`);
+
+    for (let i = 0; i < toDownload.length; i++) {
+      const asset = toDownload[i];
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket || 'project-files')
+        .createSignedUrl(asset.storage_path!, 300);
+      if (data?.signedUrl) {
+        const a = document.createElement('a');
+        a.href = data.signedUrl;
+        a.download = asset.file_name || asset.title;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (i < toDownload.length - 1) await new Promise(r => setTimeout(r, 400));
+      }
+    }
+
+    setIsDownloading(false);
+    toast.success(`${toDownload.length} arquivo(s) baixado(s)`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -659,6 +706,16 @@ export function GalleryTab({ project }: GalleryTabProps) {
           </Button>
           <Button size="sm" variant="outline" onClick={clearSelection} className="h-8 text-xs" disabled={selectedIds.size === 0}>
             Desmarcar tudo
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleBulkDownload}
+            disabled={selectedIds.size === 0 || isDownloading}
+            className="h-8 text-xs gap-1.5"
+          >
+            {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+            Baixar {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
           </Button>
           <Button
             size="sm"

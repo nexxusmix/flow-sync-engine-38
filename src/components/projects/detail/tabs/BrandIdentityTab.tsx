@@ -159,7 +159,23 @@ function LogoCard({
   const entities = asset.ai_entities as any;
   const downloadUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    // Prefer original file via signed URL
+    if (asset.storage_path) {
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket || 'project-files')
+        .createSignedUrl(asset.storage_path, 300);
+      if (data?.signedUrl) {
+        const a = document.createElement('a');
+        a.href = data.signedUrl;
+        a.download = asset.file_name || asset.title;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+    }
+    // Fallback to thumb/preview URL
     if (downloadUrl) {
       const a = document.createElement('a');
       a.href = downloadUrl;
@@ -247,8 +263,8 @@ function LogoCard({
               size="sm"
               variant="outline"
               className="flex-1 h-7 text-xs gap-1"
-              onClick={handleDownload}
-              disabled={!asset.thumb_url}
+            onClick={handleDownload}
+              disabled={!asset.storage_path && !downloadUrl}
             >
               <Download className="w-3 h-3" />
               Download
@@ -297,7 +313,7 @@ function LogoCard({
               </div>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 gap-1.5" onClick={handleDownload} disabled={!asset.thumb_url}>
+              <Button variant="outline" className="flex-1 gap-1.5" onClick={handleDownload} disabled={!asset.storage_path && !downloadUrl}>
                 <Download className="w-4 h-4" />
                 Download
               </Button>
@@ -551,6 +567,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Detect logo/visual identity assets: images that were AI processed and tagged
   const logoAssets = assets.filter(a => {
@@ -603,6 +620,39 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const selectAll = () => setSelectedIds(new Set(allVisibleAssets.map(a => a.id)));
   const clearSelection = () => setSelectedIds(new Set());
   const exitSelection = () => { setSelectionMode(false); setSelectedIds(new Set()); };
+
+  const handleBulkDownload = async () => {
+    const toDownload = [...selectedIds]
+      .map(id => allVisibleAssets.find(a => a.id === id))
+      .filter((a): a is ProjectAsset => !!(a && a.storage_path));
+
+    if (toDownload.length === 0) {
+      toast.info('Nenhum arquivo para baixar');
+      return;
+    }
+
+    setIsDownloading(true);
+    toast.info(`Baixando ${toDownload.length} arquivo(s)...`);
+
+    for (let i = 0; i < toDownload.length; i++) {
+      const asset = toDownload[i];
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket || 'project-files')
+        .createSignedUrl(asset.storage_path!, 300);
+      if (data?.signedUrl) {
+        const a = document.createElement('a');
+        a.href = data.signedUrl;
+        a.download = asset.file_name || asset.title;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (i < toDownload.length - 1) await new Promise(r => setTimeout(r, 400));
+      }
+    }
+
+    setIsDownloading(false);
+    toast.success(`${toDownload.length} arquivo(s) baixado(s)`);
+  };
 
   const handleBulkDelete = async () => {
     if (!confirm(`Excluir ${selectedIds.size} item(s)? Esta ação não pode ser desfeita.`)) return;
@@ -682,6 +732,16 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
           </Button>
           <Button size="sm" variant="outline" onClick={clearSelection} className="h-8 text-xs" disabled={selectedIds.size === 0}>
             Desmarcar tudo
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleBulkDownload}
+            disabled={selectedIds.size === 0 || isDownloading}
+            className="h-8 text-xs gap-1.5"
+          >
+            {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+            Baixar {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
           </Button>
           <Button
             size="sm"
