@@ -3,6 +3,7 @@ import { Contract, ProjectFinancialSummary, Revenue, Expense, ContractStatus } f
 import { useFinancialStore } from '@/stores/financialStore';
 import { MilestonesList } from './MilestonesList';
 import { ProjectContractModal } from './ProjectContractModal';
+import { ContractAiUploadDialog } from './ContractAiUploadDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   FileText, TrendingUp, TrendingDown, Plus, Edit2, 
-  CheckCircle, AlertTriangle
+  CheckCircle, AlertTriangle, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -49,6 +50,7 @@ export function ProjectFinanceDetailPanel({
   
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [isAiUploadOpen, setIsAiUploadOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { 
@@ -155,14 +157,25 @@ export function ProjectFinanceDetailPanel({
             </div>
           </div>
         ) : (
-          <Button
-            size="sm"
-            className="w-full"
-            onClick={() => setIsContractModalOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Criar Contrato
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIsContractModalOpen(true)}
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Criar
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={() => setIsAiUploadOpen(true)}
+            >
+              <Sparkles className="w-3 h-3 mr-1" />
+              Criar com IA
+            </Button>
+          </div>
         )}
       </div>
 
@@ -248,6 +261,15 @@ export function ProjectFinanceDetailPanel({
           )}
         </div>
       </div>
+
+      {/* Contract AI Upload Dialog */}
+      <ContractAiUploadDialog
+        open={isAiUploadOpen}
+        onOpenChange={setIsAiUploadOpen}
+        projectId={project.project_id}
+        projectName={project.project_name}
+        onSuccess={handleRefresh}
+      />
 
       {/* Contract Modal */}
       <ProjectContractModal

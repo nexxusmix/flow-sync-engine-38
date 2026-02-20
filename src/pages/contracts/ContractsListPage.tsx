@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ContractAiUploadDialog } from "@/components/finance/ContractAiUploadDialog";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Contract, STATUS_CONFIG, ContractStatus, RENEWAL_TYPE_LABELS, RenewalType } from "@/types/contracts";
 import {
   FileSignature, Plus, Search, Filter, Copy, Link2, FileText,
-  MoreHorizontal, Calendar, AlertTriangle, Bell, Users
+  MoreHorizontal, Calendar, AlertTriangle, Bell, Users, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ export default function ContractsListPage() {
   const navigate = useNavigate();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [alerts, setAlerts] = useState<{ contract_id: string; type: string; due_at: string }[]>([]);
+  const [showAiUpload, setShowAiUpload] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -208,6 +210,10 @@ export default function ContractsListPage() {
             <Button variant="outline" onClick={() => navigate('/contratos/templates')}>
               <FileText className="w-4 h-4 mr-2" />
               Templates
+            </Button>
+            <Button variant="outline" onClick={() => setShowAiUpload(true)}>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Criar com IA
             </Button>
             <Button onClick={() => setShowNewModal(true)}>
               <Plus className="w-4 h-4 mr-2" />
@@ -445,6 +451,16 @@ export default function ContractsListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Upload Dialog */}
+      <ContractAiUploadDialog
+        open={showAiUpload}
+        onOpenChange={setShowAiUpload}
+        onSuccess={(contractId) => {
+          fetchContracts();
+          navigate(`/contratos/${contractId}`);
+        }}
+      />
     </DashboardLayout>
   );
 }
