@@ -182,6 +182,7 @@ function LogoCard({
   onToggle?: (id: string) => void;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [isReprocessing, setIsReprocessing] = useState(false);
   const entities = asset.ai_entities as any;
   const downloadUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
 
@@ -208,6 +209,18 @@ function LogoCard({
       a.download = asset.file_name || asset.title;
       a.target = '_blank';
       a.click();
+    }
+  };
+
+  const handleReprocess = async () => {
+    setIsReprocessing(true);
+    try {
+      await supabase.functions.invoke('process-asset', { body: { asset_id: asset.id } });
+      toast.success('Variações IA iniciadas! Aguarde alguns instantes.');
+    } catch (e) {
+      toast.error('Erro ao iniciar reprocessamento');
+    } finally {
+      setIsReprocessing(false);
     }
   };
 
@@ -374,9 +387,21 @@ function LogoCard({
                 <Download className="w-4 h-4" />
                 Download
               </Button>
+              <Button
+                variant="secondary"
+                className="flex-1 gap-1.5"
+                onClick={handleReprocess}
+                disabled={isReprocessing}
+              >
+                {isReprocessing
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Sparkles className="w-4 h-4" />
+                }
+                {isReprocessing ? 'Gerando...' : 'Variações IA'}
+              </Button>
               <Button className="flex-1 gap-1.5" onClick={() => { setPreviewOpen(false); onSendToStudio(asset); }}>
                 <Wand2 className="w-4 h-4" />
-                Enviar ao Studio
+                Studio
               </Button>
             </div>
           </div>
