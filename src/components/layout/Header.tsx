@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
+import { useProjectsStore } from "@/stores/projectsStore";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
@@ -187,6 +188,14 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
           <QuickActionsMenu 
             onNewLead={() => setShowLeadModal(true)}
             onNewProposal={() => setShowProposalModal(true)}
+            onNewProject={() => {
+              useProjectsStore.getState().setNewProjectModalOpen(true);
+              navigate('/projetos');
+            }}
+            onNewAIProject={() => {
+              useProjectsStore.getState().setAIProjectModalOpen(true);
+              navigate('/projetos');
+            }}
           />
 
           <Button

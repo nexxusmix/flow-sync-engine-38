@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
 import { ContentItem, ContentItemStatus, CONTENT_ITEM_STAGES, CONTENT_CHANNELS, CONTENT_FORMATS } from "@/types/marketing";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Plus, Search, MoreHorizontal, Calendar, AlertTriangle,
   Link as LinkIcon, ExternalLink
@@ -243,6 +243,7 @@ export default function PipelinePage() {
     setContentFilters,
   } = useMarketingStore();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
@@ -257,6 +258,13 @@ export default function PipelinePage() {
     campaign_id: '',
     due_at: '',
   });
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsNewItemOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchContentItems();

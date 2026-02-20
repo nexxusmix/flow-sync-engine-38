@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
 import { Campaign } from "@/types/marketing";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Plus, Megaphone, Sparkles, Calendar, DollarSign,
   MoreHorizontal, Play, Pause, Archive, Trash2, Loader2, Package, FileDown
@@ -222,6 +222,7 @@ export default function CampaignsPage() {
     deleteCampaign,
   } = useMarketingStore();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isNewCampaignOpen, setIsNewCampaignOpen] = useState(false);
   const [isGeneratingPackage, setIsGeneratingPackage] = useState(false);
   const [packageResultOpen, setPackageResultOpen] = useState(false);
@@ -237,6 +238,13 @@ export default function CampaignsPage() {
     end_date: '',
     budget: '',
   });
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsNewCampaignOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   const handleExportCampaignPdf = async (campaignId: string) => {
     setExportingCampaignId(campaignId);
