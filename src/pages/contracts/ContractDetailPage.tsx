@@ -9,8 +9,9 @@ import {
 } from "@/types/contracts";
 import {
   FileSignature, Save, Eye, Link2, Plus, ArrowLeft, History, FileText,
-  Users, Calendar, DollarSign, AlertTriangle, Check, Upload, Banknote, Loader2
+  Users, Calendar, DollarSign, AlertTriangle, Check, Upload, Banknote, Loader2, ScanLine
 } from "lucide-react";
+import { SignatureScanPanel } from "@/components/contracts/SignatureScanPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -873,6 +874,26 @@ export default function ContractDetailPage() {
                   ))}
                 </div>
               )}
+            </Card>
+
+            {/* Signature Scan Panel */}
+            <Card className="glass-card p-5">
+              <div className="flex items-center gap-2 mb-5">
+                <ScanLine className="w-5 h-5 text-primary" />
+                <div>
+                  <h3 className="font-medium text-foreground">Validação Visual com IA</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Faça upload do PDF ou imagem assinados — a IA detecta assinaturas, carimbos e selos automaticamente
+                  </p>
+                </div>
+              </div>
+              <SignatureScanPanel
+                contractId={contract.id}
+                contractStatus={contract.status}
+                clientName={contract.client_name}
+                clientEmail={contract.client_email}
+                onSigned={fetchContract}
+              />
             </Card>
           </TabsContent>
         </Tabs>

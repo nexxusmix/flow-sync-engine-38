@@ -175,3 +175,6 @@ verify_jwt = false
 [functions.extract-visual-assets]
 verify_jwt = false
 
+[functions.scan-contract-signatures]
+verify_jwt = false
+
