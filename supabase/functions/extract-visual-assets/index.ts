@@ -44,9 +44,10 @@ Deno.serve(async (req) => {
     const savedAssets: any[] = [];
 
     for (const fileData of files) {
-      // Skip files over 20MB
-      if (fileData.size_bytes > 20 * 1024 * 1024) {
-        console.log(`Skipping ${fileData.name} - exceeds 20MB limit`);
+      // Skip files over 10MB to prevent OOM
+      const MAX_SIZE = 10 * 1024 * 1024;
+      if (fileData.size_bytes > MAX_SIZE || fileData.base64.length > MAX_SIZE) {
+        console.log(`Skipping ${fileData.name} - exceeds 10MB limit (${fileData.size_bytes} bytes)`);
         continue;
       }
 
@@ -54,25 +55,22 @@ Deno.serve(async (req) => {
       const isPdf = fileData.mime_type === 'application/pdf';
       const isDoc = fileData.mime_type.includes('word') || fileData.mime_type.includes('document');
 
-      // Build AI content parts for Gemini
-      const contentParts: any[] = [
-        {
-          type: 'text',
-          text: `Você é um especialista em análise visual de documentos. Analise este arquivo e extraia TODAS as informações visuais e de identidade.
+      // AI analysis prompt
+      const analysisPrompt = `Você é um especialista em análise visual de documentos. Analise este arquivo e extraia TODAS as informações visuais e de identidade.
 
 Retorne APENAS um JSON válido com esta estrutura exata:
 {
   "document_type": "contrato | proposta | briefing | referencia | identidade_visual | outro",
   "brand_name": "nome da empresa/marca detectada ou null",
-  "has_logo": true/false,
-  "has_signature": true/false,
-  "has_legal_seal": true/false,
+  "has_logo": true,
+  "has_signature": false,
+  "has_legal_seal": false,
   "color_palette": ["#HEX1", "#HEX2"],
   "assets_found": [
     {
       "type": "logo | assinatura | carimbo | foto | ilustracao | paleta | diagrama | tabela | outro",
       "description": "descrição detalhada do elemento",
-      "location": "localização no documento (ex: canto superior esquerdo, página 2)",
+      "location": "localização no documento",
       "confidence": 0.95,
       "suggested_category": "reference | deliverable | contract | other",
       "tags": ["tag1", "tag2"],
@@ -89,67 +87,57 @@ Retorne APENAS um JSON válido com esta estrutura exata:
   }
 }
 
-Seja detalhado e preciso. Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores, diagramas, tabelas de escopo, tabelas de pagamento, e qualquer elemento visual relevante.`
-        }
-      ];
+Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores, diagramas, tabelas.`;
 
-      if (isImage) {
+      // Build AI content parts - only send images/PDFs under 5MB base64 to AI
+      const MAX_AI_BASE64 = 5 * 1024 * 1024;
+      const contentParts: any[] = [{ type: 'text', text: analysisPrompt }];
+      const canSendToAI = fileData.base64.length <= MAX_AI_BASE64;
+
+      if (canSendToAI && isImage) {
         contentParts.push({
           type: 'image_url',
           image_url: { url: `data:${fileData.mime_type};base64,${fileData.base64}` }
         });
-      } else if (isPdf || isDoc) {
-        // For PDFs, send as base64 encoded in text with instructions
+      } else if (canSendToAI && isPdf) {
         contentParts.push({
-          type: 'text',
-          text: `\n\nArquivo ${fileData.name} (${fileData.mime_type}):\nBase64 do conteúdo disponível. Analise visualmente o documento descrito.`
+          type: 'image_url',
+          image_url: { url: `data:application/pdf;base64,${fileData.base64}` }
         });
-        // Also try to include the document as image if it's a pdf
-        if (isPdf) {
-          contentParts.push({
-            type: 'image_url',
-            image_url: { url: `data:${fileData.mime_type};base64,${fileData.base64}` }
-          });
-        }
+      } else {
+        console.log(`${fileData.name} too large for AI analysis (${fileData.base64.length} chars), storing without AI`);
       }
 
       let analysisResult: any = null;
-      try {
-        const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            messages: [
-              {
-                role: 'user',
-                content: contentParts,
-              }
-            ],
-            max_tokens: 4000,
-          }),
-        });
+      if (canSendToAI) {
+        try {
+          const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'google/gemini-2.5-flash',
+              messages: [{ role: 'user', content: contentParts }],
+              max_tokens: 2000,
+            }),
+          });
 
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          const rawText = aiData.choices?.[0]?.message?.content || '';
-          // Extract JSON from response
-          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            try {
-              analysisResult = JSON.parse(jsonMatch[0]);
-            } catch {
-              console.error('Failed to parse AI JSON response');
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            const rawText = aiData.choices?.[0]?.message?.content || '';
+            const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              try { analysisResult = JSON.parse(jsonMatch[0]); }
+              catch { console.error('Failed to parse AI JSON response'); }
             }
+          } else {
+            console.error('AI request failed:', await aiResponse.text());
           }
-        } else {
-          console.error('AI request failed:', await aiResponse.text());
+        } catch (e) {
+          console.error('AI analysis error:', e);
         }
-      } catch (e) {
-        console.error('AI analysis error:', e);
       }
 
       // Save the original file to storage
@@ -158,12 +146,9 @@ Seja detalhado e preciso. Identifique logos, assinaturas, carimbos, fotos, ilust
       const ext = fileData.name.split('.').pop() || '';
       const storagePath = `${project_id}/assets/${ts}_${sanitizedName}`;
 
-      // Convert base64 to bytes
+      // Convert base64 to bytes efficiently
       const binaryStr = atob(fileData.base64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
+      const bytes = Uint8Array.from(binaryStr, (c) => c.charCodeAt(0));
 
       const { error: uploadErr } = await supabase.storage
         .from('project-files')
