@@ -1,246 +1,137 @@
 
-## Pipeline IA Completo para Assets — Análise com GPT + Remoção de Fundo + Geração de Padrão
+# Dois problemas distintos a corrigir
 
-### O que será feito
+## Problema 1 — Paleta da SQUAD misturada com a do cliente
 
-Quando um asset de imagem é enviado (especialmente logos/identidade visual), o `process-asset` vai executar automaticamente 3 estágios em sequência:
+### Causa raiz
+O `BrandKitPanel` em `BrandIdentityTab.tsx` agrega `color_palette` de **todos** os assets processados pela IA, sem filtrar a origem. Quando o usuário enviou um PDF de apresentação da SQUAD Film (com preto + azul #009CCA), a IA extraiu essas cores e as exibiu junto às do cliente real.
 
-1. **Análise visual com GPT (multimodal)** — o modelo recebe a imagem real (base64) e gera título, descrição, tags, tipo de elemento, paleta de cores detectada e nome de marca. Upgrade do modelo de `gemini-2.5-flash-lite` (só texto) para `google/gemini-2.5-flash` com visão.
+### Solução — Filtro anti-SQUAD + UI de separação
 
-2. **Remoção de fundo e geração de PNG recortado** — via `google/gemini-3-pro-image-preview` (Nano banana pro), enviamos a imagem com o prompt "Remove o fundo desta imagem e retorne apenas o elemento principal em PNG com fundo transparente". O resultado é salvo no bucket `asset-thumbs` (público) como `{asset_id}_cutout.png` e armazenado em `preview_url`.
+**Parte A — Filtrar as cores do sistema (SQUAD)**
 
-3. **Geração de padrão/textura com o logo** — após o recorte, o Nano banana pro gera um padrão de identidade visual usando o logo recortado como elemento (ex: "Crie um padrão tile seamless com este logo sobre fundo escuro, estilo brand pattern"). Salvo em `asset-thumbs` como `{asset_id}_pattern.png` e armazenado em `og_image_url`.
+Definir uma lista de "cores da plataforma" a serem excluídas da paleta do cliente:
 
----
+```typescript
+const SQUAD_BRAND_COLORS = [
+  '#009cca', '#009CCA', // SQUAD Blue
+  '#000000', '#0f0f11', '#0a0a0a', // SQUAD Black variants
+  // Também filtrar por similaridade HSL se muito próximas
+];
+```
 
-### Arquitetura de Dados
+Além disso, filtrar também por nome da marca detectada: se `ai_entities.brand_name` conter "squad", "squad film", o asset é da própria plataforma — excluir das cores do cliente.
 
-Os campos `preview_url` e `og_image_url` que já existem na tabela `project_assets` são reaproveitados:
+**Parte B — Separar paleta por origem**
 
-| Campo | Conteúdo |
-|---|---|
-| `thumb_url` | URL pública do arquivo original (imagem original) |
-| `preview_url` | PNG recortado sem fundo (cutout) |
-| `og_image_url` | Padrão/textura gerado com o logo |
-| `ai_entities` | JSON com `element.type`, `color_palette`, `brand_name`, `fonts` |
+Na agregação de cores em `BrandIdentityTab`, separar dois grupos:
+- **Paleta do cliente** = assets cujo `ai_entities.brand_name` NÃO é SQUAD e cujas cores não são as SQUAD
+- **Paleta interna** = assets SQUAD (mostrar separadamente, com badge "Plataforma")
 
-Sem necessidade de migração de banco de dados — todos os campos já existem.
+**Parte C — UI no BrandKitPanel**
 
----
+Mostrar na coluna de paleta:
+```
+[ PALETA DO CLIENTE ]
+🎨 5 cores detectadas — (nome da marca)
+■ ■ ■ ■ ■
 
-### Fluxo técnico
-
-```text
-Upload do arquivo
-       │
-       ▼
-uploadSingleFile() → insert project_assets (status: "processing")
-       │
-       ▼ (se aiProcess=true OU category="brand"/"identity")
-supabase.functions.invoke('process-asset', { asset_id })
-       │
-       ▼
-[ESTÁGIO 1] Busca asset + gera signed URL do storage privado (300s)
-       │       Faz fetch da imagem → base64
-       │       Chama gemini-2.5-flash com visão (imagem + prompt)
-       │       → updates: ai_title, ai_summary, ai_tags, ai_entities
-       │         (element.type, color_palette, brand_name)
-       │
-       ▼ (apenas se asset_type="image")
-[ESTÁGIO 2] Remoção de fundo — gemini-3-pro-image-preview
-       │       Prompt: "Remove background, return only main element
-       │                as PNG with transparent background"
-       │       → decode base64 result
-       │       → upload para asset-thumbs/{asset_id}_cutout.png
-       │       → updates.preview_url = URL pública do cutout
-       │
-       ▼ (apenas se category="brand" ou element.type in [logo, assinatura])
-[ESTÁGIO 3] Geração de padrão — gemini-3-pro-image-preview
-       │       Prompt: "Crie um padrão tile seamless com este elemento
-       │                como ícone repetido sobre fundo escuro"
-       │       → upload para asset-thumbs/{asset_id}_pattern.png
-       │       → updates.og_image_url = URL pública do pattern
-       │
-       ▼
-status = "ready" → update project_assets
+[ Se houver cores SQUAD detectadas — aviso ]
+⚠️  Cores da plataforma SQUAD foram excluídas desta paleta.
 ```
 
 ---
 
-### Arquivos a modificar
+## Problema 2 — Thumbnails/previews não aparecem
 
-#### 1. `supabase/functions/process-asset/index.ts` (principal)
+### Causa raiz
 
-**Estágio 1 — Análise visual GPT/Gemini multimodal:**
+O bucket `project-files` é **privado**. A função `extract-visual-assets/index.ts` salva a imagem original em `project-files` e usa `getPublicUrl()` como `thumb_url` — mas URLs públicas de buckets privados **não funcionam** no browser.
 
-Substituir o modelo de `gemini-2.5-flash-lite` por `gemini-2.5-flash` com payload de visão. Para imagens, fazer `fetch` da signed URL, converter para base64 e incluir como `image_url` no content array:
+A tabela mostra a imagem em `AssetThumbnail` usando `asset.thumb_url` diretamente no `<img src>`, que falha silenciosamente.
+
+### Solução em duas partes
+
+**Parte A — Para novos uploads via `extract-visual-assets`**
+
+Ao salvar o arquivo original em `project-files`, **também salvar uma cópia pública no bucket `asset-thumbs`** (que já é público):
 
 ```typescript
-// Fetch image as base64 for vision
-let imageBase64: string | null = null;
-if (asset.source_type === "file" && asset.asset_type === "image" && asset.storage_path) {
-  const { data: signedData } = await sb.storage
-    .from("project-files")
-    .createSignedUrl(asset.storage_path, 300);
-  if (signedData?.signedUrl) {
-    const imgResp = await fetch(signedData.signedUrl);
-    const buffer = await imgResp.arrayBuffer();
-    imageBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+// Após upload em project-files:
+const thumbStoragePath = `${project_id}/thumbs/${ts}_${sanitizedName}`;
+await supabase.storage
+  .from('asset-thumbs')  // bucket público ✓
+  .upload(thumbStoragePath, bytes, { contentType: fileData.mime_type });
+
+const { data: thumbUrl } = supabase.storage
+  .from('asset-thumbs')
+  .getPublicUrl(thumbStoragePath);
+// Usar thumbUrl no campo thumb_url do registro
+```
+
+Para imagens grandes (>2MB), gerar uma versão reduzida via Gemini antes de salvar no bucket público.
+
+**Parte B — Para assets já existentes com thumb_url quebrada**
+
+No `AssetThumbnail` e `BrandAssetThumbnail`, quando `thumb_url` falha (`onError`), gerar uma **URL assinada on-demand** via `supabase.storage.createSignedUrl()` e substituir:
+
+```typescript
+const [resolvedUrl, setResolvedUrl] = useState<string | null>(asset.thumb_url);
+
+const handleError = async () => {
+  if (asset.storage_path) {
+    const { data } = await supabase.storage
+      .from(asset.storage_bucket || 'project-files')
+      .createSignedUrl(asset.storage_path, 3600);
+    if (data?.signedUrl) setResolvedUrl(data.signedUrl);
+    else setImgError(true);
+  } else {
+    setImgError(true);
   }
-}
-
-// Build multimodal message
-const userContent: any[] = imageBase64
-  ? [
-      { type: "text", text: prompt },
-      { type: "image_url", image_url: { url: `data:${asset.mime_type || 'image/png'};base64,${imageBase64}` } },
-    ]
-  : prompt;
-
-const model = imageBase64 ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite";
+};
 ```
 
-O prompt de análise também é enriquecido para extrair:
-- `element.type`: logo | assinatura | carimbo | foto | ilustracao | paleta | outro
-- `color_palette`: array de hex colors detectadas na imagem
-- `brand_name`: nome da marca se identificado
-- `fonts`: fontes identificadas (se houver)
-
-**Estágio 2 — Remoção de fundo (cutout):**
-
-```typescript
-if (imageBase64 && asset.asset_type === "image") {
-  const cutoutResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-3-pro-image-preview",
-      messages: [{
-        role: "user",
-        content: [
-          { type: "text", text: "Remove the background from this image completely. Return only the main element (logo, icon, or subject) with a fully transparent background. Output as PNG." },
-          { type: "image_url", image_url: { url: `data:${asset.mime_type || 'image/png'};base64,${imageBase64}` } },
-        ],
-      }],
-      modalities: ["image", "text"],
-    }),
-  });
-
-  if (cutoutResp.ok) {
-    const cutoutData = await cutoutResp.json();
-    const cutoutB64 = cutoutData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (cutoutB64) {
-      // Strip data URL prefix
-      const base64Data = cutoutB64.replace(/^data:image\/\w+;base64,/, "");
-      const binary = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-      const { data: uploadData } = await sb.storage
-        .from("asset-thumbs")
-        .upload(`${asset_id}_cutout.png`, binary.buffer, {
-          contentType: "image/png",
-          upsert: true,
-        });
-      if (uploadData) {
-        const { data: pubUrl } = sb.storage.from("asset-thumbs").getPublicUrl(`${asset_id}_cutout.png`);
-        updates.preview_url = pubUrl.publicUrl;
-      }
-    }
-  }
-}
-```
-
-**Estágio 3 — Geração de padrão (apenas se logo ou category=brand):**
-
-```typescript
-const elementType = updates.ai_entities?.element?.type || (asset.ai_entities as any)?.element?.type;
-const isBrandAsset = ["logo", "assinatura", "carimbo"].includes(elementType) 
-  || asset.category === "brand";
-
-if (isBrandAsset && updates.preview_url && cutoutBase64) {
-  const patternResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    ...body com gemini-3-pro-image-preview e o cutout como base64...
-    prompt: "Create a seamless tile brand pattern using this logo/element repeated multiple times over a dark background. Professional branding style, modern and elegant."
-  });
-  // upload para asset-thumbs/{asset_id}_pattern.png → updates.og_image_url
-}
-```
-
-**Proteção contra falhas:** cada estágio tem seu próprio try/catch, garantindo que uma falha no cutout não bloqueie o enriquecimento de metadados.
+Isso garante que **qualquer imagem com storage_path privado** funcione, mesmo para assets já existentes.
 
 ---
 
-#### 2. `src/stores/useBackgroundUploadStore.ts`
-
-Alterar a lógica de disparo do `process-asset`: hoje ele só é chamado quando `item.aiProcess === true`. Adicionar lógica para chamar automaticamente quando a categoria for `brand` ou `identity`:
-
-```typescript
-const shouldProcess = item.aiProcess 
-  || ['brand', 'identity', 'logo'].includes(item.category?.toLowerCase() || '');
-
-if (shouldProcess) {
-  await supabase.functions.invoke('process-asset', { body: { asset_id: data.id } });
-}
-```
-
----
-
-#### 3. `src/components/projects/detail/tabs/BrandIdentityTab.tsx`
-
-**Novo card "Variações Geradas"** — Quando um `logoAsset` tem `preview_url` (cutout) ou `og_image_url` (pattern), o `LogoCard` exibe um painel expandido com as variações geradas:
-
-```tsx
-{/* Variações IA */}
-{(asset.preview_url || asset.og_image_url) && (
-  <div className="mt-3 grid grid-cols-2 gap-2">
-    {asset.preview_url && (
-      <div className="rounded-lg bg-white/5 border border-border/20 p-2 flex flex-col items-center gap-1">
-        <img src={asset.preview_url} className="h-16 object-contain" />
-        <span className="text-[9px] text-muted-foreground">Recorte PNG</span>
-      </div>
-    )}
-    {asset.og_image_url && (
-      <div className="rounded-lg bg-white/5 border border-border/20 p-2 flex flex-col items-center gap-1">
-        <img src={asset.og_image_url} className="h-16 object-cover rounded" />
-        <span className="text-[9px] text-muted-foreground">Padrão</span>
-      </div>
-    )}
-  </div>
-)}
-```
-
-**Indicador de processamento:** quando `asset.status === "processing"`, exibir um spinner sobre o thumbnail com texto "Gerando variações IA...".
-
----
-
-#### 4. `src/components/projects/detail/tabs/GalleryTab.tsx`
-
-**Botão "Reprocessar com IA"** no menu de contexto de cada `AssetCard` de imagem — chama `supabase.functions.invoke('process-asset', { body: { asset_id: asset.id } })` e invalida a query de assets:
-
-```tsx
-{asset.asset_type === 'image' && (
-  <DropdownMenuItem onClick={handleReprocess}>
-    <Sparkles className="w-4 h-4 mr-2" />
-    Reprocessar com IA
-  </DropdownMenuItem>
-)}
-```
-
----
-
-### Resumo dos arquivos e mudanças
+## Arquivos a modificar
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/functions/process-asset/index.ts` | Reescrever pipeline: visão multimodal, cutout (gemini-3-pro-image-preview), pattern (gemini-3-pro-image-preview), upload para asset-thumbs |
-| `src/stores/useBackgroundUploadStore.ts` | Auto-trigger process-asset para category=brand/identity |
-| `src/components/projects/detail/tabs/BrandIdentityTab.tsx` | Exibir variações geradas (cutout + pattern) no LogoCard, spinner de processamento |
-| `src/components/projects/detail/tabs/GalleryTab.tsx` | Botão "Reprocessar com IA" no menu do AssetCard |
+| `src/components/projects/detail/tabs/BrandIdentityTab.tsx` | Filtrar cores SQUAD, separar paleta do cliente, badge de aviso quando cores são excluídas |
+| `src/components/projects/detail/tabs/GalleryTab.tsx` | `AssetThumbnail` — fallback com signed URL on-demand quando `thumb_url` falha |
+| `supabase/functions/extract-visual-assets/index.ts` | Salvar thumb em bucket público `asset-thumbs` para imagens, não apenas para PDFs |
 
-**Sem novas dependências, sem migrations de banco de dados.** O bucket `asset-thumbs` já existe e é público.
+---
 
-### Considerações de performance
+## Detalhes técnicos — Filtro de cores SQUAD
 
-- O processo inteiro (análise + cutout + pattern) pode levar 15–45 segundos por imagem dependendo do tamanho
-- A edge function roda de forma assíncrona — o asset fica com `status: "processing"` enquanto aguarda
-- Os estágios 2 e 3 (imagem→imagem) são os mais pesados; podem ser saltados se a API retornar erro 429 sem bloquear o estágio 1
-- Imagens grandes (>5MB) são convertidas para base64 completo — pode gerar payloads grandes, mas é suportado pelo gateway
+A lista de cores a filtrar usa comparação case-insensitive no HEX e também filtra por nome da marca:
+
+```typescript
+const SQUAD_COLORS_FILTER = new Set([
+  '#009cca', '#000000', '#0f0f11', '#0a0a0a', '#ffffff',
+]);
+
+const SQUAD_BRAND_NAMES = ['squad', 'squad film', 'squadfilm'];
+
+function isSquadAsset(asset: ProjectAsset): boolean {
+  const brandName = (asset.ai_entities as any)?.brand_name?.toLowerCase() || '';
+  return SQUAD_BRAND_NAMES.some(n => brandName.includes(n));
+}
+
+function filterClientColors(colors: string[]): string[] {
+  return colors.filter(c => !SQUAD_COLORS_FILTER.has(c.toLowerCase()));
+}
+```
+
+Cores do cliente = assets não-SQUAD, com as cores brutas filtradas pelas SQUAD_COLORS.
+
+---
+
+## Ordem de implementação
+
+1. **`extract-visual-assets/index.ts`** — salvar thumb em bucket público (fix para uploads futuros)
+2. **`GalleryTab.tsx`** — signed URL fallback em `AssetThumbnail` (fix para assets existentes e futuros)
+3. **`BrandIdentityTab.tsx`** — filtro SQUAD + paleta separada do cliente
