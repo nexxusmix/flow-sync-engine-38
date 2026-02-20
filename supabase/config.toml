@@ -162,3 +162,6 @@ verify_jwt = false
 
 [functions.extract-contract-from-file]
 verify_jwt = false
+
+[functions.sync-project-finances]
+verify_jwt = false
