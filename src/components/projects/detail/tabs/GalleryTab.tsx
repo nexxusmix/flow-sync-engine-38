@@ -124,17 +124,37 @@ const CATEGORY_BG: Record<string, string> = {
 
 function AssetThumbnail({ asset }: { asset: ProjectAsset }) {
   const [imgError, setImgError] = useState(false);
-  const displayUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(
+    asset.thumb_url || asset.og_image_url || asset.preview_url || null
+  );
   const entities = asset.ai_entities as any;
 
+  const handleError = async () => {
+    // Try to generate a signed URL from private storage
+    if (asset.storage_path && asset.asset_type === 'image') {
+      try {
+        const { data } = await supabase.storage
+          .from(asset.storage_bucket || 'project-files')
+          .createSignedUrl(asset.storage_path, 3600);
+        if (data?.signedUrl) {
+          setResolvedUrl(data.signedUrl);
+          return;
+        }
+      } catch {
+        // fallback to placeholder
+      }
+    }
+    setImgError(true);
+  };
+
   // Show image if we have a URL and it hasn't errored
-  if (displayUrl && !imgError) {
+  if (resolvedUrl && !imgError) {
     return (
       <img
-        src={displayUrl}
+        src={resolvedUrl}
         alt={asset.ai_title || asset.title}
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        onError={() => setImgError(true)}
+        onError={handleError}
       />
     );
   }

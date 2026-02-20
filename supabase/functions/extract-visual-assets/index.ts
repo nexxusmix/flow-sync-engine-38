@@ -161,8 +161,24 @@ Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores
 
       const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(storagePath);
 
-      // Generate thumbnail for PDFs via Gemini image generation
-      let thumbUrl: string | null = isImage ? urlData.publicUrl : null;
+      // For images: save a public copy in asset-thumbs bucket so thumb_url works in the browser
+      let thumbUrl: string | null = null;
+      if (isImage) {
+        const thumbStoragePath = `${project_id}/thumbs/${ts}_${sanitizedName}`;
+        const { error: thumbCopyErr } = await supabase.storage
+          .from('asset-thumbs')
+          .upload(thumbStoragePath, bytes, { contentType: fileData.mime_type });
+        if (!thumbCopyErr) {
+          const { data: thumbPublicData } = supabase.storage
+            .from('asset-thumbs')
+            .getPublicUrl(thumbStoragePath);
+          thumbUrl = thumbPublicData.publicUrl;
+          console.log(`Saved image thumb to public bucket: ${thumbStoragePath}`);
+        } else {
+          console.error('Failed to copy image to asset-thumbs:', thumbCopyErr);
+          // Fall back to signed URL workaround (client-side will handle)
+        }
+      }
 
       if (isPdf && canSendToAI) {
         try {
