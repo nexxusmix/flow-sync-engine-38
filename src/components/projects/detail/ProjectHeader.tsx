@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { SendToClientModal } from "@/components/projects/SendToClientModal";
 import { usePortalLink } from "@/hooks/usePortalLink";
@@ -21,8 +21,11 @@ import {
   Send,
   RefreshCw,
   Wand2,
+  Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { ProjectBannerSection } from "./ProjectBannerSection";
@@ -45,6 +48,10 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const [sendToClientOpen, setSendToClientOpen] = useState(false);
   const [isSyncingFinance, setIsSyncingFinance] = useState(false);
   const [isAutoUpdating, setIsAutoUpdating] = useState(false);
+  // Inline contract value edit
+  const [isEditingValue, setIsEditingValue] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const [isSavingValue, setIsSavingValue] = useState(false);
   const { portalLink, portalUrl, isLoading: portalLoading, createLink } = usePortalLink(project.id, {
     name: project.name,
     clientName: project.client_name || undefined,
@@ -81,6 +88,40 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const handleEdit = () => {
     setSelectedProjectId(project.id);
     setEditProjectModalOpen(true);
+  };
+
+  const handleStartEditValue = () => {
+    setEditValue(String(project.contract_value || ""));
+    setIsEditingValue(true);
+  };
+
+  const handleCancelEditValue = () => {
+    setIsEditingValue(false);
+    setEditValue("");
+  };
+
+  const handleSaveValue = async () => {
+    const parsed = parseFloat(editValue.replace(",", "."));
+    if (isNaN(parsed) || parsed < 0) {
+      toast.error("Valor inválido");
+      return;
+    }
+    setIsSavingValue(true);
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ contract_value: parsed })
+        .eq("id", project.id);
+      if (error) throw error;
+      toast.success("Valor atualizado!");
+      queryClient.invalidateQueries({ queryKey: ["project", project.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setIsEditingValue(false);
+    } catch {
+      toast.error("Erro ao salvar valor");
+    } finally {
+      setIsSavingValue(false);
+    }
   };
 
   const handleSyncFinance = async () => {
@@ -369,13 +410,54 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-5 pt-5 border-t border-border/50">
-            {/* Contract Value */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+            {/* Contract Value — inline editable */}
+            <div
+              className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 group cursor-pointer"
+              onClick={() => { if (!isEditingValue) handleStartEditValue(); }}
+              title="Clique para editar o valor do contrato"
+            >
               <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
                 <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-primary" />
               </div>
-              <div className="min-w-0">
-                <p className="text-base md:text-lg font-medium text-foreground truncate">{formatCurrency(project.contract_value || 0)}</p>
+              <div className="min-w-0 flex-1">
+                {isEditingValue ? (
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <span className="text-xs text-muted-foreground shrink-0">R$</span>
+                    <Input
+                      autoFocus
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveValue();
+                        if (e.key === "Escape") handleCancelEditValue();
+                      }}
+                      className="h-7 text-sm px-1.5 w-28 bg-background"
+                    />
+                    <button
+                      onClick={handleSaveValue}
+                      disabled={isSavingValue}
+                      className="text-emerald-500 hover:text-emerald-400 p-0.5"
+                    >
+                      {isSavingValue ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      onClick={handleCancelEditValue}
+                      className="text-muted-foreground hover:text-foreground p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-base md:text-lg font-medium text-foreground truncate">
+                      {formatCurrency(project.contract_value || 0)}
+                    </p>
+                    <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  </div>
+                )}
                 <p className="text-[10px] md:text-xs text-muted-foreground">Valor do Contrato</p>
               </div>
             </div>
