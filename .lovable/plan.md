@@ -1,132 +1,118 @@
 
-# Plano Completo de Implementação — O Que Falta
+# Automação Completa: Projetos → Financeiro → Parcelas → Contratos com IA
 
-## Diagnóstico Atual
+## O que você quer (resumindo)
 
-Com base na exploração do código, identifiquei **4 grupos de trabalho**:
-
----
-
-## Grupo 1 — Bugs Visuais (Glow/Dark/3D)
-
-**Problema:** Os cards de KPI e outros elementos no Dashboard usam `transformStyle: "preserve-3d"` + `perspective: 800` em componentes Framer Motion. Isso cria artefatos visuais (glow escuro, sombras indevidas) em certos browsers e temas.
-
-**Arquivos afetados:**
-- `src/components/dashboard/KPICards.tsx` — linha 57
-- `src/components/dashboard/MetricCard.tsx` — linha 30
-- `src/pages/Dashboard.tsx` — linhas 150 e 214
-
-**Correção:** Remover `transformStyle: "preserve-3d"` e `perspective` dos elementos. Manter o efeito visual usando apenas `y`, `scale` e `rotateX`/`rotateY` sem perspectiva fixa no estilo inline.
+Quando um projeto existe no sistema, toda a parte financeira (contrato, parcelas/receitas) e o próprio contrato jurídico devem ser **gerados e preenchidos automaticamente pela IA** com base nos dados do projeto. Além disso, em projetos já existentes, um botão "Sincronizar com IA" deve fazer tudo isso com um clique.
 
 ---
 
-## Grupo 2 — KPI Cards com Dados Reais
+## Como o sistema está hoje
 
-**Problema:** O componente `KPICards.tsx` tem os 6 cards com valores completamente hardcoded em zero (Leads Novos: 0, Respostas: 0, Calls: 0, etc). Os dados existem no banco mas não são conectados.
+- **Projetos** têm: nome, cliente, valor do contrato (`contract_value`), datas, template, etapas.
+- **Contratos** (tabela `contracts`): existem mas são criados manualmente, sem vínculo direto obrigatório com `projects`.
+- **Receitas/Parcelas** (tabela `revenues`): existem e a edge function `generate-contract-milestones` já gera parcelas a partir de um contrato **assinado** — mas só funciona para contratos com `status = 'signed'`, e não existe nenhuma automação que ligue projeto → contrato automaticamente.
+- **IA no Projeto**: o botão "Atualizar com IA" abre o `ProjectCommandCenter` (chat livre com o agente). Não existe fluxo guiado de sincronização financeira.
+- **Financeiro por Projeto** (`ProjectsFinancePage`): lista projetos com dados financeiros, mas requer que o usuário crie o contrato manualmente.
 
-**Solução:** Criar um hook `useKPIMetrics` que consulta:
-- **Leads Novos:** `crm_deals` com `stage_key = 'lead'` criados nos últimos 7 dias
-- **Respostas:** `inbox_messages` com `direction = 'inbound'` nos últimos 7 dias
-- **Calls:** `calendar_events` com `event_type = 'meeting'` e `start_at > now()`
-- **Propostas Enviadas:** `proposals` com `status = 'sent'` nos últimos 30 dias
-- **Pagamentos Previstos:** `revenues` com `status = 'pending'` e `due_date <= now() + 7 dias` (soma em BRL)
-- **Entregas nos 7 dias:** `calendar_events` com `event_type = 'delivery'` nos próximos 7 dias
+## O que falta e o que vamos construir
 
-O componente `KPICards.tsx` passa a consumir esse hook ao invés de valores fixos.
+### Parte 1 — Nova Edge Function: `sync-project-finances`
 
----
+Edge function que, dado um `project_id`, executa em sequência:
 
-## Grupo 3 — Convite de Usuários por Email
+1. **Busca dados do projeto** (`projects`, incluindo `contract_value`, `payment_terms` se houver, `client_name`, `start_date`, `due_date`, `template`).
+2. **Verifica se já existe contrato** vinculado ao `project_id` na tabela `contracts`.
+   - Se não existe: **cria o contrato** automaticamente com dados do projeto.
+   - Se existe: atualiza campos desatualizados (valor, cliente, datas).
+3. **Usa IA (Gemini Flash)** para gerar condições de pagamento inteligentes baseadas no tipo de projeto (`template`), valor e duração, caso não estejam definidas.
+4. **Gera receitas/parcelas** na tabela `revenues` (lógica já existente em `generate-contract-milestones`, agora chamada internamente). Pula se já existirem parcelas para evitar duplicação.
+5. **Retorna resumo** do que foi criado/atualizado.
 
-**Problema:** A página `UsersSettingsPage.tsx` permite ver/editar/deletar usuários, mas não tem como convidar novos usuários. O botão "Convidar" não existe.
+### Parte 2 — Botão "Sincronizar Financeiro com IA" no Projeto
 
-**Solução completa:**
+No `ProjectHeader.tsx`, adicionar um novo botão **"Sincronizar Financeiro"** (com ícone de IA + finanças) que:
+- Chama a edge function `sync-project-finances` com o `project_id`.
+- Mostra loading state enquanto processa.
+- Exibe toast de sucesso com resumo: "Contrato criado + 3 parcelas geradas".
+- Invalida as queries de financeiro para atualizar os dados na tela.
 
-### 3a. Edge Function `invite-user`
-Nova edge function que:
-1. Valida que quem está invitando é `admin`
-2. Usa `supabase.auth.admin.generateLink({ type: 'invite', email })` para gerar o link de convite
-3. Envia email via API de email do Supabase (built-in)
+### Parte 3 — Auto-sincronização ao Criar/Editar Projeto
 
-### 3b. UI na `UsersSettingsPage`
-- Botão "Convidar Usuário" no header da página
-- Dialog com campo de email + seleção de role (admin/comercial/operacao/financeiro)
-- Ao confirmar: chama a edge function, toast de sucesso "Convite enviado para [email]"
-- A role escolhida é armazenada em `user_role_assignments` quando o usuário aceitar o convite (via trigger existente `handle_new_user` ou pré-reserva)
+No hook `useProjects`, quando um projeto é **criado** com `contract_value > 0`, chamar automaticamente `sync-project-finances` em background após salvar.
 
----
+### Parte 4 — Tab "Financeiro" no Detalhe do Projeto
 
-## Grupo 4 — Onboarding Guiado para Novos Usuários
+Adicionar uma nova aba **"Financeiro"** no `ProjectTabs.tsx`, com o componente `ProjectFinanceDetailPanel` já existente, mas carregando os dados financeiros do projeto atual diretamente — sem precisar ir até a página "Financeiro por Projeto".
 
-**Problema:** Não existe nenhum fluxo de onboarding. Um novo usuário que faz login pela primeira vez vê o Dashboard completamente vazio sem qualquer orientação.
+### Parte 5 — Botão de Sync na Lista de Projetos
 
-**Solução:**
-
-### 4a. Detecção de "primeiro acesso"
-Hook `useOnboarding` que verifica se existe algum projeto do usuário. Se não houver projetos E o usuário foi criado há menos de 24h → mostra onboarding.
-
-### 4b. Componente `OnboardingDialog`
-Um Dialog/Sheet com **3 passos simples**:
-
-**Passo 1 — Workspace**
-- Nome da empresa
-- Tipo de negócio (Produtora de Vídeo, Agência, Freelancer)
-- Salva em `workspace_settings`
-
-**Passo 2 — Primeiro Projeto Demo**
-- Pergunta: "Deseja criar um projeto demo para explorar a plataforma?"
-- Botão "Sim, criar demo" → chama `seed-demo-user` edge function (já existe)
-- Botão "Não, começar do zero"
-
-**Passo 3 — Conclusão**
-- Lista as principais seções da plataforma com ícones
-- Botão "Entrar na Plataforma"
-
-### 4c. Integração no App
-O `OnboardingDialog` é renderizado no `Dashboard.tsx` e controlado pelo hook `useOnboarding`.
+Na `ProjectsListPage`, adicionar no menu de ações de cada projeto (já existente em `ProjectActionsMenu`) uma opção **"Sincronizar Financeiro com IA"** que dispara o mesmo processo.
 
 ---
 
-## Arquivos a Criar/Modificar
+## Arquivos a Criar
 
-### Novos arquivos:
-- `supabase/functions/invite-user/index.ts` — Edge Function de convite
-- `src/hooks/useKPIMetrics.ts` — Hook com dados reais dos KPIs
-- `src/hooks/useOnboarding.ts` — Hook de detecção de primeiro acesso
-- `src/components/onboarding/OnboardingDialog.tsx` — Dialog de onboarding
+- `supabase/functions/sync-project-finances/index.ts` — Edge function principal
 
-### Arquivos modificados:
-- `src/components/dashboard/KPICards.tsx` — Conectar dados reais + remover bug 3D
-- `src/components/dashboard/MetricCard.tsx` — Remover `transformStyle: "preserve-3d"`
-- `src/pages/Dashboard.tsx` — Remover `transformStyle` + integrar OnboardingDialog
-- `src/pages/settings/UsersSettingsPage.tsx` — Adicionar botão + dialog de convite
+## Arquivos a Modificar
+
+- `src/components/projects/detail/ProjectHeader.tsx` — Adicionar botão "Sincronizar Financeiro"
+- `src/components/projects/detail/ProjectTabs.tsx` — Adicionar aba "Financeiro"
+- `src/components/projects/ProjectActionsMenu.tsx` — Adicionar opção no menu de ações
+- `src/hooks/useProjects.ts` — Trigger automático ao criar projeto com valor
 
 ---
 
 ## Sequência de Implementação
 
 ```text
-1. Corrigir bugs visuais (rápido, sem risco)
+1. Criar edge function sync-project-finances
+   (busca projeto → cria/atualiza contrato → usa IA para payment_terms → gera parcelas)
    ↓
-2. Conectar KPI Cards com dados reais
+2. Adicionar aba "Financeiro" no ProjectTabs (FinanceTab)
    ↓
-3. Criar edge function invite-user
+3. Adicionar botão "Sincronizar Financeiro com IA" no ProjectHeader
    ↓
-4. Adicionar UI de convite em UsersSettingsPage
+4. Adicionar opção no ProjectActionsMenu
    ↓
-5. Criar hook useOnboarding + OnboardingDialog
-   ↓
-6. Integrar onboarding no Dashboard
+5. Trigger automático no useProjects ao criar projeto com contract_value
 ```
 
 ---
 
-## O Que NÃO Está Neste Plano
+## Lógica da IA na Edge Function
 
-Os itens abaixo foram deixados de fora intencionalmente pois envolvem integrações externas que requerem credenciais/APIs de terceiros que o usuário ainda não configurou:
-- **WhatsApp Business API oficial** — requer conta Meta Business verificada
-- **Instagram OAuth real** — requer app aprovado no Meta
-- **Stripe** — requer chave de API (existe integração nativa do Lovable mas precisa de decisão)
-- **Automações com cron** — requer pg_cron ativado e decisão de frequência
+A IA será usada para gerar `payment_terms` inteligentes quando não há condições definidas:
 
-Esses podem ser implementados em uma próxima rodada separada.
+- **Prompt**: dado o tipo de projeto (ex: `filme_institucional`), valor total (ex: R$ 15.000) e duração (ex: 90 dias), gere condições de pagamento padrão de mercado para uma produtora audiovisual brasileira.
+- **Output**: string de condições (ex: "50% na assinatura + 50% na entrega") que alimenta o parser já existente em `generate-contract-milestones`.
+- **Modelo**: `google/gemini-3-flash-preview` (rápido, custo baixo).
+
+---
+
+## Detalhes Técnicos da Edge Function
+
+```text
+POST /functions/v1/sync-project-finances
+Body: { project_id: string, force_regenerate?: boolean }
+
+Fluxo:
+1. Busca projects WHERE id = project_id
+2. Verifica contracts WHERE project_id = project_id
+3. Se não existe contrato → INSERT em contracts
+4. Se não tem payment_terms → chama IA → preenche
+5. Verifica revenues WHERE project_id = project_id AND contract_id = contract.id
+6. Se não tem parcelas (ou force_regenerate) → gera e insere
+7. Retorna: { contract_id, created_revenues: number, payment_terms, message }
+```
+
+A idempotência é garantida: se já existem parcelas para o contrato, não duplica (a menos que `force_regenerate: true`).
+
+---
+
+## O que NÃO muda
+
+- O fluxo de assinatura digital (gov.br/ICP-Brasil) permanece igual.
+- O `generate-contract-milestones` existente continua funcionando para contratos assinados.
+- As tabelas não precisam de migração — apenas vamos usar as colunas existentes corretamente.
