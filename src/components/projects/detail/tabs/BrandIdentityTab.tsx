@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+import * as htmlToImage from "html-to-image";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { useProjectAssets, ProjectAsset } from "@/hooks/useProjectAssets";
 import { useCreativeWorks } from "@/hooks/useCreativeWorks";
@@ -445,7 +446,7 @@ function PaletteRow({ asset }: { asset: ProjectAsset }) {
           className="h-7 text-xs gap-1.5 text-muted-foreground"
           onClick={copyAll}
         >
-          {copiedAll ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+          {copiedAll ? <CheckCircle2 className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
           {copiedAll ? 'Copiado!' : 'Copiar todas'}
         </Button>
       </div>
@@ -655,9 +656,18 @@ function BrandKitPanel({
   squadColorsFound: boolean;
   onExportColors: () => void;
 }) {
-  const primaryLogo = logoAssets.find(a => a.preview_url || a.thumb_url) || logoAssets[0];
-  const displayUrl = primaryLogo?.preview_url || primaryLogo?.thumb_url || primaryLogo?.og_image_url;
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [copiedPalette, setCopiedPalette] = useState(false);
+
+  // Primary logo — prefer the one with the most variants available
+  const primaryLogo = logoAssets.find(a => a.preview_url && a.og_image_url)
+    || logoAssets.find(a => a.preview_url || a.og_image_url)
+    || logoAssets[0];
+
+  const originalUrl  = primaryLogo?.thumb_url || null;
+  const cutoutUrl    = primaryLogo?.preview_url || null;
+  const patternUrl   = primaryLogo?.og_image_url || null;
 
   const handleCopyAll = () => {
     navigator.clipboard?.writeText(allColors.join(', '));
@@ -666,21 +676,43 @@ function BrandKitPanel({
     setTimeout(() => setCopiedPalette(false), 1500);
   };
 
+  const handleExportKit = async () => {
+    if (!exportRef.current) return;
+    setIsExporting(true);
+    try {
+      const dataUrl = await htmlToImage.toPng(exportRef.current, {
+        pixelRatio: 2,
+        backgroundColor: '#0f0f11',
+        cacheBust: true,
+      });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `kit-de-marca-${(brandNames[0] || 'identidade').toLowerCase().replace(/\s+/g, '-')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success('Kit de Marca exportado!');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao exportar o kit');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="glass-card rounded-2xl overflow-hidden border border-border/30">
-      {/* Top bar — brand name + actions */}
+      {/* ── Toolbar ── */}
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-primary" />
+            <Package className="w-4 h-4 text-primary" />
           </div>
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Kit de Marca</p>
-            {brandNames.length > 0 ? (
-              <h3 className="text-base font-semibold text-foreground leading-tight">{brandNames[0]}</h3>
-            ) : (
-              <h3 className="text-base font-semibold text-foreground leading-tight">Identidade Visual</h3>
-            )}
+            <h3 className="text-base font-semibold text-foreground leading-tight">
+              {brandNames[0] || 'Identidade Visual'}
+            </h3>
           </div>
           {brandNames.length > 0 && (
             <Badge className="h-5 px-1.5 text-[9px] bg-primary/10 text-primary border-0 gap-0.5">
@@ -688,140 +720,206 @@ function BrandKitPanel({
             </Badge>
           )}
         </div>
-        {allColors.length > 0 && (
-          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={onExportColors}>
-            <Palette className="w-3 h-3" />
-            Exportar Paleta
+        <div className="flex gap-2">
+          {allColors.length > 0 && (
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={onExportColors}>
+              <Palette className="w-3 h-3" />
+              Paleta CSS
+            </Button>
+          )}
+          <Button
+            size="sm"
+            className="h-8 text-xs gap-1.5"
+            onClick={handleExportKit}
+            disabled={isExporting}
+          >
+            {isExporting
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <Download className="w-3 h-3" />}
+            {isExporting ? 'Exportando...' : 'Exportar Kit PNG'}
           </Button>
-        )}
+        </div>
       </div>
 
-      {/* Kit body */}
-      <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border/20">
+      {/* ── Exportable visual region ── */}
+      <div ref={exportRef} className="p-6 space-y-6 bg-background">
 
-        {/* ── Col 1: Primary Logo ── */}
-        <div className="p-5 flex flex-col gap-3">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Logo Principal</p>
-          <div
-            className="flex-1 rounded-xl flex items-center justify-center min-h-28"
-            style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.25) 0% 25%, transparent 0% 50%) 0 0 / 10px 10px" }}
-          >
-            {displayUrl ? (
-              <img
-                src={displayUrl}
-                alt="Logo principal"
-                className="max-h-24 max-w-[80%] object-contain drop-shadow-sm"
-              />
-            ) : logoAssets.length > 0 ? (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
-                <Layers className="w-10 h-10" />
-                <span className="text-[10px]">{logoAssets[0].ai_title || logoAssets[0].title}</span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground/30">
-                <Layers className="w-8 h-8" />
-                <span className="text-[10px]">Nenhum logo detectado</span>
-              </div>
-            )}
+        {/* Brand header inside export */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">Identidade Visual</p>
+            <h2 className="text-xl font-bold text-foreground leading-tight">{brandNames[0] || 'Kit de Marca'}</h2>
           </div>
+          {brandNames.length > 1 && (
+            <div className="flex flex-wrap gap-1 justify-end">
+              {brandNames.slice(1).map((n, i) => (
+                <span key={i} className="text-[9px] bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded-full">{n}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Logo variants row ── */}
+        <div>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Variações de Logo</p>
+          <div className="grid grid-cols-3 gap-3">
+            {/* Original */}
+            <div className="space-y-1.5">
+              <div
+                className="rounded-xl border border-border/30 flex items-center justify-center min-h-28 overflow-hidden"
+                style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.3) 0% 25%, transparent 0% 50%) 0 0 / 10px 10px" }}
+              >
+                {originalUrl ? (
+                  <img src={originalUrl} alt="Logo original" className="max-h-24 max-w-[85%] object-contain" />
+                ) : cutoutUrl ? (
+                  <img src={cutoutUrl} alt="Logo" className="max-h-24 max-w-[85%] object-contain" />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground/30 py-6">
+                    <Layers className="w-8 h-8" />
+                    <span className="text-[9px]">Sem logo</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                <p className="text-[10px] text-muted-foreground">Original</p>
+              </div>
+            </div>
+
+            {/* Cutout PNG */}
+            <div className="space-y-1.5">
+              <div
+                className="rounded-xl border border-border/30 flex items-center justify-center min-h-28 overflow-hidden"
+                style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.15) 0% 25%, transparent 0% 50%) 0 0 / 10px 10px" }}
+              >
+                {cutoutUrl ? (
+                  <img src={cutoutUrl} alt="Cutout PNG" className="max-h-24 max-w-[85%] object-contain drop-shadow-lg" />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground/30 py-6">
+                    <FileImage className="w-7 h-7" />
+                    <span className="text-[9px]">Gerar via IA</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                <p className="text-[10px] text-muted-foreground">Recorte PNG</p>
+                {cutoutUrl && <Badge className="h-3.5 px-1 text-[8px] bg-primary/10 text-primary border-0 ml-auto">IA</Badge>}
+              </div>
+            </div>
+
+            {/* Generated Pattern */}
+            <div className="space-y-1.5">
+              <div className="rounded-xl border border-border/30 overflow-hidden min-h-28 flex items-center justify-center">
+                {patternUrl ? (
+                  <img src={patternUrl} alt="Padrão gerado" className="w-full h-28 object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground/30 py-6">
+                    <Brush className="w-7 h-7" />
+                    <span className="text-[9px]">Gerar via IA</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                <p className="text-[10px] text-muted-foreground">Padrão Gerado</p>
+                {patternUrl && <Badge className="h-3.5 px-1 text-[8px] bg-primary/10 text-primary border-0 ml-auto">IA</Badge>}
+              </div>
+            </div>
+          </div>
+
+          {/* Additional logos (thumbnails) */}
           {logoAssets.length > 1 && (
-            <div className="flex gap-1.5 flex-wrap">
-              {logoAssets.slice(1, 4).map(a => {
+            <div className="flex gap-2 mt-3 flex-wrap">
+              {logoAssets.filter(a => a.id !== primaryLogo?.id).slice(0, 6).map(a => {
                 const url = a.preview_url || a.thumb_url || a.og_image_url;
                 return url ? (
                   <div
                     key={a.id}
-                    className="w-12 h-12 rounded-lg border border-border/40 overflow-hidden"
-                    style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.2) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px" }}
+                    className="w-12 h-12 rounded-lg border border-border/30 overflow-hidden"
+                    style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.2) 0% 25%, transparent 0% 50%) 0 0 / 6px 6px" }}
                   >
                     <img src={url} alt="" className="w-full h-full object-contain" />
                   </div>
                 ) : null;
               })}
-              {logoAssets.length > 4 && (
-                <div className="w-12 h-12 rounded-lg border border-border/40 bg-muted/20 flex items-center justify-center text-[10px] text-muted-foreground font-medium">
-                  +{logoAssets.length - 4}
+              {logoAssets.length > 7 && (
+                <div className="w-12 h-12 rounded-lg border border-border/40 bg-muted/20 flex items-center justify-center text-[9px] text-muted-foreground font-medium">
+                  +{logoAssets.length - 7}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* ── Col 2: Color Palette ── */}
-        <div className="p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+        {/* ── Color palette ── */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Paleta de Cores</p>
             {allColors.length > 0 && (
               <button onClick={handleCopyAll} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                 {copiedPalette ? <CheckCircle2 className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
-                Copiar
+                Copiar tudo
               </button>
             )}
           </div>
+
           {allColors.length > 0 ? (
-            <>
-              {/* Stripe preview */}
-              <div className="rounded-xl overflow-hidden h-10 flex">
-                {allColors.slice(0, 8).map((c, i) => (
+            <div className="space-y-3">
+              {/* Full-width color bar */}
+              <div className="rounded-xl overflow-hidden h-12 flex shadow-sm">
+                {allColors.slice(0, 12).map((c, i) => (
                   <div key={i} className="flex-1" style={{ backgroundColor: c }} />
                 ))}
               </div>
-              {/* Swatch grid */}
-              <div className="flex flex-wrap gap-2">
-                {allColors.slice(0, 10).map((c, i) => (
+              {/* Swatch + hex grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {allColors.map((c, i) => (
                   <TooltipProvider key={i}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => { navigator.clipboard?.writeText(c); toast.success(`${c} copiada!`); }}
-                          className="w-9 h-9 rounded-lg border-2 border-border/30 hover:scale-110 hover:-translate-y-0.5 transition-all shadow-sm"
-                          style={{ backgroundColor: c }}
-                        />
+                          className="flex flex-col items-center gap-1.5 group"
+                        >
+                          <div
+                            className="w-full h-10 rounded-lg border-2 border-border/30 group-hover:scale-105 group-hover:-translate-y-0.5 transition-all shadow-sm"
+                            style={{ backgroundColor: c }}
+                          />
+                          <span className="text-[9px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+                            {c}
+                          </span>
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent className="text-xs font-mono">{c}</TooltipContent>
+                      <TooltipContent className="text-xs font-mono">Copiar {c}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ))}
-                {allColors.length > 10 && (
-                  <div className="w-9 h-9 rounded-lg border border-border/40 bg-muted/20 flex items-center justify-center text-[9px] text-muted-foreground font-medium">
-                    +{allColors.length - 10}
-                  </div>
-                )}
               </div>
-              {/* Hex chips */}
-              <div className="flex flex-wrap gap-1">
-                {allColors.slice(0, 6).map((c, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { navigator.clipboard?.writeText(c); toast.success(`${c} copiada!`); }}
-                    className="text-[9px] font-mono bg-muted/40 hover:bg-muted text-muted-foreground px-1.5 py-0.5 rounded transition-colors"
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </>
+            </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground/30 min-h-28">
-              <Palette className="w-8 h-8" />
+            <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground/30 min-h-20 border border-border/20 rounded-xl">
+              <Palette className="w-7 h-7" />
               <span className="text-[10px]">Nenhuma cor detectada</span>
             </div>
           )}
-          {/* SQUAD color exclusion warning */}
+
+          {/* SQUAD exclusion warning */}
           {squadColorsFound && (
-            <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <span className="text-amber-500 text-[11px] flex-shrink-0">⚠️</span>
-              <p className="text-[10px] text-amber-600 dark:text-amber-400 leading-snug">
+            <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg bg-muted/40 border border-border/30 mt-2">
+              <span className="text-[11px] flex-shrink-0">⚠️</span>
+              <p className="text-[10px] text-muted-foreground leading-snug">
                 Cores da plataforma SQUAD foram excluídas desta paleta.
               </p>
             </div>
           )}
         </div>
 
-        {/* ── Col 3: Typography + Metadata ── */}
-        <div className="p-5 flex flex-col gap-4">
+        {/* ── Typography + Metadata ── */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Typography */}
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Tipografia Detectada</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Tipografia</p>
             {fonts.length > 0 ? (
               <div className="space-y-1.5">
                 {fonts.slice(0, 4).map((font, i) => (
@@ -846,32 +944,34 @@ function BrandKitPanel({
             )}
           </div>
 
-          {/* Brand metadata */}
-          <div className="space-y-2 mt-auto">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Metadados da Marca</p>
+          {/* Metadata */}
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Metadados</p>
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/20 border border-border/20">
                 <span className="text-muted-foreground">Logos detectados</span>
                 <Badge variant="outline" className="text-[10px] h-4 px-1.5">{logoAssets.length}</Badge>
               </div>
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/20 border border-border/20">
                 <span className="text-muted-foreground">Cores extraídas</span>
                 <Badge variant="outline" className="text-[10px] h-4 px-1.5">{allColors.length}</Badge>
               </div>
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/20 border border-border/20">
                 <span className="text-muted-foreground">Fontes identificadas</span>
                 <Badge variant="outline" className="text-[10px] h-4 px-1.5">{fonts.length}</Badge>
               </div>
-              {brandNames.length > 1 && (
-                <div className="flex items-start justify-between text-xs gap-2">
-                  <span className="text-muted-foreground flex-shrink-0">Outras marcas</span>
-                  <div className="flex flex-wrap gap-1 justify-end">
-                    {brandNames.slice(1).map((n, i) => (
-                      <span key={i} className="text-[9px] bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded-full">{n}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/20 border border-border/20">
+                <span className="text-muted-foreground">Com recorte PNG</span>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                  {logoAssets.filter(a => a.preview_url).length}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/20 border border-border/20">
+                <span className="text-muted-foreground">Com padrão gerado</span>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                  {logoAssets.filter(a => a.og_image_url).length}
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
