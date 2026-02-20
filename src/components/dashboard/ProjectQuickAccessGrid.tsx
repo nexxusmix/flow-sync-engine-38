@@ -76,7 +76,7 @@ export function ProjectQuickAccessGrid({ projects, isLoading }: ProjectQuickAcce
       initial={{ opacity: 0, y: 25, filter: "blur(12px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ delay: 0.15, type: "spring", stiffness: 80, damping: 18 }}
-      style={{ transformStyle: "preserve-3d" }}
+      
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
@@ -126,8 +126,7 @@ export function ProjectQuickAccessGrid({ projects, isLoading }: ProjectQuickAcce
                 initial={{ opacity: 0, y: 15, scale: 0.95, filter: "blur(8px)" }}
                 animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
                 transition={{ delay: 0.2 + idx * 0.07, type: "spring", stiffness: 100, damping: 18 }}
-                whileHover={{ y: -4, scale: 1.02, rotateX: -1, rotateY: 1 }}
-                style={{ transformStyle: "preserve-3d", perspective: 800 }}
+                whileHover={{ y: -4, scale: 1.02 }}
               >
                 <Link to={`/projetos/${project.id}`}>
                   <Card className="p-4 bg-muted/20 border-border/50 hover:border-primary/30 hover:bg-muted/30 transition-all cursor-pointer group hover:shadow-[0_15px_40px_-15px_rgba(0,163,211,0.15)]">

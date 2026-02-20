@@ -46,7 +46,7 @@ export function PageTransition({ children }: PageTransitionProps) {
       exit="exit"
       transition={pageTransition}
       className="w-full flex-1"
-      style={{ transformStyle: "preserve-3d", perspective: 1200 }}
+      
     >
       {children}
     </motion.div>
