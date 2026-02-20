@@ -104,12 +104,76 @@ function ColorPalette({ colors }: { colors: string[] }) {
   );
 }
 
+const CATEGORY_BG: Record<string, string> = {
+  deliverable: 'from-primary/20 to-primary/5',
+  reference: 'from-blue-500/20 to-blue-500/5',
+  raw: 'from-orange-500/20 to-orange-500/5',
+  contract: 'from-purple-500/20 to-purple-500/5',
+  finance: 'from-green-500/20 to-green-500/5',
+  other: 'from-muted to-muted/30',
+};
+
+function AssetThumbnail({ asset }: { asset: ProjectAsset }) {
+  const [imgError, setImgError] = useState(false);
+  const displayUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
+  const entities = asset.ai_entities as any;
+
+  // Show image if we have a URL and it hasn't errored
+  if (displayUrl && !imgError) {
+    return (
+      <img
+        src={displayUrl}
+        alt={asset.ai_title || asset.title}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  // Fallback placeholder — rich visual based on category/type
+  const bg = CATEGORY_BG[asset.category] || CATEGORY_BG.other;
+  const isPdf = asset.asset_type === 'pdf';
+  const isImage = asset.asset_type === 'image';
+
+  // Detect element type for sub-assets
+  const elementType = entities?.element?.type;
+  const iconSize = "w-8 h-8";
+
+  const Icon = () => {
+    if (elementType === 'logo') return <Layers className={iconSize} />;
+    if (elementType === 'assinatura') return <PenLine className={iconSize} />;
+    if (elementType === 'carimbo') return <Stamp className={iconSize} />;
+    if (elementType === 'foto') return <Camera className={iconSize} />;
+    if (elementType === 'paleta') return <Palette className={iconSize} />;
+    if (isImage) return <ImageIcon className={iconSize} />;
+    if (isPdf) return <FileText className={iconSize} />;
+    return <Package className={iconSize} />;
+  };
+
+  const label = asset.file_ext?.toUpperCase()
+    || (isPdf ? 'PDF' : isImage ? 'IMG' : asset.asset_type?.toUpperCase() || 'FILE');
+
+  return (
+    <div className={cn(
+      "w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br text-muted-foreground",
+      bg
+    )}>
+      <Icon />
+      <span className="text-[10px] font-semibold tracking-widest opacity-60">{label}</span>
+      {asset.file_name && (
+        <span className="text-[9px] text-center px-2 opacity-40 truncate w-full text-center leading-tight">
+          {asset.file_name.length > 22 ? asset.file_name.substring(0, 22) + '…' : asset.file_name}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function AssetCard({ asset, onDelete }: { asset: ProjectAsset; onDelete: (id: string) => void }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const entities = asset.ai_entities as any;
   const colorPalette = entities?.color_palette as string[] | undefined;
-  const hasThumbnail = !!asset.thumb_url;
-  const displayUrl = asset.thumb_url || asset.preview_url;
+  const displayUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
 
   return (
     <>
@@ -119,19 +183,7 @@ function AssetCard({ asset, onDelete }: { asset: ProjectAsset; onDelete: (id: st
           className="relative aspect-video bg-muted/40 overflow-hidden cursor-pointer"
           onClick={() => setPreviewOpen(true)}
         >
-          {displayUrl ? (
-            <img 
-              src={displayUrl} 
-              alt={asset.ai_title || asset.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              {getAssetTypeIcon(asset)}
-              <span className="text-xs">{asset.file_ext?.toUpperCase() || asset.asset_type}</span>
-            </div>
-          )}
+          <AssetThumbnail asset={asset} />
 
           {/* Overlay on hover */}
           <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
