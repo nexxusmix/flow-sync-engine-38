@@ -63,17 +63,36 @@ interface BrandIdentityTabProps {
 
 function BrandAssetThumbnail({ asset, className }: { asset: ProjectAsset; className?: string }) {
   const [imgError, setImgError] = useState(false);
-  const displayUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(
+    asset.thumb_url || asset.og_image_url || asset.preview_url || null
+  );
   const entities = asset.ai_entities as any;
   const elementType = entities?.element?.type;
 
-  if (displayUrl && !imgError) {
+  const handleError = async () => {
+    if (asset.storage_path && asset.asset_type === 'image') {
+      try {
+        const { data } = await supabase.storage
+          .from(asset.storage_bucket || 'project-files')
+          .createSignedUrl(asset.storage_path, 3600);
+        if (data?.signedUrl) {
+          setResolvedUrl(data.signedUrl);
+          return;
+        }
+      } catch {
+        // fallback to placeholder
+      }
+    }
+    setImgError(true);
+  };
+
+  if (resolvedUrl && !imgError) {
     return (
       <img
-        src={displayUrl}
+        src={resolvedUrl}
         alt={asset.ai_title || asset.title}
         className={cn("max-w-[80%] max-h-[80%] object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300", className)}
-        onError={() => setImgError(true)}
+        onError={handleError}
       />
     );
   }
@@ -601,12 +620,14 @@ function BrandKitPanel({
   allColors,
   logoAssets,
   fonts,
+  squadColorsFound,
   onExportColors,
 }: {
   brandNames: string[];
   allColors: string[];
   logoAssets: ProjectAsset[];
   fonts: string[];
+  squadColorsFound: boolean;
   onExportColors: () => void;
 }) {
   const primaryLogo = logoAssets.find(a => a.preview_url || a.thumb_url) || logoAssets[0];
@@ -761,6 +782,15 @@ function BrandKitPanel({
               <span className="text-[10px]">Nenhuma cor detectada</span>
             </div>
           )}
+          {/* SQUAD color exclusion warning */}
+          {squadColorsFound && (
+            <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <span className="text-amber-500 text-[11px] flex-shrink-0">⚠️</span>
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 leading-snug">
+                Cores da plataforma SQUAD foram excluídas desta paleta.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ── Col 3: Typography + Metadata ── */}
@@ -839,8 +869,30 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
 
+  // ── SQUAD brand filter ─────────────────────────────────────────────────────
+  // Colors belonging to the SQUAD Film platform — must be excluded from the client palette
+  const SQUAD_COLORS_FILTER = new Set([
+    '#009cca', '#009CCA',
+    '#000000', '#0f0f11', '#0a0a0a', '#1a1a1a', '#111111',
+    '#ffffff', '#fefefe',
+  ].map(c => c.toLowerCase()));
+
+  const SQUAD_BRAND_NAMES = ['squad', 'squad film', 'squadfilm'];
+
+  const isSquadAsset = (a: ProjectAsset): boolean => {
+    const brandName = ((a.ai_entities as any)?.brand_name || '').toLowerCase();
+    return SQUAD_BRAND_NAMES.some(n => brandName.includes(n));
+  };
+
+  const filterClientColors = (colors: string[]): string[] =>
+    colors.filter(c => !SQUAD_COLORS_FILTER.has(c.toLowerCase()));
+
+  // How many SQUAD-originated colors were stripped (for the warning UI)
+  const squadColorsFound = assets.some(isSquadAsset);
+
   // Detect logo/visual identity assets: images that were AI processed and tagged
   const logoAssets = assets.filter(a => {
+    if (isSquadAsset(a)) return false;
     const entities = a.ai_entities as any;
     if (a.asset_type === 'image' && a.ai_processed) return true;
     if (entities?.element?.type && ['logo', 'foto', 'ilustracao'].includes(entities.element.type)) return true;
@@ -849,29 +901,34 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
     return false;
   });
 
-  // Detect palette assets: assets with color_palette in entities
+  // Detect palette assets: only from non-SQUAD assets
   const paletteAssets = assets.filter(a => {
+    if (isSquadAsset(a)) return false;
     const entities = a.ai_entities as any;
     return entities?.color_palette && Array.isArray(entities.color_palette) && entities.color_palette.length > 0;
   });
 
-  // All unique colors across all palette assets
+  // All unique client colors, filtered to remove SQUAD platform colors
   const allColors: string[] = [...new Set(
-    paletteAssets.flatMap(a => {
-      const entities = a.ai_entities as any;
-      return (entities?.color_palette as string[] | undefined) || [];
-    })
+    filterClientColors(
+      paletteAssets.flatMap(a => {
+        const entities = a.ai_entities as any;
+        return (entities?.color_palette as string[] | undefined) || [];
+      })
+    )
   )];
 
   // Signature / seal assets
   const signatureAssets = assets.filter(a => {
+    if (isSquadAsset(a)) return false;
     const entities = a.ai_entities as any;
     return ['assinatura', 'carimbo'].includes(entities?.element?.type || '');
   });
 
-  // Brand name detected
+  // Brand name detected — exclude SQUAD names
   const brandNames = [...new Set(
     assets
+      .filter(a => !isSquadAsset(a))
       .map(a => (a.ai_entities as any)?.brand_name)
       .filter(Boolean)
   )] as string[];
@@ -1022,6 +1079,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
           allColors={allColors}
           logoAssets={logoAssets}
           fonts={allFonts}
+          squadColorsFound={squadColorsFound}
           onExportColors={() => setExportColorsOpen(true)}
         />
       )}
