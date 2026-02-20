@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useProjects, CreateProjectInput } from "@/hooks/useProjects";
 import { PROJECT_TEMPLATES } from "@/data/projectTemplates";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +46,8 @@ import {
   Calendar,
   DollarSign,
   FileCheck,
-  ClipboardList
+  ClipboardList,
+  Images,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -129,9 +131,10 @@ const DELIVERABLE_TYPE_LABELS: Record<string, string> = {
 
 export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
   const { createProject, isCreating } = useProjects();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [step, setStep] = useState<'upload' | 'processing' | 'review'>('upload');
+  const [step, setStep] = useState<'upload' | 'processing' | 'extracting_visuals' | 'review'>('upload');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [additionalText, setAdditionalText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -140,6 +143,8 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
   const [autoCreateClient, setAutoCreateClient] = useState(true);
   const [activeTab, setActiveTab] = useState("projeto");
   const [scopeExpanded, setScopeExpanded] = useState(false);
+  const [extractedAssets, setExtractedAssets] = useState<any[]>([]);
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<ExtractedData>({
     title: "",
@@ -173,6 +178,8 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     setProcessingStep("");
     setActiveTab("projeto");
     setScopeExpanded(false);
+    setExtractedAssets([]);
+    setCreatedProjectId(null);
     setFormData({
       title: "",
       clientName: "",
@@ -289,13 +296,12 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
 
       if (error) throw error;
 
-      setProcessingProgress(90);
+      setProcessingProgress(85);
       setProcessingStep("Preenchendo formulário...");
 
       if (data.projectData) {
         const extracted = data.projectData;
         
-        // Mark all deliverables as selected by default
         const deliverablesWithSelection = (extracted.deliverables || []).map((d: Deliverable) => ({
           ...d,
           selected: true
@@ -323,6 +329,40 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
           rawExtractedContent: extracted.rawExtractedContent || "",
           has_payment_block: true,
         });
+      }
+
+      // Step 2: Extract visual assets in background
+      setProcessingProgress(90);
+      setProcessingStep("Extraindo assets visuais com IA...");
+      setStep('extracting_visuals');
+
+      // Run visual extraction non-blocking
+      try {
+        const allFilesForVisual = uploadedFiles.filter(f => f.file.size <= 20 * 1024 * 1024);
+        if (allFilesForVisual.length > 0) {
+          const filesPayload = await Promise.all(
+            allFilesForVisual.map(async (uf) => ({
+              name: uf.file.name,
+              base64: await fileToBase64(uf.file),
+              mime_type: uf.file.type,
+              size_bytes: uf.file.size,
+            }))
+          );
+
+          const { data: visualData } = await supabase.functions.invoke('extract-visual-assets', {
+            body: {
+              project_id: '__pending__', // will be linked after project creation
+              files: filesPayload,
+              uploaded_by_user_id: user?.id,
+            }
+          });
+
+          if (visualData?.assets) {
+            setExtractedAssets(visualData.assets);
+          }
+        }
+      } catch (visualErr) {
+        console.warn('Visual extraction failed (non-blocking):', visualErr);
       }
 
       setProcessingProgress(100);
@@ -607,12 +647,17 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
           </div>
         )}
 
-        {step === 'processing' && (
+        {(step === 'processing' || step === 'extracting_visuals') && (
           <div className="py-12 space-y-6">
             <div className="text-center">
-              <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+              <div className="relative inline-block mb-4">
+                <Loader2 className="w-12 h-12 text-primary mx-auto animate-spin" />
+                {step === 'extracting_visuals' && (
+                  <Sparkles className="w-5 h-5 text-primary absolute -top-1 -right-1 animate-pulse" />
+                )}
+              </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Processando documentos...
+                {step === 'extracting_visuals' ? 'Extraindo assets visuais...' : 'Processando documentos...'}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {processingStep}
@@ -620,7 +665,9 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
             </div>
             <Progress value={processingProgress} className="h-2" />
             <p className="text-xs text-muted-foreground text-center">
-              A IA está analisando seus documentos para extrair TODAS as informações do projeto.
+              {step === 'extracting_visuals'
+                ? 'A IA está identificando logos, identidade visual, assinaturas e outros elementos.'
+                : 'A IA está analisando seus documentos para extrair TODAS as informações do projeto.'}
             </p>
           </div>
         )}
@@ -631,11 +678,12 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
               <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
               <span className="text-sm text-primary">
                 Dados extraídos! Revise todas as abas antes de criar.
+                {extractedAssets.length > 0 && ` • ${extractedAssets.length} asset(s) visual(is) detectado(s).`}
               </span>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsList className={`grid w-full mb-4 ${extractedAssets.length > 0 ? 'grid-cols-5' : 'grid-cols-4'}`}>
                 <TabsTrigger value="projeto" className="gap-1 text-xs">
                   <FileCheck className="w-3 h-3" />
                   Projeto
@@ -657,6 +705,15 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
                   <DollarSign className="w-3 h-3" />
                   Financeiro
                 </TabsTrigger>
+                {extractedAssets.length > 0 && (
+                  <TabsTrigger value="visual" className="gap-1 text-xs">
+                    <Images className="w-3 h-3" />
+                    Visual
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                      {extractedAssets.length}
+                    </Badge>
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <ScrollArea className="flex-1 pr-4">
@@ -975,6 +1032,44 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
                     </div>
                   )}
                 </TabsContent>
+
+                {/* Tab: Visual Assets */}
+                {extractedAssets.length > 0 && (
+                  <TabsContent value="visual" className="space-y-4 mt-0">
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        A IA detectou <strong>{extractedAssets.length}</strong> asset(s) nos documentos enviados. Eles foram salvos e estarão disponíveis na aba <strong>Galeria IA</strong> do projeto.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {extractedAssets.slice(0, 6).map((asset: any, i: number) => (
+                        <div key={i} className="p-3 bg-muted/30 rounded-xl space-y-1.5">
+                          {asset.thumb_url && (
+                            <img src={asset.thumb_url} alt={asset.ai_title || asset.title} className="w-full h-24 object-cover rounded-lg mb-2" />
+                          )}
+                          <p className="text-xs font-medium text-foreground truncate">
+                            {asset.ai_title || asset.title}
+                          </p>
+                          {asset.ai_summary && (
+                            <p className="text-[10px] text-muted-foreground line-clamp-2">{asset.ai_summary}</p>
+                          )}
+                          {asset.ai_tags && asset.ai_tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {asset.ai_tags.slice(0, 3).map((tag: string, j: number) => (
+                                <span key={j} className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{tag}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {extractedAssets.length > 6 && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        +{extractedAssets.length - 6} assets adicionais salvos na Galeria IA
+                      </p>
+                    )}
+                  </TabsContent>
+                )}
               </ScrollArea>
             </Tabs>
 

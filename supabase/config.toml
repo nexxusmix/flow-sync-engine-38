@@ -172,3 +172,6 @@ verify_jwt = false
 [functions.generate-contract-text]
 verify_jwt = false
 
+[functions.extract-visual-assets]
+verify_jwt = false
+
