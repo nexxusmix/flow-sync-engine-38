@@ -59,7 +59,7 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
       <motion.div
         className="glass-card rounded-xl p-3 cursor-pointer group hover:border-primary/30 transition-all min-w-[220px] max-w-[280px] flex-shrink-0"
         whileHover={{ scale: 1.02, y: -2 }}
-        style={{ transformStyle: "preserve-3d" }}
+        
       >
         <div className="flex items-start gap-2.5">
           <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", config.color.replace("text-", "bg-").replace("-400", "-500/15"))}>
