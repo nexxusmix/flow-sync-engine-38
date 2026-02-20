@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useFinancialStore } from "@/stores/financialStore";
 import { Expense, EXPENSE_CATEGORIES } from "@/types/financial";
@@ -65,6 +66,7 @@ export default function ExpensesPage() {
     markExpensePaid,
   } = useFinancialStore();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [search, setSearch] = useState('');
@@ -79,6 +81,13 @@ export default function ExpensesPage() {
     project_id: '',
     notes: '',
   });
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsNewDialogOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchExpenses();

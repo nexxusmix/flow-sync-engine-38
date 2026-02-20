@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTasksUnified, Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
@@ -71,6 +72,7 @@ export default function TasksPage() {
   const [viewMode, setViewMode] = useUrlState('view', 'board') as [ViewMode, (v: ViewMode) => void];
   useScrollPersistence('tasks');
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [isAISheetOpen, setIsAISheetOpen] = useState(false);
@@ -91,6 +93,13 @@ export default function TasksPage() {
   useEffect(() => {
     try { localStorage.setItem('tasks-ai-text', aiText); } catch {}
   }, [aiText]);
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsNewTaskOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   // Speech-to-text hook
   const handleSpeechResult = useCallback((text: string, isFinal: boolean) => {

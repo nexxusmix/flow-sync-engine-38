@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ContractAiUploadDialog } from "@/components/finance/ContractAiUploadDialog";
 import { ContractAiUpdateDialog } from "@/components/finance/ContractAiUpdateDialog";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -48,10 +48,19 @@ export default function ContractsListPage() {
     total_value: "",
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   useEffect(() => {
     fetchContracts();
     fetchAlerts();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setShowNewModal(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   const fetchContracts = async () => {
     setLoading(true);
