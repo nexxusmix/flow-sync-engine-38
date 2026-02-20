@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { useKPIMetrics } from "@/hooks/useKPIMetrics";
+import { formatCurrencyBRL } from "@/utils/format";
 
 const container = {
   hidden: { opacity: 0 },
@@ -25,17 +27,18 @@ const item = {
   },
 };
 
-// KPIs zerados para estado inicial
-const kpis = [
-  { label: "Leads Novos", value: 0, icon: "person_add", detail: "HOT LEADS" },
-  { label: "Respostas", value: 0, icon: "mark_email_read", detail: "HOJE" },
-  { label: "Calls", value: 0, icon: "call", detail: "AGENDADAS" },
-  { label: "Propostas", value: 0, icon: "send", detail: "ENVIADAS" },
-  { label: "Pagamentos", value: "R$ 0", icon: "payments", detail: "PREVISTOS" },
-  { label: "Entregas", value: 0, icon: "local_shipping", detail: "7 DIAS" },
-];
-
 export function KPICards() {
+  const metrics = useKPIMetrics();
+
+  const kpis = [
+    { label: "Leads Novos", value: metrics.newLeads, icon: "person_add", detail: "HOT LEADS" },
+    { label: "Respostas", value: metrics.inboundReplies, icon: "mark_email_read", detail: "HOJE" },
+    { label: "Calls", value: metrics.upcomingMeetings, icon: "call", detail: "AGENDADAS" },
+    { label: "Propostas", value: metrics.sentProposals, icon: "send", detail: "ENVIADAS" },
+    { label: "Pagamentos", value: formatCurrencyBRL(metrics.pendingPaymentsTotal), icon: "payments", detail: "PREVISTOS" },
+    { label: "Entregas", value: metrics.upcomingDeliveries, icon: "local_shipping", detail: "7 DIAS" },
+  ];
+
   return (
     <section>
       <motion.div 
@@ -54,7 +57,6 @@ export function KPICards() {
             }}
             whileTap={{ scale: 0.98 }}
             className="glass-card p-8 rounded-[2rem] transition-colors duration-500 group cursor-pointer min-h-[160px] border border-transparent"
-            style={{ transformStyle: "preserve-3d", perspective: 800 }}
           >
             <div className="flex justify-between items-start mb-8">
               <motion.span 
@@ -89,7 +91,11 @@ export function KPICards() {
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               transition={{ delay: 0.3 + index * 0.08, type: "spring", stiffness: 100 }}
             >
-              {kpi.value}
+              {metrics.isLoading ? (
+                <span className="text-2xl text-muted-foreground animate-pulse">—</span>
+              ) : (
+                kpi.value
+              )}
             </motion.span>
           </motion.div>
         ))}

@@ -27,7 +27,7 @@ export function MetricCard({ label, value, trend, trendUp, icon: Icon, index = 0
         scale: 1.01,
       }}
       whileTap={{ scale: 0.98 }}
-      style={{ transformStyle: "preserve-3d", perspective: 800 }}
+      
     >
       <div className="flex items-start justify-between mb-4">
         <motion.div 
