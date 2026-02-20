@@ -14,6 +14,7 @@ import { BackgroundUploadIndicator } from "./components/ui/BackgroundUploadIndic
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
 import LandingPage from "./pages/LandingPage";
 
 // Pages
@@ -134,6 +135,8 @@ function AppRoutes() {
         path="/login" 
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
       />
+      {/* Invite accept page — always public so the token hash can be processed */}
+      <Route path="/auth" element={<AcceptInvitePage />} />
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <LandingPage />} />
       <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
       <Route path="/tarefas" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />

@@ -67,13 +67,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate invite link
+    // Generate invite link — redirect to /auth where the user sets their password
+    const origin = req.headers.get("origin") || "https://flow-sync-engine-38.lovable.app";
     const { data: inviteData, error: inviteError } =
       await adminClient.auth.admin.generateLink({
         type: "invite",
         email,
         options: {
-          redirectTo: `${req.headers.get("origin") || "https://flow-sync-engine-38.lovable.app"}/auth`,
+          redirectTo: `${origin}/auth`,
         },
       });
 
