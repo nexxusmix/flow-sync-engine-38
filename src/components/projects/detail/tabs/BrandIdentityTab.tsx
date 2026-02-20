@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useSignedUrlBatch } from "@/hooks/useSignedUrlBatch";
 import * as htmlToImage from "html-to-image";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { useProjectAssets, ProjectAsset } from "@/hooks/useProjectAssets";
@@ -62,16 +63,24 @@ interface BrandIdentityTabProps {
 
 // ─── Brand Asset Thumbnail ─────────────────────────────────────────────────
 
-function BrandAssetThumbnail({ asset, className }: { asset: ProjectAsset; className?: string }) {
+function BrandAssetThumbnail({ asset, className, preloadedUrl }: { asset: ProjectAsset; className?: string; preloadedUrl?: string | null }) {
   const [imgError, setImgError] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(
-    asset.thumb_url || asset.og_image_url || asset.preview_url || null
+    preloadedUrl || asset.thumb_url || asset.og_image_url || asset.preview_url || null
   );
   const entities = asset.ai_entities as any;
-  const elementType = entities?.element?.type;
+  const elementType = entities?.element?.type as string | undefined;
+
+  useEffect(() => {
+    if (preloadedUrl && preloadedUrl !== resolvedUrl) {
+      setResolvedUrl(preloadedUrl);
+      setImgError(false);
+    }
+  }, [preloadedUrl]);
+
 
   const handleError = async () => {
-    if (asset.storage_path && asset.asset_type === 'image') {
+    if (!preloadedUrl && asset.storage_path) {
       try {
         const { data } = await supabase.storage
           .from(asset.storage_bucket || 'project-files')
@@ -80,9 +89,7 @@ function BrandAssetThumbnail({ asset, className }: { asset: ProjectAsset; classN
           setResolvedUrl(data.signedUrl);
           return;
         }
-      } catch {
-        // fallback to placeholder
-      }
+      } catch (e) { /* noop */ }
     }
     setImgError(true);
   };
@@ -176,6 +183,7 @@ function LogoCard({
   isSelected,
   onToggle,
   primaryColor,
+  preloadedUrl,
 }: {
   asset: ProjectAsset;
   onSendToStudio: (asset: ProjectAsset) => void;
@@ -183,6 +191,7 @@ function LogoCard({
   isSelected?: boolean;
   onToggle?: (id: string) => void;
   primaryColor?: string;
+  preloadedUrl?: string | null;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [isReprocessing, setIsReprocessing] = useState(false);
@@ -278,7 +287,7 @@ function LogoCard({
           style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.3) 0% 25%, transparent 0% 50%) 0 0 / 12px 12px" }}
           onClick={handleCardClick}
         >
-          <BrandAssetThumbnail asset={asset} />
+          <BrandAssetThumbnail asset={asset} preloadedUrl={preloadedUrl} />
 
           {asset.status === 'processing' && (
             <div className="absolute inset-0 bg-background/70 flex flex-col items-center justify-center gap-2 z-10">
@@ -1155,6 +1164,8 @@ function BrandKitPanel({
 
 export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const { assets, isLoading, deleteAsset } = useProjectAssets(project.id);
+  // Batch pre-fetch all signed URLs at once — eliminates per-card delay
+  const signedUrlMap = useSignedUrlBatch(assets);
   const [studioAsset, setStudioAsset] = useState<ProjectAsset | null>(null);
   const [exportColorsOpen, setExportColorsOpen] = useState(false);
 
@@ -1503,6 +1514,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(asset.id)}
                     onToggle={toggleSelection}
+                    preloadedUrl={signedUrlMap.get(asset.id)}
                   />
                 ))}
               </div>
@@ -1593,6 +1605,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(asset.id)}
                     onToggle={toggleSelection}
+                    preloadedUrl={signedUrlMap.get(asset.id)}
                   />
                 ))}
               </div>
