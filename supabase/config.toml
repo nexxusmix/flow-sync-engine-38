@@ -178,3 +178,6 @@ verify_jwt = false
 [functions.scan-contract-signatures]
 verify_jwt = false
 
+[functions.generate-logo-variations]
+verify_jwt = false
+
