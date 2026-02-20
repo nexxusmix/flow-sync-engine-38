@@ -12,6 +12,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -41,6 +47,7 @@ import {
   Camera,
   Trash2,
   CheckSquare,
+  FolderInput,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -599,6 +606,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
 
   // Detect logo/visual identity assets: images that were AI processed and tagged
   const logoAssets = assets.filter(a => {
@@ -700,6 +708,34 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
     }
   };
 
+  const BRAND_CATEGORY_LABELS: Record<string, string> = {
+    deliverable: 'Entrega',
+    reference: 'Referência',
+    raw: 'Bruto',
+    contract: 'Contrato',
+    finance: 'Financeiro',
+    other: 'Outro',
+  };
+
+  const handleBulkMove = async (targetCategory: string) => {
+    if (selectedIds.size === 0) return;
+    setIsMoving(true);
+    try {
+      await Promise.all(
+        [...selectedIds].map(id =>
+          supabase.from('project_assets').update({ category: targetCategory }).eq('id', id)
+        )
+      );
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      toast.success(`${selectedIds.size} asset(s) movido(s) para "${BRAND_CATEGORY_LABELS[targetCategory] || targetCategory}"`);
+    } catch {
+      toast.error('Erro ao mover assets');
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -774,6 +810,26 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
             {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
             Baixar {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={selectedIds.size === 0 || isMoving}
+                className="h-8 text-xs gap-1.5"
+              >
+                {isMoving ? <Loader2 className="w-3 h-3 animate-spin" /> : <FolderInput className="w-3 h-3" />}
+                Mover para...
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="z-50 bg-popover border border-border shadow-lg">
+              {Object.entries(BRAND_CATEGORY_LABELS).map(([key, label]) => (
+                <DropdownMenuItem key={key} onClick={() => handleBulkMove(key)}>
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             size="sm"
             variant="destructive"
