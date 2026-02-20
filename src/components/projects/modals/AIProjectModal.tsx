@@ -48,6 +48,7 @@ import {
   FileCheck,
   ClipboardList,
   Images,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -143,6 +144,7 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
   const [autoCreateClient, setAutoCreateClient] = useState(true);
   const [activeTab, setActiveTab] = useState("projeto");
   const [scopeExpanded, setScopeExpanded] = useState(false);
+  const [rawExpanded, setRawExpanded] = useState(false);
   const [extractedAssets, setExtractedAssets] = useState<any[]>([]);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   
@@ -178,6 +180,7 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     setProcessingStep("");
     setActiveTab("projeto");
     setScopeExpanded(false);
+    setRawExpanded(false);
     setExtractedAssets([]);
     setCreatedProjectId(null);
     setFormData({
@@ -961,6 +964,34 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
                         ))}
                       </div>
                     </div>
+                  )}
+
+                  {/* Raw extracted content preview */}
+                  {formData.rawExtractedContent && (
+                    <Collapsible open={rawExpanded} onOpenChange={setRawExpanded}>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground">
+                          <span className="flex items-center gap-2 text-xs">
+                            <Eye className="w-3.5 h-3.5" />
+                            Ver texto bruto extraído do documento ({formData.rawExtractedContent.length.toLocaleString('pt-BR')} caracteres)
+                          </span>
+                          <ChevronDown className={`w-4 h-4 transition-transform ${rawExpanded ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2">
+                        <div className="rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20 p-1">
+                          <div className="flex items-center gap-2 px-3 py-2 border-b border-muted-foreground/20 mb-1">
+                            <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground font-medium">Texto extraído pela IA — somente leitura</span>
+                          </div>
+                          <ScrollArea className="h-64">
+                            <pre className="px-3 py-2 text-[11px] text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                              {formData.rawExtractedContent}
+                            </pre>
+                          </ScrollArea>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   )}
                 </TabsContent>
 
