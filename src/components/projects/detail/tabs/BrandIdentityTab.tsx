@@ -594,6 +594,237 @@ function ExportColorsDialog({
   );
 }
 
+// ─── Brand Kit Panel ───────────────────────────────────────────────────────
+
+function BrandKitPanel({
+  brandNames,
+  allColors,
+  logoAssets,
+  fonts,
+  onExportColors,
+}: {
+  brandNames: string[];
+  allColors: string[];
+  logoAssets: ProjectAsset[];
+  fonts: string[];
+  onExportColors: () => void;
+}) {
+  const primaryLogo = logoAssets.find(a => a.preview_url || a.thumb_url) || logoAssets[0];
+  const displayUrl = primaryLogo?.preview_url || primaryLogo?.thumb_url || primaryLogo?.og_image_url;
+  const [copiedPalette, setCopiedPalette] = useState(false);
+
+  const handleCopyAll = () => {
+    navigator.clipboard?.writeText(allColors.join(', '));
+    setCopiedPalette(true);
+    toast.success("Paleta copiada!");
+    setTimeout(() => setCopiedPalette(false), 1500);
+  };
+
+  return (
+    <div className="glass-card rounded-2xl overflow-hidden border border-border/30">
+      {/* Top bar — brand name + actions */}
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/20">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Kit de Marca</p>
+            {brandNames.length > 0 ? (
+              <h3 className="text-base font-semibold text-foreground leading-tight">{brandNames[0]}</h3>
+            ) : (
+              <h3 className="text-base font-semibold text-foreground leading-tight">Identidade Visual</h3>
+            )}
+          </div>
+          {brandNames.length > 0 && (
+            <Badge className="h-5 px-1.5 text-[9px] bg-primary/10 text-primary border-0 gap-0.5">
+              <Sparkles className="w-2 h-2" /> IA
+            </Badge>
+          )}
+        </div>
+        {allColors.length > 0 && (
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={onExportColors}>
+            <Palette className="w-3 h-3" />
+            Exportar Paleta
+          </Button>
+        )}
+      </div>
+
+      {/* Kit body */}
+      <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border/20">
+
+        {/* ── Col 1: Primary Logo ── */}
+        <div className="p-5 flex flex-col gap-3">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Logo Principal</p>
+          <div
+            className="flex-1 rounded-xl flex items-center justify-center min-h-28"
+            style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.25) 0% 25%, transparent 0% 50%) 0 0 / 10px 10px" }}
+          >
+            {displayUrl ? (
+              <img
+                src={displayUrl}
+                alt="Logo principal"
+                className="max-h-24 max-w-[80%] object-contain drop-shadow-sm"
+              />
+            ) : logoAssets.length > 0 ? (
+              <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
+                <Layers className="w-10 h-10" />
+                <span className="text-[10px]">{logoAssets[0].ai_title || logoAssets[0].title}</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-muted-foreground/30">
+                <Layers className="w-8 h-8" />
+                <span className="text-[10px]">Nenhum logo detectado</span>
+              </div>
+            )}
+          </div>
+          {logoAssets.length > 1 && (
+            <div className="flex gap-1.5 flex-wrap">
+              {logoAssets.slice(1, 4).map(a => {
+                const url = a.preview_url || a.thumb_url || a.og_image_url;
+                return url ? (
+                  <div
+                    key={a.id}
+                    className="w-12 h-12 rounded-lg border border-border/40 overflow-hidden"
+                    style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.2) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px" }}
+                  >
+                    <img src={url} alt="" className="w-full h-full object-contain" />
+                  </div>
+                ) : null;
+              })}
+              {logoAssets.length > 4 && (
+                <div className="w-12 h-12 rounded-lg border border-border/40 bg-muted/20 flex items-center justify-center text-[10px] text-muted-foreground font-medium">
+                  +{logoAssets.length - 4}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Col 2: Color Palette ── */}
+        <div className="p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Paleta de Cores</p>
+            {allColors.length > 0 && (
+              <button onClick={handleCopyAll} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                {copiedPalette ? <CheckCircle2 className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+                Copiar
+              </button>
+            )}
+          </div>
+          {allColors.length > 0 ? (
+            <>
+              {/* Stripe preview */}
+              <div className="rounded-xl overflow-hidden h-10 flex">
+                {allColors.slice(0, 8).map((c, i) => (
+                  <div key={i} className="flex-1" style={{ backgroundColor: c }} />
+                ))}
+              </div>
+              {/* Swatch grid */}
+              <div className="flex flex-wrap gap-2">
+                {allColors.slice(0, 10).map((c, i) => (
+                  <TooltipProvider key={i}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => { navigator.clipboard?.writeText(c); toast.success(`${c} copiada!`); }}
+                          className="w-9 h-9 rounded-lg border-2 border-border/30 hover:scale-110 hover:-translate-y-0.5 transition-all shadow-sm"
+                          style={{ backgroundColor: c }}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent className="text-xs font-mono">{c}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+                {allColors.length > 10 && (
+                  <div className="w-9 h-9 rounded-lg border border-border/40 bg-muted/20 flex items-center justify-center text-[9px] text-muted-foreground font-medium">
+                    +{allColors.length - 10}
+                  </div>
+                )}
+              </div>
+              {/* Hex chips */}
+              <div className="flex flex-wrap gap-1">
+                {allColors.slice(0, 6).map((c, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { navigator.clipboard?.writeText(c); toast.success(`${c} copiada!`); }}
+                    className="text-[9px] font-mono bg-muted/40 hover:bg-muted text-muted-foreground px-1.5 py-0.5 rounded transition-colors"
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground/30 min-h-28">
+              <Palette className="w-8 h-8" />
+              <span className="text-[10px]">Nenhuma cor detectada</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Col 3: Typography + Metadata ── */}
+        <div className="p-5 flex flex-col gap-4">
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Tipografia Detectada</p>
+            {fonts.length > 0 ? (
+              <div className="space-y-1.5">
+                {fonts.slice(0, 4).map((font, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/20 border border-border/20">
+                    <span className="text-[10px] text-muted-foreground w-4 flex-shrink-0 font-mono">{i + 1}</span>
+                    <span className="text-sm font-medium text-foreground truncate flex-1" style={{ fontFamily: font }}>
+                      {font}
+                    </span>
+                    <button
+                      onClick={() => { navigator.clipboard?.writeText(font); toast.success(`"${font}" copiada!`); }}
+                      className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground/30 min-h-16 border border-border/20 rounded-xl">
+                <span className="text-[10px]">Nenhuma tipografia detectada</span>
+              </div>
+            )}
+          </div>
+
+          {/* Brand metadata */}
+          <div className="space-y-2 mt-auto">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Metadados da Marca</p>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Logos detectados</span>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5">{logoAssets.length}</Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Cores extraídas</span>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5">{allColors.length}</Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Fontes identificadas</span>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5">{fonts.length}</Badge>
+              </div>
+              {brandNames.length > 1 && (
+                <div className="flex items-start justify-between text-xs gap-2">
+                  <span className="text-muted-foreground flex-shrink-0">Outras marcas</span>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {brandNames.slice(1).map((n, i) => (
+                      <span key={i} className="text-[9px] bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded-full">{n}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────
 
 export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
@@ -643,6 +874,17 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
     assets
       .map(a => (a.ai_entities as any)?.brand_name)
       .filter(Boolean)
+  )] as string[];
+
+  // Typography: collect all fonts detected across assets
+  const allFonts: string[] = [...new Set(
+    assets.flatMap(a => {
+      const entities = a.ai_entities as any;
+      const fonts = entities?.fonts;
+      if (Array.isArray(fonts)) return fonts as string[];
+      if (typeof fonts === 'string') return [fonts];
+      return [];
+    }).filter(Boolean)
   )];
 
   const allVisibleAssets = [...logoAssets, ...signatureAssets];
@@ -747,21 +989,16 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const hasAnyData = logoAssets.length > 0 || paletteAssets.length > 0 || signatureAssets.length > 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Brush className="w-5 h-5 text-primary" />
             Identidade Visual
-            {brandNames.length > 0 && (
-              <Badge variant="outline" className="text-xs font-normal ml-1">
-                {brandNames[0]}
-              </Badge>
-            )}
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Logos, paletas e assets de marca extraídos automaticamente pela IA
+            Kit de marca consolidado automaticamente pela IA a partir dos assets do projeto
           </p>
         </div>
         <div className="flex gap-2">
@@ -775,18 +1012,19 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
               Selecionar
             </Button>
           )}
-          {allColors.length > 0 && !selectionMode && (
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setExportColorsOpen(true)}
-            >
-              <Palette className="w-4 h-4" />
-              Exportar Paleta
-            </Button>
-          )}
         </div>
       </div>
+
+      {/* ── Kit de Marca consolidado ─────────────────────────────── */}
+      {hasAnyData && (
+        <BrandKitPanel
+          brandNames={brandNames}
+          allColors={allColors}
+          logoAssets={logoAssets}
+          fonts={allFonts}
+          onExportColors={() => setExportColorsOpen(true)}
+        />
+      )}
 
       {/* Selection action bar */}
       {selectionMode && (
