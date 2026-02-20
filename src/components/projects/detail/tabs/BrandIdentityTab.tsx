@@ -34,14 +34,68 @@ import {
   ChevronRight,
   Info,
   X,
+  FileText,
+  Package,
+  PenLine,
+  Stamp,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
+
 interface BrandIdentityTabProps {
   project: ProjectWithStages;
+}
+
+// ─── Brand Asset Thumbnail ─────────────────────────────────────────────────
+
+function BrandAssetThumbnail({ asset, className }: { asset: ProjectAsset; className?: string }) {
+  const [imgError, setImgError] = useState(false);
+  const displayUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
+  const entities = asset.ai_entities as any;
+  const elementType = entities?.element?.type;
+
+  if (displayUrl && !imgError) {
+    return (
+      <img
+        src={displayUrl}
+        alt={asset.ai_title || asset.title}
+        className={cn("max-w-[80%] max-h-[80%] object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300", className)}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  // Fallback: rich placeholder
+  const isPdf = asset.asset_type === 'pdf';
+  const iconSize = "w-10 h-10 text-muted-foreground/50";
+  const label = asset.file_ext?.toUpperCase() || (isPdf ? 'PDF' : asset.asset_type?.toUpperCase() || 'FILE');
+
+  const Icon = () => {
+    if (elementType === 'logo') return <Layers className={iconSize} />;
+    if (elementType === 'assinatura') return <PenLine className={iconSize} />;
+    if (elementType === 'carimbo') return <Stamp className={iconSize} />;
+    if (elementType === 'foto') return <Camera className={iconSize} />;
+    if (elementType === 'paleta') return <Palette className={iconSize} />;
+    if (isPdf) return <FileText className={iconSize} />;
+    if (asset.asset_type === 'image') return <ImageIcon className={iconSize} />;
+    return <FileImage className={iconSize} />;
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-2">
+      <Icon />
+      <span className="text-[10px] font-semibold tracking-widest text-muted-foreground/40">{label}</span>
+      {asset.file_name && (
+        <span className="text-[9px] text-muted-foreground/30 text-center px-2 truncate max-w-[120px]">
+          {asset.file_name.length > 20 ? asset.file_name.substring(0, 20) + '…' : asset.file_name}
+        </span>
+      )}
+    </div>
+  );
 }
 
 // ─── Color Swatch ──────────────────────────────────────────────────────────
@@ -89,11 +143,12 @@ function ColorSwatch({ color, size = "md" }: { color: string; size?: "sm" | "md"
 function LogoCard({ asset, onSendToStudio }: { asset: ProjectAsset; onSendToStudio: (asset: ProjectAsset) => void }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const entities = asset.ai_entities as any;
+  const downloadUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
 
   const handleDownload = () => {
-    if (asset.thumb_url) {
+    if (downloadUrl) {
       const a = document.createElement('a');
-      a.href = asset.thumb_url;
+      a.href = downloadUrl;
       a.download = asset.file_name || asset.title;
       a.target = '_blank';
       a.click();
@@ -109,15 +164,7 @@ function LogoCard({ asset, onSendToStudio }: { asset: ProjectAsset; onSendToStud
           style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.3) 0% 25%, transparent 0% 50%) 0 0 / 12px 12px" }}
           onClick={() => setPreviewOpen(true)}
         >
-          {asset.thumb_url ? (
-            <img
-              src={asset.thumb_url}
-              alt={asset.ai_title || asset.title}
-              className="max-w-[80%] max-h-[80%] object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <FileImage className="w-12 h-12 text-muted-foreground/40" />
-          )}
+          <BrandAssetThumbnail asset={asset} />
 
           {/* Hover overlay */}
           <div className="absolute inset-0 bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -197,9 +244,7 @@ function LogoCard({ asset, onSendToStudio }: { asset: ProjectAsset; onSendToStud
               className="rounded-xl p-8 flex items-center justify-center min-h-48"
               style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.4) 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" }}
             >
-              {asset.thumb_url && (
-                <img src={asset.thumb_url} alt={asset.ai_title || asset.title} className="max-h-64 object-contain" />
-              )}
+              <BrandAssetThumbnail asset={asset} className="max-h-64 object-contain" />
             </div>
             {asset.ai_summary && (
               <p className="text-sm text-muted-foreground">{asset.ai_summary}</p>
