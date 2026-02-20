@@ -239,13 +239,23 @@ serve(async (req) => {
       console.log(`PDF extraction result: ${extractedContent.length} characters`);
     }
 
-    // Process images if provided
+// Process images ONLY as fallback when PDF extraction was insufficient
+    const pdfExtractionSufficient = extractedContent.length > 1000;
     if (imageBase64List && imageBase64List.length > 0) {
-      console.log(`Processing ${imageBase64List.length} images...`);
+      if (pdfExtractionSufficient) {
+        console.log(`PDF extraction successful (${extractedContent.length} chars) - skipping ${imageBase64List.length} images to save memory`);
+      } else {
+        console.log(`PDF insufficient, processing ${imageBase64List.length} images as fallback...`);
       
       for (let i = 0; i < imageBase64List.length; i++) {
         const imageBase64 = imageBase64List[i];
         console.log(`Processing image ${i + 1}/${imageBase64List.length}, size: ${imageBase64.length} chars`);
+        
+        // Skip images larger than 3MB base64 to prevent OOM
+        if (imageBase64.length > 3 * 1024 * 1024) {
+          console.log(`Image ${i + 1} too large (${imageBase64.length} chars), skipping to prevent OOM`);
+          continue;
+        }
         
         const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -289,6 +299,7 @@ Esta é a página ${i + 1} de ${imageBase64List.length} do documento.`
           console.error(`Image ${i + 1} processing failed:`, errText);
         }
       }
+      } // end fallback image processing
     }
 
     // Process textDocuments (DOCX as base64 sent to AI vision, TXT as plain text)
@@ -410,9 +421,10 @@ Data de hoje: ${new Date().toISOString().split('T')[0]}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
+        max_tokens: 16000,
         messages: [
-          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados COMPLETOS e DETALHADOS de documentos. Nunca resuma - preserve todo o conteúdo." },
+          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Extraia dados estruturados COMPLETOS e DETALHADOS de documentos. Nunca resuma - preserve todo o conteúdo. Transcreva valores monetários, datas e entregáveis VERBATIM." },
           { role: "user", content: structuredPrompt }
         ],
         tools: [
