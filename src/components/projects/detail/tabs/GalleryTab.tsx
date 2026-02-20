@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { useProjectAssets, ProjectAsset } from "@/hooks/useProjectAssets";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,12 @@ import {
   Stamp,
   Camera,
   Layers,
+  AlertCircle,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -171,9 +177,31 @@ function AssetThumbnail({ asset }: { asset: ProjectAsset }) {
 
 function AssetCard({ asset, onDelete }: { asset: ProjectAsset; onDelete: (id: string) => void }) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const entities = asset.ai_entities as any;
   const colorPalette = entities?.color_palette as string[] | undefined;
   const displayUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
+  const isPdf = asset.asset_type === 'pdf';
+
+  const openPreview = useCallback(async () => {
+    setPreviewOpen(true);
+    if (isPdf && asset.storage_path && !pdfUrl) {
+      setPdfLoading(true);
+      try {
+        const { data, error } = await supabase.storage
+          .from('project-files')
+          .createSignedUrl(asset.storage_path, 3600);
+        if (data?.signedUrl) setPdfUrl(data.signedUrl);
+        else console.error('Signed URL error:', error);
+      } catch (e) {
+        console.error('Error generating PDF signed URL:', e);
+      } finally {
+        setPdfLoading(false);
+      }
+    }
+  }, [isPdf, asset.storage_path, pdfUrl]);
+
 
   return (
     <>
@@ -181,7 +209,7 @@ function AssetCard({ asset, onDelete }: { asset: ProjectAsset; onDelete: (id: st
         {/* Thumbnail */}
         <div 
           className="relative aspect-video bg-muted/40 overflow-hidden cursor-pointer"
-          onClick={() => setPreviewOpen(true)}
+          onClick={openPreview}
         >
           <AssetThumbnail asset={asset} />
 
@@ -281,21 +309,70 @@ function AssetCard({ asset, onDelete }: { asset: ProjectAsset; onDelete: (id: st
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className={cn(
+          "max-h-[92vh] overflow-hidden flex flex-col",
+          isPdf ? "sm:max-w-4xl" : "sm:max-w-2xl"
+        )}>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2 text-sm">
               {getAssetTypeIcon(asset)}
               {asset.ai_title || asset.title}
+              {isPdf && asset.storage_path && (
+                <a
+                  href={pdfUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto"
+                  onClick={(e) => { if (!pdfUrl) e.preventDefault(); }}
+                >
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" disabled={!pdfUrl}>
+                    <ExternalLink className="w-3 h-3" />
+                    Abrir em nova aba
+                  </Button>
+                </a>
+              )}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {displayUrl && (
-              <img 
-                src={displayUrl} 
+
+          <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+            {/* PDF Viewer */}
+            {isPdf && (
+              <div className="rounded-xl overflow-hidden border border-border/40 bg-muted/20" style={{ height: '65vh' }}>
+                {pdfLoading ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="text-sm">Carregando PDF...</span>
+                  </div>
+                ) : pdfUrl ? (
+                  <iframe
+                    src={`${pdfUrl}#toolbar=1&navpanes=1&scrollbar=1`}
+                    className="w-full h-full border-0"
+                    title={asset.title}
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <AlertCircle className="w-8 h-8 text-destructive/60" />
+                    <span className="text-sm">Não foi possível carregar o PDF</span>
+                    {asset.storage_path && (
+                      <Button size="sm" variant="outline" onClick={openPreview} className="gap-1.5">
+                        <RotateCw className="w-3 h-3" />
+                        Tentar novamente
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Image viewer */}
+            {!isPdf && displayUrl && (
+              <img
+                src={displayUrl}
                 alt={asset.ai_title || asset.title}
                 className="w-full rounded-xl object-contain max-h-96"
               />
             )}
+
             {asset.ai_summary && (
               <p className="text-sm text-muted-foreground">{asset.ai_summary}</p>
             )}
