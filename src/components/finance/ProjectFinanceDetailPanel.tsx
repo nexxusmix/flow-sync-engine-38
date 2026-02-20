@@ -4,6 +4,7 @@ import { useFinancialStore } from '@/stores/financialStore';
 import { MilestonesList } from './MilestonesList';
 import { ProjectContractModal } from './ProjectContractModal';
 import { ContractAiUploadDialog } from './ContractAiUploadDialog';
+import { ContractAiUpdateDialog } from './ContractAiUpdateDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   FileText, TrendingUp, TrendingDown, Plus, Edit2, 
-  CheckCircle, AlertTriangle, Sparkles
+  CheckCircle, AlertTriangle, Sparkles, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -51,6 +52,7 @@ export function ProjectFinanceDetailPanel({
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [isAiUploadOpen, setIsAiUploadOpen] = useState(false);
+  const [isAiUpdateOpen, setIsAiUpdateOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { 
@@ -133,7 +135,7 @@ export function ProjectFinanceDetailPanel({
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -143,11 +145,20 @@ export function ProjectFinanceDetailPanel({
                 <Edit2 className="w-3 h-3 mr-1" />
                 Editar
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsAiUpdateOpen(true)}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Atualizar com IA
+              </Button>
               {contract.status === 'active' && (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1"
+                  className="w-full"
                   onClick={() => setShowFinalizeDialog(true)}
                 >
                   <CheckCircle className="w-3 h-3 mr-1" />
@@ -270,6 +281,18 @@ export function ProjectFinanceDetailPanel({
         projectName={project.project_name}
         onSuccess={handleRefresh}
       />
+
+      {/* Contract AI Update Dialog */}
+      {contract && (
+        <ContractAiUpdateDialog
+          open={isAiUpdateOpen}
+          onOpenChange={setIsAiUpdateOpen}
+          contractId={contract.id}
+          projectId={project.project_id}
+          projectName={project.project_name}
+          onSuccess={handleRefresh}
+        />
+      )}
 
       {/* Contract Modal */}
       <ProjectContractModal

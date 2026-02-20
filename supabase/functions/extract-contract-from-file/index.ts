@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { fileBase64, mimeType, fileName, project_id, workspace_id } = await req.json();
+    const { fileBase64, mimeType, fileName, project_id, workspace_id, contract_id: updateContractId } = await req.json();
 
     if (!fileBase64 || !mimeType) {
       return new Response(
@@ -296,6 +296,46 @@ Para total_value, retorne apenas o número (sem R$ ou pontos/vírgulas de separa
       resolvedWorkspaceId = profile?.workspace_id;
     }
 
+    // ── UPDATE MODE: atualizar contrato existente ─────────────────────────────
+    if (updateContractId) {
+      const updateData: Record<string, unknown> = {};
+      if (extracted.client_name) updateData.client_name = extracted.client_name;
+      if (extracted.client_email) updateData.client_email = extracted.client_email;
+      if (extracted.client_document) updateData.client_document = extracted.client_document;
+      if (extracted.total_value) updateData.total_value = totalValue;
+      if (extracted.payment_terms) updateData.payment_terms = extracted.payment_terms;
+      if (extracted.start_date) updateData.start_date = extracted.start_date;
+      if (extracted.end_date) updateData.end_date = extracted.end_date;
+      if (extracted.notes) updateData.notes = extracted.notes;
+      if (extracted.project_name) updateData.project_name = extracted.project_name;
+
+      const { data: updatedContract, error: updateError } = await supabaseAdmin
+        .from("contracts")
+        .update(updateData)
+        .eq("id", updateContractId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Contract update error:", updateError);
+        return new Response(
+          JSON.stringify({ error: "Erro ao atualizar contrato", details: updateError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          extracted,
+          contract_id: updateContractId,
+          updated: true,
+          message: "Contrato atualizado com IA • Revise os dados e salve se necessário",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── CREATE MODE ────────────────────────────────────────────────────────────
     // Check if project already has a contract
     if (project_id) {
       const { data: existingContracts } = await supabaseAdmin
@@ -305,7 +345,6 @@ Para total_value, retorne apenas o número (sem R$ ou pontos/vírgulas de separa
         .limit(1);
 
       if (existingContracts && existingContracts.length > 0) {
-        // Return extracted data without saving - let frontend handle confirmation
         return new Response(
           JSON.stringify({
             extracted,
