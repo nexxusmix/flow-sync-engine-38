@@ -14,6 +14,7 @@ import {
   Bell,
   DollarSign,
   Images,
+  Brush,
 } from "lucide-react";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TasksTab } from "./tabs/TasksTab";
@@ -28,6 +29,7 @@ import { StoryboardTab } from "./tabs/StoryboardTab";
 import { AlertsTab } from "./tabs/AlertsTab";
 import { FinanceTab } from "./tabs/FinanceTab";
 import { GalleryTab } from "./tabs/GalleryTab";
+import { BrandIdentityTab } from "./tabs/BrandIdentityTab";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useProjectRevisions } from "@/hooks/useProjectRevisions";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -47,6 +49,7 @@ const tabs = [
   { id: "revisions", label: "Revisões", icon: MessageSquare },
   { id: "files", label: "Arquivos", icon: FolderOpen },
   { id: "gallery", label: "Galeria IA", icon: Images },
+  { id: "brand", label: "Identidade Visual", icon: Brush },
   { id: "schedule", label: "Cronograma", icon: Calendar },
   { id: "finance", label: "Financeiro", icon: DollarSign },
   { id: "storyboard", label: "Storyboard IA", icon: Clapperboard },
@@ -125,6 +128,10 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
 
       <TabsContent value="gallery" className="mt-6">
         <GalleryTab project={project} />
+      </TabsContent>
+
+      <TabsContent value="brand" className="mt-6">
+        <BrandIdentityTab project={project} />
       </TabsContent>
       
       <TabsContent value="schedule" className="mt-6">
