@@ -200,11 +200,11 @@ Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores
               const imgBytes = Uint8Array.from(imgBinary, (c) => c.charCodeAt(0));
 
               const { error: thumbUploadErr } = await supabase.storage
-                .from('project-files')
+                .from('asset-thumbs')
                 .upload(thumbPath, imgBytes, { contentType: imgMime });
 
               if (!thumbUploadErr) {
-                const { data: thumbUrlData } = supabase.storage.from('project-files').getPublicUrl(thumbPath);
+                const { data: thumbUrlData } = supabase.storage.from('asset-thumbs').getPublicUrl(thumbPath);
                 thumbUrl = thumbUrlData.publicUrl;
                 console.log(`Generated PDF thumbnail for ${fileData.name}: ${thumbPath}`);
               } else {
