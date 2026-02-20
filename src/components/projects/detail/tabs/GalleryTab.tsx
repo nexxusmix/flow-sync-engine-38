@@ -324,32 +324,53 @@ export function GalleryTab({ project }: GalleryTabProps) {
     if (selectedFiles.length === 0) return;
     setIsExtracting(true);
     setUploadDialogOpen(false);
-    setExtractProgress("Preparando arquivos...");
+
+    // Filter: skip files over 5MB to prevent OOM in edge function
+    const MAX_FILE_BYTES = 5 * 1024 * 1024;
+    const eligibleFiles = selectedFiles.filter(f => f.size <= MAX_FILE_BYTES);
+    const skippedCount = selectedFiles.length - eligibleFiles.length;
+
+    if (skippedCount > 0) {
+      toast.warning(`${skippedCount} arquivo(s) ignorado(s) por exceder 5MB. Envie arquivos menores para análise de IA.`);
+    }
+
+    if (eligibleFiles.length === 0) {
+      setIsExtracting(false);
+      return;
+    }
+
+    let totalSaved = 0;
 
     try {
-      const filesPayload = await Promise.all(
-        selectedFiles.map(async (file) => ({
-          name: file.name,
-          base64: await fileToBase64(file),
-          mime_type: file.type,
-          size_bytes: file.size,
-        }))
-      );
+      // Process one file at a time to avoid OOM in the edge function
+      for (let i = 0; i < eligibleFiles.length; i++) {
+        const file = eligibleFiles[i];
+        setExtractProgress(`Processando ${i + 1}/${eligibleFiles.length}: ${file.name}...`);
 
-      setExtractProgress("Analisando com IA (pode levar alguns segundos)...");
+        const base64 = await fileToBase64(file);
 
-      const { data, error } = await supabase.functions.invoke('extract-visual-assets', {
-        body: {
-          project_id: project.id,
-          files: filesPayload,
-          uploaded_by_user_id: user?.id,
+        const { data, error } = await supabase.functions.invoke('extract-visual-assets', {
+          body: {
+            project_id: project.id,
+            files: [{
+              name: file.name,
+              base64,
+              mime_type: file.type,
+              size_bytes: file.size,
+            }],
+            uploaded_by_user_id: user?.id,
+          }
+        });
+
+        if (error) {
+          console.error(`Error processing ${file.name}:`, error);
+          toast.error(`Erro ao processar ${file.name}`);
+        } else {
+          totalSaved += data?.total || 0;
         }
-      });
+      }
 
-      if (error) throw error;
-
-      const count = data?.total || 0;
-      toast.success(`${count} asset${count !== 1 ? 's' : ''} extraído${count !== 1 ? 's' : ''} com sucesso!`);
+      toast.success(`${totalSaved} asset${totalSaved !== 1 ? 's' : ''} extraído${totalSaved !== 1 ? 's' : ''} com sucesso!`);
       setSelectedFiles([]);
     } catch (err) {
       console.error('Extraction error:', err);
