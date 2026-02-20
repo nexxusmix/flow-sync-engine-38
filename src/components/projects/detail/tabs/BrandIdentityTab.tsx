@@ -1207,9 +1207,19 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
 
   const SQUAD_BRAND_NAMES = ['squad', 'squad film', 'squadfilm'];
 
+  // Brand name anchor: used to prioritize client assets during palette/logo detection
+  const clientBrandName = ((project as any).brand_name || '').toLowerCase().trim();
+
   const isSquadAsset = (a: ProjectAsset): boolean => {
     const brandName = ((a.ai_entities as any)?.brand_name || '').toLowerCase();
     return SQUAD_BRAND_NAMES.some(n => brandName.includes(n));
+  };
+
+  /** True when the asset's detected brand matches the project's brand_name anchor */
+  const isClientBrandAsset = (a: ProjectAsset): boolean => {
+    if (!clientBrandName) return false;
+    const brandName = ((a.ai_entities as any)?.brand_name || '').toLowerCase();
+    return brandName.includes(clientBrandName) || clientBrandName.includes(brandName);
   };
 
   const filterClientColors = (colors: string[]): string[] =>
@@ -1227,14 +1237,18 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
     const tags = (a.ai_tags || []).join(' ').toLowerCase();
     if (tags.includes('logo') || tags.includes('identidade') || tags.includes('marca')) return true;
     return false;
-  });
+  // Sort: client brand assets first (brand_name anchor match)
+  }).sort((a, b) => Number(isClientBrandAsset(b)) - Number(isClientBrandAsset(a)));
 
   // Detect palette assets: only from non-SQUAD assets
-  const paletteAssets = assets.filter(a => {
-    if (isSquadAsset(a)) return false;
-    const entities = a.ai_entities as any;
-    return entities?.color_palette && Array.isArray(entities.color_palette) && entities.color_palette.length > 0;
-  });
+  // Client brand assets sorted first → their colors lead the palette
+  const paletteAssets = assets
+    .filter(a => {
+      if (isSquadAsset(a)) return false;
+      const entities = a.ai_entities as any;
+      return entities?.color_palette && Array.isArray(entities.color_palette) && entities.color_palette.length > 0;
+    })
+    .sort((a, b) => Number(isClientBrandAsset(b)) - Number(isClientBrandAsset(a)));
 
   // All unique client colors, filtered to remove SQUAD platform colors
   const allColors: string[] = [...new Set(

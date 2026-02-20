@@ -401,7 +401,14 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               </div>
               <div className="min-w-0">
                 <h1 className="text-xl md:text-2xl font-normal text-foreground mb-1">{project.name}</h1>
-                <p className="text-sm text-muted-foreground">{project.client_name || 'Sem cliente'}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm text-muted-foreground">{project.client_name || 'Sem cliente'}</p>
+                  {(project as any).brand_name && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                      {(project as any).brand_name}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

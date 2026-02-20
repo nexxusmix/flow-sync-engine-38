@@ -36,6 +36,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   const [formData, setFormData] = useState<{
     name: string;
     client_name: string;
+    brand_name: string;
     description: string;
     template: string;
     start_date: string;
@@ -46,6 +47,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   }>({
     name: "",
     client_name: "",
+    brand_name: "",
     description: "",
     template: "",
     start_date: new Date().toISOString().split('T')[0],
@@ -61,6 +63,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     setFormData({
       name: "",
       client_name: "",
+      brand_name: "",
       description: "",
       template: "",
       start_date: new Date().toISOString().split('T')[0],
@@ -99,6 +102,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     const projectData = {
       name: formData.name,
       client_name: formData.client_name,
+      brand_name: formData.brand_name || undefined,
       description: formData.description || undefined,
       template: formData.template || undefined,
       start_date: formData.start_date || undefined,
@@ -169,6 +173,20 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
               placeholder="Ex: Empresa ABC"
               required
             />
+          </div>
+
+          {/* Brand Name */}
+          <div className="space-y-2">
+            <Label htmlFor="brand_name">Nome da Marca do Cliente</Label>
+            <Input
+              id="brand_name"
+              value={formData.brand_name}
+              onChange={(e) => setFormData({ ...formData, brand_name: e.target.value })}
+              placeholder="Ex: Nike, Apple, Coca-Cola..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Âncora para detecção de paleta — a IA prioriza assets com esta marca
+            </p>
           </div>
 
           {/* Description */}
