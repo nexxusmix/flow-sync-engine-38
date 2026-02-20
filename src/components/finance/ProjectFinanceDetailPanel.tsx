@@ -21,9 +21,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   FileText, TrendingUp, TrendingDown, Plus, Edit2, 
-  CheckCircle, AlertTriangle, Sparkles, RefreshCw
+  CheckCircle, AlertTriangle, Sparkles, RefreshCw, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectFinanceDetailPanelProps {
   project: ProjectFinancialSummary;
@@ -53,6 +54,42 @@ export function ProjectFinanceDetailPanel({
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [isAiUploadOpen, setIsAiUploadOpen] = useState(false);
   const [isAiUpdateOpen, setIsAiUpdateOpen] = useState(false);
+  const [isGeneratingText, setIsGeneratingText] = useState(false);
+
+  const handleGenerateContractText = async () => {
+    if (!contract) return;
+    setIsGeneratingText(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-contract-text`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ contract_id: contract.id }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data?.error || "Erro ao gerar texto jurídico");
+      } else {
+        toast.success(data?.message || "Texto jurídico gerado com IA!");
+        onRefresh();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar texto do contrato");
+    } finally {
+      setIsGeneratingText(false);
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { 
@@ -153,6 +190,20 @@ export function ProjectFinanceDetailPanel({
               >
                 <RefreshCw className="w-3 h-3 mr-1" />
                 Atualizar com IA
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={handleGenerateContractText}
+                disabled={isGeneratingText}
+              >
+                {isGeneratingText ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3 mr-1" />
+                )}
+                {isGeneratingText ? "Gerando texto jurídico..." : "Gerar Texto Jurídico com IA"}
               </Button>
               {contract.status === 'active' && (
                 <Button
