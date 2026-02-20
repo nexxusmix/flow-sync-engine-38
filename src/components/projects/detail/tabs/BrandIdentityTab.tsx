@@ -175,20 +175,26 @@ function LogoCard({
   selectionMode,
   isSelected,
   onToggle,
+  primaryColor,
 }: {
   asset: ProjectAsset;
   onSendToStudio: (asset: ProjectAsset) => void;
   selectionMode?: boolean;
   isSelected?: boolean;
   onToggle?: (id: string) => void;
+  primaryColor?: string;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [isReprocessing, setIsReprocessing] = useState(false);
+  const [isGeneratingVariations, setIsGeneratingVariations] = useState(false);
+  const [localVariations, setLocalVariations] = useState<Record<string, string> | null>(null);
+
   const entities = asset.ai_entities as any;
+  const colorVariations: Record<string, string> = localVariations || entities?.color_variations || {};
+  const hasVariations = Object.keys(colorVariations).filter(k => k !== 'primary_color_hex').length > 0;
   const downloadUrl = asset.thumb_url || asset.og_image_url || asset.preview_url;
 
   const handleDownload = async () => {
-    // Prefer original file via signed URL
     if (asset.storage_path) {
       const { data } = await supabase.storage
         .from(asset.storage_bucket || 'project-files')
@@ -203,7 +209,6 @@ function LogoCard({
         return;
       }
     }
-    // Fallback to thumb/preview URL
     if (downloadUrl) {
       const a = document.createElement('a');
       a.href = downloadUrl;
@@ -225,10 +230,39 @@ function LogoCard({
     }
   };
 
+  const handleGenerateColorVariations = async () => {
+    setIsGeneratingVariations(true);
+    toast.info('Gerando variações de cor com IA... Pode levar até 1 minuto.');
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-logo-variations', {
+        body: { asset_id: asset.id, primary_color: primaryColor },
+      });
+      if (error) throw error;
+      if (data?.color_variations) {
+        setLocalVariations(data.color_variations);
+        toast.success('Variações de cor geradas com sucesso!');
+      } else {
+        toast.error('Não foi possível gerar todas as variações.');
+      }
+    } catch (e: any) {
+      console.error('Color variation error:', e);
+      toast.error('Erro ao gerar variações de cor');
+    } finally {
+      setIsGeneratingVariations(false);
+    }
+  };
+
   const handleCardClick = () => {
     if (selectionMode) onToggle?.(asset.id);
     else setPreviewOpen(true);
   };
+
+  // Variation labels and backgrounds
+  const VARIATION_SLOTS = [
+    { key: 'white', label: 'Branco', cardBg: 'bg-muted/50', imgBg: 'bg-muted/80' },
+    { key: 'black', label: 'Preto',  cardBg: 'bg-muted/20', imgBg: 'bg-background' },
+    { key: 'primary', label: 'Cor Principal', cardBg: 'bg-primary/5', imgBg: 'bg-transparent' },
+  ] as const;
 
   return (
     <>
@@ -246,7 +280,6 @@ function LogoCard({
         >
           <BrandAssetThumbnail asset={asset} />
 
-          {/* Processing overlay */}
           {asset.status === 'processing' && (
             <div className="absolute inset-0 bg-background/70 flex flex-col items-center justify-center gap-2 z-10">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -254,7 +287,6 @@ function LogoCard({
             </div>
           )}
 
-          {/* Selection checkbox overlay */}
           {selectionMode && (
             <div className="absolute top-2 left-2 z-20">
               <div className="w-5 h-5 rounded border-2 border-primary bg-background flex items-center justify-center shadow-sm">
@@ -263,7 +295,6 @@ function LogoCard({
             </div>
           )}
 
-          {/* Hover overlay (only when not in selection mode) */}
           {!selectionMode && asset.status !== 'processing' && (
             <div className="absolute inset-0 bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1">
@@ -281,28 +312,57 @@ function LogoCard({
           )}
         </div>
 
-          {/* AI Variations */}
-          {(asset.preview_url || asset.og_image_url) && (
-            <div className="mt-2 grid grid-cols-2 gap-1.5 px-3 pb-0">
-              {asset.preview_url && (
-                <div className="rounded-lg bg-muted/30 border border-border/20 p-1.5 flex flex-col items-center gap-1">
-                  <img
-                    src={asset.preview_url}
-                    className="h-12 object-contain"
-                    style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.2) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px" }}
-                    alt="Recorte PNG"
-                  />
-                  <span className="text-[9px] text-muted-foreground">Recorte PNG</span>
-                </div>
-              )}
-              {asset.og_image_url && (
-                <div className="rounded-lg bg-muted/30 border border-border/20 p-1.5 flex flex-col items-center gap-1 overflow-hidden">
-                  <img src={asset.og_image_url} className="h-12 object-cover rounded w-full" alt="Padrão" />
-                  <span className="text-[9px] text-muted-foreground">Padrão</span>
-                </div>
-              )}
+        {/* Original AI Variations (cutout + pattern) */}
+        {(asset.preview_url || asset.og_image_url) && (
+          <div className="mt-2 grid grid-cols-2 gap-1.5 px-3 pb-0">
+            {asset.preview_url && (
+              <div className="rounded-lg bg-muted/30 border border-border/20 p-1.5 flex flex-col items-center gap-1">
+                <img
+                  src={asset.preview_url}
+                  className="h-12 object-contain"
+                  style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.2) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px" }}
+                  alt="Recorte PNG"
+                />
+                <span className="text-[9px] text-muted-foreground">Recorte PNG</span>
+              </div>
+            )}
+            {asset.og_image_url && (
+              <div className="rounded-lg bg-muted/30 border border-border/20 p-1.5 flex flex-col items-center gap-1 overflow-hidden">
+                <img src={asset.og_image_url} className="h-12 object-cover rounded w-full" alt="Padrão" />
+                <span className="text-[9px] text-muted-foreground">Padrão</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Color Variations strip */}
+        {hasVariations && (
+          <div className="px-3 pt-2 pb-0">
+            <div className="flex items-center gap-1 mb-1.5">
+              <Palette className="w-2.5 h-2.5 text-primary" />
+              <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Variações de Cor</span>
             </div>
-          )}
+            <div className="grid grid-cols-3 gap-1.5">
+              {VARIATION_SLOTS.map(({ key, label, cardBg, imgBg }) => {
+                const url = colorVariations[key];
+                const hex = key === 'primary' ? (colorVariations.primary_color_hex || primaryColor) : undefined;
+                return url ? (
+                  <div key={key} className={cn("rounded-lg border border-border/20 p-1 flex flex-col items-center gap-0.5", cardBg)}>
+                    <div className={cn("w-full h-8 rounded flex items-center justify-center overflow-hidden", imgBg)}>
+                      <img src={url} className="max-h-8 max-w-full object-contain" alt={label} />
+                    </div>
+                    <div className="flex items-center gap-0.5 w-full justify-center">
+                      {hex && (
+                        <div className="w-2 h-2 rounded-full border border-border/40 flex-shrink-0" style={{ backgroundColor: hex }} />
+                      )}
+                      <span className="text-[8px] text-muted-foreground truncate">{label}</span>
+                    </div>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Info */}
         <div className="p-3 space-y-2.5">
@@ -317,7 +377,6 @@ function LogoCard({
             )}
           </div>
 
-          {/* AI Tags */}
           {asset.ai_tags && asset.ai_tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {asset.ai_tags.slice(0, 3).map((tag, i) => (
@@ -328,13 +387,12 @@ function LogoCard({
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-1.5 pt-0.5">
             <Button
               size="sm"
               variant="outline"
               className="flex-1 h-7 text-xs gap-1"
-            onClick={handleDownload}
+              onClick={handleDownload}
               disabled={!asset.storage_path && !downloadUrl}
             >
               <Download className="w-3 h-3" />
@@ -354,23 +412,127 @@ function LogoCard({
 
       {/* Full preview dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-sm flex items-center gap-2">
               <Layers className="w-4 h-4 text-primary" />
               {asset.ai_title || asset.title}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+            {/* Original preview */}
             <div
               className="rounded-xl p-8 flex items-center justify-center min-h-48"
               style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.4) 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" }}
             >
               <BrandAssetThumbnail asset={asset} className="max-h-64 object-contain" />
             </div>
+
             {asset.ai_summary && (
               <p className="text-sm text-muted-foreground">{asset.ai_summary}</p>
             )}
+
+            {/* Color Variations Section */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-medium text-foreground">Variações Monocromáticas</p>
+                  {hasVariations && (
+                    <Badge className="h-4 px-1 text-[9px] bg-primary/10 text-primary border-0">IA</Badge>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant={hasVariations ? 'outline' : 'default'}
+                  className="h-7 text-xs gap-1.5"
+                  onClick={handleGenerateColorVariations}
+                  disabled={isGeneratingVariations}
+                >
+                  {isGeneratingVariations
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Sparkles className="w-3 h-3" />}
+                  {isGeneratingVariations
+                    ? 'Gerando...'
+                    : hasVariations ? 'Regenerar' : 'Gerar Variações IA'}
+                </Button>
+              </div>
+
+              {isGeneratingVariations ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {VARIATION_SLOTS.map(({ key, label }) => (
+                    <div key={key} className="rounded-xl border border-border/20 bg-muted/10 p-3 flex flex-col items-center gap-2 min-h-20">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary/50 mt-2" />
+                      <span className="text-[10px] text-muted-foreground">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : hasVariations ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {VARIATION_SLOTS.map(({ key, label }) => {
+                    const url = colorVariations[key];
+                    const hex = key === 'primary' ? (colorVariations.primary_color_hex || primaryColor) : undefined;
+                    const bgs = {
+                      white: 'bg-muted/60',
+                      black: 'bg-background',
+                      primary: 'bg-primary/5',
+                    } as const;
+                    return (
+                      <div key={key} className={cn("rounded-xl border border-border/20 p-3 flex flex-col items-center gap-2", bgs[key as keyof typeof bgs] || 'bg-muted/20')}>
+                        {url ? (
+                          <>
+                            <div className="w-full h-14 flex items-center justify-center">
+                              <img src={url} className="max-h-14 max-w-full object-contain" alt={label} />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {hex && (
+                                <div className="w-2.5 h-2.5 rounded-full border border-border/40" style={{ backgroundColor: hex }} />
+                              )}
+                              <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-[9px] gap-0.5 mt-auto"
+                              onClick={async () => {
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `logo-${key}.png`;
+                                a.target = '_blank';
+                                a.click();
+                              }}
+                            >
+                              <Download className="w-2.5 h-2.5" />
+                              Baixar
+                            </Button>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 text-muted-foreground/30 min-h-14 justify-center">
+                            <ImageIcon className="w-6 h-6" />
+                            <span className="text-[9px]">{label}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border/40 bg-muted/10 p-5 flex flex-col items-center gap-2 text-center">
+                  <Palette className="w-8 h-8 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">
+                    Gere versões monocromáticas do logo em branco, preto e na cor principal da marca usando IA.
+                  </p>
+                  {primaryColor && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <div className="w-3 h-3 rounded-full border border-border/40" style={{ backgroundColor: primaryColor }} />
+                      <span className="font-mono">{primaryColor}</span>
+                      <span>— cor detectada</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {entities?.assets_found && (
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground">Elementos detectados</p>
@@ -383,6 +545,7 @@ function LogoCard({
                 ))}
               </div>
             )}
+
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1 gap-1.5" onClick={handleDownload} disabled={!asset.storage_path && !downloadUrl}>
                 <Download className="w-4 h-4" />
@@ -396,9 +559,8 @@ function LogoCard({
               >
                 {isReprocessing
                   ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <Sparkles className="w-4 h-4" />
-                }
-                {isReprocessing ? 'Gerando...' : 'Variações IA'}
+                  : <Sparkles className="w-4 h-4" />}
+                {isReprocessing ? 'Gerando...' : 'Reprocessar IA'}
               </Button>
               <Button className="flex-1 gap-1.5" onClick={() => { setPreviewOpen(false); onSendToStudio(asset); }}>
                 <Wand2 className="w-4 h-4" />
@@ -1304,6 +1466,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
                   <LogoCard
                     key={asset.id}
                     asset={asset}
+                    primaryColor={allColors[0]}
                     onSendToStudio={(a) => setStudioAsset(a)}
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(asset.id)}
@@ -1393,6 +1556,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
                   <LogoCard
                     key={asset.id}
                     asset={asset}
+                    primaryColor={allColors[0]}
                     onSendToStudio={(a) => setStudioAsset(a)}
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(asset.id)}
