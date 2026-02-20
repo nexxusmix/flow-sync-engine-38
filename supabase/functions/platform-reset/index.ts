@@ -29,25 +29,29 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
-      console.error("[platform-reset] Auth error:", userError?.message);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      console.error("[platform-reset] Auth error:", claimsError?.message);
       return new Response(JSON.stringify({ error: "Usuário não autenticado" }), { 
         status: 401, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
+    const userId = claimsData.claims.sub;
+    const userEmail = claimsData.claims.email;
+
     // Verificar se usuário tem role admin
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_role_assignments')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('role', 'admin')
       .single();
 
     if (roleError || !roleData) {
-      console.log(`[platform-reset] Acesso negado para: ${user.email} - não é admin`);
+      console.log(`[platform-reset] Acesso negado para: ${userEmail} - não é admin`);
       return new Response(JSON.stringify({ error: "Apenas administradores podem executar esta ação" }), { 
         status: 403, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -62,7 +66,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[platform-reset] Iniciando reset por ADMIN: ${user.email}`);
+    console.log(`[platform-reset] Iniciando reset por ADMIN: ${userEmail}`);
 
     // Lista completa de tabelas operacionais para limpeza
     // Ordem importante: tabelas filhas antes das tabelas pai
