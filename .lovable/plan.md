@@ -1,91 +1,126 @@
 
-## Problema identificado
+## Multi-select com exclusão em lote — Galeria IA e Identidade Visual
 
-Na galeria, os assets extraídos de PDFs mostram uma imagem quebrada (X vermelho) porque:
+### Problema
+Ambas as abas (Galeria IA e Identidade Visual) não têm seleção de itens. O usuário precisa excluir um por um, pelo menu de cada card. A solução é adicionar seleção múltipla, "Selecionar tudo" e exclusão em lote.
 
-1. **Edge function `extract-visual-assets`**: O campo `thumb_url` só é preenchido para imagens (`isImage ? urlData.publicUrl : null`). PDFs ficam com `thumb_url: null`.
-2. **Sub-assets de elementos detectados** (logo, assinatura, paleta, etc.) também herdam esse `null` para PDFs.
-3. **`AssetCard` no `GalleryTab.tsx`**: Tenta renderizar `<img src={displayUrl}>` mesmo quando `displayUrl` é `null` ou inválido, resultando na imagem quebrada.
+---
 
-## Solução em duas frentes
+### Comportamento esperado
 
-### 1. Edge function — gerar thumbnail para PDFs via IA
+- **Modo normal**: cards funcionam como hoje (clique abre preview)
+- **Entrar no modo seleção**: clique longo (ou botão "Selecionar" no header) ativa o modo seleção
+- **Modo seleção ativo**:
+  - Cada card mostra um checkbox no canto superior esquerdo
+  - Clique no card alterna a seleção (não abre o preview)
+  - Uma barra de ação aparece no topo com:
+    - "X selecionados"
+    - Botão "Selecionar tudo"
+    - Botão "Desmarcar tudo"
+    - Botão "Excluir selecionados" (vermelho, com confirmação)
+    - Botão "Cancelar" (sai do modo seleção)
+- **Exclusão em lote**: chama `deleteAsset.mutateAsync(id)` em paralelo via `Promise.all` para todos os ids selecionados
 
-Quando o arquivo é um PDF, solicitar ao Gemini que retorne uma **imagem de preview** usando `modalities: ["image", "text"]`. Isso gera um thumbnail representativo do documento que é salvo no storage e usado como `thumb_url`.
-
-Se a geração de imagem falhar ou o PDF for grande demais, usar um fallback elegante no frontend.
-
-### 2. Frontend `GalleryTab.tsx` — melhorar o AssetCard
-
-- **Remover a imagem quebrada**: Envolver o `<img>` em `try/catch` via `onError` já existe, mas o problema é que `src` recebe uma string vazia ou inválida sendo renderizada mesmo assim.
-- **Fallback visual rico**: Quando não há thumbnail, exibir um placeholder elegante com ícone do tipo de arquivo, nome do arquivo e cor de fundo baseada na categoria — em vez da imagem quebrada atual.
-- **Para PDFs**: Mostrar um card visual com gradiente + ícone PDF + nome do documento (sem tentar carregar imagem).
+---
 
 ### Arquivos a modificar
 
-**`supabase/functions/extract-visual-assets/index.ts`**:
-- Após salvar o arquivo no storage, se for PDF e tamanho <= 3MB base64, fazer uma chamada ao Gemini com `modalities: ["image", "text"]` para gerar um preview visual
-- Salvar esse preview no storage como `thumb_{timestamp}.png`
-- Usar a URL pública do preview como `thumb_url` do asset
+#### 1. `src/components/projects/detail/tabs/GalleryTab.tsx`
 
-**`src/components/projects/detail/tabs/GalleryTab.tsx`**:
-- Corrigir o `AssetCard` para não renderizar `<img>` quando `displayUrl` é falsy
-- Melhorar o placeholder sem thumbnail: mostrar gradiente de fundo baseado na categoria + ícone grande + extensão do arquivo
-- Para assets com `preview_url` ou `og_image_url`, usar essas como fallback antes do placeholder
-
-### Fluxo corrigido
-
-```text
-PDF enviado
-  ↓
-Edge function: salva PDF no storage
-  ↓
-Se PDF <= 3MB: pede ao Gemini para gerar imagem preview
-  ↓
-Gemini retorna imagem base64 do preview
-  ↓
-Salva preview no storage como thumb_xxx.png
-  ↓
-thumb_url = URL pública do preview
-  ↓
-Galeria: mostra o preview como thumbnail ✅
-
-Se PDF > 3MB ou geração falha:
-  ↓
-thumb_url = null
-  ↓
-Galeria: mostra placeholder elegante (sem imagem quebrada) ✅
-```
-
-### Detalhes técnicos
-
-**No edge function**, a geração de thumbnail fica assim:
+**States a adicionar no `GalleryTab`** (linhas 413-417):
 ```typescript
-// Para PDFs, gera preview via Gemini image generation
-if (isPdf && fileData.base64.length <= 3 * 1024 * 1024) {
-  const previewResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
-      messages: [{ role: 'user', content: [
-        { type: 'text', text: 'Gere uma imagem de preview/thumbnail deste PDF' },
-        { type: 'image_url', image_url: { url: `data:application/pdf;base64,...` } }
-      ]}],
-      modalities: ['image', 'text'],
-    })
-  });
-  // extrai base64 da imagem gerada, salva no storage
-}
+const [selectionMode, setSelectionMode] = useState(false);
+const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const [isDeleting, setIsDeleting] = useState(false);
 ```
 
-**No `AssetCard`**, o placeholder sem thumbnail:
+**Handler de exclusão em lote**:
+```typescript
+const handleBulkDelete = async () => {
+  if (!confirm(`Excluir ${selectedIds.size} itens?`)) return;
+  setIsDeleting(true);
+  await Promise.all([...selectedIds].map(id => deleteAsset.mutateAsync(id)));
+  setSelectedIds(new Set());
+  setSelectionMode(false);
+  setIsDeleting(false);
+};
+```
+
+**Barra de seleção** — aparece acima dos filtros quando `selectionMode` é true:
 ```tsx
-// Em vez de tentar renderizar <img> com src vazio:
-{displayUrl ? (
-  <img src={displayUrl} onError={...} />
-) : (
-  <div className={cn("w-full h-full flex flex-col items-center justify-center gap-2", categoryBg)}>
-    {getAssetTypeIcon(asset)}  // ícone grande
-    <span>{asset.file_ext?.toUpperCase() || asset.asset_type}</span>
+{selectionMode && (
+  <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/20">
+    <span className="text-sm font-medium">{selectedIds.size} selecionado(s)</span>
+    <Button size="sm" variant="outline" onClick={selectAll}>Selecionar tudo</Button>
+    <Button size="sm" variant="outline" onClick={clearSelection}>Limpar</Button>
+    <Button size="sm" variant="destructive" disabled={selectedIds.size === 0 || isDeleting} onClick={handleBulkDelete}>
+      {isDeleting ? <Loader2 className="animate-spin w-3 h-3" /> : <Trash2 className="w-3 h-3" />}
+      Excluir
+    </Button>
+    <Button size="sm" variant="ghost" onClick={() => { setSelectionMode(false); setSelectedIds(new Set()); }}>
+      Cancelar
+    </Button>
   </div>
 )}
 ```
+
+**Botão "Selecionar" no header** — adicionado ao lado dos filtros existentes
+
+**Modificação no `AssetCard`** — novo prop `selectionMode` e `isSelected`:
+- Quando `selectionMode=true`: checkbox visível, clique alterna seleção em vez de abrir preview
+- Checkbox sobreposto no canto superior esquerdo do card
+- Border do card em `ring-primary` quando selecionado
+
+---
+
+#### 2. `src/components/projects/detail/tabs/BrandIdentityTab.tsx`
+
+O componente principal `BrandIdentityTab` terá os mesmos states de seleção. A diferença é que ele tem dois grupos de cards (`logoAssets` e `signatureAssets`), então:
+
+- A barra de seleção aparece uma vez no topo da seção de conteúdo
+- "Selecionar tudo" seleciona todos os assets visíveis (logos + assinaturas)
+- O `LogoCard` recebe `selectionMode`, `isSelected` e `onToggle` como props
+- O `LogoCard` exibe checkbox sobreposto quando em modo seleção
+
+**States no `BrandIdentityTab`**:
+```typescript
+const [selectionMode, setSelectionMode] = useState(false);
+const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const [isDeleting, setIsDeleting] = useState(false);
+```
+
+O hook `useProjectAssets` já expõe `deleteAsset`, só falta importá-lo no `BrandIdentityTab`:
+```typescript
+const { assets, isLoading, deleteAsset } = useProjectAssets(project.id);
+```
+
+---
+
+### UX dos cards com seleção
+
+```text
+┌─────────────────┐        ┌─────────────────┐
+│ ☑  [thumbnail]  │        │ ☐  [thumbnail]  │
+│                 │  vs.   │                 │
+│ Título do asset │        │ Título do asset │
+│ PDF • 2.3 MB    │        │ PDF • 2.3 MB    │
+└─────────────────┘        └─────────────────┘
+  Selecionado                Não selecionado
+  (ring azul + fundo        (ring ausente)
+   primary/10)
+```
+
+O checkbox é um overlay `absolute top-2 left-2` com z-index alto, e o card inteiro tem `onClick` redirecionado para toggle quando `selectionMode=true`.
+
+---
+
+### Resumo das mudanças
+
+| Arquivo | O que muda |
+|---|---|
+| `GalleryTab.tsx` | States de seleção, barra de ação, botão "Selecionar", props novos no `AssetCard` |
+| `GalleryTab.tsx` (`AssetCard`) | Suporte a `selectionMode`, `isSelected`, `onToggle`; checkbox overlay |
+| `BrandIdentityTab.tsx` | States de seleção, `deleteAsset` do hook, barra de ação, props novos no `LogoCard` |
+| `BrandIdentityTab.tsx` (`LogoCard`) | Suporte a `selectionMode`, `isSelected`, `onToggle`; checkbox overlay |
+
+Sem dependências novas, sem migrações de banco de dados, sem edge functions.
