@@ -159,3 +159,6 @@ verify_jwt = false
 
 [functions.invite-user]
 verify_jwt = false
+
+[functions.extract-contract-from-file]
+verify_jwt = false
