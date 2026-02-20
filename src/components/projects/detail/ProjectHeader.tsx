@@ -19,6 +19,7 @@ import {
   Sparkles,
   Upload,
   Send,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
@@ -41,6 +42,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const [commandCenterOpen, setCommandCenterOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [sendToClientOpen, setSendToClientOpen] = useState(false);
+  const [isSyncingFinance, setIsSyncingFinance] = useState(false);
   const { portalLink, portalUrl, isLoading: portalLoading, createLink } = usePortalLink(project.id, {
     name: project.name,
     clientName: project.client_name || undefined,
@@ -77,6 +79,24 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const handleEdit = () => {
     setSelectedProjectId(project.id);
     setEditProjectModalOpen(true);
+  };
+
+  const handleSyncFinance = async () => {
+    setIsSyncingFinance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-project-finances', {
+        body: { project_id: project.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(data?.message || 'Financeiro sincronizado!');
+      queryClient.invalidateQueries({ queryKey: ['project-finance', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao sincronizar financeiro');
+    } finally {
+      setIsSyncingFinance(false);
+    }
   };
 
   const handleOpenPortal = async () => {
@@ -172,6 +192,20 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               >
                 <Upload className="w-4 h-4" />
                 Enviar Material
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSyncFinance}
+                disabled={isSyncingFinance}
+                className="h-9 hidden sm:flex gap-2"
+              >
+                {isSyncingFinance ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 text-emerald-500" />
+                )}
+                Sincronizar Financeiro
               </Button>
               <Button
                 size="sm"
