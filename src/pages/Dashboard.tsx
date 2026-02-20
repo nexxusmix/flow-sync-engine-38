@@ -8,6 +8,7 @@ import { KPIStrip } from "@/components/dashboard/KPIStrip";
 import { ActionHubRail } from "@/components/action-hub/ActionHubRail";
 import { ActionHubOverviewCard } from "@/components/action-hub/ActionHubOverviewCard";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
+import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -208,6 +209,9 @@ export default function Dashboard() {
 
         {/* Projetos Ativos - Quick Access */}
         <ProjectQuickAccessGrid projects={recentProjects} isLoading={isLoading} />
+
+        {/* Recentes — últimos itens de todos os módulos */}
+        <RecentActivityFeed />
 
         {/* Timeline Forecast 30D */}
         <TimelineForecast30D milestones={timelineMilestones} />
