@@ -476,6 +476,8 @@ export function GalleryTab({ project }: GalleryTabProps) {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [elementFilter, setElementFilter] = useState<string>('all');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractProgress, setExtractProgress] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -489,8 +491,12 @@ export function GalleryTab({ project }: GalleryTabProps) {
   const [isMoving, setIsMoving] = useState(false);
 
   const filteredAssets = assets.filter(a => {
-    if (filter === 'all') return true;
-    return a.asset_type === filter;
+    const typeMatch = filter === 'all' || a.asset_type === filter;
+    const catMatch = categoryFilter === 'all' || a.category === categoryFilter;
+    const entities = a.ai_entities as any;
+    const elementType = entities?.element?.type || '';
+    const elementMatch = elementFilter === 'all' || elementType === elementFilter;
+    return typeMatch && catMatch && elementMatch;
   });
 
   const filterCounts: Record<FilterType, number> = {
@@ -501,6 +507,29 @@ export function GalleryTab({ project }: GalleryTabProps) {
     link: assets.filter(a => a.asset_type === 'link').length,
     other: assets.filter(a => !['image', 'video', 'pdf', 'link'].includes(a.asset_type)).length,
   };
+
+  // Category chips — only show categories that have assets
+  const categoryCounts = Object.keys(CATEGORY_LABELS).reduce<Record<string, number>>((acc, cat) => {
+    acc[cat] = assets.filter(a => a.category === cat).length;
+    return acc;
+  }, {});
+
+  // Element type chips from AI entities — only show types that appear in assets
+  const ELEMENT_LABELS: Record<string, string> = {
+    logo: 'Logo',
+    assinatura: 'Assinatura',
+    carimbo: 'Carimbo',
+    foto: 'Foto',
+    ilustracao: 'Ilustração',
+    paleta: 'Paleta',
+  };
+  const elementCounts = Object.keys(ELEMENT_LABELS).reduce<Record<string, number>>((acc, el) => {
+    acc[el] = assets.filter(a => (a.ai_entities as any)?.element?.type === el).length;
+    return acc;
+  }, {});
+
+  const hasActiveFilter = categoryFilter !== 'all' || elementFilter !== 'all' || filter !== 'all';
+  const clearAllFilters = () => { setFilter('all'); setCategoryFilter('all'); setElementFilter('all'); };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -794,26 +823,125 @@ export function GalleryTab({ project }: GalleryTabProps) {
 
       {/* Filters */}
       {assets.length > 0 && (
-        <div className="flex gap-2 flex-wrap">
-          {(Object.keys(FILTER_LABELS) as FilterType[]).map(f => (
-            filterCounts[f] > 0 || f === 'all' ? (
-              <Button
-                key={f}
-                variant={filter === f ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter(f)}
-                className="h-8 text-xs gap-1.5"
+        <div className="space-y-2">
+          {/* Row 1: Type chips */}
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-10 flex-shrink-0">Tipo</span>
+            {(Object.keys(FILTER_LABELS) as FilterType[]).map(f => (
+              filterCounts[f] > 0 || f === 'all' ? (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs font-medium transition-all border",
+                    filter === f
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-muted/40 text-muted-foreground border-border/40 hover:border-border hover:text-foreground"
+                  )}
+                >
+                  {FILTER_LABELS[f]}
+                  <span className={cn(
+                    "text-[10px] px-1 py-0.5 rounded-full font-bold",
+                    filter === f ? 'bg-background/20 text-background' : 'bg-background text-muted-foreground'
+                  )}>
+                    {filterCounts[f]}
+                  </span>
+                </button>
+              ) : null
+            ))}
+          </div>
+
+          {/* Row 2: Category chips */}
+          {Object.values(categoryCounts).some(c => c > 0) && (
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-10 flex-shrink-0">Cat.</span>
+              <button
+                onClick={() => setCategoryFilter('all')}
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs font-medium transition-all border",
+                  categoryFilter === 'all'
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-muted/40 text-muted-foreground border-border/40 hover:border-border hover:text-foreground"
+                )}
               >
-                {FILTER_LABELS[f]}
-                <span className={cn(
-                  "text-[10px] px-1.5 py-0.5 rounded-full font-semibold",
-                  filter === f ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
-                )}>
-                  {filterCounts[f]}
-                </span>
-              </Button>
-            ) : null
-          ))}
+                Todas
+              </button>
+              {Object.entries(CATEGORY_LABELS).map(([key, label]) =>
+                categoryCounts[key] > 0 ? (
+                  <button
+                    key={key}
+                    onClick={() => setCategoryFilter(categoryFilter === key ? 'all' : key)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs font-medium transition-all border",
+                      categoryFilter === key
+                        ? "bg-foreground text-background border-foreground"
+                        : cn("border-border/40 hover:border-border hover:text-foreground", CATEGORY_COLORS[key] || 'bg-muted/40 text-muted-foreground')
+                    )}
+                  >
+                    {label}
+                    <span className={cn(
+                      "text-[10px] px-1 rounded-full font-bold",
+                      categoryFilter === key ? 'bg-background/20 text-background' : 'bg-background/60 text-muted-foreground'
+                    )}>
+                      {categoryCounts[key]}
+                    </span>
+                  </button>
+                ) : null
+              )}
+            </div>
+          )}
+
+          {/* Row 3: AI Element type chips */}
+          {Object.values(elementCounts).some(c => c > 0) && (
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-10 flex-shrink-0">IA</span>
+              <button
+                onClick={() => setElementFilter('all')}
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs font-medium transition-all border",
+                  elementFilter === 'all'
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/40 text-muted-foreground border-border/40 hover:border-border hover:text-foreground"
+                )}
+              >
+                Todos
+              </button>
+              {Object.entries(ELEMENT_LABELS).map(([key, label]) =>
+                elementCounts[key] > 0 ? (
+                  <button
+                    key={key}
+                    onClick={() => setElementFilter(elementFilter === key ? 'all' : key)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs font-medium transition-all border",
+                      elementFilter === key
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
+                    )}
+                  >
+                    {label}
+                    <span className={cn(
+                      "text-[10px] px-1 rounded-full font-bold",
+                      elementFilter === key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                    )}>
+                      {elementCounts[key]}
+                    </span>
+                  </button>
+                ) : null
+              )}
+            </div>
+          )}
+
+          {/* Clear all filters */}
+          {hasActiveFilter && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <button
+                onClick={clearAllFilters}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+              >
+                Limpar filtros ({filteredAssets.length} de {assets.length} exibido{filteredAssets.length !== 1 ? 's' : ''})
+              </button>
+            </div>
+          )}
         </div>
       )}
 
