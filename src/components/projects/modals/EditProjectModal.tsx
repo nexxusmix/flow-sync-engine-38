@@ -37,6 +37,7 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
   const [formData, setFormData] = useState({
     name: project.name,
     client_name: project.client_name || '',
+    brand_name: (project as any).brand_name || '',
     template: project.template || '',
     start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
     due_date: project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : '',
@@ -53,6 +54,7 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
     setFormData({
       name: project.name,
       client_name: project.client_name || '',
+      brand_name: (project as any).brand_name || '',
       template: project.template || '',
       start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
       due_date: project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : '',
@@ -97,6 +99,7 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
       data: {
         name: formData.name,
         client_name: formData.client_name || null,
+        brand_name: (formData.brand_name || null) as any,
         template: formData.template || null,
         start_date: formData.start_date || null,
         due_date: formData.due_date || null,
@@ -201,6 +204,20 @@ export function EditProjectModal({ open, onOpenChange, project }: EditProjectMod
               onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
               placeholder="Ex: Empresa ABC"
             />
+          </div>
+
+          {/* Brand Name */}
+          <div className="space-y-2">
+            <Label htmlFor="brand_name">Nome da Marca do Cliente</Label>
+            <Input
+              id="brand_name"
+              value={formData.brand_name}
+              onChange={(e) => setFormData({ ...formData, brand_name: e.target.value })}
+              placeholder="Ex: Nike, Apple, Coca-Cola..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Usado como âncora para detecção automática de paleta — a IA prioriza assets com esta marca
+            </p>
           </div>
 
           {/* Template (Read-only for existing projects) */}

@@ -5115,6 +5115,7 @@ export type Database = {
       projects: {
         Row: {
           banner_url: string | null
+          brand_name: string | null
           client_name: string
           contract_value: number | null
           cover_image_url: string | null
@@ -5139,6 +5140,7 @@ export type Database = {
         }
         Insert: {
           banner_url?: string | null
+          brand_name?: string | null
           client_name: string
           contract_value?: number | null
           cover_image_url?: string | null
@@ -5163,6 +5165,7 @@ export type Database = {
         }
         Update: {
           banner_url?: string | null
+          brand_name?: string | null
           client_name?: string
           contract_value?: number | null
           cover_image_url?: string | null
