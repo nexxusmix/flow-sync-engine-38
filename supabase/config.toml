@@ -181,3 +181,6 @@ verify_jwt = false
 [functions.generate-logo-variations]
 verify_jwt = false
 
+[functions.scrape-client-url]
+verify_jwt = false
+
