@@ -59,7 +59,7 @@ interface AIProjectModalProps {
 interface UploadedFile {
   file: File;
   preview?: string;
-  type: 'pdf' | 'image' | 'other';
+  type: 'pdf' | 'image' | 'docx' | 'txt' | 'other';
 }
 
 interface Deliverable {
@@ -204,16 +204,29 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     });
   };
 
+  const detectFileType = (file: File): UploadedFile['type'] => {
+    if (file.type === 'application/pdf') return 'pdf';
+    if (file.type.startsWith('image/')) return 'image';
+    if (
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.type === 'application/msword' ||
+      file.name.endsWith('.docx') ||
+      file.name.endsWith('.doc')
+    ) return 'docx';
+    if (file.type === 'text/plain' || file.name.endsWith('.txt')) return 'txt';
+    return 'other';
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
     const newFiles: UploadedFile[] = files.map(file => {
-      const isPdf = file.type === 'application/pdf';
-      const isImage = file.type.startsWith('image/');
+      const fileType = detectFileType(file);
+      const isImage = fileType === 'image';
       
       return {
         file,
-        type: isPdf ? 'pdf' : isImage ? 'image' : 'other',
+        type: fileType,
         preview: isImage ? URL.createObjectURL(file) : undefined,
       };
     });
@@ -249,6 +262,16 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     });
   };
 
+  // Read TXT file as plain text
+  const readTextFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file, 'utf-8');
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+    });
+  };
+
   const processWithAI = async () => {
     if (uploadedFiles.length === 0 && !additionalText) {
       toast.error("Adicione pelo menos um arquivo ou texto para processar");
@@ -263,15 +286,41 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     try {
       const pdfFiles = uploadedFiles.filter(f => f.type === 'pdf');
       const imageFiles = uploadedFiles.filter(f => f.type === 'image');
+      const docxFiles = uploadedFiles.filter(f => f.type === 'docx');
+      const txtFiles = uploadedFiles.filter(f => f.type === 'txt');
       
       setProcessingProgress(20);
       setProcessingStep("Convertendo documentos...");
 
       let documentBase64: string | undefined;
       let imageBase64List: string[] = [];
+      const textDocuments: Array<{ name: string; content: string; mimeType: string }> = [];
 
       if (pdfFiles.length > 0) {
         documentBase64 = await fileToBase64(pdfFiles[0].file);
+      }
+
+      // Convert DOCX to base64 for edge function processing
+      for (const docxFile of docxFiles) {
+        const base64 = await fileToBase64(docxFile.file);
+        textDocuments.push({
+          name: docxFile.file.name,
+          content: base64,
+          mimeType: docxFile.file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
+      }
+
+      setProcessingProgress(30);
+      setProcessingStep("Lendo arquivos de texto...");
+
+      // Read TXT files as plain text
+      for (const txtFile of txtFiles) {
+        const text = await readTextFile(txtFile.file);
+        textDocuments.push({
+          name: txtFile.file.name,
+          content: text,
+          mimeType: 'text/plain',
+        });
       }
 
       setProcessingProgress(40);
@@ -290,6 +339,7 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
           text: additionalText || undefined,
           documentBase64,
           imageBase64List: imageBase64List.length > 0 ? imageBase64List : undefined,
+          textDocuments: textDocuments.length > 0 ? textDocuments : undefined,
           documentType: 'contract',
         }
       });
@@ -505,6 +555,8 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
     switch (type) {
       case 'pdf': return <FileText className="w-5 h-5 text-destructive" />;
       case 'image': return <Image className="w-5 h-5 text-primary" />;
+      case 'docx': return <FileText className="w-5 h-5 text-primary" />;
+      case 'txt': return <FileText className="w-5 h-5 text-muted-foreground" />;
       default: return <File className="w-5 h-5 text-muted-foreground" />;
     }
   };
@@ -541,10 +593,10 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
             >
               <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
               <p className="text-sm font-medium text-foreground mb-1">
-                Arraste arquivos ou clique para selecionar
-              </p>
-              <p className="text-xs text-muted-foreground">
-                PDF, Imagens (JPG, PNG), documentos variados
+              Arraste arquivos ou clique para selecionar
+            </p>
+            <p className="text-xs text-muted-foreground">
+                PDF, DOCX, TXT, Imagens (JPG, PNG)
               </p>
               <p className="text-[10px] text-muted-foreground mt-2">
                 Múltiplos arquivos permitidos
@@ -553,7 +605,7 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx"
+                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.txt"
                 onChange={handleFileSelect}
                 multiple
               />
