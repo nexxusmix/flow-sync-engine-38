@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContractAiUploadDialog } from "@/components/finance/ContractAiUploadDialog";
+import { ContractAiUpdateDialog } from "@/components/finance/ContractAiUpdateDialog";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Contract, STATUS_CONFIG, ContractStatus, RENEWAL_TYPE_LABELS, RenewalType } from "@/types/contracts";
 import {
-  FileSignature, Plus, Search, Filter, Copy, Link2, FileText,
-  MoreHorizontal, Calendar, AlertTriangle, Bell, Users, Sparkles
+  FileSignature, Plus, Search, Copy, Link2, FileText,
+  MoreHorizontal, AlertTriangle, Bell, Users, Sparkles, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ export default function ContractsListPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [alerts, setAlerts] = useState<{ contract_id: string; type: string; due_at: string }[]>([]);
   const [showAiUpload, setShowAiUpload] = useState(false);
+  const [aiUpdateContract, setAiUpdateContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -372,6 +374,11 @@ export default function ContractsListPage() {
                               Preview
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setAiUpdateContract(contract)}>
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Atualizar com IA
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleGenerateLink(contract.id)}>
                               <Link2 className="w-4 h-4 mr-2" />
                               Gerar Link
@@ -461,6 +468,21 @@ export default function ContractsListPage() {
           navigate(`/contratos/${contractId}`);
         }}
       />
+
+      {/* AI Update Dialog */}
+      {aiUpdateContract && (
+        <ContractAiUpdateDialog
+          open={!!aiUpdateContract}
+          onOpenChange={(open) => { if (!open) setAiUpdateContract(null); }}
+          contractId={aiUpdateContract.id}
+          projectId={aiUpdateContract.project_id}
+          projectName={aiUpdateContract.project_name}
+          onSuccess={() => {
+            fetchContracts();
+            setAiUpdateContract(null);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }
