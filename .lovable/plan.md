@@ -1,104 +1,139 @@
 
-# Diagnóstico e Solução Completa
+## Extração Completa de Arquivos com IA + Galeria de Assets em Tempo Real
 
-## Problema 1: Erro no "Sincronizar Financeiro"
+### O que será feito
 
-**Causa raiz confirmada:** O projeto "Identidade Visual Porto 153" tem `contract_value = 0` no banco. A edge function `sync-project-finances` retorna HTTP 400 com a mensagem `"Projeto sem valor de contrato definido."`. O frontend captura esse erro e exibe o toast genérico do Lovable SDK como "Edge Function returned a non-2xx status code".
+O sistema atual já tem upload de documentos e extração de dados para criar projetos. O pedido expande isso para:
 
-**O que falta:** O `handleSyncFinance` em `ProjectHeader.tsx` já trata o erro com `toast.error`, mas o SDK do Supabase às vezes lança o erro antes de o body ser lido, perdendo a mensagem específica. Além disso, não há nenhum aviso proativo ao usuário de que o projeto precisa de um valor de contrato antes de sincronizar.
-
-**Correções:**
-- Melhorar o tratamento de erro em `ProjectHeader.tsx` e `ProjectActionsMenu.tsx` para extrair a mensagem do body da resposta mesmo em erros não-2xx
-- Adicionar validação visual: se `project.contract_value === 0`, o botão mostra aviso amigável e abre o modal de edição em vez de chamar a edge function
-- Corrigir a edge function `sync-project-finances` para aceitar `force_regenerate` via UI (já tem suporte, mas não é exposto)
-
----
-
-## Problema 2: Botão de "Auto-Sync Inteligente" sem abrir chat
-
-O usuário quer uma ação que, ao clicar, a IA analisa o estado atual do projeto e executa tudo que for necessário automaticamente — sem precisar abrir o Command Center / chat.
-
-**Solução: Novo botão "Auto Sync IA" com Edge Function dedicada**
-
-### Nova Edge Function: `auto-update-project`
-
-Recebe o `project_id`, lê todos os dados do projeto (tarefas, etapas, financeiro, calendário) e executa um plano de ações de forma autônoma:
-1. Se `contract_value > 0` e não há contrato → cria contrato + parcelas
-2. Se não há tarefas → gera tarefas com base no template e etapa atual
-3. Se não há próximas entregas no calendário → gera evento de entrega
-4. Se etapa atual não tem tarefas concluídas → sugere próxima etapa (opcional)
-5. Retorna um resumo das ações executadas
-
-### UI: Botão "Auto Update" em `ProjectHeader.tsx`
-
-- Substitui o atual "Atualizar com IA" (que abre chat) por um botão que executa automaticamente
-- Mantém o "Atualizar com IA" como opção secundária no menu
-- Durante a execução: loading spinner + toast "Analisando projeto..."
-- Ao concluir: toast com resumo "✓ 3 ações executadas: contrato criado, 5 tarefas geradas, entrega agendada"
+1. **Extração visual inteligente**: Para cada arquivo enviado (PDF, DOCX, imagens), a IA analisa visualmente o conteúdo e detecta automaticamente logos, identidade visual, escopos, contratos, assinaturas — recortando e salvando como assets individuais
+2. **Galeria de assets em tempo real**: Uma nova aba "Galeria IA" no projeto que exibe todos os assets extraídos em grade, com atualização via Realtime
+3. **Salvamento automático nos arquivos do projeto**: Cada imagem/asset extraído é salvo na pasta correta (logos → referências, contratos → contratos, etc.)
+4. **Nova edge function `extract-visual-assets`**: Processa os arquivos enviados, usa Gemini Vision para identificar e descrever cada elemento visual, gera thumbnails e salva tudo em `project_assets` e `project_files`
+5. **Integração no AIProjectModal**: Após a extração dos dados do projeto, automaticamente processa os arquivos para extrair assets visuais e os exibe em preview dentro do modal
+6. **Upload multi-arquivo melhorado**: O modal aceita qualquer tipo de arquivo (não só PDF + imagem), processa cada um em paralelo
 
 ---
 
-## Implementação Técnica
-
-### Arquivos a modificar
-
-**`src/components/projects/detail/ProjectHeader.tsx`**
-- Corrigir `handleSyncFinance`: validar `contract_value > 0` antes de chamar a edge function; se zero, abrir modal de edição com aviso claro
-- Melhorar extração da mensagem de erro da resposta da edge function
-- Adicionar botão "Auto Update" com ícone `Wand2` e loading state
-- Mover "Atualizar com IA" para o menu secundário (`ProjectActionsMenu`)
-
-**`src/components/projects/ProjectActionsMenu.tsx`**
-- Adicionar opção "Atualizar com IA" (abre Command Center)
-- Adicionar opção "Auto Sync IA" (chama a nova edge function)
-
-**`supabase/functions/auto-update-project/index.ts`** *(novo)*
-- Autenticação via `getClaims()` (padrão da plataforma)
-- Lê: projeto, tarefas existentes, contrato, revenues, próximos eventos
-- Executa ações paralelas via `Promise.allSettled`:
-  - Sync financeiro (se `contract_value > 0`)
-  - Geração de tarefas via IA (se não há tarefas)
-  - Criação de evento de entrega (se `due_date` existe e não há evento)
-- Usa modelo `google/gemini-3-flash-preview` para gerar tarefas contextuais
-- Retorna JSON com lista de ações executadas e contagem de sucesso/erro
-
-**`supabase/config.toml`**
-- Registrar `auto-update-project` com `verify_jwt = false` (validação no código)
-
-### Fluxo visual do Auto Update
+### Arquitetura do fluxo
 
 ```text
-[Clique em "Auto Update"]
-        ↓
-Spinner + toast "Analisando projeto..."
-        ↓
-Edge function analisa o estado atual
-        ↓
-Executa ações em paralelo:
-  - Sync financeiro (se aplicável)
-  - Gera tarefas (se aplicável)  
-  - Agenda entrega (se aplicável)
-        ↓
-Invalida todos os React Query caches relevantes
-        ↓
-Toast de sucesso com resumo das ações
-```
-
-### Validação no botão "Sincronizar Financeiro"
-
-```text
-contract_value === 0?
-   ↓ SIM → toast.warning + abre EditProjectModal
-   ↓ NÃO → chama edge function normalmente
+[Usuário sobe arquivos] → AIProjectModal
+         │
+         ├─ extract-project-from-document  (dados texto: nome, valor, datas...)
+         │
+         └─ extract-visual-assets (NOVA) ──── Gemini Vision analisa cada arquivo
+                    │                         Detecta: logos, cores, assinaturas,
+                    │                         tabelas, escopos, carimbos
+                    │
+                    ├─ Salva imagens em storage → project-files bucket
+                    │   pasta: referencias/ para logos/identidade
+                    │   pasta: contratos/  para assinaturas/selos
+                    │
+                    └─ Insere registros em project_assets (thumb_url, category, tags)
+                               │
+                               └─ Realtime notifica frontend → Galeria atualiza
 ```
 
 ---
 
-## Resumo das mudanças
+### Mudanças técnicas
 
-| Arquivo | Tipo | O que muda |
-|---|---|---|
-| `src/components/projects/detail/ProjectHeader.tsx` | Modificação | Validação pre-sync, botão Auto Update |
-| `src/components/projects/ProjectActionsMenu.tsx` | Modificação | Adiciona "Auto Sync IA" no menu |
-| `supabase/functions/auto-update-project/index.ts` | Criação | Engine de auto-atualização com IA |
-| `supabase/config.toml` | Modificação | Registra nova edge function |
+#### 1. Nova Edge Function: `extract-visual-assets`
+
+**`supabase/functions/extract-visual-assets/index.ts`**
+
+- Recebe: `project_id`, lista de arquivos em base64 (PDF e imagens)
+- Para cada arquivo, envia ao Gemini 2.5 Flash com prompt específico para:
+  - Detectar presença de logo/marca (recortar região)
+  - Extrair paleta de cores predominante
+  - Identificar tipo de documento (contrato, proposta, briefing, etc.)
+  - Extrair imagens relevantes embutidas
+- Para cada asset detectado:
+  - Converte para blob e faz upload no bucket `project-files`
+  - Insere em `project_assets` com `category`, `tags`, `ai_title`, `thumb_url`
+- Retorna lista de assets salvos com seus IDs e URLs
+- Registrado em `supabase/config.toml` com `verify_jwt = false`
+
+#### 2. Nova aba "Galeria" no projeto
+
+**`src/components/projects/detail/tabs/GalleryTab.tsx`** (novo componente)
+
+- Usa `useProjectAssets(project.id)` já existente
+- Layout em grade responsiva (2→3→4 colunas)
+- Cada card mostra: thumbnail, título IA, categoria, tags
+- Filtros rápidos: Todos | Logos | Identidade | Contratos | Referências
+- Botão "Processar mais arquivos" que abre upload direto
+- Realtime já está implementado no hook `useProjectAssets`
+
+#### 3. Integração no AIProjectModal
+
+**`src/components/projects/modals/AIProjectModal.tsx`** (modificado)
+
+- Novo passo `'extracting_visuals'` após o passo `'processing'` existente
+- Depois de extrair dados textuais, automaticamente chama `extract-visual-assets` com os mesmos arquivos
+- Exibe preview dos assets detectados na tela de review com mini-galeria
+- Nova aba "Visual" na tela de review mostrando logos e assets extraídos
+- Ao criar o projeto, os assets já estão salvos e vinculados
+
+#### 4. Integração na aba de arquivos existente
+
+**`src/components/projects/detail/tabs/FilesTab.tsx`** (modificado)
+
+- Novo botão "Extrair Assets com IA" que abre modal de upload
+- Após upload, chama `extract-visual-assets` e mostra progresso
+- Arquivos originais salvos na pasta correta + assets extraídos na galeria
+
+#### 5. Registro no ProjectTabs
+
+**`src/components/projects/detail/ProjectTabs.tsx`** (modificado)
+
+- Adicionar aba "Galeria" entre "Arquivos" e outra aba relevante
+
+---
+
+### Detalhes do prompt Gemini para extração visual
+
+O prompt instruirá o Gemini a retornar um JSON estruturado para cada arquivo:
+```json
+{
+  "document_type": "contrato | proposta | briefing | referencia | identidade_visual",
+  "assets_found": [
+    {
+      "type": "logo | assinatura | carimbo | foto | ilustracao | paleta | outro",
+      "description": "Logo da empresa XYZ em fundo transparente",
+      "location": "canto superior esquerdo",
+      "confidence": 0.92,
+      "suggested_folder": "referencias",
+      "suggested_category": "reference | deliverable | contract | other",
+      "tags": ["logo", "identidade", "marca"]
+    }
+  ],
+  "color_palette": ["#003F7C", "#FF5A00", "#FFFFFF"],
+  "brand_name": "Nome detectado",
+  "has_signature": true,
+  "has_legal_seal": false
+}
+```
+
+Para imagens onde um logo ou elemento foi detectado, a edge function usará Gemini com `modalities: ["image"]` para gerar um recorte limpo do elemento.
+
+---
+
+### Ordem de implementação
+
+1. Criar edge function `extract-visual-assets` e registrar no config.toml
+2. Criar `GalleryTab.tsx` com grid de assets em tempo real
+3. Integrar a nova aba em `ProjectTabs.tsx`
+4. Modificar `AIProjectModal.tsx` para incluir extração visual após extração textual e mostrar preview
+5. Adicionar botão "Extrair Assets com IA" no `FilesTab.tsx`
+
+---
+
+### Observações técnicas
+
+- A extração visual é **não bloqueante** — o projeto é criado mesmo se a extração visual falhar
+- O bucket `project-files` já existe e será reutilizado
+- A tabela `project_assets` já existe com todos os campos necessários (`thumb_url`, `ai_tags`, `category`, `ai_title`, etc.)
+- O hook `useProjectAssets` já tem Realtime configurado, então a galeria atualiza automaticamente
+- Arquivos > 20MB serão ignorados na extração visual (limitação da API)
+- PDFs com mais de 10 páginas terão apenas as 5 primeiras processadas visualmente
