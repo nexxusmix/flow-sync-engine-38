@@ -20,7 +20,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink } from "lucide-react";
+import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProjectActionsMenuProps {
   project?: ProjectWithStages;
@@ -50,6 +52,7 @@ export function ProjectActionsMenu({
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isSyncingFinance, setIsSyncingFinance] = useState(false);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -75,6 +78,23 @@ export function ProjectActionsMenu({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowDeleteDialog(true);
+  };
+
+  const handleSyncFinance = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSyncingFinance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-project-finances', {
+        body: { project_id: projectId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(data?.message || 'Financeiro sincronizado!');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao sincronizar financeiro');
+    } finally {
+      setIsSyncingFinance(false);
+    }
   };
 
   const confirmComplete = () => {
@@ -107,7 +127,7 @@ export function ProjectActionsMenu({
             <MoreVertical className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end" className="w-56">
           {showOpenOption && (
             <DropdownMenuItem onClick={handleOpenProject}>
               <ExternalLink className="w-4 h-4 mr-2" />
@@ -117,6 +137,15 @@ export function ProjectActionsMenu({
           <DropdownMenuItem onClick={handleEdit}>
             <Pencil className="w-4 h-4 mr-2" />
             Editar
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={handleSyncFinance}
+            disabled={isSyncingFinance}
+            className="text-emerald-600 focus:text-emerald-600"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncingFinance ? 'animate-spin' : ''}`} />
+            {isSyncingFinance ? 'Sincronizando...' : 'Sincronizar Financeiro'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {!isCompleted && !isArchived && (
