@@ -44,7 +44,7 @@ const ACCEPTED_EXTENSIONS = ".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp";
 const MAX_SIZE_MB = 20;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
-type Step = "upload" | "processing" | "preview" | "done";
+type Step = "upload" | "processing" | "preview" | "generating" | "done";
 
 export function ContractAiUploadDialog({
   open,
@@ -185,16 +185,50 @@ export function ContractAiUploadDialog({
       return;
     }
 
+    // Step 1: notify user
     toast.success(
       `Contrato criado com IA! ${createdRevenues > 0 ? `${createdRevenues} parcela(s) gerada(s).` : ""}`
     );
+
+    // Step 2: generate juridical text in background
+    setStep("generating");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-contract-text`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ contract_id: contractId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.warn("Contract text generation warning:", data?.error);
+        // Non-blocking: continue even if text generation fails
+        toast.warning("Contrato criado, mas o texto jurídico não pôde ser gerado agora. Acesse o contrato para gerar manualmente.");
+      } else {
+        toast.success(`Texto jurídico gerado com IA • ${data.message || "Versão 1 salva"}`);
+      }
+    } catch (err) {
+      console.warn("Contract text generation error:", err);
+      toast.warning("Contrato criado. Gere o texto jurídico abrindo o contrato.");
+    }
 
     setStep("done");
     onSuccess?.(contractId);
 
     setTimeout(() => {
       handleClose();
-    }, 1500);
+    }, 1800);
   };
 
   const updateField = (field: keyof ExtractedData, value: string | number) => {
@@ -215,10 +249,11 @@ export function ContractAiUploadDialog({
             Criar Contrato com IA
           </DialogTitle>
           <DialogDescription>
-            {step === "upload" && "Envie um contrato ou proposta comercial. A IA extrai os dados automaticamente."}
+            {step === "upload" && "Envie um contrato ou proposta comercial. A IA extrai os dados e gera o texto jurídico formal."}
             {step === "processing" && "Processando seu documento..."}
             {step === "preview" && "Revise os dados extraídos antes de confirmar."}
-            {step === "done" && "Contrato criado com sucesso!"}
+            {step === "generating" && "Aguarde enquanto a IA redige o texto jurídico..."}
+            {step === "done" && "Contrato criado e texto jurídico gerado com sucesso!"}
           </DialogDescription>
         </DialogHeader>
 
@@ -279,6 +314,22 @@ export function ContractAiUploadDialog({
                   {selectedFile.name}
                 </p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* GENERATING LEGAL TEXT STEP */}
+        {step === "generating" && (
+          <div className="flex flex-col items-center py-10 gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-primary" />
+              </div>
+              <Loader2 className="absolute inset-0 m-auto w-16 h-16 text-primary/30 animate-spin" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-medium text-foreground">Redigindo texto jurídico...</p>
+              <p className="text-xs text-muted-foreground">A IA está gerando as cláusulas do contrato formal</p>
             </div>
           </div>
         )}
