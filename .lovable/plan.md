@@ -1,200 +1,246 @@
 
-## Download em lote (ZIP) e individual — Galeria IA e Identidade Visual
+## Pipeline IA Completo para Assets — Análise com GPT + Remoção de Fundo + Geração de Padrão
 
-### Contexto
+### O que será feito
 
-Os assets de arquivo ficam no bucket privado `project-files`. Para download é necessário gerar uma **signed URL** com expiração (mesma técnica já usada no PDF viewer). Assets do tipo `link` (YouTube, Vimeo, etc.) não têm arquivo para baixar.
+Quando um asset de imagem é enviado (especialmente logos/identidade visual), o `process-asset` vai executar automaticamente 3 estágios em sequência:
 
-O download ZIP no browser é feito **sem biblioteca externa**: `fetch()` os blobs em paralelo → empacota com a API nativa **`CompressionStream`** usando formato zip simulado, ou, mais simples e confiável, via **`<a download>`** individual para cada arquivo. A alternativa mais robusta para ZIP real é usar a lib **`fflate`** (já disponível no ecossistema, sem instalação extra necessária via CDN/import), mas como não está nas dependências, usaremos a abordagem de **download sequencial de arquivos** para o lote (melhor UX que pedir lib nova).
+1. **Análise visual com GPT (multimodal)** — o modelo recebe a imagem real (base64) e gera título, descrição, tags, tipo de elemento, paleta de cores detectada e nome de marca. Upgrade do modelo de `gemini-2.5-flash-lite` (só texto) para `google/gemini-2.5-flash` com visão.
 
-> **Estratégia de download em lote**: Dado que `fflate` não está instalado, faremos o download "em lote" gerando signed URLs para todos os selecionados e disparando os downloads automaticamente em série com pequeno intervalo (técnica de `<a>` programático com `setTimeout`). Isso evita bloqueio de popup do browser e não requer nova dependência.
+2. **Remoção de fundo e geração de PNG recortado** — via `google/gemini-3-pro-image-preview` (Nano banana pro), enviamos a imagem com o prompt "Remove o fundo desta imagem e retorne apenas o elemento principal em PNG com fundo transparente". O resultado é salvo no bucket `asset-thumbs` (público) como `{asset_id}_cutout.png` e armazenado em `preview_url`.
+
+3. **Geração de padrão/textura com o logo** — após o recorte, o Nano banana pro gera um padrão de identidade visual usando o logo recortado como elemento (ex: "Crie um padrão tile seamless com este logo sobre fundo escuro, estilo brand pattern"). Salvo em `asset-thumbs` como `{asset_id}_pattern.png` e armazenado em `og_image_url`.
 
 ---
 
-### Comportamento esperado
+### Arquitetura de Dados
 
-**Download individual** (card normal, sem modo seleção):
-- Botão de download já existe em alguns cards — garantir que todos os `AssetCard` (Gallery) e `LogoCard` (Identity) tenham um botão de download no menu de ações
-- Gera signed URL → dispara `<a download>` → baixa o arquivo com o nome original
+Os campos `preview_url` e `og_image_url` que já existem na tabela `project_assets` são reaproveitados:
 
-**Download em lote** (modo seleção ativo):
-- Novo botão "Baixar" na barra de ação (ao lado de "Excluir")
-- Estado `isDownloading` com spinner
-- Para cada ID selecionado: gera signed URL e dispara download com delay de 300ms entre cada um (evita bloqueio do browser)
-- Assets do tipo `link` são ignorados no lote (sem arquivo)
-- Toast de progresso: "Baixando N arquivo(s)..."
+| Campo | Conteúdo |
+|---|---|
+| `thumb_url` | URL pública do arquivo original (imagem original) |
+| `preview_url` | PNG recortado sem fundo (cutout) |
+| `og_image_url` | Padrão/textura gerado com o logo |
+| `ai_entities` | JSON com `element.type`, `color_palette`, `brand_name`, `fonts` |
+
+Sem necessidade de migração de banco de dados — todos os campos já existem.
+
+---
+
+### Fluxo técnico
+
+```text
+Upload do arquivo
+       │
+       ▼
+uploadSingleFile() → insert project_assets (status: "processing")
+       │
+       ▼ (se aiProcess=true OU category="brand"/"identity")
+supabase.functions.invoke('process-asset', { asset_id })
+       │
+       ▼
+[ESTÁGIO 1] Busca asset + gera signed URL do storage privado (300s)
+       │       Faz fetch da imagem → base64
+       │       Chama gemini-2.5-flash com visão (imagem + prompt)
+       │       → updates: ai_title, ai_summary, ai_tags, ai_entities
+       │         (element.type, color_palette, brand_name)
+       │
+       ▼ (apenas se asset_type="image")
+[ESTÁGIO 2] Remoção de fundo — gemini-3-pro-image-preview
+       │       Prompt: "Remove background, return only main element
+       │                as PNG with transparent background"
+       │       → decode base64 result
+       │       → upload para asset-thumbs/{asset_id}_cutout.png
+       │       → updates.preview_url = URL pública do cutout
+       │
+       ▼ (apenas se category="brand" ou element.type in [logo, assinatura])
+[ESTÁGIO 3] Geração de padrão — gemini-3-pro-image-preview
+       │       Prompt: "Crie um padrão tile seamless com este elemento
+       │                como ícone repetido sobre fundo escuro"
+       │       → upload para asset-thumbs/{asset_id}_pattern.png
+       │       → updates.og_image_url = URL pública do pattern
+       │
+       ▼
+status = "ready" → update project_assets
+```
 
 ---
 
 ### Arquivos a modificar
 
-#### 1. `GalleryTab.tsx`
+#### 1. `supabase/functions/process-asset/index.ts` (principal)
 
-**Novo ícone**: `Download` já importado ✓, adicionar `DownloadCloud`.
+**Estágio 1 — Análise visual GPT/Gemini multimodal:**
 
-**Handler de download individual** (dentro de `AssetCard`):
+Substituir o modelo de `gemini-2.5-flash-lite` por `gemini-2.5-flash` com payload de visão. Para imagens, fazer `fetch` da signed URL, converter para base64 e incluir como `image_url` no content array:
+
 ```typescript
-const handleDownload = async () => {
-  if (!asset.storage_path) return;
-  const { data } = await supabase.storage
-    .from(asset.storage_bucket || 'project-files')
+// Fetch image as base64 for vision
+let imageBase64: string | null = null;
+if (asset.source_type === "file" && asset.asset_type === "image" && asset.storage_path) {
+  const { data: signedData } = await sb.storage
+    .from("project-files")
     .createSignedUrl(asset.storage_path, 300);
-  if (data?.signedUrl) {
-    const a = document.createElement('a');
-    a.href = data.signedUrl;
-    a.download = asset.file_name || asset.title;
-    a.click();
+  if (signedData?.signedUrl) {
+    const imgResp = await fetch(signedData.signedUrl);
+    const buffer = await imgResp.arrayBuffer();
+    imageBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
   }
-};
+}
+
+// Build multimodal message
+const userContent: any[] = imageBase64
+  ? [
+      { type: "text", text: prompt },
+      { type: "image_url", image_url: { url: `data:${asset.mime_type || 'image/png'};base64,${imageBase64}` } },
+    ]
+  : prompt;
+
+const model = imageBase64 ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite";
 ```
 
-**Botão de download no `AssetCard`** — adicionado no rodapé do card (área de metadados), visível no dropdown/menu de ações do card quando `selectionMode=false`:
+O prompt de análise também é enriquecido para extrair:
+- `element.type`: logo | assinatura | carimbo | foto | ilustracao | paleta | outro
+- `color_palette`: array de hex colors detectadas na imagem
+- `brand_name`: nome da marca se identificado
+- `fonts`: fontes identificadas (se houver)
+
+**Estágio 2 — Remoção de fundo (cutout):**
+
+```typescript
+if (imageBase64 && asset.asset_type === "image") {
+  const cutoutResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-3-pro-image-preview",
+      messages: [{
+        role: "user",
+        content: [
+          { type: "text", text: "Remove the background from this image completely. Return only the main element (logo, icon, or subject) with a fully transparent background. Output as PNG." },
+          { type: "image_url", image_url: { url: `data:${asset.mime_type || 'image/png'};base64,${imageBase64}` } },
+        ],
+      }],
+      modalities: ["image", "text"],
+    }),
+  });
+
+  if (cutoutResp.ok) {
+    const cutoutData = await cutoutResp.json();
+    const cutoutB64 = cutoutData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (cutoutB64) {
+      // Strip data URL prefix
+      const base64Data = cutoutB64.replace(/^data:image\/\w+;base64,/, "");
+      const binary = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      const { data: uploadData } = await sb.storage
+        .from("asset-thumbs")
+        .upload(`${asset_id}_cutout.png`, binary.buffer, {
+          contentType: "image/png",
+          upsert: true,
+        });
+      if (uploadData) {
+        const { data: pubUrl } = sb.storage.from("asset-thumbs").getPublicUrl(`${asset_id}_cutout.png`);
+        updates.preview_url = pubUrl.publicUrl;
+      }
+    }
+  }
+}
+```
+
+**Estágio 3 — Geração de padrão (apenas se logo ou category=brand):**
+
+```typescript
+const elementType = updates.ai_entities?.element?.type || (asset.ai_entities as any)?.element?.type;
+const isBrandAsset = ["logo", "assinatura", "carimbo"].includes(elementType) 
+  || asset.category === "brand";
+
+if (isBrandAsset && updates.preview_url && cutoutBase64) {
+  const patternResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    ...body com gemini-3-pro-image-preview e o cutout como base64...
+    prompt: "Create a seamless tile brand pattern using this logo/element repeated multiple times over a dark background. Professional branding style, modern and elegant."
+  });
+  // upload para asset-thumbs/{asset_id}_pattern.png → updates.og_image_url
+}
+```
+
+**Proteção contra falhas:** cada estágio tem seu próprio try/catch, garantindo que uma falha no cutout não bloqueie o enriquecimento de metadados.
+
+---
+
+#### 2. `src/stores/useBackgroundUploadStore.ts`
+
+Alterar a lógica de disparo do `process-asset`: hoje ele só é chamado quando `item.aiProcess === true`. Adicionar lógica para chamar automaticamente quando a categoria for `brand` ou `identity`:
+
+```typescript
+const shouldProcess = item.aiProcess 
+  || ['brand', 'identity', 'logo'].includes(item.category?.toLowerCase() || '');
+
+if (shouldProcess) {
+  await supabase.functions.invoke('process-asset', { body: { asset_id: data.id } });
+}
+```
+
+---
+
+#### 3. `src/components/projects/detail/tabs/BrandIdentityTab.tsx`
+
+**Novo card "Variações Geradas"** — Quando um `logoAsset` tem `preview_url` (cutout) ou `og_image_url` (pattern), o `LogoCard` exibe um painel expandido com as variações geradas:
+
 ```tsx
-{asset.source_type === 'file' && (
-  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleDownload}>
-    <Download className="w-3.5 h-3.5" />
-  </Button>
+{/* Variações IA */}
+{(asset.preview_url || asset.og_image_url) && (
+  <div className="mt-3 grid grid-cols-2 gap-2">
+    {asset.preview_url && (
+      <div className="rounded-lg bg-white/5 border border-border/20 p-2 flex flex-col items-center gap-1">
+        <img src={asset.preview_url} className="h-16 object-contain" />
+        <span className="text-[9px] text-muted-foreground">Recorte PNG</span>
+      </div>
+    )}
+    {asset.og_image_url && (
+      <div className="rounded-lg bg-white/5 border border-border/20 p-2 flex flex-col items-center gap-1">
+        <img src={asset.og_image_url} className="h-16 object-cover rounded" />
+        <span className="text-[9px] text-muted-foreground">Padrão</span>
+      </div>
+    )}
+  </div>
 )}
 ```
 
-**Handler de download em lote** no `GalleryTab`:
-```typescript
-const [isDownloading, setIsDownloading] = useState(false);
+**Indicador de processamento:** quando `asset.status === "processing"`, exibir um spinner sobre o thumbnail com texto "Gerando variações IA...".
 
-const handleBulkDownload = async () => {
-  const toDownload = [...selectedIds]
-    .map(id => assets.find(a => a.id === id))
-    .filter(a => a && a.source_type === 'file' && a.storage_path);
-  
-  if (toDownload.length === 0) {
-    toast.info('Nenhum arquivo para baixar (links são ignorados)');
-    return;
-  }
-  
-  setIsDownloading(true);
-  toast.info(`Baixando ${toDownload.length} arquivo(s)...`);
-  
-  for (let i = 0; i < toDownload.length; i++) {
-    const asset = toDownload[i];
-    const { data } = await supabase.storage
-      .from(asset.storage_bucket || 'project-files')
-      .createSignedUrl(asset.storage_path!, 300);
-    if (data?.signedUrl) {
-      const a = document.createElement('a');
-      a.href = data.signedUrl;
-      a.download = asset.file_name || asset.title;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      if (i < toDownload.length - 1) await new Promise(r => setTimeout(r, 400));
-    }
-  }
-  setIsDownloading(false);
-  toast.success(`${toDownload.length} arquivo(s) baixado(s)`);
-};
-```
+---
 
-**Botão na barra de seleção** — entre "Desmarcar tudo" e "Excluir":
+#### 4. `src/components/projects/detail/tabs/GalleryTab.tsx`
+
+**Botão "Reprocessar com IA"** no menu de contexto de cada `AssetCard` de imagem — chama `supabase.functions.invoke('process-asset', { body: { asset_id: asset.id } })` e invalida a query de assets:
+
 ```tsx
-<Button
-  size="sm"
-  variant="outline"
-  onClick={handleBulkDownload}
-  disabled={selectedIds.size === 0 || isDownloading}
-  className="h-8 text-xs gap-1.5"
->
-  {isDownloading 
-    ? <Loader2 className="w-3 h-3 animate-spin" /> 
-    : <Download className="w-3 h-3" />}
-  Baixar {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
-</Button>
+{asset.asset_type === 'image' && (
+  <DropdownMenuItem onClick={handleReprocess}>
+    <Sparkles className="w-4 h-4 mr-2" />
+    Reprocessar com IA
+  </DropdownMenuItem>
+)}
 ```
 
 ---
 
-#### 2. `BrandIdentityTab.tsx`
+### Resumo dos arquivos e mudanças
 
-Mesma lógica espelhada:
-
-**Handler de download individual** (dentro de `LogoCard`) — já existe `handleDownload` usando `downloadUrl` (thumb_url/og_image_url). Melhorar para usar o `storage_path` quando disponível (arquivo original com melhor qualidade):
-```typescript
-const handleDownload = async () => {
-  // Prefer original file via signed URL
-  if (asset.storage_path) {
-    const { data } = await supabase.storage
-      .from(asset.storage_bucket || 'project-files')
-      .createSignedUrl(asset.storage_path, 300);
-    if (data?.signedUrl) {
-      const a = document.createElement('a');
-      a.href = data.signedUrl;
-      a.download = asset.file_name || asset.title;
-      a.click();
-      return;
-    }
-  }
-  // Fallback to thumb/preview URL
-  if (downloadUrl) {
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = asset.file_name || asset.title;
-    a.target = '_blank';
-    a.click();
-  }
-};
-```
-
-**Handler de download em lote** no `BrandIdentityTab`:
-```typescript
-const [isDownloading, setIsDownloading] = useState(false);
-
-const handleBulkDownload = async () => {
-  const toDownload = [...selectedIds]
-    .map(id => allVisibleAssets.find(a => a.id === id))
-    .filter(a => a && a.storage_path);
-  
-  if (toDownload.length === 0) {
-    toast.info('Nenhum arquivo para baixar');
-    return;
-  }
-  
-  setIsDownloading(true);
-  toast.info(`Baixando ${toDownload.length} arquivo(s)...`);
-  
-  for (let i = 0; i < toDownload.length; i++) {
-    const asset = toDownload[i];
-    const { data } = await supabase.storage
-      .from(asset.storage_bucket || 'project-files')
-      .createSignedUrl(asset.storage_path!, 300);
-    if (data?.signedUrl) {
-      const a = document.createElement('a');
-      a.href = data.signedUrl;
-      a.download = asset.file_name || asset.title;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      if (i < toDownload.length - 1) await new Promise(r => setTimeout(r, 400));
-    }
-  }
-  setIsDownloading(false);
-  toast.success(`${toDownload.length} arquivo(s) baixado(s)`);
-};
-```
-
-**Botão na barra de seleção** de `BrandIdentityTab` — mesma posição, entre "Desmarcar tudo" e "Excluir".
-
----
-
-### Resumo das mudanças
-
-| Arquivo | O que muda |
+| Arquivo | Mudança |
 |---|---|
-| `GalleryTab.tsx` | `isDownloading` state, `handleBulkDownload`, `handleDownload` no `AssetCard`, botão "Baixar" na barra de seleção, ícone `DownloadCloud` importado |
-| `BrandIdentityTab.tsx` | `isDownloading` state, `handleBulkDownload`, melhora do `handleDownload` no `LogoCard` (usa storage_path), botão "Baixar" na barra de seleção, `supabase` importado |
+| `supabase/functions/process-asset/index.ts` | Reescrever pipeline: visão multimodal, cutout (gemini-3-pro-image-preview), pattern (gemini-3-pro-image-preview), upload para asset-thumbs |
+| `src/stores/useBackgroundUploadStore.ts` | Auto-trigger process-asset para category=brand/identity |
+| `src/components/projects/detail/tabs/BrandIdentityTab.tsx` | Exibir variações geradas (cutout + pattern) no LogoCard, spinner de processamento |
+| `src/components/projects/detail/tabs/GalleryTab.tsx` | Botão "Reprocessar com IA" no menu do AssetCard |
 
-**Sem novas dependências, sem migrations, sem edge functions.**
+**Sem novas dependências, sem migrations de banco de dados.** O bucket `asset-thumbs` já existe e é público.
 
----
+### Considerações de performance
 
-### Nota sobre links
-
-Assets do tipo `source_type = 'link'` (YouTube, Vimeo, Google Drive) não têm `storage_path` e são automaticamente ignorados no download em lote. O contador no botão reflete o total de selecionados, mas o toast informa quantos arquivos foram de fato baixados.
+- O processo inteiro (análise + cutout + pattern) pode levar 15–45 segundos por imagem dependendo do tamanho
+- A edge function roda de forma assíncrona — o asset fica com `status: "processing"` enquanto aguarda
+- Os estágios 2 e 3 (imagem→imagem) são os mais pesados; podem ser saltados se a API retornar erro 429 sem bloquear o estágio 1
+- Imagens grandes (>5MB) são convertidas para base64 completo — pode gerar payloads grandes, mas é suportado pelo gateway
