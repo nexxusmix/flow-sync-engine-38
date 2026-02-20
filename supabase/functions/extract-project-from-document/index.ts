@@ -5,10 +5,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface TextDocument {
+  name: string;
+  content: string; // base64 for DOCX, plain text for TXT
+  mimeType: string;
+}
+
 interface ExtractRequest {
   text?: string;
   documentBase64?: string;
   imageBase64List?: string[];
+  textDocuments?: TextDocument[]; // DOCX (base64) and TXT (plain text)
   documentType?: 'contract' | 'proposal' | 'general';
 }
 
@@ -195,7 +202,7 @@ serve(async (req) => {
     const { data: { user }, error: authErr } = await sbAuth.auth.getUser();
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { text, documentBase64, imageBase64List, documentType = 'general' } = await req.json() as ExtractRequest;
+    const { text, documentBase64, imageBase64List, textDocuments, documentType = 'general' } = await req.json() as ExtractRequest;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
@@ -280,6 +287,66 @@ Esta é a página ${i + 1} de ${imageBase64List.length} do documento.`
         } else {
           const errText = await imageResponse.text();
           console.error(`Image ${i + 1} processing failed:`, errText);
+        }
+      }
+    }
+
+    // Process textDocuments (DOCX as base64 sent to AI vision, TXT as plain text)
+    if (textDocuments && textDocuments.length > 0) {
+      console.log(`Processing ${textDocuments.length} text document(s)...`);
+      for (const doc of textDocuments) {
+        const isPlainText = doc.mimeType === 'text/plain';
+        
+        if (isPlainText) {
+          // TXT: inject directly as text context
+          console.log(`Injecting TXT file ${doc.name} as plain text (${doc.content.length} chars)`);
+          extractedContent += `\n\n--- ARQUIVO TXT: ${doc.name} ---\n${doc.content}`;
+        } else {
+          // DOCX: send to Gemini as a document for visual+text extraction
+          console.log(`Processing DOCX ${doc.name} with Gemini vision...`);
+          try {
+            const docResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash",
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "text",
+                        text: `${HYPER_DETAILED_PROMPT}\n\nEste é o arquivo DOCX: ${doc.name}`
+                      },
+                      {
+                        type: "image_url",
+                        image_url: {
+                          url: `data:${doc.mimeType};base64,${doc.content}`
+                        }
+                      }
+                    ]
+                  }
+                ],
+                max_tokens: 8000,
+              }),
+            });
+
+            if (docResponse.ok) {
+              const docResult = await docResponse.json();
+              const docContent = docResult.choices?.[0]?.message?.content || "";
+              if (docContent) {
+                extractedContent += `\n\n--- ARQUIVO DOCX: ${doc.name} ---\n${docContent}`;
+                console.log(`DOCX ${doc.name} extracted ${docContent.length} chars`);
+              }
+            } else {
+              console.error(`DOCX ${doc.name} processing failed:`, await docResponse.text());
+            }
+          } catch (docErr) {
+            console.error(`Error processing DOCX ${doc.name}:`, docErr);
+          }
         }
       }
     }
