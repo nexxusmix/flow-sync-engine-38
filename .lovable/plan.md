@@ -1,76 +1,91 @@
 
-## Diagnóstico completo
+## Problema identificado
 
-### O que os logs mostram
+Na galeria, os assets extraídos de PDFs mostram uma imagem quebrada (X vermelho) porque:
 
-A função `extract-project-from-document` tem **dois problemas críticos** que causam dados incompletos:
+1. **Edge function `extract-visual-assets`**: O campo `thumb_url` só é preenchido para imagens (`isImage ? urlData.publicUrl : null`). PDFs ficam com `thumb_url: null`.
+2. **Sub-assets de elementos detectados** (logo, assinatura, paleta, etc.) também herdam esse `null` para PDFs.
+3. **`AssetCard` no `GalleryTab.tsx`**: Tenta renderizar `<img src={displayUrl}>` mesmo quando `displayUrl` é `null` ou inválido, resultando na imagem quebrada.
 
-**Problema 1 — Processamento redundante e ineficiente de imagens**
+## Solução em duas frentes
 
-O fluxo atual processa **tanto o PDF quanto 6 imagens das páginas** em sequência:
-- PDF (18MB base64) → Gemini extrai 11.558 chars ✅
-- Imagem 1 (10.7MB) → retorna apenas 674 chars
-- Imagem 2 (11.1MB) → retorna apenas 535 chars
-- Imagem 3 (11.4MB) → retorna apenas 463 chars
-- Imagem 4 (12.5MB) → retorna apenas 652 chars
-- Imagem 5 (10.3MB) → retorna apenas 451 chars
-- Imagem 6 (70KB) → retorna apenas 1.337 chars
+### 1. Edge function — gerar thumbnail para PDFs via IA
 
-As imagens de página são imagens enormes (~10MB cada) sendo enviadas para o Gemini via gateway HTTP com o prompt de extração hiper-detalhado, mas o modelo retorna muito pouco por imagem — provavelmente porque cada imagem é tratada isoladamente sem contexto das demais.
+Quando o arquivo é um PDF, solicitar ao Gemini que retorne uma **imagem de preview** usando `modalities: ["image", "text"]`. Isso gera um thumbnail representativo do documento que é salvo no storage e usado como `thumb_url`.
 
-**Resultado:** Total de apenas 15.784 chars extraídos, sendo que a maioria (11.558) vem do PDF. As imagens contribuem menos de 4.000 chars combinados apesar de consumirem enorme memória.
+Se a geração de imagem falhar ou o PDF for grande demais, usar um fallback elegante no frontend.
 
-**Problema 2 — Chamada de estruturação sem `max_tokens`, usando modelo que trunca**
+### 2. Frontend `GalleryTab.tsx` — melhorar o AssetCard
 
-A segunda chamada de IA (estruturação do projeto) usa `gemini-3-flash-preview` com `tool_choice: function` mas sem `max_tokens` definido. O modelo tem limite padrão baixo para tool calls, causando truncamento do `fullScope` (resultado: apenas 1.194 chars para o escopo de todo o projeto).
-
----
-
-### Solução
-
-**Mudança 1 — Ignorar as imagens de página quando o PDF já foi extraído com sucesso**
-
-Se o PDF foi processado e retornou conteúdo suficiente (>1.000 chars), as imagens das páginas são redundantes. A função deve pular o loop de imagens nesse caso. As imagens devem ser processadas SOMENTE como fallback quando o PDF falha.
-
-**Mudança 2 — Quando processar imagens, limitar tamanho e usar streaming sequencial**
-
-Para imagens grandes (>3MB base64), reduzir para escala antes de enviar. Imagens de página acima de 3MB devem ser ignoradas ou marcadas como "página visual sem texto detectável".
-
-**Mudança 3 — Aumentar `max_tokens` na chamada de estruturação**
-
-A segunda chamada deve usar `max_tokens: 16000` para garantir que o `fullScope`, `deliverables` e `paymentMilestones` não sejam truncados. Usar `gemini-2.5-flash` que tem maior janela de output para tool calls.
-
-**Mudança 4 — Melhorar o prompt de extração de PDF**
-
-O prompt atual é genérico. Deve incluir instrução explícita para extrair **todos os valores monetários, datas e nomes de entregáveis verbatim**, especialmente para documentos de identidade visual e contratos.
-
----
+- **Remover a imagem quebrada**: Envolver o `<img>` em `try/catch` via `onError` já existe, mas o problema é que `src` recebe uma string vazia ou inválida sendo renderizada mesmo assim.
+- **Fallback visual rico**: Quando não há thumbnail, exibir um placeholder elegante com ícone do tipo de arquivo, nome do arquivo e cor de fundo baseada na categoria — em vez da imagem quebrada atual.
+- **Para PDFs**: Mostrar um card visual com gradiente + ícone PDF + nome do documento (sem tentar carregar imagem).
 
 ### Arquivos a modificar
 
-**`supabase/functions/extract-project-from-document/index.ts`**:
+**`supabase/functions/extract-visual-assets/index.ts`**:
+- Após salvar o arquivo no storage, se for PDF e tamanho <= 3MB base64, fazer uma chamada ao Gemini com `modalities: ["image", "text"]` para gerar um preview visual
+- Salvar esse preview no storage como `thumb_{timestamp}.png`
+- Usar a URL pública do preview como `thumb_url` do asset
 
-1. Após extrair o PDF com sucesso (>1.000 chars), **pular completamente o loop de imagens**
-2. No loop de imagens (fallback), **filtrar imagens >3MB** com aviso em log
-3. Na chamada de estruturação: mudar modelo para `gemini-2.5-flash`, adicionar `max_tokens: 16000`
-4. Adicionar log do `rawExtractedContent` length para rastrear truncamento
+**`src/components/projects/detail/tabs/GalleryTab.tsx`**:
+- Corrigir o `AssetCard` para não renderizar `<img>` quando `displayUrl` é falsy
+- Melhorar o placeholder sem thumbnail: mostrar gradiente de fundo baseado na categoria + ícone grande + extensão do arquivo
+- Para assets com `preview_url` ou `og_image_url`, usar essas como fallback antes do placeholder
 
 ### Fluxo corrigido
 
 ```text
-ANTES (sempre processa tudo):
-PDF (18MB) → 11k chars
-+ Imagem 1 (10MB) → 674 chars   ← desnecessário, OOM risk
-+ Imagem 2 (11MB) → 535 chars   ← desnecessário
-+ ... 4 imagens mais
-= 15k chars total → estruturação truncada (max_tokens não definido)
-→ fullScope: 1.194 chars ← INCOMPLETO
+PDF enviado
+  ↓
+Edge function: salva PDF no storage
+  ↓
+Se PDF <= 3MB: pede ao Gemini para gerar imagem preview
+  ↓
+Gemini retorna imagem base64 do preview
+  ↓
+Salva preview no storage como thumb_xxx.png
+  ↓
+thumb_url = URL pública do preview
+  ↓
+Galeria: mostra o preview como thumbnail ✅
 
-DEPOIS (PDF prioritário, imagens só como fallback):
-PDF (18MB) → 11k chars → sucesso ✅
-→ pula imagens (já temos conteúdo suficiente)
-= 11k chars → estruturação com max_tokens: 16000
-→ fullScope: completo, deliverables: completo ✅
+Se PDF > 3MB ou geração falha:
+  ↓
+thumb_url = null
+  ↓
+Galeria: mostra placeholder elegante (sem imagem quebrada) ✅
 ```
 
-Além disso, o log do `extract-visual-assets` ainda mostra OOM — esse arquivo foi reescrito mas pode não ter sido deployado corretamente. O plano inclui verificar e re-deployar.
+### Detalhes técnicos
+
+**No edge function**, a geração de thumbnail fica assim:
+```typescript
+// Para PDFs, gera preview via Gemini image generation
+if (isPdf && fileData.base64.length <= 3 * 1024 * 1024) {
+  const previewResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash',
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: 'Gere uma imagem de preview/thumbnail deste PDF' },
+        { type: 'image_url', image_url: { url: `data:application/pdf;base64,...` } }
+      ]}],
+      modalities: ['image', 'text'],
+    })
+  });
+  // extrai base64 da imagem gerada, salva no storage
+}
+```
+
+**No `AssetCard`**, o placeholder sem thumbnail:
+```tsx
+// Em vez de tentar renderizar <img> com src vazio:
+{displayUrl ? (
+  <img src={displayUrl} onError={...} />
+) : (
+  <div className={cn("w-full h-full flex flex-col items-center justify-center gap-2", categoryBg)}>
+    {getAssetTypeIcon(asset)}  // ícone grande
+    <span>{asset.file_ext?.toUpperCase() || asset.asset_type}</span>
+  </div>
+)}
+```
