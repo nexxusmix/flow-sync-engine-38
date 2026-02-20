@@ -73,7 +73,10 @@ async function uploadSingleFile(item: BackgroundUploadItem, userId: string | und
       await supabase.from('project_assets').update({ status: 'ready' }).eq('id', data.id);
     }
 
-    if (item.aiProcess) {
+    const shouldProcess = item.aiProcess
+      || ['brand', 'identity', 'logo', 'deliverable', 'reference'].includes((item.category || '').toLowerCase());
+
+    if (shouldProcess) {
       try {
         await supabase.functions.invoke('process-asset', { body: { asset_id: data.id } });
       } catch (e) {

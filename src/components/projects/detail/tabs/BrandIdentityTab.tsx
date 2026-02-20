@@ -206,6 +206,14 @@ function LogoCard({
         >
           <BrandAssetThumbnail asset={asset} />
 
+          {/* Processing overlay */}
+          {asset.status === 'processing' && (
+            <div className="absolute inset-0 bg-background/70 flex flex-col items-center justify-center gap-2 z-10">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-[10px] text-muted-foreground font-medium">Gerando variações IA...</span>
+            </div>
+          )}
+
           {/* Selection checkbox overlay */}
           {selectionMode && (
             <div className="absolute top-2 left-2 z-20">
@@ -216,7 +224,7 @@ function LogoCard({
           )}
 
           {/* Hover overlay (only when not in selection mode) */}
-          {!selectionMode && (
+          {!selectionMode && asset.status !== 'processing' && (
             <div className="absolute inset-0 bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1">
                 <ImageIcon className="w-3 h-3" />
@@ -232,6 +240,29 @@ function LogoCard({
             </Badge>
           )}
         </div>
+
+          {/* AI Variations */}
+          {(asset.preview_url || asset.og_image_url) && (
+            <div className="mt-2 grid grid-cols-2 gap-1.5 px-3 pb-0">
+              {asset.preview_url && (
+                <div className="rounded-lg bg-muted/30 border border-border/20 p-1.5 flex flex-col items-center gap-1">
+                  <img
+                    src={asset.preview_url}
+                    className="h-12 object-contain"
+                    style={{ background: "repeating-conic-gradient(hsl(var(--muted)/0.2) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px" }}
+                    alt="Recorte PNG"
+                  />
+                  <span className="text-[9px] text-muted-foreground">Recorte PNG</span>
+                </div>
+              )}
+              {asset.og_image_url && (
+                <div className="rounded-lg bg-muted/30 border border-border/20 p-1.5 flex flex-col items-center gap-1 overflow-hidden">
+                  <img src={asset.og_image_url} className="h-12 object-cover rounded w-full" alt="Padrão" />
+                  <span className="text-[9px] text-muted-foreground">Padrão</span>
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Info */}
         <div className="p-3 space-y-2.5">
