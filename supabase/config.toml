@@ -165,3 +165,7 @@ verify_jwt = false
 
 [functions.sync-project-finances]
 verify_jwt = false
+
+[functions.auto-update-project]
+verify_jwt = false
+

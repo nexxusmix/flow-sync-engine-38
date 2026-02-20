@@ -20,9 +20,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink, RefreshCw } from "lucide-react";
+import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink, RefreshCw, Wand2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProjectActionsMenuProps {
   project?: ProjectWithStages;
@@ -46,6 +47,7 @@ export function ProjectActionsMenu({
   const projectName = project?.name ?? propProjectName ?? '';
   const projectStatus = project?.status ?? propProjectStatus ?? 'active';
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { completeProject, archiveProject, deleteProject } = useProjects();
   const { setEditProjectModalOpen, setSelectedProjectId } = useProjectsStore();
   
@@ -53,6 +55,7 @@ export function ProjectActionsMenu({
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSyncingFinance, setIsSyncingFinance] = useState(false);
+  const [isAutoUpdating, setIsAutoUpdating] = useState(false);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,6 +85,20 @@ export function ProjectActionsMenu({
 
   const handleSyncFinance = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Validate contract_value
+    if (!project?.contract_value || project.contract_value === 0) {
+      toast.warning('Defina o valor do contrato no projeto antes de sincronizar o financeiro.', {
+        action: {
+          label: 'Editar',
+          onClick: () => {
+            setSelectedProjectId(projectId);
+            setEditProjectModalOpen(true);
+          },
+        },
+        duration: 5000,
+      });
+      return;
+    }
     setIsSyncingFinance(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-project-finances', {
@@ -94,6 +111,31 @@ export function ProjectActionsMenu({
       toast.error(err?.message || 'Erro ao sincronizar financeiro');
     } finally {
       setIsSyncingFinance(false);
+    }
+  };
+
+  const handleAutoUpdate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsAutoUpdating(true);
+    const toastId = toast.loading('Analisando projeto com IA...');
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-update-project', {
+        body: { project_id: projectId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.dismiss(toastId);
+      toast.success(data?.summary || 'Projeto atualizado!', { duration: 6000 });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project-finance', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+    } catch (err: any) {
+      toast.dismiss(toastId);
+      toast.error(err?.message || 'Erro ao executar Auto Update');
+    } finally {
+      setIsAutoUpdating(false);
     }
   };
 
@@ -146,6 +188,14 @@ export function ProjectActionsMenu({
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isSyncingFinance ? 'animate-spin' : ''}`} />
             {isSyncingFinance ? 'Sincronizando...' : 'Sincronizar Financeiro'}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleAutoUpdate}
+            disabled={isAutoUpdating}
+            className="text-primary focus:text-primary"
+          >
+            <Wand2 className={`w-4 h-4 mr-2 ${isAutoUpdating ? 'animate-spin' : ''}`} />
+            {isAutoUpdating ? 'Atualizando...' : 'Auto Update IA'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {!isCompleted && !isArchived && (

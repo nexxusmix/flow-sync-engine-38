@@ -20,6 +20,7 @@ import {
   Upload,
   Send,
   RefreshCw,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/stores/projectsStore";
@@ -43,6 +44,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [sendToClientOpen, setSendToClientOpen] = useState(false);
   const [isSyncingFinance, setIsSyncingFinance] = useState(false);
+  const [isAutoUpdating, setIsAutoUpdating] = useState(false);
   const { portalLink, portalUrl, isLoading: portalLoading, createLink } = usePortalLink(project.id, {
     name: project.name,
     clientName: project.client_name || undefined,
@@ -82,12 +84,34 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   };
 
   const handleSyncFinance = async () => {
+    // Validate contract_value before calling edge function
+    if (!project.contract_value || project.contract_value === 0) {
+      toast.warning('Este projeto não tem valor de contrato definido. Edite o projeto para definir o valor antes de sincronizar o financeiro.', {
+        action: {
+          label: 'Editar projeto',
+          onClick: handleEdit,
+        },
+        duration: 6000,
+      });
+      return;
+    }
+
     setIsSyncingFinance(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-project-finances', {
         body: { project_id: project.id },
       });
-      if (error) throw error;
+      // Try to extract specific error message from response body
+      if (error) {
+        const bodyMsg = (error as any)?.context?.body
+          ? await (error as any).context.body.text?.()?.catch?.(() => null)
+          : null;
+        let parsedMsg: string | null = null;
+        if (bodyMsg) {
+          try { parsedMsg = JSON.parse(bodyMsg)?.error || JSON.parse(bodyMsg)?.message; } catch { /* ignore */ }
+        }
+        throw new Error(parsedMsg || error.message || 'Erro ao sincronizar financeiro');
+      }
       if (data?.error) throw new Error(data.error);
       toast.success(data?.message || 'Financeiro sincronizado!');
       queryClient.invalidateQueries({ queryKey: ['project-finance', project.id] });
@@ -96,6 +120,33 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       toast.error(err?.message || 'Erro ao sincronizar financeiro');
     } finally {
       setIsSyncingFinance(false);
+    }
+  };
+
+  const handleAutoUpdate = async () => {
+    setIsAutoUpdating(true);
+    const toastId = toast.loading('Analisando projeto com IA...');
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-update-project', {
+        body: { project_id: project.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.dismiss(toastId);
+      toast.success(data?.summary || 'Projeto atualizado com sucesso!', { duration: 6000 });
+
+      // Invalidate all relevant caches
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['project-finance', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+    } catch (err: any) {
+      toast.dismiss(toastId);
+      toast.error(err?.message || 'Erro ao executar atualização automática');
+    } finally {
+      setIsAutoUpdating(false);
     }
   };
 
@@ -210,10 +261,24 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setCommandCenterOpen(true)}
+                onClick={handleAutoUpdate}
+                disabled={isAutoUpdating}
                 className="h-9 hidden sm:flex gap-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5"
               >
-                <Sparkles className="w-4 h-4 text-primary" />
+                {isAutoUpdating ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                ) : (
+                  <Wand2 className="w-4 h-4 text-primary" />
+                )}
+                Auto Update IA
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCommandCenterOpen(true)}
+                className="h-9 hidden sm:flex gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-muted-foreground" />
                 Atualizar com IA
               </Button>
               <Button 
