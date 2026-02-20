@@ -47,9 +47,11 @@ import {
   ChevronRight,
   CheckSquare,
   FolderInput,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ScrapeUrlDialog } from "@/components/projects/detail/ScrapeUrlDialog";
 
 interface GalleryTabProps {
   project: ProjectWithStages;
@@ -511,6 +513,7 @@ export function GalleryTab({ project }: GalleryTabProps) {
   const [extractProgress, setExtractProgress] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [scrapeUrlOpen, setScrapeUrlOpen] = useState(false);
 
   // Selection state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -765,6 +768,15 @@ export function GalleryTab({ project }: GalleryTabProps) {
               Selecionar
             </Button>
           )}
+          <Button
+            variant="outline"
+            onClick={() => setScrapeUrlOpen(true)}
+            disabled={selectionMode}
+            className="gap-2"
+          >
+            <Globe className="w-4 h-4" />
+            + URL / Site
+          </Button>
           <Button 
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
@@ -1019,6 +1031,13 @@ export function GalleryTab({ project }: GalleryTabProps) {
           </Button>
         </div>
       )}
+
+      {/* Scrape URL dialog */}
+      <ScrapeUrlDialog
+        open={scrapeUrlOpen}
+        onOpenChange={setScrapeUrlOpen}
+        projectId={project.id}
+      />
 
       {/* Upload confirmation dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>

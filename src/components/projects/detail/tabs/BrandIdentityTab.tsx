@@ -50,11 +50,14 @@ import {
   Trash2,
   CheckSquare,
   FolderInput,
+  Globe,
+  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { ScrapeUrlDialog } from "@/components/projects/detail/ScrapeUrlDialog";
 
 
 interface BrandIdentityTabProps {
@@ -1168,6 +1171,7 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
   const signedUrlMap = useSignedUrlBatch(assets);
   const [studioAsset, setStudioAsset] = useState<ProjectAsset | null>(null);
   const [exportColorsOpen, setExportColorsOpen] = useState(false);
+  const [scrapeUrlOpen, setScrapeUrlOpen] = useState(false);
 
   // Manually excluded colors (persisted in localStorage per project)
   const storageKey = `squad-excluded-colors-${project.id}`;
@@ -1411,8 +1415,107 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
               Selecionar
             </Button>
           )}
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setScrapeUrlOpen(true)}
+            disabled={selectionMode}
+          >
+            <Globe className="w-4 h-4" />
+            + URL / Site
+          </Button>
         </div>
       </div>
+
+      {/* Digital Sources section — URLs already processed */}
+      {assets.filter(a => a.source_type === 'link' && a.category === 'reference').length > 0 && (
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-primary" />
+              <p className="text-sm font-medium text-foreground">Fontes Digitais</p>
+              <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                {assets.filter(a => a.source_type === 'link' && a.category === 'reference').length}
+              </Badge>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => setScrapeUrlOpen(true)}
+            >
+              <Globe className="w-3 h-3" />
+              Adicionar URL
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {assets
+              .filter(a => a.source_type === 'link' && a.category === 'reference')
+              .map(asset => {
+                const entities = asset.ai_entities as any;
+                const colors: string[] = entities?.color_palette || [];
+                const faviconUrl = entities?.source_url
+                  ? `https://www.google.com/s2/favicons?domain=${new URL(entities.source_url).hostname}&sz=32`
+                  : null;
+                return (
+                  <div key={asset.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-xl border border-border/20 hover:border-border/40 transition-colors">
+                    {/* Favicon */}
+                    <div className="w-8 h-8 rounded-lg bg-muted/50 border border-border/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {faviconUrl ? (
+                        <img
+                          src={faviconUrl}
+                          alt=""
+                          className="w-5 h-5 object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-medium text-foreground truncate flex-1">
+                          {asset.ai_title || asset.title}
+                        </p>
+                        {asset.ai_processed && (
+                          <Badge className="h-3.5 px-1 text-[8px] bg-primary/10 text-primary border-0 flex-shrink-0">IA</Badge>
+                        )}
+                      </div>
+                      {asset.url && (
+                        <a
+                          href={asset.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 truncate"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
+                          <span className="truncate">{asset.url.replace(/^https?:\/\//, '')}</span>
+                        </a>
+                      )}
+                      {colors.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {colors.slice(0, 6).map((c, i) => (
+                            <div
+                              key={i}
+                              className="w-4 h-4 rounded-full border border-border/30 cursor-pointer"
+                              style={{ backgroundColor: c }}
+                              title={c}
+                              onClick={() => { navigator.clipboard?.writeText(c); toast.success(`${c} copiada!`); }}
+                            />
+                          ))}
+                          {colors.length > 6 && (
+                            <span className="text-[9px] text-muted-foreground self-center">+{colors.length - 6}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       {/* ── Kit de Marca consolidado ─────────────────────────────── */}
       {hasAnyData && (
@@ -1650,6 +1753,11 @@ export function BrandIdentityTab({ project }: BrandIdentityTabProps) {
       )}
 
       {/* Dialogs */}
+      <ScrapeUrlDialog
+        open={scrapeUrlOpen}
+        onOpenChange={setScrapeUrlOpen}
+        projectId={project.id}
+      />
       <SendToStudioDialog
         open={!!studioAsset}
         onOpenChange={(v) => !v && setStudioAsset(null)}
