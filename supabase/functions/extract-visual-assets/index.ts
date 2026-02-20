@@ -161,6 +161,64 @@ Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores
 
       const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(storagePath);
 
+      // Generate thumbnail for PDFs via Gemini image generation
+      let thumbUrl: string | null = isImage ? urlData.publicUrl : null;
+
+      if (isPdf && canSendToAI) {
+        try {
+          const thumbResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'google/gemini-2.5-flash-image',
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Generate a clean thumbnail preview image for this PDF document. Show the first page layout as a visual preview.' },
+                  { type: 'image_url', image_url: { url: `data:application/pdf;base64,${fileData.base64}` } }
+                ]
+              }],
+              modalities: ['image', 'text'],
+            }),
+          });
+
+          if (thumbResponse.ok) {
+            const thumbData = await thumbResponse.json();
+            const generatedImage = thumbData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+            if (generatedImage && generatedImage.startsWith('data:image/')) {
+              // Extract base64 from data URL and save to storage
+              const [meta, imgBase64] = generatedImage.split(',');
+              const mimeMatch = meta.match(/data:([^;]+)/);
+              const imgMime = mimeMatch?.[1] || 'image/png';
+              const imgExt = imgMime.split('/')[1] || 'png';
+              const thumbPath = `${project_id}/thumbs/thumb_${ts}.${imgExt}`;
+
+              const imgBinary = atob(imgBase64);
+              const imgBytes = Uint8Array.from(imgBinary, (c) => c.charCodeAt(0));
+
+              const { error: thumbUploadErr } = await supabase.storage
+                .from('project-files')
+                .upload(thumbPath, imgBytes, { contentType: imgMime });
+
+              if (!thumbUploadErr) {
+                const { data: thumbUrlData } = supabase.storage.from('project-files').getPublicUrl(thumbPath);
+                thumbUrl = thumbUrlData.publicUrl;
+                console.log(`Generated PDF thumbnail for ${fileData.name}: ${thumbPath}`);
+              } else {
+                console.error('Thumb upload error:', thumbUploadErr);
+              }
+            }
+          } else {
+            console.log('PDF thumbnail generation failed, using fallback');
+          }
+        } catch (thumbErr) {
+          console.error('PDF thumbnail error:', thumbErr);
+        }
+      }
+
       // Determine asset type and category from AI analysis
       const docType = analysisResult?.document_type || 'outro';
       const category = docType === 'contrato' ? 'contract' :
@@ -196,7 +254,7 @@ Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores
           file_ext: ext,
           mime_type: fileData.mime_type,
           file_size_bytes: fileData.size_bytes,
-          thumb_url: isImage ? urlData.publicUrl : null,
+          thumb_url: thumbUrl,
           status: 'ready',
           ai_title: aiTitle,
           ai_summary: aiSummary,
@@ -250,7 +308,7 @@ Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores
               file_ext: ext,
               mime_type: fileData.mime_type,
               file_size_bytes: fileData.size_bytes,
-              thumb_url: isImage ? urlData.publicUrl : null,
+              thumb_url: thumbUrl,
               status: 'ready',
               ai_title: `[${visualElement.type?.toUpperCase()}] ${visualElement.description?.substring(0, 60) || 'Elemento'}`,
               ai_summary: `${visualElement.description} — Localização: ${visualElement.location || 'não especificado'}`,
