@@ -1,137 +1,91 @@
 
-# Dois problemas distintos a corrigir
+## Adicionar URLs do Cliente (Site, Instagram, etc.) como Fonte de Identidade Visual
 
-## Problema 1 — Paleta da SQUAD misturada com a do cliente
+### Objetivo
+Permitir que o usuário informe links do cliente (site, Instagram, Behance, Pinterest, etc.) para que a IA extraia automaticamente screenshots, cores, logos e elementos visuais — alimentando a **Galeria IA** e a aba **Identidade Visual** com dados reais da presença digital do cliente.
 
-### Causa raiz
-O `BrandKitPanel` em `BrandIdentityTab.tsx` agrega `color_palette` de **todos** os assets processados pela IA, sem filtrar a origem. Quando o usuário enviou um PDF de apresentação da SQUAD Film (com preto + azul #009CCA), a IA extraiu essas cores e as exibiu junto às do cliente real.
+---
 
-### Solução — Filtro anti-SQUAD + UI de separação
+### Visão Geral do Fluxo
 
-**Parte A — Filtrar as cores do sistema (SQUAD)**
-
-Definir uma lista de "cores da plataforma" a serem excluídas da paleta do cliente:
-
-```typescript
-const SQUAD_BRAND_COLORS = [
-  '#009cca', '#009CCA', // SQUAD Blue
-  '#000000', '#0f0f11', '#0a0a0a', // SQUAD Black variants
-  // Também filtrar por similaridade HSL se muito próximas
-];
-```
-
-Além disso, filtrar também por nome da marca detectada: se `ai_entities.brand_name` conter "squad", "squad film", o asset é da própria plataforma — excluir das cores do cliente.
-
-**Parte B — Separar paleta por origem**
-
-Na agregação de cores em `BrandIdentityTab`, separar dois grupos:
-- **Paleta do cliente** = assets cujo `ai_entities.brand_name` NÃO é SQUAD e cujas cores não são as SQUAD
-- **Paleta interna** = assets SQUAD (mostrar separadamente, com badge "Plataforma")
-
-**Parte C — UI no BrandKitPanel**
-
-Mostrar na coluna de paleta:
-```
-[ PALETA DO CLIENTE ]
-🎨 5 cores detectadas — (nome da marca)
-■ ■ ■ ■ ■
-
-[ Se houver cores SQUAD detectadas — aviso ]
-⚠️  Cores da plataforma SQUAD foram excluídas desta paleta.
+```text
+Usuário cola URL do cliente
+        ↓
+Nova Edge Function: scrape-client-url
+  ├── Captura screenshot via Gemini Vision (URL → imagem)
+  ├── Extrai OG tags, favicon, cores, logos
+  └── Salva como project_asset (source_type=link, asset_type=image)
+        ↓
+process-asset (já existente) é chamado para enriquecer o asset
+        ↓
+Galeria IA + Identidade Visual exibem automaticamente
 ```
 
 ---
 
-## Problema 2 — Thumbnails/previews não aparecem
+### Mudanças Técnicas
 
-### Causa raiz
+#### 1. Nova Edge Function: `scrape-client-url`
 
-O bucket `project-files` é **privado**. A função `extract-visual-assets/index.ts` salva a imagem original em `project-files` e usa `getPublicUrl()` como `thumb_url` — mas URLs públicas de buckets privados **não funcionam** no browser.
+Responsável por receber uma URL do cliente e:
 
-A tabela mostra a imagem em `AssetThumbnail` usando `asset.thumb_url` diretamente no `<img src>`, que falha silenciosamente.
+- Buscar o HTML da página via `fetch()` para extrair: título, `og:image`, `og:title`, favicon, meta description, cores CSS
+- Chamar o Gemini Vision (`gemini-2.5-flash`) passando a URL da `og:image` para análise visual e extração de paleta/logo
+- Salvar o resultado como um `project_asset` com `source_type = 'link'`, `asset_type = 'image'` e `ai_entities` populado com cores e brand_name detectados
+- Suportar Instagram: detectar perfil, extrair imagem pública disponível via OG
 
-### Solução em duas partes
+#### 2. UI — Novo Modal "Adicionar URL do Cliente" na Galeria IA
 
-**Parte A — Para novos uploads via `extract-visual-assets`**
+Um botão adicional **"+ URL / Site"** na toolbar da `GalleryTab`, abrindo um pequeno popover/dialog com:
 
-Ao salvar o arquivo original em `project-files`, **também salvar uma cópia pública no bucket `asset-thumbs`** (que já é público):
+- Campo de texto: "URL do site ou perfil do Instagram, Behance, Pinterest..."
+- Sugestão de tipo detectado automaticamente (site, instagram, behance, etc.)
+- Botão **"Extrair Identidade"** que dispara a edge function
+- Feedback de progresso e toast de conclusão
 
-```typescript
-// Após upload em project-files:
-const thumbStoragePath = `${project_id}/thumbs/${ts}_${sanitizedName}`;
-await supabase.storage
-  .from('asset-thumbs')  // bucket público ✓
-  .upload(thumbStoragePath, bytes, { contentType: fileData.mime_type });
+#### 3. UI — Seção "Sites do Cliente" na Identidade Visual (`BrandIdentityTab`)
 
-const { data: thumbUrl } = supabase.storage
-  .from('asset-thumbs')
-  .getPublicUrl(thumbStoragePath);
-// Usar thumbUrl no campo thumb_url do registro
-```
+Acima do upload, uma seção colapsável **"Fontes Digitais"** exibindo:
+- Cards das URLs já processadas com ícone do domínio (favicon), título e status
+- Botão "+ Adicionar URL" que abre o mesmo popover
+- As cores e logos extraídos aparecem automaticamente no Kit de Marca abaixo
 
-Para imagens grandes (>2MB), gerar uma versão reduzida via Gemini antes de salvar no bucket público.
+#### 4. Detecção de Tipo por URL
 
-**Parte B — Para assets já existentes com thumb_url quebrada**
+| Padrão de URL | Tipo detectado | Estratégia |
+|---|---|---|
+| `instagram.com/user` | Instagram | OG image + perfil público |
+| `behance.net/user` | Behance | OG image + thumbnail |
+| `pinterest.com` | Pinterest | OG image |
+| `youtube.com/channel` | YouTube | OG image + banner |
+| Qualquer outro | Site genérico | Screenshot via fetch + og:image |
 
-No `AssetThumbnail` e `BrandAssetThumbnail`, quando `thumb_url` falha (`onError`), gerar uma **URL assinada on-demand** via `supabase.storage.createSignedUrl()` e substituir:
+#### 5. Persistência
 
-```typescript
-const [resolvedUrl, setResolvedUrl] = useState<string | null>(asset.thumb_url);
+Os links são armazenados como `project_asset` com:
+- `source_type = 'link'`
+- `url = URL_original`
+- `provider = 'generic' | 'instagram' | 'behance' | 'pinterest'`
+- `og_image_url` = imagem open graph capturada
+- `thumb_url` = a og:image salva no bucket `asset-thumbs`
+- `ai_entities.color_palette` = cores extraídas
+- `ai_entities.brand_name` = nome detectado
 
-const handleError = async () => {
-  if (asset.storage_path) {
-    const { data } = await supabase.storage
-      .from(asset.storage_bucket || 'project-files')
-      .createSignedUrl(asset.storage_path, 3600);
-    if (data?.signedUrl) setResolvedUrl(data.signedUrl);
-    else setImgError(true);
-  } else {
-    setImgError(true);
-  }
-};
-```
-
-Isso garante que **qualquer imagem com storage_path privado** funcione, mesmo para assets já existentes.
+Nenhuma nova tabela é necessária — usa a infraestrutura existente de `project_assets`.
 
 ---
 
-## Arquivos a modificar
+### Arquivos a criar/modificar
 
-| Arquivo | Mudança |
+| Arquivo | Ação |
 |---|---|
-| `src/components/projects/detail/tabs/BrandIdentityTab.tsx` | Filtrar cores SQUAD, separar paleta do cliente, badge de aviso quando cores são excluídas |
-| `src/components/projects/detail/tabs/GalleryTab.tsx` | `AssetThumbnail` — fallback com signed URL on-demand quando `thumb_url` falha |
-| `supabase/functions/extract-visual-assets/index.ts` | Salvar thumb em bucket público `asset-thumbs` para imagens, não apenas para PDFs |
+| `supabase/functions/scrape-client-url/index.ts` | **Criar** — Edge Function principal |
+| `supabase/config.toml` | Registrar nova função |
+| `src/components/projects/detail/tabs/GalleryTab.tsx` | Adicionar botão "+ URL / Site" e lógica de chamada |
+| `src/components/projects/detail/tabs/BrandIdentityTab.tsx` | Adicionar seção "Fontes Digitais" com cards e botão |
 
 ---
 
-## Detalhes técnicos — Filtro de cores SQUAD
+### Sem necessidade de migração de banco de dados
 
-A lista de cores a filtrar usa comparação case-insensitive no HEX e também filtra por nome da marca:
-
-```typescript
-const SQUAD_COLORS_FILTER = new Set([
-  '#009cca', '#000000', '#0f0f11', '#0a0a0a', '#ffffff',
-]);
-
-const SQUAD_BRAND_NAMES = ['squad', 'squad film', 'squadfilm'];
-
-function isSquadAsset(asset: ProjectAsset): boolean {
-  const brandName = (asset.ai_entities as any)?.brand_name?.toLowerCase() || '';
-  return SQUAD_BRAND_NAMES.some(n => brandName.includes(n));
-}
-
-function filterClientColors(colors: string[]): string[] {
-  return colors.filter(c => !SQUAD_COLORS_FILTER.has(c.toLowerCase()));
-}
-```
-
-Cores do cliente = assets não-SQUAD, com as cores brutas filtradas pelas SQUAD_COLORS.
-
----
-
-## Ordem de implementação
-
-1. **`extract-visual-assets/index.ts`** — salvar thumb em bucket público (fix para uploads futuros)
-2. **`GalleryTab.tsx`** — signed URL fallback em `AssetThumbnail` (fix para assets existentes e futuros)
-3. **`BrandIdentityTab.tsx`** — filtro SQUAD + paleta separada do cliente
+Toda a infraestrutura de `project_assets` já suporta links (`source_type = 'link'`). Nenhuma coluna nova é necessária.
