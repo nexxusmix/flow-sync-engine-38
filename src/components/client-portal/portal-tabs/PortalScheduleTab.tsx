@@ -38,7 +38,7 @@ const STAGE_NAMES: Record<string, string> = {
 };
 
 function PortalScheduleTabComponent({ stages, dueDate }: PortalScheduleTabProps) {
-  const completedStages = stages.filter(s => s.status === 'completed').length;
+  const completedStages = stages.filter(s => s.status === 'done' || s.status === 'completed').length;
   const totalStages = stages.length || 1;
   const progress = Math.round((completedStages / totalStages) * 100);
 
@@ -111,7 +111,7 @@ function PortalScheduleTabComponent({ stages, dueDate }: PortalScheduleTabProps)
 
         <div className="space-y-0">
           {stages.map((stage, index) => {
-            const isCompleted = stage.status === 'completed';
+            const isCompleted = stage.status === 'done' || stage.status === 'completed';
             const isInProgress = stage.status === 'in_progress';
             const isLast = index === stages.length - 1;
 
