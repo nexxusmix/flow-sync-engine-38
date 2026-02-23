@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,8 +11,6 @@ serve(async (req) => {
 
   try {
     const { task } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const systemPrompt = `Você é um especialista em neurociência cognitiva, psicologia comportamental e ciência de produtividade (Deep Work, carga cognitiva, fadiga decisional).
 
@@ -37,64 +36,39 @@ ${task.due_date ? `Prazo: ${task.due_date}` : 'Sem prazo definido'}
 ${task.tags?.length ? `Tags: ${task.tags.join(', ')}` : ''}
 ${task.is_overdue ? 'ATENÇÃO: Esta tarefa está ATRASADA!' : ''}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "create_execution_plan",
-            description: "Gera plano de execução inteligente para a tarefa",
-            parameters: {
-              type: "object",
-              properties: {
-                estimate_min: { type: "integer", description: "Tempo mínimo estimado em minutos" },
-                estimate_max: { type: "integer", description: "Tempo máximo estimado em minutos" },
-                energy_level: { type: "string", enum: ["baixa", "media", "alta"] },
-                next_action: { type: "string", description: "Primeira micro-ação (regra dos 2 min)" },
-                micro_steps: { type: "array", items: { type: "string" }, description: "3-7 passos acionáveis" },
-                work_mode: { type: "string", enum: ["deep_work", "admin", "criativo", "comunicacao"] },
-                break_pattern: { type: "string", description: "Padrão trabalho/pausa em minutos" },
-                definition_of_done: { type: "array", items: { type: "string" }, description: "Critérios de conclusão" },
-                cognitive_load: { type: "integer", description: "Carga cognitiva 0-100" },
-                suggested_time_slot: { type: "string", description: "Melhor período do dia" },
-                emergency_mode: { type: "boolean", description: "Modo emergência para tarefas atrasadas" },
-              },
-              required: ["estimate_min", "estimate_max", "energy_level", "next_action", "micro_steps", "work_mode", "break_pattern", "definition_of_done", "cognitive_load"],
-              additionalProperties: false,
+    const data = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_execution_plan",
+          description: "Gera plano de execução inteligente para a tarefa",
+          parameters: {
+            type: "object",
+            properties: {
+              estimate_min: { type: "integer", description: "Tempo mínimo estimado em minutos" },
+              estimate_max: { type: "integer", description: "Tempo máximo estimado em minutos" },
+              energy_level: { type: "string", enum: ["baixa", "media", "alta"] },
+              next_action: { type: "string", description: "Primeira micro-ação (regra dos 2 min)" },
+              micro_steps: { type: "array", items: { type: "string" }, description: "3-7 passos acionáveis" },
+              work_mode: { type: "string", enum: ["deep_work", "admin", "criativo", "comunicacao"] },
+              break_pattern: { type: "string", description: "Padrão trabalho/pausa em minutos" },
+              definition_of_done: { type: "array", items: { type: "string" }, description: "Critérios de conclusão" },
+              cognitive_load: { type: "integer", description: "Carga cognitiva 0-100" },
+              suggested_time_slot: { type: "string", description: "Melhor período do dia" },
+              emergency_mode: { type: "boolean", description: "Modo emergência para tarefas atrasadas" },
             },
+            required: ["estimate_min", "estimate_max", "energy_level", "next_action", "micro_steps", "work_mode", "break_pattern", "definition_of_done", "cognitive_load"],
+            additionalProperties: false,
           },
-        }],
-        tool_choice: { type: "function", function: { name: "create_execution_plan" } },
-      }),
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_execution_plan" } },
     });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA insuficientes." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI error: ${response.status}`);
-    }
-
-    const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     
     if (!toolCall?.function?.arguments) {

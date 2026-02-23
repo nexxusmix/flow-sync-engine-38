@@ -1,4 +1,7 @@
+// ============= Full file contents =============
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,11 +14,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    // LOVABLE_API_KEY handled in ai-client.ts
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -111,29 +112,19 @@ Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores
       let analysisResult: any = null;
       if (canSendToAI) {
         try {
-          const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'google/gemini-2.5-flash',
-              messages: [{ role: 'user', content: contentParts }],
-              max_tokens: 2000,
-            }),
+          const aiData = await chatCompletion({
+            model: 'google/gemini-2.5-flash',
+            messages: [{ role: 'user', content: contentParts }],
+            max_tokens: 2000,
           });
 
-          if (aiResponse.ok) {
-            const aiData = await aiResponse.json();
+          if (aiData) {
             const rawText = aiData.choices?.[0]?.message?.content || '';
             const jsonMatch = rawText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
               try { analysisResult = JSON.parse(jsonMatch[0]); }
               catch { console.error('Failed to parse AI JSON response'); }
             }
-          } else {
-            console.error('AI request failed:', await aiResponse.text());
           }
         } catch (e) {
           console.error('AI analysis error:', e);
@@ -182,27 +173,19 @@ Identifique logos, assinaturas, carimbos, fotos, ilustrações, paletas de cores
 
       if (isPdf && canSendToAI) {
         try {
-          const thumbResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'google/gemini-2.5-flash-image',
-              messages: [{
-                role: 'user',
-                content: [
-                  { type: 'text', text: 'Generate a clean thumbnail preview image for this PDF document. Show the first page layout as a visual preview.' },
-                  { type: 'image_url', image_url: { url: `data:application/pdf;base64,${fileData.base64}` } }
-                ]
-              }],
-              modalities: ['image', 'text'],
-            }),
+          const thumbData = await chatCompletion({
+            model: 'google/gemini-2.5-flash-image',
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Generate a clean thumbnail preview image for this PDF document. Show the first page layout as a visual preview.' },
+                { type: 'image_url', image_url: { url: `data:application/pdf;base64,${fileData.base64}` } }
+              ]
+            }],
+            modalities: ['image', 'text'],
           });
 
-          if (thumbResponse.ok) {
-            const thumbData = await thumbResponse.json();
+          if (thumbData) {
             const generatedImage = thumbData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
             if (generatedImage && generatedImage.startsWith('data:image/')) {
               // Extract base64 from data URL and save to storage

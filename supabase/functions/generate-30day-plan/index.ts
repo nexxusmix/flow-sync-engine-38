@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,11 +22,7 @@ serve(async (req) => {
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { brandKit, objective, postsPerWeek = 4, existingIdeas = [] } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    // LOVABLE_API_KEY handled in ai-client.ts
 
     const totalPosts = postsPerWeek * 4; // 4 weeks
 
@@ -65,77 +62,54 @@ Para cada ideia, defina:
 
 Distribua os pilares de forma equilibrada ao longo do mês.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_content_plan",
-              description: "Generate a 30-day content plan with multiple ideas",
-              parameters: {
-                type: "object",
-                properties: {
-                  ideas: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string" },
-                        hook: { type: "string" },
-                        angle: { type: "string" },
-                        pillar: { 
-                          type: "string",
-                          enum: ["autoridade", "bastidores", "cases", "oferta", "prova_social", "educacional"]
-                        },
-                        format: {
-                          type: "string",
-                          enum: ["reel", "carousel", "post", "story", "youtube", "short"]
-                        },
-                        channel: {
-                          type: "string",
-                          enum: ["instagram", "tiktok", "youtube", "linkedin"]
-                        },
-                        score: { type: "number", minimum: 1, maximum: 10 }
+    const data = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "generate_content_plan",
+            description: "Generate a 30-day content plan with multiple ideas",
+            parameters: {
+              type: "object",
+              properties: {
+                ideas: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string" },
+                      hook: { type: "string" },
+                      angle: { type: "string" },
+                      pillar: { 
+                        type: "string",
+                        enum: ["autoridade", "bastidores", "cases", "oferta", "prova_social", "educacional"]
                       },
-                      required: ["title", "hook", "pillar", "format", "channel", "score"]
-                    }
+                      format: {
+                        type: "string",
+                        enum: ["reel", "carousel", "post", "story", "youtube", "short"]
+                      },
+                      channel: {
+                        type: "string",
+                        enum: ["instagram", "tiktok", "youtube", "linkedin"]
+                      },
+                      score: { type: "number", minimum: 1, maximum: 10 }
+                    },
+                    required: ["title", "hook", "pillar", "format", "channel", "score"]
                   }
-                },
-                required: ["ideas"]
-              }
+                }
+              },
+              required: ["ideas"]
             }
           }
-        ],
-        tool_choice: { type: "function", function: { name: "generate_content_plan" } }
-      }),
+        }
+      ],
+      tool_choice: { type: "function", function: { name: "generate_content_plan" } }
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     
     if (!toolCall?.function?.arguments) {

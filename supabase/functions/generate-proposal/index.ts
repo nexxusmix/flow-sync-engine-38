@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,11 +29,6 @@ serve(async (req) => {
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { briefing, serviceType, clientName, references } = await req.json() as GenerateProposalRequest;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     const systemPrompt = `Você é um consultor de vendas premium de uma produtora audiovisual.
 Sua tarefa é gerar propostas comerciais elegantes, claras e persuasivas.
@@ -90,108 +86,85 @@ Gere:
 - Call to action claro
 - Como proceder para aprovar`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_proposal_content",
-              description: "Generate structured proposal content",
-              parameters: {
-                type: "object",
-                properties: {
-                  intro: {
-                    type: "object",
-                    properties: {
-                      text: { type: "string" }
-                    }
-                  },
-                  context: {
-                    type: "object",
-                    properties: {
-                      text: { type: "string" }
-                    }
-                  },
-                  scope: {
-                    type: "object",
-                    properties: {
-                      included: { type: "array", items: { type: "string" } },
-                      excluded: { type: "array", items: { type: "string" } }
-                    }
-                  },
-                  deliverables: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string" },
-                        description: { type: "string" },
-                        quantity: { type: "number" }
-                      }
-                    }
-                  },
-                  timeline: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        phase: { type: "string" },
-                        description: { type: "string" },
-                        duration_days: { type: "number" }
-                      }
-                    }
-                  },
-                  terms: {
-                    type: "object",
-                    properties: {
-                      text: { type: "string" },
-                      payment_suggestion: { type: "string" },
-                      validity_days: { type: "number" }
-                    }
-                  },
-                  cta: {
-                    type: "object",
-                    properties: {
-                      text: { type: "string" }
-                    }
-                  },
-                  suggested_title: { type: "string" }
+    const data = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "generate_proposal_content",
+            description: "Generate structured proposal content",
+            parameters: {
+              type: "object",
+              properties: {
+                intro: {
+                  type: "object",
+                  properties: {
+                    text: { type: "string" }
+                  }
                 },
-                required: ["intro", "context", "scope", "deliverables", "timeline", "terms", "cta"]
-              }
+                context: {
+                  type: "object",
+                  properties: {
+                    text: { type: "string" }
+                  }
+                },
+                scope: {
+                  type: "object",
+                  properties: {
+                    included: { type: "array", items: { type: "string" } },
+                    excluded: { type: "array", items: { type: "string" } }
+                  }
+                },
+                deliverables: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string" },
+                      description: { type: "string" },
+                      quantity: { type: "number" }
+                    }
+                  }
+                },
+                timeline: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      phase: { type: "string" },
+                      description: { type: "string" },
+                      duration_days: { type: "number" }
+                    }
+                  }
+                },
+                terms: {
+                  type: "object",
+                  properties: {
+                    text: { type: "string" },
+                    payment_suggestion: { type: "string" },
+                    validity_days: { type: "number" }
+                  }
+                },
+                cta: {
+                  type: "object",
+                  properties: {
+                    text: { type: "string" }
+                  }
+                },
+                suggested_title: { type: "string" }
+              },
+              required: ["intro", "context", "scope", "deliverables", "timeline", "terms", "cta"]
             }
           }
-        ],
-        tool_choice: { type: "function", function: { name: "generate_proposal_content" } }
-      }),
+        }
+      ],
+      tool_choice: { type: "function", function: { name: "generate_proposal_content" } }
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a few seconds." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     
     if (!toolCall?.function?.arguments) {

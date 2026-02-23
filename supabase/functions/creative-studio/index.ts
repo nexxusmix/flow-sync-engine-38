@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,11 +38,6 @@ serve(async (req) => {
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { briefId, inputText, brandKit, packageType, format } = await req.json() as GenerateRequest;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     const brandContext = brandKit ? `
 BRAND KIT DO CLIENTE: ${brandKit.name || 'Cliente'}
@@ -125,120 +121,97 @@ Lista de planos com:
 - dont_visual (o que evitar)
 - mood_prompts (3-5 prompts para tiles do moodboard, SEM TEXTO)`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_creative_package",
-              description: "Generate a complete creative package from a brief",
-              parameters: {
-                type: "object",
-                properties: {
-                  concept: {
+    const data = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "generate_creative_package",
+            description: "Generate a complete creative package from a brief",
+            parameters: {
+              type: "object",
+              properties: {
+                concept: {
+                  type: "object",
+                  properties: {
+                    premissa: { type: "string" },
+                    promessa: { type: "string" },
+                    tom: { type: "string" },
+                    tema: { type: "string" },
+                    metafora_central: { type: "string" },
+                    big_idea: { type: "string" },
+                    headline: { type: "string" },
+                    subheadline: { type: "string" },
+                    argumento_comercial: { type: "string" }
+                  }
+                },
+                script: {
+                  type: "object",
+                  properties: {
+                    hook: { type: "string" },
+                    desenvolvimento: { type: "string" },
+                    cta: { type: "string" },
+                    duracao_estimada: { type: "string" }
+                  }
+                },
+                storyboard: {
+                  type: "array",
+                  items: {
                     type: "object",
                     properties: {
-                      premissa: { type: "string" },
-                      promessa: { type: "string" },
-                      tom: { type: "string" },
-                      tema: { type: "string" },
-                      metafora_central: { type: "string" },
-                      big_idea: { type: "string" },
-                      headline: { type: "string" },
-                      subheadline: { type: "string" },
-                      argumento_comercial: { type: "string" }
-                    }
-                  },
-                  script: {
-                    type: "object",
-                    properties: {
-                      hook: { type: "string" },
-                      desenvolvimento: { type: "string" },
-                      cta: { type: "string" },
-                      duracao_estimada: { type: "string" }
-                    }
-                  },
-                  storyboard: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        scene_number: { type: "number" },
-                        title: { type: "string" },
-                        description: { type: "string" },
-                        emotion: { type: "string" },
-                        camera: { type: "string" },
-                        duration_sec: { type: "number" },
-                        audio: { type: "string" },
-                        image_prompt: { type: "string" }
-                      }
-                    }
-                  },
-                  shotlist: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        plano: { type: "string" },
-                        descricao: { type: "string" },
-                        lente_sugerida: { type: "string" },
-                        ambiente: { type: "string" },
-                        luz: { type: "string" },
-                        prioridade: { type: "string" }
-                      }
-                    }
-                  },
-                  moodboard: {
-                    type: "object",
-                    properties: {
-                      direcao_de_arte: { type: "string" },
-                      paleta: { type: "array", items: { type: "string" } },
-                      referencias: { type: "array", items: { type: "string" } },
-                      materiais_texturas: { type: "string" },
-                      figurino: { type: "string" },
-                      props: { type: "string" },
-                      arquitetura_clima: { type: "string" },
-                      do_visual: { type: "array", items: { type: "string" } },
-                      dont_visual: { type: "array", items: { type: "string" } },
-                      mood_prompts: { type: "array", items: { type: "string" } }
+                      scene_number: { type: "number" },
+                      title: { type: "string" },
+                      description: { type: "string" },
+                      emotion: { type: "string" },
+                      camera: { type: "string" },
+                      duration_sec: { type: "number" },
+                      audio: { type: "string" },
+                      image_prompt: { type: "string" }
                     }
                   }
                 },
-                required: ["concept", "script", "storyboard", "shotlist", "moodboard"]
-              }
+                shotlist: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      plano: { type: "string" },
+                      descricao: { type: "string" },
+                      lente_sugerida: { type: "string" },
+                      ambiente: { type: "string" },
+                      luz: { type: "string" },
+                      prioridade: { type: "string" }
+                    }
+                  }
+                },
+                moodboard: {
+                  type: "object",
+                  properties: {
+                    direcao_de_arte: { type: "string" },
+                    paleta: { type: "array", items: { type: "string" } },
+                    referencias: { type: "array", items: { type: "string" } },
+                    materiais_texturas: { type: "string" },
+                    figurino: { type: "string" },
+                    props: { type: "string" },
+                    arquitetura_clima: { type: "string" },
+                    do_visual: { type: "array", items: { type: "string" } },
+                    dont_visual: { type: "array", items: { type: "string" } },
+                    mood_prompts: { type: "array", items: { type: "string" } }
+                  }
+                }
+              },
+              required: ["concept", "script", "storyboard", "shotlist", "moodboard"]
             }
           }
-        ],
-        tool_choice: { type: "function", function: { name: "generate_creative_package" } }
-      }),
+        }
+      ],
+      tool_choice: { type: "function", function: { name: "generate_creative_package" } }
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a few seconds." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     
     if (!toolCall?.function?.arguments) {

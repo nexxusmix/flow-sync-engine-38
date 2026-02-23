@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,8 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    // LOVABLE_API_KEY handled in ai-client.ts
 
     const { templateId, templateName, category, fields, brandKit, existingValues } = await req.json();
 
@@ -56,58 +56,31 @@ ${existingContext}
 Retorne APENAS um JSON com os campos preenchidos, sem markdown, sem explicação.
 Exemplo: {"title": "...", "subtitle": "...", "body": "...", "cta": "..."}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "fill_template_fields",
-              description: "Fill template fields with professional marketing copy",
-              parameters: {
-                type: "object",
-                properties: Object.fromEntries(
-                  fields.map((f: any) => [f.key, { type: "string", description: f.label }])
-                ),
-                required: fields.map((f: any) => f.key),
-                additionalProperties: false,
-              },
+    const aiResult = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "fill_template_fields",
+            description: "Fill template fields with professional marketing copy",
+            parameters: {
+              type: "object",
+              properties: Object.fromEntries(
+                fields.map((f: any) => [f.key, { type: "string", description: f.label }])
+              ),
+              required: fields.map((f: any) => f.key),
+              additionalProperties: false,
             },
           },
-        ],
-        tool_choice: { type: "function", function: { name: "fill_template_fields" } },
-      }),
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "fill_template_fields" } },
     });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit excedido. Tente novamente em alguns segundos." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos no workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI error: ${response.status}`);
-    }
-
-    const aiResult = await response.json();
     
     let generatedFields: Record<string, string> = {};
     

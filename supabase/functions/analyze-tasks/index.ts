@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,19 +40,12 @@ Data atual: ${new Date().toISOString().split('T')[0]}
 Tarefas:
 ${JSON.stringify(tasks, null, 2)}`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}` },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2,
-        max_tokens: 4096,
-      }),
+    const aiResp = await chatCompletion({
+      model: 'google/gemini-2.5-flash',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+      max_tokens: 4096,
     });
-
-    if (!response.ok) throw new Error(`AI error: ${response.status}`);
-    const aiResp = await response.json();
     let content = aiResp.choices?.[0]?.message?.content?.trim() || '';
     if (content.startsWith('```json')) content = content.replace(/^```json\s*/, '').replace(/```\s*$/, '');
     else if (content.startsWith('```')) content = content.replace(/^```\s*/, '').replace(/```\s*$/, '');

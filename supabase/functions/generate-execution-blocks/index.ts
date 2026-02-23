@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -117,18 +118,12 @@ Formato exato:
 
 Tarefas (${taskList.length} total):
 ${JSON.stringify(taskList)}`;
-      const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}` },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [{ role: 'user', content: p }],
-          temperature: 0.3,
-          max_tokens: maxTokens,
-        }),
+      const aiResp = await chatCompletion({
+        model: 'google/gemini-2.5-flash',
+        messages: [{ role: 'user', content: p }],
+        temperature: 0.3,
+        max_tokens: maxTokens,
       });
-      if (!resp.ok) throw new Error(`AI error: ${resp.status}`);
-      const aiResp = await resp.json();
       return aiResp.choices?.[0]?.message?.content?.trim() || '';
     };
 
