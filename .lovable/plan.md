@@ -1,93 +1,76 @@
 
 
-## Resumo do Dia: Auto-gerado + Visual com Cards Interativos
+## Corrigir "Gerando resumo..." que nunca termina + Loading animado
 
-### O que muda
+### Problema raiz
 
-O componente `AIDailySummary` sera completamente redesenhado para:
+O componente tem 4 estados: loading, error, summary (parsed OK), e um fallback "Gerando resumo..." (linha 203). O problema e que quando a query **termina com sucesso** mas o JSON parse falha (AI envolve em code blocks, retorna texto livre, etc.), `summary` fica `null` e o componente mostra "Gerando resumo..." para sempre -- nao esta carregando, nao tem erro, mas tambem nao tem dados parseados.
 
-1. **Gerar automaticamente** ao carregar o dashboard (sem precisar clicar em nada)
-2. **Exibir resultados em cards visuais** em vez de texto markdown corrido
-3. **AI retorna JSON estruturado** em vez de texto livre, permitindo renderizacao visual
+Alem disso, a edge function nao usa `response_format: { type: "json_object" }` que forca o modelo a retornar JSON puro.
 
-### Como funciona
+### Solucao
 
-**1. Edge function (`polo-ai-chat/index.ts`) - resposta estruturada para daily_summary**
+**1. Edge function (`polo-ai-chat/index.ts`) - Forcar JSON output**
+- Adicionar `response_format: { type: "json_object" }` na chamada `chatCompletion` quando for daily_summary
+- Isso garante que o Gemini retorne JSON puro sem markdown wrapping
 
-Alterar o system prompt do `daily_summary` para pedir ao AI que retorne um JSON estruturado com categorias:
+**2. Componente (`AIDailySummary.tsx`) - Corrigir estados + Loading animado**
 
-```json
-{
-  "greeting": "Bom dia! Aqui vai seu resumo.",
-  "highlights": [
-    { "icon": "trending-up", "label": "Receita", "value": "R$ 12.500", "status": "positive", "detail": "3 pagamentos previstos esta semana" },
-    { "icon": "users", "label": "Leads", "value": "5 novos", "status": "neutral", "detail": "Pipeline estavel" },
-    { "icon": "alert-triangle", "label": "Entregas", "value": "2 proximas", "status": "warning", "detail": "Projeto X vence em 3 dias" }
-  ],
-  "action_items": [
-    "Cobrar pagamento do Projeto Y (venceu ha 2 dias)",
-    "Confirmar reuniao com cliente Z amanha"
-  ]
-}
-```
-
-**2. Componente `AIDailySummary.tsx` - redesign visual completo**
-
-- Remover `ReactMarkdown` e renderizar cards visuais com icones, cores por status e animacoes
-- Cada highlight vira um mini-card glass com icone, valor e detalhe
-- Action items aparecem como checklist visual
-- Saudacao do AI aparece no topo
-- Gera automaticamente quando o dashboard carrega (ja funciona com `enabled: !!user?.id && !kpi.isLoading`)
-- Remover texto "Clique em atualizar" -- nunca mais sera necessario
-
-**3. Layout visual**
-
-```
-+--------------------------------------------------+
-| Sparkles  Resumo do Dia  [Polo AI]     [refresh]  |
-+--------------------------------------------------+
-| "Bom dia! Aqui vai seu resumo de hoje."           |
-|                                                    |
-| [card receita]  [card leads]  [card entregas]      |
-|  R$ 12.500       5 novos      2 proximas           |
-|  3 pagamentos    Pipeline      Projeto X em 3d     |
-|  previstos       estavel                           |
-|                                                    |
-| Acoes recomendadas:                                |
-|  * Cobrar pagamento do Projeto Y                   |
-|  * Confirmar reuniao com cliente Z                  |
-+--------------------------------------------------+
-```
+- **Eliminar estado limbo**: Se `rawSummary` existe mas `summary` e null (parse falhou), mostrar erro em vez de "Gerando resumo..."
+- **Loading animado**: Substituir skeleton por um icone Sparkles animado com pulse + texto "Analisando dados..."
+- **Melhor parse**: Tratar mais casos de limpeza do JSON (remover prefixos de texto antes do `{`)
 
 ### Arquivos a editar
 
 | Arquivo | Mudanca |
 |---|---|
-| `supabase/functions/polo-ai-chat/index.ts` | Alterar prompt do `daily_summary` para pedir JSON estruturado |
-| `src/components/dashboard/AIDailySummary.tsx` | Redesign completo com cards visuais, parse de JSON, auto-load |
+| `supabase/functions/polo-ai-chat/index.ts` | Adicionar `response_format: { type: "json_object" }` para daily_summary |
+| `src/components/dashboard/AIDailySummary.tsx` | Fix estado limbo + loading animado com Sparkles pulsando |
 
 ### Detalhes tecnicos
 
-**Prompt atualizado (polo-ai-chat):**
-- Instrui o AI a responder APENAS com JSON valido (sem markdown, sem code blocks)
-- Define schema exato com `greeting`, `highlights` (max 6 items), `action_items` (max 4 items)
-- Cada highlight tem: `icon` (nome lucide), `label`, `value`, `status` (positive/warning/neutral/negative), `detail`
+**Edge function - forcar JSON:**
+```typescript
+// No bloco non-streaming, quando daily_summary:
+const completionOpts: any = {
+  model: "google/gemini-3-flash-preview",
+  messages: aiMessages,
+  stream: false,
+};
+if (context?.type === 'daily_summary') {
+  completionOpts.response_format = { type: "json_object" };
+}
+const result = await chatCompletion(completionOpts);
+```
 
-**Componente redesenhado:**
-- Parse do JSON com `try/catch` e fallback para texto se o parse falhar
-- Grid responsivo de mini-cards (2-3 colunas)
-- Cores por status: `positive` = verde, `warning` = amber, `negative` = vermelho, `neutral` = azul
-- Icones mapeados de string para componente Lucide
-- Animacao staggered com framer-motion nos cards
-- Secao de action items com icone de check
+**Componente - loading animado:**
+```tsx
+{(isLoading || isFetching || kpi.isLoading) ? (
+  <div className="flex flex-col items-center justify-center py-8 gap-3">
+    <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+      transition={{ duration: 2, repeat: Infinity }}>
+      <Sparkles className="w-6 h-6 text-primary" />
+    </motion.div>
+    <p className="text-xs text-muted-foreground">Analisando dados...</p>
+  </div>
+) : ...}
+```
 
-**Auto-geracao:**
-- O query ja tem `enabled: !!user?.id && !kpi.isLoading` -- dispara automaticamente
-- `staleTime: 30 min` -- nao regenera a cada visita, so a cada 30 minutos
-- Botao de refresh manual continua disponivel
+**Componente - eliminar estado limbo:**
+```tsx
+// Ultima condicao: se rawSummary existe mas summary e null = parse falhou
+) : rawSummary && !summary ? (
+  <div className="flex items-start gap-2 text-xs text-muted-foreground">
+    <AlertTriangle className="w-4 h-4 text-amber-500" />
+    <p>Formato inesperado. Clique em atualizar para tentar novamente.</p>
+  </div>
+) : (
+  <p className="text-xs text-muted-foreground">Sem dados para resumo.</p>
+)}
+```
 
 ### Resultado
-- Resumo aparece automaticamente ao abrir o dashboard
-- Visual com cards coloridos, icones e animacoes (padrao glass-card da plataforma)
-- Dados baseados nas metricas reais do KPI
-- Zero cliques necessarios
+- Loading mostra icone Sparkles pulsando (animado)
+- JSON forcado pelo `response_format` elimina maioria dos erros de parse
+- Se parse falhar, mostra mensagem de erro em vez de ficar eternamente "Gerando resumo..."
+- Funciona automaticamente ao carregar o dashboard
