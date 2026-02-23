@@ -147,7 +147,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
     }
   };
 
-  const totalTasks = plan?.blocks.reduce((sum, b) => sum + b.tasks.length, 0) || 0;
+  const totalTasks = plan?.blocks?.reduce((sum, b) => sum + (b.tasks?.length || 0), 0) || 0;
   const now = new Date();
   const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
 
@@ -345,7 +345,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
               {plan && !isLoading && !error && (
                 <div className="shrink-0 px-8 py-5 border-t border-white/[0.04]">
                   {/* Tips */}
-                  {plan.tips.length > 0 && (
+                  {(plan.tips?.length ?? 0) > 0 && (
                     <div className="mb-4">
                       <p className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono mb-2.5">Dicas de Produtividade</p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
