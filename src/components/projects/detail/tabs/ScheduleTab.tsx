@@ -14,12 +14,15 @@ export function ScheduleTab({ project }: ScheduleTabProps) {
       id: stage.id,
       projectId: project.id,
       name: stage.title,
-      status: (stage.status === 'completed' ? 'done' : 
+      status: (stage.status === 'done' ? 'done' : 
                stage.status === 'in_progress' ? 'in_progress' : 
+               stage.status === 'blocked' ? 'blocked' :
                'not_started') as 'done' | 'in_progress' | 'not_started' | 'blocked',
       plannedStart: stage.planned_start || new Date().toISOString(),
       plannedEnd: stage.planned_end || new Date().toISOString(),
-      progress: stage.status === 'completed' ? 100 : stage.status === 'in_progress' ? 50 : 0,
+      actualStart: stage.actual_start || undefined,
+      actualEnd: stage.actual_end || undefined,
+      progress: stage.status === 'done' ? 100 : stage.status === 'in_progress' ? 50 : 0,
     })) || [],
     milestones: [],
     
