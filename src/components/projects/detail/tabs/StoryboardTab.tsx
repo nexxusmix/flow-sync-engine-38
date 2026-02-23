@@ -17,8 +17,9 @@ import {
   Sparkles, Loader2, Film, Camera, Sun, Palette, 
   ChevronDown, Copy, Check, Trash2, Eye, Plus, Clapperboard,
   Mic, Upload, FileAudio, FileText, FolderSearch, Brain, 
-  FileUp, X, CheckCircle2
+  FileUp, X, CheckCircle2, ImageIcon, RefreshCw
 } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -556,6 +557,8 @@ function StoryboardScenes({ storyboardId, colorGrading }: { storyboardId: string
 function SceneCard({ scene }: { scene: any }) {
   const [copied, setCopied] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(scene.image_url || null);
 
   const copyPrompt = () => {
     navigator.clipboard.writeText(scene.ai_prompt || "");
@@ -564,8 +567,90 @@ function SceneCard({ scene }: { scene: any }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleGenerateImage = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const sonyPrefix = "Cinematic frame shot on Sony FX3 camera with Sony GM 28-70mm f/2.8 lens. Shallow depth of field, natural film-like bokeh, rich color science, S-Cinetone color profile. Professional cinematography, 16:9 widescreen frame.";
+      const { data, error } = await supabase.functions.invoke("generate-image", {
+        body: {
+          prompt: `${sonyPrefix} ${scene.ai_prompt || scene.description}`,
+          sceneId: scene.id,
+          purpose: "storyboard_frame",
+          aspectRatio: "16:9",
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      if (data?.imageUrl) {
+        setImageUrl(data.imageUrl);
+        // Update scene in database
+        await supabase
+          .from("project_storyboard_scenes")
+          .update({ image_url: data.imageUrl } as any)
+          .eq("id", scene.id);
+        toast.success("Imagem gerada!");
+      }
+    } catch (err: any) {
+      if (err.message?.includes("429") || err.message?.includes("Rate limit")) {
+        toast.error("Rate limit atingido. Tente novamente em alguns segundos.");
+      } else if (err.message?.includes("402")) {
+        toast.error("Créditos insuficientes. Adicione créditos ao workspace.");
+      } else {
+        toast.error(err.message || "Erro ao gerar imagem");
+      }
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   return (
-    <Card className="bg-muted/20 border-border/50">
+    <Card className="bg-muted/20 border-border/50 overflow-hidden">
+      {/* Scene Image */}
+      {imageUrl ? (
+        <div className="relative group">
+          <AspectRatio ratio={16 / 9}>
+            <img
+              src={imageUrl}
+              alt={`Cena ${scene.scene_number}: ${scene.title}`}
+              className="w-full h-full object-cover"
+            />
+          </AspectRatio>
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleGenerateImage}
+              disabled={isGeneratingImage}
+              className="gap-2"
+            >
+              {isGeneratingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Regenerar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-muted/40 border-b border-border/50">
+          <AspectRatio ratio={16 / 9}>
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+              {isGeneratingImage ? (
+                <>
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-xs text-muted-foreground">Gerando imagem...</span>
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
+                  <Button variant="outline" size="sm" onClick={handleGenerateImage} className="gap-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Gerar Imagem
+                  </Button>
+                </>
+              )}
+            </div>
+          </AspectRatio>
+        </div>
+      )}
+
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">

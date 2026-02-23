@@ -19,6 +19,7 @@ export interface StoryboardScene {
   production_type: string;
   ai_prompt: string;
   negative_prompt: string;
+  image_url?: string;
 }
 
 export interface Storyboard {
@@ -180,7 +181,7 @@ export function useProjectStoryboards(projectId: string | undefined) {
       if (sbError) throw sbError;
 
       // Save scenes
-      const scenes = (aiData.scenes || []).map((s: StoryboardScene) => ({
+      const scenes = (aiData.scenes || []).map((s: any) => ({
         storyboard_id: sb.id,
         scene_number: s.scene_number,
         title: s.title,
@@ -195,6 +196,7 @@ export function useProjectStoryboards(projectId: string | undefined) {
         production_type: s.production_type,
         ai_prompt: s.ai_prompt,
         negative_prompt: s.negative_prompt,
+        image_url: s.image_url || null,
       }));
 
       if (scenes.length > 0) {

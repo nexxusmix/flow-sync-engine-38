@@ -5030,6 +5030,7 @@ export type Database = {
           direction: string | null
           fps: string | null
           id: string
+          image_url: string | null
           lens: string | null
           lighting: string | null
           mood: string | null
@@ -5049,6 +5050,7 @@ export type Database = {
           direction?: string | null
           fps?: string | null
           id?: string
+          image_url?: string | null
           lens?: string | null
           lighting?: string | null
           mood?: string | null
@@ -5068,6 +5070,7 @@ export type Database = {
           direction?: string | null
           fps?: string | null
           id?: string
+          image_url?: string | null
           lens?: string | null
           lighting?: string | null
           mood?: string | null
