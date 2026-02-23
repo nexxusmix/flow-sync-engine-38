@@ -274,11 +274,15 @@ REGRAS:
         headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     } else {
-      const result = await chatCompletion({
+      const completionOpts: any = {
         model: "google/gemini-3-flash-preview",
         messages: aiMessages,
         stream: false,
-      });
+      };
+      if (context?.type === 'daily_summary') {
+        completionOpts.response_format = { type: "json_object" };
+      }
+      const result = await chatCompletion(completionOpts);
       const text = result.choices?.[0]?.message?.content || "";
       return new Response(JSON.stringify({ response: text }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
