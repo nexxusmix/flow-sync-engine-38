@@ -337,17 +337,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    await supabaseAdmin.from("event_logs").insert({
-      action: "sync_project_finances",
-      entity_type: "project",
-      entity_id: project_id,
-      details: {
-        contract_id: contract.id,
-        contract_created: contractCreated,
-        revenues_created: inserted?.length || 0,
-        payment_terms: contract.payment_terms,
-      },
-    }).catch(() => {});
+    try {
+      await supabaseAdmin.from("event_logs").insert({
+        action: "sync_project_finances",
+        entity_type: "project",
+        entity_id: project_id,
+        details: {
+          contract_id: contract.id,
+          contract_created: contractCreated,
+          revenues_created: inserted?.length || 0,
+          payment_terms: contract.payment_terms,
+        },
+      });
+    } catch (_) { /* ignore logging errors */ }
 
     const message = [
       contractCreated ? "Contrato criado" : "Contrato atualizado",
