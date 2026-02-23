@@ -17,8 +17,11 @@ import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
-  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain
+  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain, MoreHorizontal
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -308,33 +311,59 @@ export default function TasksPage() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 lg:gap-3 flex-wrap">
               {/* Select All */}
               {viewMode !== 'dashboard' && (
                 <Button variant="outline" size="sm" onClick={selectAll} className="gap-1.5">
                   <CheckSquare className="w-4 h-4" />
-                  {selectedIds.size === tasks.length && tasks.length > 0 ? 'Desmarcar' : 'Selecionar Tudo'}
+                  <span className="hidden lg:inline">{selectedIds.size === tasks.length && tasks.length > 0 ? 'Desmarcar' : 'Selecionar Tudo'}</span>
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={() => exportTasks()} disabled={isExporting}>
                 {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                Exportar PDF
+                <span className="hidden lg:inline">Exportar PDF</span>
               </Button>
-              <TaskAnalysisPanel tasks={tasks} />
-              <TaskExecutionGuide
-                tasks={tasks}
-                onComplete={(id) => {
-                  const t = tasks.find(t => t.id === id);
-                  if (t) updateTask(id, { status: 'done', completed_at: new Date().toISOString() } as any);
-                }}
-              />
+              <div className="hidden lg:contents">
+                <TaskAnalysisPanel tasks={tasks} />
+                <TaskExecutionGuide
+                  tasks={tasks}
+                  onComplete={(id) => {
+                    const t = tasks.find(t => t.id === id);
+                    if (t) updateTask(id, { status: 'done', completed_at: new Date().toISOString() } as any);
+                  }}
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="lg:hidden gap-1.5">
+                    <MoreHorizontal className="w-4 h-4" />
+                    Mais
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <div><TaskAnalysisPanel tasks={tasks} /></div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <div>
+                      <TaskExecutionGuide
+                        tasks={tasks}
+                        onComplete={(id) => {
+                          const t = tasks.find(t => t.id === id);
+                          if (t) updateTask(id, { status: 'done', completed_at: new Date().toISOString() } as any);
+                        }}
+                      />
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
                 <Sparkles className="w-4 h-4 mr-2" />
-                Criar com IA
+                <span className="hidden lg:inline">Criar com IA</span>
               </Button>
               <Button onClick={() => setIsNewTaskOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Nova Tarefa
+                <span className="hidden lg:inline">Nova Tarefa</span>
               </Button>
             </div>
           </div>
