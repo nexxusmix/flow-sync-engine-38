@@ -1,77 +1,123 @@
 
 
-## Reorganizacao do Menu Lateral (Sidebar)
+## Plano de Melhorias Globais - Fase 1
 
-### Mudanca Solicitada
-
-Reordenar os itens do menu e criar um grupo expansivel "Studio Criativo e Marketing" que agrupa os sub-itens relacionados.
-
-### Nova Ordem do Menu
-
-1. Overview
-2. Tarefas
-3. Projetos
-4. **Studio Criativo e Marketing** (grupo expansivel com sub-itens):
-   - Marketing (dashboard)
-   - Gerar Posts
-   - Transcricao
-   - Studio Criativo
-5. Central de Acoes
-6. CRM
-7. Clientes (novo item - apontando para `/crm?tab=clients` ou rota dedicada)
-8. Prospeccao
-9. Calendario
-10. Financeiro
-11. Propostas
-12. Contratos
-13. Relatorios
-14. Avisos
+Como voce quer melhorar todas as areas (Dashboard, Login, CRM, Notificacoes) com todos os tipos de melhoria (UX, funcionalidades, IA, performance), vou organizar em uma fase inicial focada nas melhorias de maior impacto e menor risco.
 
 ---
 
-### Detalhes Tecnicos
+### 1. Login com Google (OAuth Social)
 
-**Arquivo**: `src/components/layout/Sidebar.tsx`
+Adicionar botao "Entrar com Google" na pagina de login, usando o sistema gerenciado do Lovable Cloud (sem necessidade de configurar credenciais).
 
-#### 1. Reestruturar o modelo de dados
+**Arquivo**: `src/pages/LoginPage.tsx`
+- Importar `lovable` de `@/integrations/lovable`
+- Adicionar botao estilizado "Continuar com Google" abaixo do formulario
+- Chamar `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`
+- Manter o formulario de email/senha existente como alternativa
 
-Trocar a lista plana `mainMenuItems` por uma estrutura que suporta itens com `children`:
+---
 
-```typescript
-interface MenuItem {
-  name: string;
-  href: string;
-  icon: string;
-  badge?: number;
-  children?: MenuItem[];
-}
-```
+### 2. Sistema de Notificacoes em Tempo Real
 
-Os itens do grupo "Studio Criativo e Marketing" serao filhos com rotas existentes:
-- Marketing -> `/marketing`
-- Gerar Posts -> `/marketing/studio?tab=templates`
-- Transcricao -> `/marketing/transcricao`
-- Studio -> `/marketing/studio`
+Criar um sistema de notificacoes que aparece como badge no menu lateral e como dropdown ao clicar.
 
-#### 2. Adicionar estado local para controle do grupo
+**Tabela**: `notifications` (nova migração)
+- Colunas: id, user_id, title, message, type (info/warning/error/success), read (boolean), entity_type, entity_id, created_at
+- RLS: usuario so ve suas proprias notificacoes
 
-Usar `useState` para controlar a expansao/colapso do grupo. Auto-expandir quando qualquer rota filha estiver ativa.
+**Arquivos novos**:
+- `src/hooks/useNotifications.ts` - Hook com React Query + Realtime subscription para notificacoes nao lidas
+- `src/components/layout/NotificationDropdown.tsx` - Dropdown com lista de notificacoes, marcar como lida, limpar todas
 
-#### 3. Renderizacao condicional
+**Arquivo editado**: `src/components/layout/Sidebar.tsx`
+- Adicionar badge com contador de notificacoes nao lidas no item "Avisos"
+- Badge animado com pulse quando ha novas notificacoes
 
-- **Sidebar expandida**: Mostrar o grupo como um item clicavel que expande/colapsa, com os sub-itens indentados abaixo.
-- **Sidebar colapsada**: Mostrar apenas o icone do grupo pai. Ao passar o mouse ou clicar, nao expandir (manter comportamento simples de navegacao para a rota `/marketing`).
+---
 
-#### 4. Item "Clientes"
+### 3. Dashboard - Resumo Diario com IA
 
-Criar novo item apontando para `/crm` com tab de clientes (ou simplesmente `/crm` como entrada separada do CRM). O CRM ja gerencia clientes, entao o href sera `/crm` com icone `group`.
+Adicionar um card no topo do Dashboard com um resumo inteligente do dia gerado pelo Polo AI.
 
-#### 5. Animacao
+**Arquivo novo**: `src/components/dashboard/AIDailySummary.tsx`
+- Card com resumo gerado pela edge function `polo-ai-chat`
+- Conteudo: destaques do dia (tarefas pendentes, deals quentes, pagamentos proximos, entregas da semana)
+- Botao para regenerar o resumo
+- Skeleton loading enquanto a IA processa
+- Cache do resumo por sessao (evitar chamadas repetidas)
 
-Manter o padrao existente de `framer-motion` para os sub-itens, usando `AnimatePresence` com altura animada para a expansao do grupo.
+**Arquivo editado**: `src/pages/Dashboard.tsx`
+- Inserir o componente `AIDailySummary` logo apos o header, antes dos metric cards
+
+---
+
+### 4. Dashboard - Graficos Interativos
+
+Substituir os blocos estaticos do Dashboard por graficos interativos usando Recharts (ja instalado).
+
+**Arquivo novo**: `src/components/dashboard/RevenueChart.tsx`
+- Grafico de barras/area mostrando receita dos ultimos 6 meses
+- Tooltip interativo com valores formatados em BRL
+- Cores consistentes com o tema
+
+**Arquivo novo**: `src/components/dashboard/PipelineChart.tsx`
+- Grafico de funil ou donut mostrando distribuicao de deals por estagio
+- Clicavel para navegar ao CRM filtrado
+
+**Arquivo editado**: `src/pages/Dashboard.tsx`
+- Adicionar secao com os graficos em grid 2 colunas abaixo dos KPIs
+
+---
+
+### 5. CRM - Filtros Avancados
+
+Adicionar barra de filtros no topo do Kanban do CRM.
+
+**Arquivo editado**: `src/pages/CRMPage.tsx`
+- Filtro por temperatura (hot/warm/cold)
+- Filtro por responsavel
+- Filtro por valor minimo/maximo
+- Busca por nome do deal ou contato
+- Botao "Limpar filtros"
+- Filtros persistidos no estado local (Zustand ou useState)
+
+---
+
+### 6. Dark/Light Mode Toggle
+
+Adicionar alternador de tema no Sidebar (rodape, proximo ao usuario).
+
+**Arquivo editado**: `src/components/layout/Sidebar.tsx`
+- Botao de toggle sol/lua no rodape do sidebar
+- Usar `next-themes` (ja instalado) para alternar entre dark e light
+
+**Arquivo editado**: `src/App.tsx` ou provider raiz
+- Garantir que o `ThemeProvider` do next-themes esteja envolvendo a aplicacao
+
+---
 
 ### Resumo de Arquivos
 
-| Arquivo | Mudanca |
-|---|---|
-| `src/components/layout/Sidebar.tsx` | Reordenar itens, criar grupo expansivel, adicionar item Clientes |
+| Arquivo | Tipo | Mudanca |
+|---|---|---|
+| `src/pages/LoginPage.tsx` | Editar | Botao Google OAuth |
+| `src/components/layout/Sidebar.tsx` | Editar | Badge notificacoes + toggle tema |
+| `src/pages/Dashboard.tsx` | Editar | Resumo IA + graficos |
+| `src/components/dashboard/AIDailySummary.tsx` | Novo | Card resumo diario com IA |
+| `src/components/dashboard/RevenueChart.tsx` | Novo | Grafico receita mensal |
+| `src/components/dashboard/PipelineChart.tsx` | Novo | Grafico pipeline CRM |
+| `src/hooks/useNotifications.ts` | Novo | Hook notificacoes realtime |
+| `src/components/layout/NotificationDropdown.tsx` | Novo | Dropdown de notificacoes |
+| `src/pages/CRMPage.tsx` | Editar | Filtros avancados |
+| Migracao SQL | Novo | Tabela notifications + RLS |
+
+### Ordem de implementacao
+
+1. Login com Google (rapido, alto impacto)
+2. Dark/Light mode toggle (rapido, visual)
+3. Sistema de notificacoes (banco + frontend)
+4. Dashboard - Resumo IA
+5. Dashboard - Graficos interativos
+6. CRM - Filtros avancados
+
