@@ -9,6 +9,9 @@ import { ActionHubRail } from "@/components/action-hub/ActionHubRail";
 import { ActionHubOverviewCard } from "@/components/action-hub/ActionHubOverviewCard";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
+import { AIDailySummary } from "@/components/dashboard/AIDailySummary";
+import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { PipelineChart } from "@/components/dashboard/PipelineChart";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -206,6 +209,15 @@ export default function Dashboard() {
 
         {/* KPI Strip — dados operacionais em tempo real */}
         <KPIStrip />
+
+        {/* AI Daily Summary */}
+        <AIDailySummary />
+
+        {/* Interactive Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RevenueChart />
+          <PipelineChart />
+        </div>
 
         {/* Projetos Ativos - Quick Access */}
         <ProjectQuickAccessGrid projects={recentProjects} isLoading={isLoading} />

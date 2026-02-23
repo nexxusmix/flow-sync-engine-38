@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KanbanColumn } from "@/components/crm/KanbanColumn";
 import { useCRM, CRM_STAGES, Deal } from "@/hooks/useCRM";
 import { useAuth } from "@/hooks/useAuth";
-import { Filter, ChevronDown, Plus, Sparkles, Users, Loader2 } from "lucide-react";
+import { Filter, ChevronDown, Plus, Sparkles, Users, Loader2, Search, X as XIcon, Flame, Snowflake, ThermometerSun } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -20,6 +20,12 @@ export default function CRMPage() {
   const [activeView, setActiveView] = useState<'kanban' | 'lista'>('kanban');
   const [showNewDealDialog, setShowNewDealDialog] = useState(false);
   const [newDealStage, setNewDealStage] = useState('lead');
+  
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tempFilter, setTempFilter] = useState<string | null>(null);
+  const [minValue, setMinValue] = useState('');
+  const [maxValue, setMaxValue] = useState('');
   
   // New deal form state
   const [newDealTitle, setNewDealTitle] = useState('');
@@ -70,6 +76,28 @@ export default function CRMPage() {
     ownerInitials: 'SQ',
     lastActivity: deal.updatedAt || new Date().toISOString(),
   }));
+
+  const hasFilters = searchQuery || tempFilter || minValue || maxValue;
+
+  // Apply filters
+  const filteredDeals = transformedDeals.filter(d => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!d.title.toLowerCase().includes(q) && !(d.company || '').toLowerCase().includes(q)) return false;
+    }
+    if (minValue && d.value < parseFloat(minValue)) return false;
+    if (maxValue && d.value > parseFloat(maxValue)) return false;
+    return true;
+  });
+
+  // Also filter raw deals for temperature (which is on Deal, not transformedDeal)
+  const tempFilteredIds = tempFilter
+    ? new Set(deals.filter(d => (d as any).temperature === tempFilter).map(d => d.id))
+    : null;
+
+  const finalDeals = tempFilteredIds
+    ? filteredDeals.filter(d => tempFilteredIds.has(d.id))
+    : filteredDeals;
 
   const hasDeals = deals.length > 0;
   
@@ -144,11 +172,74 @@ export default function CRMPage() {
             </div>
 
             {/* Filter Button */}
-            <button className="chip flex items-center gap-2">
+            <button className="chip flex items-center gap-2" onClick={() => setTempFilter(null)}>
               <Filter className="w-3 h-3" />
               Owner: Todos
               <ChevronDown className="w-3 h-3" />
             </button>
+
+            {/* Temperature Filters */}
+            <div className="flex items-center gap-1">
+              {[
+                { key: 'hot', label: 'Quente', icon: Flame, color: 'text-red-500' },
+                { key: 'warm', label: 'Morno', icon: ThermometerSun, color: 'text-amber-500' },
+                { key: 'cold', label: 'Frio', icon: Snowflake, color: 'text-blue-400' },
+              ].map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTempFilter(tempFilter === t.key ? null : t.key)}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all border ${
+                    tempFilter === t.key
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
+                  }`}
+                >
+                  <t.icon className={`w-3 h-3 ${tempFilter !== t.key ? t.color : ''}`} />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Search + Value Filters */}
+          <div className="flex items-center gap-3 flex-wrap w-full md:w-auto">
+            <div className="relative flex-1 md:flex-none md:w-52">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Buscar deal..."
+                className="w-full pl-9 pr-8 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <XIcon className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+            <input
+              type="number"
+              value={minValue}
+              onChange={e => setMinValue(e.target.value)}
+              placeholder="Mín R$"
+              className="w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+            />
+            <input
+              type="number"
+              value={maxValue}
+              onChange={e => setMaxValue(e.target.value)}
+              placeholder="Máx R$"
+              className="w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+            />
+            {hasFilters && (
+              <button
+                onClick={() => { setSearchQuery(''); setTempFilter(null); setMinValue(''); setMaxValue(''); }}
+                className="text-[9px] font-bold text-destructive uppercase tracking-wider hover:underline flex items-center gap-1"
+              >
+                <XIcon className="w-3 h-3" /> Limpar
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-4 flex-wrap">
@@ -185,8 +276,8 @@ export default function CRMPage() {
                   title={stage.title}
                   color={stage.color}
                   stageKey={stage.key}
-                  count={transformedDeals.filter(d => d.stage === stage.key).length}
-                  deals={transformedDeals.filter(d => d.stage === stage.key)}
+                  count={finalDeals.filter(d => d.stage === stage.key).length}
+                  deals={finalDeals.filter(d => d.stage === stage.key)}
                   onDeleteDeal={(id) => deleteDeal(id)}
                   onMoveDeal={(dealId, toStage) => moveDealToStage({ dealId, stage: toStage })}
                 />
