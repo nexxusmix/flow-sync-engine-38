@@ -32,7 +32,7 @@ const mainMenuItems: MenuItem[] = [
   },
   { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
   { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
-  { name: "Clientes", href: "/crm?tab=clients", icon: "groups" },
+  { name: "Clientes", href: "/clientes", icon: "groups" },
   { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
   { name: "Calendário", href: "/calendario", icon: "event" },
   { name: "Financeiro", href: "/financeiro", icon: "payments" },
