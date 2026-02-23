@@ -1,57 +1,86 @@
 
-# Pagina de Clientes
+# Gerar Cliente, CRM Deal e Prospect a partir do Projeto com IA
 
-Criar uma pagina dedicada e completa para gestao de clientes, substituindo o link atual do sidebar que aponta para `/crm?tab=clients`.
+Adicionar ao menu de acoes do projeto (ProjectActionsMenu) uma opcao "Gerar Cliente + CRM + Prospeccao" que, com um clique, usa IA para extrair e preencher automaticamente:
 
-## O que sera criado
+1. Um **contato** em `crm_contacts` (cliente)
+2. Um **deal** em `crm_deals` (pipeline CRM) vinculado ao contato e projeto
+3. Um **prospect** em `prospects` + **oportunidade** em `prospect_opportunities` vinculada ao projeto
 
-### 1. Pagina principal `/clientes` (`src/pages/ClientesPage.tsx`)
-- Header com titulo "Clientes", busca e botao "Novo Cliente"
-- Cards de metricas no topo: Total de Clientes, Clientes Ativos (com projetos), Valor Total em Contratos, Novos no Mes
-- Tabela com todos os contatos da `crm_contacts` mostrando: Nome, Empresa, Email, Telefone, Instagram, Projetos Ativos, Valor Total, Tags, Data de Criacao
-- Filtros por busca textual e por tags
-- Click na linha abre o detalhe do cliente
+Tudo de forma autonoma, sem formularios manuais.
 
-### 2. Drawer/Dialog de detalhe do cliente
-- Informacoes de contato editaveis (nome, empresa, email, telefone, instagram, notas)
-- Abas internas:
-  - **Resumo**: dados do cliente e metricas agregadas
-  - **Projetos**: lista de projetos vinculados ao cliente (via `projects.client_name`)
-  - **Deals**: deals do CRM vinculados (via `crm_deals.contact_id`)
-  - **Contratos**: contratos vinculados (via `contracts.client_name`)
-  - **Financeiro**: receitas vinculadas aos projetos do cliente
+---
 
-### 3. Dialog de criacao/edicao de cliente
-- Formulario com campos: nome, empresa, email, telefone, instagram, notas, tags
-- Usa as mutations ja existentes do `useCRM` (createContact, updateContact, deleteContact)
+## Fluxo do Usuario
 
-### 4. Atualizacoes no Sidebar e Rotas
+1. No menu de acoes de qualquer projeto (tres pontinhos), aparece nova opcao: **"Gerar Cliente + Pipeline"** com icone de IA (Sparkles)
+2. Ao clicar, o sistema:
+   - Verifica se ja existe um contato com o mesmo nome/empresa do cliente do projeto
+   - Se nao existe, cria automaticamente em `crm_contacts`
+   - Cria um Deal em `crm_deals` no estagio "lead" vinculado ao contato e ao projeto
+   - Cria um Prospect em `prospects` e uma Opportunity em `prospect_opportunities`
+   - Usa IA para enriquecer dados: gerar notas, temperatura, score, tags e proxima acao
+3. Toast de sucesso com resumo do que foi criado
 
-- **Sidebar**: Alterar o href de "Clientes" de `/crm?tab=clients` para `/clientes`
-- **App.tsx**: Adicionar rota `/clientes` apontando para `ClientesPage`
+---
 
 ## Detalhes tecnicos
 
+### 1. Nova Edge Function: `generate-client-from-project`
+
+**Arquivo:** `supabase/functions/generate-client-from-project/index.ts`
+
+Recebe `{ project_id }` e executa:
+
+1. Busca o projeto completo (name, client_name, brand_name, description, contract_value, template, start_date, due_date)
+2. Verifica se ja existe contato com `name = client_name` em `crm_contacts` (evita duplicatas)
+3. Se nao existe, insere novo contato com `name = client_name`, `company = brand_name || client_name`
+4. Chama Lovable AI (Gemini Flash) com o contexto do projeto para gerar:
+   - `temperature` (hot/warm/cold baseado no valor e contexto)
+   - `score` (0-100)
+   - `source` ("projeto_existente")
+   - `next_action` (sugestao de proxima acao)
+   - `next_action_at` (data sugerida)
+   - `tags` para o contato
+   - `notes` contextuais
+   - Dados de prospect: `niche`, `priority`, `city`
+5. Insere Deal em `crm_deals` com contact_id, project_id, stage_key='lead', value=contract_value
+6. Insere Prospect em `prospects` com company_name=client_name, decision_maker_name inferido
+7. Insere Opportunity em `prospect_opportunities` com prospect_id, linked_project_id, estimated_value
+8. Retorna resumo de tudo que foi criado
+
+Usa tool calling para extrair JSON estruturado da IA (conforme padrao do projeto).
+
+### 2. Atualizar `ProjectActionsMenu.tsx`
+
+Adicionar nova opcao no DropdownMenu entre "Auto Update IA" e o separador:
+
+```
+Gerar Cliente + Pipeline (icone Sparkles, cor primary)
+```
+
+Novo handler `handleGenerateClient` que:
+- Mostra toast loading "Gerando cliente e pipeline com IA..."
+- Invoca `generate-client-from-project` com `project_id`
+- Invalida queries: `crm-contacts`, `crm-deals`, `prospects`
+- Mostra toast de sucesso com resumo
+
+### 3. Config.toml
+
+Adicionar entrada para nova funcao:
+```toml
+[functions.generate-client-from-project]
+verify_jwt = false
+```
+
 ### Arquivos a criar
-- `src/pages/ClientesPage.tsx` - Pagina principal com tabela, metricas e dialogs
-- `src/components/clients/ClientDetailDrawer.tsx` - Drawer lateral com abas de detalhe
-- `src/components/clients/ClientFormDialog.tsx` - Dialog de criar/editar cliente
+- `supabase/functions/generate-client-from-project/index.ts`
 
 ### Arquivos a editar
-- `src/components/layout/Sidebar.tsx` - Linha 35: mudar href para `/clientes`
-- `src/App.tsx` - Adicionar import e rota protegida para `/clientes`
+- `src/components/projects/ProjectActionsMenu.tsx` (nova opcao no menu)
+- `supabase/config.toml` (registro da funcao -- automatico)
 
-### Dados utilizados (sem alteracoes no banco)
-- `crm_contacts` - tabela principal de clientes (ja existe com RLS)
-- `crm_deals` - deals vinculados via `contact_id`
-- `projects` - projetos vinculados via `client_name` (match por nome)
-- `contracts` - contratos vinculados via `client_name`
-- `revenues` - receitas vinculadas via `project_id` dos projetos do cliente
-
-### Hooks reutilizados
-- `useCRM()` - contacts, createContact, updateContact, deleteContact ja implementados
-- Queries adicionais inline para projetos, contratos e receitas do cliente selecionado
-
-### Padrao visual
-- Segue o padrao existente: `DashboardLayout`, `glass-card`, tabelas com componentes `Table/*`, badges, chips
-- Estilo tipografico: titulos bold uppercase tracking-tighter, labels `font-light`
+### Fluxo anti-duplicata
+- Antes de criar contato, busca por `name ILIKE client_name` em `crm_contacts`
+- Antes de criar prospect, busca por `company_name ILIKE client_name` em `prospects`
+- Se ja existem, reutiliza os IDs existentes e so cria deal/opportunity
