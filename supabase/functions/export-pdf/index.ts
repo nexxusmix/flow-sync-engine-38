@@ -379,6 +379,120 @@ async function buildFinancePdf(supabase: any, period: string) {
   return { bytes: await b.save(), slug: `financeiro-${period}` };
 }
 
+// ─── Project Overview HTML via Gemini ────────────────────────
+async function buildProjectOverviewHtml(supabase: any, period: string): Promise<{ html: string; slug: string }> {
+  const { start, label } = getPeriodDates(period);
+
+  const [{ data: projects }, { data: revenues }] = await Promise.all([
+    supabase.from("projects").select("*").order("created_at", { ascending: false }).limit(50),
+    supabase.from("revenues").select("*").order("due_date"),
+  ]);
+
+  const list = projects || [];
+  const revList = revenues || [];
+  const today = new Date().toISOString().split("T")[0];
+
+  const total = list.length;
+  const active = list.filter((p: any) => p.status === "active").length;
+  const delayed = list.filter((p: any) => p.status === "delayed" || p.status === "atrasado").length;
+  const completed = list.filter((p: any) => p.status === "completed" || p.status === "delivered" || p.status === "concluido").length;
+  const avgHealth = total > 0 ? Math.round(list.reduce((s: number, p: any) => s + (p.health_score || 100), 0) / total) : 100;
+  const totalValue = list.reduce((s: number, p: any) => s + (Number(p.contract_value) || 0), 0);
+  const received = revList.filter((r: any) => r.status === "received").reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const pendingRev = revList.filter((r: any) => r.status !== "received").reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+  const overdueRev = revList.filter((r: any) => r.status !== "received" && r.due_date < today).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+
+  const fmtCur = (v: number) => `R$ ${v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+  const fmtDt = (d: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR') : '--';
+
+  const dataPayload = JSON.stringify({
+    period_label: label,
+    date: new Date().toLocaleDateString('pt-BR'),
+    kpis: {
+      total_projects: total,
+      active,
+      completed,
+      delayed,
+      avg_health: avgHealth,
+      total_pipeline: fmtCur(totalValue),
+      received: fmtCur(received),
+      pending: fmtCur(pendingRev),
+      overdue: fmtCur(overdueRev),
+    },
+    projects: list.slice(0, 30).map((p: any) => ({
+      name: p.name || 'Projeto',
+      client: p.client_name || '--',
+      status: p.status || 'active',
+      health: p.health_score || 100,
+      value: fmtCur(Number(p.contract_value) || 0),
+      stage: p.stage_current || 'briefing',
+      due_date: fmtDt(p.due_date),
+    })),
+  });
+
+  const systemPrompt = `You are a pixel-perfect HTML report generator for SQUAD FILM.
+Return ONLY a complete HTML document starting with <!DOCTYPE html>. No markdown code blocks, no explanations, no text before or after the HTML.
+
+Use this EXACT CSS inside a <style> tag in the <head>:
+${SQUAD_REPORT_CSS}
+
+Also add these @media print rules inside the same <style>:
+@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } @page { margin: 0; size: A4 landscape; } }
+
+Also add in <head>:
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+DOCUMENT STRUCTURE (follow EXACTLY):
+1. div.header with div.logo "SQ" and span.header-right "SQUAD FILM | 2026"
+2. div.hero with:
+   - p.hero-subtitle "Command Center"
+   - h1.hero-title: "SQUAD<br><span class='accent'>Projetos.</span>"
+   - div.accent-bar
+   - p.hero-desc "Visao Geral da Operacao | Gerado em DD/MM/YYYY"
+3. div.kpi-row (first row) with 4 kpi-cards:
+   - "Projetos Ativos" value with accent class
+   - "Concluidos" value with success class
+   - "Saude Media" value with success if >=80, warning if 50-79, error if <50
+   - "Em Risco" value with error class if >0, else white
+4. div.kpi-row (second row) with 4 kpi-cards:
+   - "Pipeline Total" (white)
+   - "Recebido" (success)
+   - "A Receber" (accent)
+   - "Vencido" (error if >0, else white)
+5. div.section with h2.section-title "Projetos" and table with columns: Projeto, Cliente, Etapa, Saude, Valor, Prazo.
+   - Project name in bold class
+   - Client in muted class
+   - Stage as span.badge.badge-accent
+   - Health as percentage with color (success>=80, warning 50-79, error<50)
+   - Value in bold class
+   - Due date in muted class
+6. div.footer with p "SQUAD FILM | 2026"
+
+Stage labels: briefing->Briefing, roteiro->Roteiro, pre_producao->Pre-Producao, captacao->Captacao, edicao->Edicao, revisao->Revisao, aprovacao->Aprovacao, entrega->Entrega, pos_venda->Pos-Venda.
+Status: active->Ativo, delayed->Atrasado, completed/concluido->Entregue.
+If any section data is empty, skip that section entirely.`;
+
+  console.log(`[export-pdf] Calling Gemini for project overview HTML`);
+
+  const aiResult = await chatCompletion({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Generate the HTML report with this data:\n${dataPayload}` },
+    ],
+    temperature: 0.1,
+  });
+
+  let html = aiResult.choices?.[0]?.message?.content || "";
+  html = html.replace(/^```html?\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+
+  if (!html.includes('<html') && !html.includes('<!DOCTYPE')) {
+    throw new Error("IA nao gerou HTML valido para visao geral");
+  }
+
+  return { html, slug: "command-center-projetos" };
+}
+
 // ─── Main Handler ─────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -403,18 +517,28 @@ serve(async (req) => {
     }
 
     // ── HTML-based exports (Gemini AI) ──────────────────────
-    if (type === "project" || type === "portal") {
-      const projectId = id || "";
-      if (!projectId) throw new Error("ID do projeto e obrigatorio");
+    if (type === "project" || type === "portal" || type === "project_overview") {
+      let html: string;
+      let slug: string;
 
-      const { html, slug } = await buildProjectHtml(supabase, projectId);
+      if (type === "project_overview") {
+        const result = await buildProjectOverviewHtml(supabase, period);
+        html = result.html;
+        slug = result.slug;
+      } else {
+        const projectId = id || "";
+        if (!projectId) throw new Error("ID do projeto e obrigatorio");
+        const result = await buildProjectHtml(supabase, projectId);
+        html = result.html;
+        slug = type === "portal" ? `portal-${result.slug}` : result.slug;
+      }
 
       console.log(`[export-pdf] Done (HTML via Gemini): ${slug}`);
 
       return new Response(JSON.stringify({
         success: true,
         html,
-        slug: type === "portal" ? `portal-${slug}` : slug,
+        slug,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -430,10 +554,6 @@ serve(async (req) => {
         break;
       case "tasks":
         result = await buildTasksPdf(supabase);
-        break;
-      case "project_overview":
-        result = await buildReport360Pdf(supabase, period);
-        result.slug = "command-center-projetos";
         break;
       default:
         throw new Error(`Tipo nao suportado: ${type}`);
