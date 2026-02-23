@@ -1,58 +1,93 @@
 
 
-## Corrigir "Resumo do Dia" para funcionar de verdade
+## Resumo do Dia: Auto-gerado + Visual com Cards Interativos
 
-### Problema
-O `polo-ai-chat` usa o system prompt do **executor autonomo** (que responde com JSON/execution_plan) para TODAS as chamadas, incluindo o resumo diario. Quando o dashboard pede um "resumo executivo", o Gemini responde com um JSON de execution plan em vez de texto legivel. O `data?.response` pode ate ter conteudo, mas e um bloco JSON ilegivel, ou o campo vem vazio porque o executor nao "entende" o pedido como uma acao.
+### O que muda
 
-Alem disso, o componente `AIDailySummary` depende de dados reais (tarefas, CRM, pagamentos) que **nao sao enviados ao AI** -- ele pede "inclua tarefas pendentes" mas nao passa nenhum dado real. O AI inventa ou responde genericamente.
+O componente `AIDailySummary` sera completamente redesenhado para:
 
-### Solucao
+1. **Gerar automaticamente** ao carregar o dashboard (sem precisar clicar em nada)
+2. **Exibir resultados em cards visuais** em vez de texto markdown corrido
+3. **AI retorna JSON estruturado** em vez de texto livre, permitindo renderizacao visual
 
-**1. Criar um system prompt especifico para daily summary no `polo-ai-chat/index.ts`**
-- Quando `context.type === 'daily_summary'`, usar um prompt simplificado que pede resposta em markdown legivel (nao JSON)
-- Isso garante que o Gemini responda com bullet points legiveis
+### Como funciona
 
-**2. Injetar dados reais do dashboard na chamada**
-- No `AIDailySummary.tsx`, buscar metricas reais usando o hook `useDashboardMetrics` que ja existe
-- Passar esses dados no corpo da mensagem ao AI para que ele gere um resumo baseado em dados reais
-- Isso transforma o resumo de "inventado" para "baseado em dados"
+**1. Edge function (`polo-ai-chat/index.ts`) - resposta estruturada para daily_summary**
 
-**3. Tratar melhor a resposta no componente**
-- Garantir que o fallback so aparece quando realmente nao ha resposta
+Alterar o system prompt do `daily_summary` para pedir ao AI que retorne um JSON estruturado com categorias:
+
+```json
+{
+  "greeting": "Bom dia! Aqui vai seu resumo.",
+  "highlights": [
+    { "icon": "trending-up", "label": "Receita", "value": "R$ 12.500", "status": "positive", "detail": "3 pagamentos previstos esta semana" },
+    { "icon": "users", "label": "Leads", "value": "5 novos", "status": "neutral", "detail": "Pipeline estavel" },
+    { "icon": "alert-triangle", "label": "Entregas", "value": "2 proximas", "status": "warning", "detail": "Projeto X vence em 3 dias" }
+  ],
+  "action_items": [
+    "Cobrar pagamento do Projeto Y (venceu ha 2 dias)",
+    "Confirmar reuniao com cliente Z amanha"
+  ]
+}
+```
+
+**2. Componente `AIDailySummary.tsx` - redesign visual completo**
+
+- Remover `ReactMarkdown` e renderizar cards visuais com icones, cores por status e animacoes
+- Cada highlight vira um mini-card glass com icone, valor e detalhe
+- Action items aparecem como checklist visual
+- Saudacao do AI aparece no topo
+- Gera automaticamente quando o dashboard carrega (ja funciona com `enabled: !!user?.id && !kpi.isLoading`)
+- Remover texto "Clique em atualizar" -- nunca mais sera necessario
+
+**3. Layout visual**
+
+```
++--------------------------------------------------+
+| Sparkles  Resumo do Dia  [Polo AI]     [refresh]  |
++--------------------------------------------------+
+| "Bom dia! Aqui vai seu resumo de hoje."           |
+|                                                    |
+| [card receita]  [card leads]  [card entregas]      |
+|  R$ 12.500       5 novos      2 proximas           |
+|  3 pagamentos    Pipeline      Projeto X em 3d     |
+|  previstos       estavel                           |
+|                                                    |
+| Acoes recomendadas:                                |
+|  * Cobrar pagamento do Projeto Y                   |
+|  * Confirmar reuniao com cliente Z                  |
++--------------------------------------------------+
+```
 
 ### Arquivos a editar
 
 | Arquivo | Mudanca |
 |---|---|
-| `supabase/functions/polo-ai-chat/index.ts` | Adicionar system prompt especifico quando `context.type === 'daily_summary'` |
-| `src/components/dashboard/AIDailySummary.tsx` | Usar `useDashboardMetrics` para enviar dados reais ao AI |
+| `supabase/functions/polo-ai-chat/index.ts` | Alterar prompt do `daily_summary` para pedir JSON estruturado |
+| `src/components/dashboard/AIDailySummary.tsx` | Redesign completo com cards visuais, parse de JSON, auto-load |
 
-### Detalhe tecnico
+### Detalhes tecnicos
 
-**polo-ai-chat - novo branch para daily_summary:**
-```typescript
-if (context?.type === 'daily_summary') {
-  systemPrompt = `Voce e o Polo AI, assistente da produtora. Gere um resumo executivo curto do dia em markdown com bullet points. Seja direto, use emojis moderadamente. Responda APENAS em texto legivel, NUNCA em JSON. Use os dados fornecidos pelo usuario para basear o resumo.`;
-}
-```
+**Prompt atualizado (polo-ai-chat):**
+- Instrui o AI a responder APENAS com JSON valido (sem markdown, sem code blocks)
+- Define schema exato com `greeting`, `highlights` (max 6 items), `action_items` (max 4 items)
+- Cada highlight tem: `icon` (nome lucide), `label`, `value`, `status` (positive/warning/neutral/negative), `detail`
 
-**AIDailySummary - enviar metricas reais:**
-```typescript
-const { data: dashData } = useDashboardMetrics();
-// ... na queryFn:
-const metricsContext = dashData ? `Dados atuais:
-- Projetos ativos: ${dashData.metrics.totalProjectsActive}
-- Projetos em risco: ${dashData.metrics.projectsAtRisk}
-- Receita do mes: R$${dashData.metrics.monthlyRevenue}
-- Pagamentos pendentes: R$${dashData.metrics.pendingPayments}
-- Deals no pipeline: ${dashData.metrics.totalDeals}
-- Eventos proximos: ${dashData.metrics.eventsNext30Days}` : '';
+**Componente redesenhado:**
+- Parse do JSON com `try/catch` e fallback para texto se o parse falhar
+- Grid responsivo de mini-cards (2-3 colunas)
+- Cores por status: `positive` = verde, `warning` = amber, `negative` = vermelho, `neutral` = azul
+- Icones mapeados de string para componente Lucide
+- Animacao staggered com framer-motion nos cards
+- Secao de action items com icone de check
 
-message: `${metricsContext}\n\nGere o resumo do dia.`
-```
+**Auto-geracao:**
+- O query ja tem `enabled: !!user?.id && !kpi.isLoading` -- dispara automaticamente
+- `staleTime: 30 min` -- nao regenera a cada visita, so a cada 30 minutos
+- Botao de refresh manual continua disponivel
 
 ### Resultado
-- Resumo gerado com dados REAIS do dashboard
-- Texto legivel em markdown (nao JSON de execution plan)
-- Deploy automatico da edge function
+- Resumo aparece automaticamente ao abrir o dashboard
+- Visual com cards coloridos, icones e animacoes (padrao glass-card da plataforma)
+- Dados baseados nas metricas reais do KPI
+- Zero cliques necessarios
