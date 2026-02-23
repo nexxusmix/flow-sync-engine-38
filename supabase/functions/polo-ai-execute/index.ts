@@ -108,9 +108,12 @@ const TABLE_SEARCH_FIELDS: Record<string, string[]> = {
   knowledge_articles: ['title', 'content_md'],
 };
 
+// Tables that use user_id instead of workspace_id
+const USER_SCOPED_TABLES = new Set(['tasks']);
+
 async function toolSearch(
   supabase: ReturnType<typeof createClient>,
-  entity: string, query: string, workspaceId: string,
+  entity: string, query: string, workspaceId: string, userId?: string,
 ): Promise<{ data: unknown[] | null; error: string | null }> {
   const table = resolveTable(entity);
   if (!table) return { data: null, error: `Entidade desconhecida: ${entity}` };
@@ -118,30 +121,39 @@ async function toolSearch(
   const searchFields = TABLE_SEARCH_FIELDS[table] || ['name', 'title'];
   const q = query.toLowerCase();
 
-  // First try with workspace_id filter
-  const { data, error } = await supabase
-    .from(table)
-    .select('*')
-    .eq('workspace_id', workspaceId)
-    .or(searchFields.map(f => `${f}.ilike.%${q}%`).join(','))
-    .limit(10);
+  // Build base query
+  let baseQuery = supabase.from(table).select('*');
+  
+  // Apply appropriate scope filter
+  if (USER_SCOPED_TABLES.has(table)) {
+    if (userId) baseQuery = baseQuery.eq('user_id', userId);
+  } else {
+    baseQuery = baseQuery.eq('workspace_id', workspaceId);
+  }
+
+  // Apply search filter (skip for "all" queries)
+  if (q !== 'all' && q !== '*') {
+    baseQuery = baseQuery.or(searchFields.map(f => `${f}.ilike.%${q}%`).join(','));
+  }
+
+  const { data, error } = await baseQuery.limit(20);
 
   if (error) return { data: null, error: error.message };
 
-  // If no results found, retry WITHOUT workspace_id filter (handles workspace_id mismatch)
+  // If no results found with scope, retry without scope filter
   if (!data || data.length === 0) {
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from(table)
-      .select('*')
-      .or(searchFields.map(f => `${f}.ilike.%${q}%`).join(','))
-      .limit(10);
-
+    let fallbackQuery = supabase.from(table).select('*');
+    if (q !== 'all' && q !== '*') {
+      fallbackQuery = fallbackQuery.or(searchFields.map(f => `${f}.ilike.%${q}%`).join(','));
+    }
+    const { data: fallbackData, error: fallbackError } = await fallbackQuery.limit(20);
     if (fallbackError) return { data: null, error: fallbackError.message };
     return { data: fallbackData || [], error: null };
   }
 
   return { data: data || [], error: null };
 }
+
 
 async function toolUpsert(
   supabase: ReturnType<typeof createClient>,
@@ -362,7 +374,7 @@ serve(async (req) => {
       try {
         switch (step.action) {
           case 'search': {
-            const r = await toolSearch(supabase, step.entity!, step.query!, workspaceId);
+            const r = await toolSearch(supabase, step.entity!, step.query!, workspaceId, userId);
             // If search found results and entity is project, extract project_id for later steps
             const searchResults = (r.data || []) as any[];
             if (!r.error && searchResults.length > 0 && step.entity === 'project') {
