@@ -20,7 +20,7 @@ interface TasksTabProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  completed: { label: "Concluído", variant: "default" },
+  done: { label: "Concluído", variant: "default" },
   in_progress: { label: "Em andamento", variant: "secondary" },
   blocked: { label: "Bloqueado", variant: "destructive" },
   not_started: { label: "Não iniciado", variant: "outline" },
@@ -30,21 +30,21 @@ export function TasksTab({ project }: TasksTabProps) {
   const { updateStage } = useProjects();
 
   const stages = project.stages || [];
-  const completedCount = stages.filter(s => s.status === "completed").length;
+  const completedCount = stages.filter(s => s.status === "done").length;
   const progressPercent = stages.length > 0 ? Math.round((completedCount / stages.length) * 100) : 0;
 
   const handleToggle = (stageId: string, currentStatus: string | null) => {
-    const newStatus = currentStatus === "completed" ? "not_started" : "completed";
+    const newStatus = currentStatus === "done" ? "not_started" : "done";
     updateStage(
       {
         stageId,
         data: {
           status: newStatus,
-          ...(newStatus === "completed" ? { actual_end: new Date().toISOString() } : { actual_end: null }),
+          ...(newStatus === "done" ? { actual_end: new Date().toISOString() } : { actual_end: null }),
         },
       },
       {
-        onSuccess: () => toast.success(newStatus === "completed" ? "Etapa concluída!" : "Etapa reaberta"),
+        onSuccess: () => toast.success(newStatus === "done" ? "Etapa concluída!" : "Etapa reaberta"),
         onError: () => toast.error("Erro ao atualizar etapa"),
       }
     );
@@ -56,7 +56,7 @@ export function TasksTab({ project }: TasksTabProps) {
         stageId,
         data: {
           status: newStatus,
-          ...(newStatus === "completed" ? { actual_end: new Date().toISOString() } : {}),
+          ...(newStatus === "done" ? { actual_end: new Date().toISOString() } : {}),
         },
       },
       {
@@ -99,14 +99,14 @@ export function TasksTab({ project }: TasksTabProps) {
             return (
               <div key={stage.id} className="p-4 flex items-start gap-4 hover:bg-muted/20 transition-colors">
                 <Checkbox
-                  checked={stage.status === "completed"}
+                  checked={stage.status === "done"}
                   onCheckedChange={() => handleToggle(stage.id, stage.status)}
                   className="mt-0.5"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-sm font-medium ${
-                      stage.status === "completed" ? "text-muted-foreground line-through" : "text-foreground"
+                      stage.status === "done" ? "text-muted-foreground line-through" : "text-foreground"
                     }`}>
                       {stage.title}
                     </span>
