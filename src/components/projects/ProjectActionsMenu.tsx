@@ -59,6 +59,7 @@ export function ProjectActionsMenu({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSyncingFinance, setIsSyncingFinance] = useState(false);
   const [isAutoUpdating, setIsAutoUpdating] = useState(false);
+  const [isGeneratingClient, setIsGeneratingClient] = useState(false);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -143,6 +144,30 @@ export function ProjectActionsMenu({
     }
   };
 
+  const handleGenerateClient = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsGeneratingClient(true);
+    const toastId = toast.loading('Gerando cliente e pipeline com IA...');
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-client-from-project', {
+        body: { project_id: projectId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.dismiss(toastId);
+      toast.success(data?.summary || 'Cliente e pipeline gerados!', { duration: 8000 });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deals'] });
+      queryClient.invalidateQueries({ queryKey: ['prospects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    } catch (err: any) {
+      toast.dismiss(toastId);
+      toast.error(err?.message || 'Erro ao gerar cliente e pipeline');
+    } finally {
+      setIsGeneratingClient(false);
+    }
+  };
+
   const confirmComplete = () => {
     completeProject(projectId);
     setShowCompleteDialog(false);
@@ -200,6 +225,14 @@ export function ProjectActionsMenu({
           >
             <Wand2 className={`w-4 h-4 mr-2 ${isAutoUpdating ? 'animate-spin' : ''}`} />
             {isAutoUpdating ? 'Atualizando...' : 'Auto Update IA'}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleGenerateClient}
+            disabled={isGeneratingClient}
+            className="text-primary focus:text-primary"
+          >
+            <Sparkles className={`w-4 h-4 mr-2 ${isGeneratingClient ? 'animate-pulse' : ''}`} />
+            {isGeneratingClient ? 'Gerando...' : 'Gerar Cliente + Pipeline'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {!isCompleted && !isArchived && (
