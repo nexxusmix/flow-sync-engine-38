@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useKPIMetrics } from '@/hooks/useKPIMetrics';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -10,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 export function AIDailySummary() {
   const { user } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
+  const kpi = useKPIMetrics();
 
   const { data: summary, isLoading, isFetching, error } = useQuery({
     queryKey: ['ai-daily-summary', user?.id, refreshKey],
@@ -20,24 +22,31 @@ export function AIDailySummary() {
       const token = session.data.session?.access_token;
       if (!token) return null;
 
+      const metricsText = `Dados atuais do dashboard:
+- Leads novos (últimos 7 dias): ${kpi.newLeads}
+- Respostas recebidas: ${kpi.inboundReplies}
+- Reuniões agendadas: ${kpi.upcomingMeetings}
+- Propostas enviadas: ${kpi.sentProposals}
+- Pagamentos pendentes (próx. 7 dias): R$${kpi.pendingPaymentsTotal.toLocaleString('pt-BR')}
+- Entregas próximas: ${kpi.upcomingDeliveries}`;
+
       const { data, error } = await supabase.functions.invoke('polo-ai-chat', {
         body: {
-          message: 'Gere um resumo executivo curto do dia de hoje para o dono da produtora. Inclua: tarefas pendentes, deals quentes no CRM, pagamentos próximos e entregas da semana. Seja direto e use bullet points. Responda em português.',
+          message: `${metricsText}\n\nGere o resumo executivo do dia baseado nesses dados.`,
           context: { type: 'daily_summary' },
         },
       });
 
       if (error) {
-        // Check for credit exhaustion
         const msg = error?.message || '';
         if (msg.includes('402') || msg.includes('CREDITS_EXHAUSTED') || msg.includes('payment')) {
           throw new Error('CREDITS_EXHAUSTED');
         }
         throw error;
       }
-      return data?.response || data?.message || 'Resumo indisponível no momento.';
+      return data?.response || data?.message || null;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !kpi.isLoading,
     staleTime: 1000 * 60 * 30,
     retry: 1,
   });
@@ -66,7 +75,7 @@ export function AIDailySummary() {
           <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
         </button>
       </div>
-      {isLoading ? (
+      {isLoading || kpi.isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-4/5" />
