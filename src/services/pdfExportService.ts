@@ -117,48 +117,47 @@ async function downloadPdfFromUrl(url: string, fileName: string): Promise<void> 
   }
 }
 
-// ─── HTML to PDF conversion (client-side via html2pdf.js) ─────
+// ─── HTML to PDF conversion (client-side via iframe print) ─────
 
-async function convertHtmlToPdf(html: string, fileName: string): Promise<void> {
-  const html2pdfModule = await import('html2pdf.js');
-  const html2pdf = html2pdfModule.default;
+async function convertHtmlToPdf(html: string, _fileName: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '0';
+      iframe.style.width = '794px';
+      iframe.style.height = '1123px';
+      document.body.appendChild(iframe);
 
-  // Create off-screen container
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  container.style.position = 'fixed';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '794px'; // A4 width at 96 DPI
-  container.style.zIndex = '-1';
-  document.body.appendChild(container);
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        document.body.removeChild(iframe);
+        reject(new Error('Could not access iframe document'));
+        return;
+      }
 
-  // Wait for fonts and styles to load
-  await new Promise(resolve => setTimeout(resolve, 800));
+      iframeDoc.open();
+      iframeDoc.write(html);
+      iframeDoc.close();
 
-  try {
-    await html2pdf()
-      .from(container)
-      .set({
-        margin: 0,
-        filename: fileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#000000',
-          logging: false,
-        },
-        jsPDF: {
-          unit: 'mm',
-          format: 'a4',
-          orientation: 'portrait',
-        },
-      })
-      .save();
-  } finally {
-    document.body.removeChild(container);
-  }
+      // Wait for fonts/images to load then trigger print dialog
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.print();
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            resolve();
+          }, 1000);
+        } catch (e) {
+          document.body.removeChild(iframe);
+          reject(e);
+        }
+      }, 1500);
+    } catch (e) {
+      reject(e);
+    }
+  });
 }
 
 /**
