@@ -2127,6 +2127,7 @@ export type Database = {
           account_holder_name: string | null
           bank_name: string | null
           client_document: string | null
+          client_email: string | null
           client_name: string | null
           created_at: string
           created_by: string | null
@@ -2155,6 +2156,7 @@ export type Database = {
           account_holder_name?: string | null
           bank_name?: string | null
           client_document?: string | null
+          client_email?: string | null
           client_name?: string | null
           created_at?: string
           created_by?: string | null
@@ -2183,6 +2185,7 @@ export type Database = {
           account_holder_name?: string | null
           bank_name?: string | null
           client_document?: string | null
+          client_email?: string | null
           client_name?: string | null
           created_at?: string
           created_by?: string | null
