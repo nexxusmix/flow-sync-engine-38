@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useExecutionPlans } from "@/hooks/useExecutionPlans";
 import { ExecutionPlanBadge } from "@/components/tasks/ExecutionPlanBadge";
 import {
@@ -77,8 +78,10 @@ const COLUMN_CONFIG: Record<string, {
 
 export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask }: TasksBoardViewProps) {
   const { getPlanForTask } = useExecutionPlans();
+  const isMobile = useIsMobile();
   const toggleComplete = onToggleComplete || (() => {});
   const deleteTask = onDeleteTask || (() => {});
+  const [mobileColumn, setMobileColumn] = useState<Task["status"]>("today");
   const [expandedColumn, setExpandedColumn] = useState<Task["status"] | null>(null);
   const [search, setSearch] = useState("");
   const [globalSearch, setGlobalSearch] = useState("");
@@ -248,9 +251,44 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
         </div>
       )}
 
+      {/* Mobile Column Selector */}
+      {isMobile && (
+        <div className="flex gap-1 overflow-x-auto scrollbar-none pb-1">
+          {TASK_COLUMNS.map((col) => {
+            const config = COLUMN_CONFIG[col.key];
+            const Icon = config.icon;
+            const isActive = mobileColumn === col.key;
+            return (
+              <button
+                key={col.key}
+                onClick={() => setMobileColumn(col.key)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-light whitespace-nowrap transition-all border",
+                  isActive
+                    ? "bg-white/[0.08] border-white/[0.15] text-foreground"
+                    : "bg-white/[0.02] border-white/[0.06] text-muted-foreground"
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {col.title}
+                <span className={cn(
+                  "ml-1 text-[10px] px-1.5 py-0.5 rounded-full",
+                  isActive ? "bg-white/[0.1]" : "bg-white/[0.04]"
+                )}>
+                  {counts[col.key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Premium Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        {TASK_COLUMNS.map((col, index) => {
+      <div className={cn(
+        "grid gap-5",
+        isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
+      )}>
+        {(isMobile ? TASK_COLUMNS.filter(c => c.key === mobileColumn) : TASK_COLUMNS).map((col, index) => {
           const config = COLUMN_CONFIG[col.key];
           const Icon = config.icon;
           const count = counts[col.key];
@@ -453,8 +491,8 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="relative max-w-[200px]">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <div className="relative flex-1 sm:max-w-[200px]">
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                         <Input
                           value={search}
@@ -695,7 +733,7 @@ function ExpandedTaskRow({ task, plan, onEdit, onToggle, onDelete }: ExpandedTas
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0"
+            className="h-7 w-7 p-0 sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0"
           >
             <MoreHorizontal className="w-4 h-4" />
           </Button>
