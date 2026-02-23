@@ -39,10 +39,10 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
     const total = projects.length;
     const active = projects.filter(p => p.status === 'active').length;
     const completed = projects.filter(p => p.status === 'completed').length;
-    const withBlock = projects.filter(p => p.has_payment_block).length;
+    
     const totalValue = projects.reduce((acc, p) => acc + (p.contract_value || 0), 0);
     
-    return { total, active, completed, withBlock, totalValue };
+    return { total, active, completed, totalValue };
   }, [projects]);
 
   const statusData = useMemo(() => {
@@ -126,17 +126,6 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
           </div>
         </Card>
 
-        <Card className="glass-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-medium text-foreground">{metrics.withBlock}</p>
-              <p className="text-xs text-muted-foreground">Bloqueados</p>
-            </div>
-          </div>
-        </Card>
 
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">

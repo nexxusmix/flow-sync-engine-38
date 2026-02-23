@@ -30,7 +30,7 @@ export function useTimelineMilestones() {
           else if (daysUntil <= 7) severity = 'risk';
 
           // Increase severity if project has blockers or is at risk
-          if (project.has_payment_block) severity = 'critical';
+          
           if (project.health_score && project.health_score < 70) {
             severity = severity === 'normal' ? 'risk' : 'critical';
           }

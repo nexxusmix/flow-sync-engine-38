@@ -31,7 +31,7 @@ export function GenerateAlertsButton() {
     try {
       // Fetch all data in parallel
       const [projectsRes, portalLinksRes, meetingsRes, revisionsRes, revenuesRes] = await Promise.all([
-        supabase.from('projects').select('id, name, due_date, status, has_payment_block, health_score, stage_current, client_name, updated_at, start_date').neq('status', 'archived'),
+        supabase.from('projects').select('id, name, due_date, status, health_score, stage_current, client_name, updated_at, start_date').neq('status', 'archived'),
         supabase.from('portal_links').select('id, project_id'),
         supabase.from('calendar_events').select('id, project_id, title, start_at, status').gte('start_at', new Date().toISOString()).order('start_at', { ascending: true }),
         supabase.from('portal_change_requests').select('id, portal_link_id, status, created_at').eq('status', 'pending'),
@@ -116,20 +116,6 @@ export function GenerateAlertsButton() {
           }
         }
 
-        // ─── 2. PAGAMENTOS ───
-        if (p.has_payment_block) {
-          alertsToCreate.push({
-            title: `💰 Pagamento bloqueado: ${p.name}`,
-            type: 'payment_overdue',
-            severity: 'critical',
-            project_id: pid,
-            idempotency_key: `payment_overdue_${pid}`,
-            scope: 'hub',
-            channels: { in_app: true },
-            created_by: user.id,
-            message: `Bloqueio de pagamento ativo. Verifique com o cliente.`,
-          });
-        }
 
         const projectRevenues = revenues.filter((r: any) => r.project_id === pid);
         for (const rev of projectRevenues) {

@@ -60,7 +60,7 @@ export function PanoramaTab({ project }: PanoramaTabProps) {
             healthScore: project.health_score,
             status: project.status,
             contractValue: project.contract_value,
-            hasPaymentBlock: (project as any).has_payment_block,
+            
             portalUrl,
           },
         },

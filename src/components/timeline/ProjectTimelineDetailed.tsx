@@ -185,12 +185,6 @@ export function ProjectTimelineDetailed({
               </Badge>
             )}
 
-            {hasPaymentBlock && (
-              <Badge variant="destructive" className="bg-red-500/20 border-red-500/40 text-red-400">
-                <Lock className="w-3 h-3 mr-1" />
-                Bloqueado
-              </Badge>
-            )}
           </div>
 
           <div className="flex items-center gap-2">
