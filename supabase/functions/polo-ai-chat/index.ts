@@ -179,8 +179,22 @@ serve(async (req) => {
       });
     }
 
-    const { messages, context } = await req.json();
+    const body = await req.json();
+    
+    // Support both { messages: [...] } and { message: "string" } formats
+    let userMessages: Array<{ role: string; content: string }>;
+    if (Array.isArray(body.messages)) {
+      userMessages = body.messages;
+    } else if (typeof body.message === "string") {
+      userMessages = [{ role: "user", content: body.message }];
+    } else {
+      return new Response(JSON.stringify({ error: "Invalid request: messages or message required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
+    const context = body.context;
     let systemPrompt = SYSTEM_PROMPT;
     
     // Inject context
@@ -198,7 +212,7 @@ serve(async (req) => {
       model: "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
-        ...messages,
+        ...userMessages,
       ],
       stream: true,
     });

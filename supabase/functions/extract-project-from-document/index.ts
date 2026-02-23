@@ -138,6 +138,9 @@ async function extractPdfWithGemini(documentBase64: string, apiKey: string, docu
       return "";
     }
     
+    if (response.status === 402) {
+      throw new Error("CREDITS_EXHAUSTED");
+    }
     throw new Error(`Gemini API error: ${response.status}`);
   }
 
@@ -180,7 +183,11 @@ async function extractPdfWithPro(documentBase64: string, apiKey: string): Promis
   });
 
   if (!response.ok) {
-    console.error("Pro extraction failed:", await response.text());
+    const errText = await response.text();
+    console.error("Pro extraction failed:", errText);
+    if (response.status === 402) {
+      throw new Error("CREDITS_EXHAUSTED");
+    }
     return "";
   }
 
@@ -220,6 +227,11 @@ serve(async (req) => {
       try {
         extractedContent = await extractPdfWithGemini(documentBase64, LOVABLE_API_KEY, documentType);
       } catch (e) {
+        if (e instanceof Error && e.message === "CREDITS_EXHAUSTED") {
+          return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Aguarde a renovação ou adicione créditos ao workspace.", code: "CREDITS_EXHAUSTED" }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         console.error("Primary PDF extraction error:", e);
       }
       
@@ -232,6 +244,11 @@ serve(async (req) => {
             extractedContent = proContent;
           }
         } catch (e) {
+          if (e instanceof Error && e.message === "CREDITS_EXHAUSTED") {
+            return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Aguarde a renovação ou adicione créditos ao workspace.", code: "CREDITS_EXHAUSTED" }), {
+              status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
           console.error("Pro extraction error:", e);
         }
       }

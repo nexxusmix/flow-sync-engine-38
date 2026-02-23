@@ -4,14 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export function AIDailySummary() {
   const { user } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { data: summary, isLoading, isFetching } = useQuery({
+  const { data: summary, isLoading, isFetching, error } = useQuery({
     queryKey: ['ai-daily-summary', user?.id, refreshKey],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -27,13 +27,23 @@ export function AIDailySummary() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check for credit exhaustion
+        const msg = error?.message || '';
+        if (msg.includes('402') || msg.includes('CREDITS_EXHAUSTED') || msg.includes('payment')) {
+          throw new Error('CREDITS_EXHAUSTED');
+        }
+        throw error;
+      }
       return data?.response || data?.message || 'Resumo indisponível no momento.';
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 30, // 30min cache
+    staleTime: 1000 * 60 * 30,
     retry: 1,
   });
+
+  const isCreditsError = error?.message === 'CREDITS_EXHAUSTED' || 
+    (error?.message && (error.message.includes('402') || error.message.includes('payment')));
 
   return (
     <motion.div
@@ -61,6 +71,15 @@ export function AIDailySummary() {
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-4/5" />
           <Skeleton className="h-3 w-3/5" />
+        </div>
+      ) : error ? (
+        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p>
+            {isCreditsError
+              ? 'Créditos de IA esgotados. Adicione créditos ao workspace para reativar o resumo diário.'
+              : 'Não foi possível gerar o resumo. Tente novamente mais tarde.'}
+          </p>
         </div>
       ) : (
         <div className="text-xs text-muted-foreground leading-relaxed prose prose-sm prose-invert max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_li]:my-0.5">
