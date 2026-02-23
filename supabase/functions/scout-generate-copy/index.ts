@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,8 +16,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -29,8 +29,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Token inválido" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const userId = user.id;
@@ -38,8 +37,7 @@ Deno.serve(async (req) => {
     const { opportunity_id, tone } = await req.json();
     if (!opportunity_id) {
       return new Response(JSON.stringify({ error: "opportunity_id obrigatório" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -52,8 +50,7 @@ Deno.serve(async (req) => {
 
     if (oppErr || !opp) {
       return new Response(JSON.stringify({ error: "Oportunidade não encontrada" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -66,15 +63,6 @@ Deno.serve(async (req) => {
       .limit(1);
 
     const nextVersion = (existingMsgs?.[0]?.version || 0) + 1;
-
-    // Generate copy with Lovable AI
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     const systemPrompt = `Você é um copywriter especialista em prospecção B2B para produtoras audiovisuais premium.
 Gere uma abordagem personalizada para WhatsApp baseada no contexto da oportunidade.
@@ -99,63 +87,44 @@ Cargo: ${opp.contact_role || 'Não informado'}
 Contexto: ${JSON.stringify(opp.context)}
 Fonte: ${opp.source}`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "generate_copy",
-            description: "Generate WhatsApp approach copy",
-            parameters: {
-              type: "object",
-              properties: {
-                text_message: { type: "string", description: "WhatsApp message text" },
-                audio_script: { type: "string", description: "Audio narration script" },
-              },
-              required: ["text_message", "audio_script"],
-              additionalProperties: false,
+    const aiData = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [{
+        type: "function",
+        function: {
+          name: "generate_copy",
+          description: "Generate WhatsApp approach copy",
+          parameters: {
+            type: "object",
+            properties: {
+              text_message: { type: "string", description: "WhatsApp message text" },
+              audio_script: { type: "string", description: "Audio narration script" },
             },
+            required: ["text_message", "audio_script"],
+            additionalProperties: false,
           },
-        }],
-        tool_choice: { type: "function", function: { name: "generate_copy" } },
-      }),
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "generate_copy" } },
     });
 
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      console.error("AI error:", aiResponse.status, errText);
-      return new Response(JSON.stringify({ error: `Erro na IA: ${aiResponse.status}` }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiData = await aiResponse.json();
     let generated: { text_message: string; audio_script: string };
 
     try {
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       generated = JSON.parse(toolCall.function.arguments);
     } catch {
-      // Fallback: try parsing content directly
       try {
         const content = aiData.choices?.[0]?.message?.content || "";
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         generated = jsonMatch ? JSON.parse(jsonMatch[0]) : { text_message: content, audio_script: content };
       } catch {
         return new Response(JSON.stringify({ error: "Falha ao processar resposta da IA" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
@@ -184,8 +153,7 @@ Fonte: ${opp.source}`;
     if (msgErr) {
       console.error("Insert message error:", msgErr);
       return new Response(JSON.stringify({ error: "Erro ao salvar mensagem" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -196,8 +164,7 @@ Fonte: ${opp.source}`;
       .eq("id", opportunity_id);
 
     return new Response(JSON.stringify({ success: true, message: newMsg }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("scout-generate-copy error:", err);

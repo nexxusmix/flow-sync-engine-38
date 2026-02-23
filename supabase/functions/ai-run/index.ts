@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,10 +9,9 @@ const corsHeaders = {
 
 // ============================================
 // Unified AI Action Handler
-// Routes by action_key and calls Lovable AI
+// Routes by action_key, uses shared ai-client
 // ============================================
 
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
 // Action-specific system prompts
@@ -160,7 +160,6 @@ Elabore um briefing profissional e detalhado.
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -195,21 +194,12 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error('[ai-run] LOVABLE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'Configuração de IA não encontrada' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const systemPrompt = ACTION_PROMPTS[actionKey];
     const userPrompt = buildUserPrompt(actionKey, input || {});
     const tool = ACTION_TOOLS[actionKey];
 
-    // Build request body
-    const requestBody: Record<string, unknown> = {
+    // Build request options
+    const requestOpts: Record<string, unknown> = {
       model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
@@ -219,55 +209,23 @@ serve(async (req) => {
 
     // Add tool for structured output if available
     if (tool) {
-      requestBody.tools = [tool];
-      requestBody.tool_choice = { 
+      requestOpts.tools = [tool];
+      requestOpts.tool_choice = { 
         type: "function", 
         function: { name: (tool as { function: { name: string } }).function.name } 
       };
     }
 
-    console.log(`[ai-run] Calling Lovable AI...`);
+    console.log(`[ai-run] Calling AI via shared client...`);
 
-    const response = await fetch(LOVABLE_AI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
+    const data = await chatCompletion(requestOpts as any);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[ai-run] Lovable AI error: ${response.status}`, errorText);
-
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos.", status: 429 }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos para continuar.", status: 402 }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ error: "Erro ao gerar conteúdo com IA" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    console.log(`[ai-run] Response received`);
+    console.log(`[ai-run] Response received via ${data.provider}`);
 
     // Extract result from tool call or message content
     let result: unknown;
 
     if (data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments) {
-      // Tool call response - parse JSON from arguments
       try {
         result = JSON.parse(data.choices[0].message.tool_calls[0].function.arguments);
       } catch (parseErr) {
@@ -275,12 +233,10 @@ serve(async (req) => {
         result = { error: 'Falha ao processar resposta da IA' };
       }
     } else if (data.choices?.[0]?.message?.content) {
-      // Regular text response - try to parse as JSON
       const content = data.choices[0].message.content;
       try {
         result = JSON.parse(content);
       } catch {
-        // Not JSON, return as-is
         result = { content };
       }
     } else {
