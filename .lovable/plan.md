@@ -1,142 +1,111 @@
 
+# OG Image Dinamica para Portal do Cliente
 
-# Resumo do Dia Completo -- Visao 360 com Clientes, Relacionamento e Acoes
+Quando o link do portal e compartilhado no WhatsApp, atualmente aparece a thumbnail padrao do Lovable. O objetivo e gerar uma imagem OG dinamica e personalizada para cada projeto, com layout:
 
-Hoje o "Resumo do Dia" recebe apenas 6 metricas basicas (leads, respostas, reunioes, propostas, pagamentos, entregas). O objetivo e enriquece-lo massivamente com dados de clientes, relacionamento, datas criticas e acoes inteligentes para que o Polo AI gere um resumo verdadeiramente completo e antecipativo.
+```text
++------------------------------------------+
+|                                          |
+|        [Logo Cliente]  +  [SQUAD]        |
+|                                          |
+|          Titulo do Projeto               |
+|                                          |
++------------------------------------------+
+```
+
+Fundo azul (#00A3D3), logos em preto centralizados com margens generosas, titulo abaixo.
 
 ---
 
-## O que muda
+## Solucao
 
-### 1. Novo hook `useDailySummaryMetrics` (substituindo uso direto do `useKPIMetrics`)
+### 1. Nova Edge Function: `generate-og-image`
 
-Um hook dedicado que coleta TODAS as metricas necessarias para o resumo, organizadas em blocos:
+Gera uma imagem OG (1200x630) dinamicamente usando SVG renderizado como PNG.
 
-**Bloco Comercial**
-- Leads novos (7 dias)
-- Deals com next_action vencida ou para hoje (crm_deals.next_action_at <= hoje)
-- Deals quentes (temperature = 'hot') sem acao nos ultimos 5 dias
-- Propostas enviadas aguardando resposta (proposals.status = 'sent', > 3 dias)
+**Entrada:** Recebe `token` como query param (GET request para crawlers do WhatsApp).
 
-**Bloco Clientes / Relacionamento**
-- Clientes sem contato ha mais de 30 dias (crm_contacts sem deal/projeto atualizado)
-- Aniversarios/datas importantes (se houver campo, senao contratos completando 1 ano)
-- Contratos vencendo nos proximos 15 dias (contracts.end_date)
-- Contratos com renovacao pendente (renewal_type != null, perto do end_date)
-- Mensagens nao respondidas no inbox (inbox_threads.status = 'open', sem resposta > 24h)
-- Total de clientes ativos (com projeto em andamento)
+**Logica:**
+1. Busca `portal_links` pelo `share_token` para obter `project_id`, `project_name`, `client_name`
+2. Busca `projects.logo_url` para o logo do cliente
+3. Monta um SVG 1200x630 com:
+   - Fundo azul SQUAD (#00A3D3)
+   - Logo do cliente (via `<image>` SVG, com `object-fit: contain` equivalente via `preserveAspectRatio`)
+   - Sinal "+" entre os logos
+   - Logo SQUAD (URL fixa do storage)
+   - Ambos logos com filtro preto (usando SVG filter ou logos ja em preto)
+   - Titulo do projeto abaixo em texto branco/preto
+   - Margens generosas para "respiro"
+4. Converte SVG para PNG usando `resvg-wasm` (biblioteca disponivel em Deno para renderizar SVG em PNG)
+5. Faz cache da imagem no storage bucket `marketing-assets` para nao regenerar a cada crawl
+6. Retorna a imagem diretamente como `image/png`
 
-**Bloco Operacional**
-- Entregas proximas (7 dias)
-- Projetos atrasados (due_date < hoje, status != concluido)
-- Projetos sem atividade ha mais de 7 dias
-- Reunioes de hoje e amanha
+**Alternativa simplificada (sem dependencia de resvg):**
+- Retornar o SVG diretamente como `image/svg+xml` -- porem WhatsApp/Telegram nao suportam SVG em OG
+- Melhor abordagem: usar a Lovable AI (Gemini image) para gerar a imagem OG sob demanda e cachear no storage
 
-**Bloco Financeiro**
-- Pagamentos a receber (7 dias)
-- Pagamentos atrasados (revenues.status = 'overdue')
-- Valor total em pipeline aberto (crm_deals nao fechados)
+**Abordagem escolhida: SVG inline como data URI nao funciona para OG. Vamos usar a AI para gerar a imagem e cachear:**
+1. Primeira vez que o link e acessado: gera via Gemini image (prompt com instrucoes de layout)
+2. Salva no storage `marketing-assets/og/{project_id}.png`
+3. Proximas vezes: serve direto do storage (cache)
 
-**Bloco Prospeccao**
-- Prospects com follow-up para hoje (prospect_opportunities.next_action_at)
-- Prospects sem interacao > 7 dias
-- Oportunidades em fase de negociacao
+### 2. Atualizar `og-portal/index.ts`
 
-### 2. Atualizar `AIDailySummary.tsx`
+Mudar a logica de `ogImage`:
+1. Buscar `projects.logo_url` e `projects.name`
+2. Verificar se ja existe imagem OG cacheada no storage: `marketing-assets/og/{project_id}.png`
+3. Se nao existe, chamar a nova function `generate-og-image` para gerar
+4. Usar a URL publica da imagem gerada como `og:image`
 
-- Substituir uso de `useKPIMetrics` pelo novo `useDailySummaryMetrics`
-- Montar o texto de metricas muito mais rico para enviar ao Polo AI
-- Adicionar nova secao visual "Relacionamento" com cards de clientes que precisam de atencao
-- Expandir o grid de highlights para suportar ate 9 cards (3x3)
-- Adicionar nova secao "Mensagens para Enviar" apos action_items
+### 3. Gerar OG image com SVG puro (abordagem final)
 
-### 3. Atualizar prompt do Polo AI em `polo-ai-chat/index.ts`
+Na verdade, a melhor abordagem para Deno Edge Functions e gerar um SVG e converter para PNG usando `resvg-wasm`. Isso evita depender da AI para cada imagem e e deterministico.
 
-Expandir o prompt do daily_summary para incluir novas categorias de highlights e um novo campo `client_actions`:
+**SVG Layout (1200x630):**
+- Retangulo de fundo: `#0088CC` (azul SQUAD)
+- Logo do cliente: embeddado via `<image>` SVG, centralizado a esquerda, max 180x180, com `preserveAspectRatio="xMidYMid meet"` (nao corta)
+- Texto "+": entre os logos, fonte bold branca
+- Logo SQUAD: a direita, max 180x180
+- Titulo do projeto: abaixo, centralizado, fonte branca, max 40 chars
 
-```
-{
-  "greeting": "...",
-  "highlights": [...],  // ate 9 items agora
-  "action_items": [...],
-  "client_actions": [
-    {
-      "client_name": "Nome",
-      "reason": "Sem contato ha 35 dias",
-      "suggested_message": "Oi [nome], tudo bem? Passando pra ver como estao as coisas...",
-      "urgency": "medium",
-      "channel": "whatsapp"
-    }
-  ]
-}
-```
+**Conversao SVG para PNG:**
+- Usar `https://esm.sh/@aspect-dev/resvg-wasm` ou similar para renderizar
+- Ou alternativamente, servir o SVG e usar um servico de conversao
 
-### 4. Nova secao visual "Clientes para Contatar"
-
-Renderizar os `client_actions` como cards interativos com:
-- Nome do cliente + motivo do contato
-- Mensagem sugerida pela IA (copiavel)
-- Botao de WhatsApp deep-link
-- Badge de urgencia (alta/media/baixa)
+**Abordagem mais simples e confiavel:** Gerar a imagem OG usando a Lovable AI (Gemini image) uma unica vez por projeto e cachear no storage. Isso produz um PNG real que funciona em todos os crawlers.
 
 ---
 
 ## Detalhes tecnicos
 
 ### Arquivos a criar
-- `src/hooks/useDailySummaryMetrics.ts` -- hook centralizado com todas as queries
+- `supabase/functions/generate-og-image/index.ts` -- gera OG image via AI e cacheia no storage
 
-### Arquivos a editar
-- `src/components/dashboard/AIDailySummary.tsx` -- usar novo hook, nova UI com secao de clientes
-- `supabase/functions/polo-ai-chat/index.ts` -- expandir prompt do daily_summary com novo schema
+### Arquivos a editar  
+- `supabase/functions/og-portal/index.ts` -- usar OG image dinamica em vez do logo SQUAD fixo
 
-### Queries do novo hook (todas em paralelo via useQuery)
-- `crm_deals` WHERE next_action_at <= hoje -- deals com acao pendente
-- `crm_deals` WHERE temperature = 'hot' AND updated_at < 5 dias -- deals quentes parados
-- `contracts` WHERE end_date BETWEEN hoje AND +15 dias -- contratos vencendo
-- `inbox_threads` WHERE status = 'open' -- threads abertas sem resposta
-- `projects` WHERE due_date < hoje AND status != 'concluido' -- projetos atrasados
-- `projects` WHERE updated_at < 7 dias AND status IN ('em_andamento') -- projetos inativos
-- `revenues` WHERE status = 'overdue' -- pagamentos atrasados
-- `prospect_opportunities` WHERE next_action_at <= hoje -- follow-ups de hoje
-- `crm_contacts` LEFT JOIN ultimas interacoes -- clientes sem contato recente
-- Reutilizar dados existentes do KPI (leads, reunioes, propostas, entregas, pagamentos)
+### Fluxo completo
 
-### Texto enviado ao Polo AI (exemplo)
+1. Crawler do WhatsApp acessa `og-portal?token=ABC`
+2. `og-portal` busca dados do projeto e verifica se existe `marketing-assets/og/{project_id}.png` no storage
+3. Se nao existe: chama `generate-og-image` internamente para gerar via Gemini (prompt: "fundo azul, logo cliente + SQUAD em preto, titulo abaixo")
+4. OG image URL aponta para o PNG publico no storage
+5. Proximas vezes, usa cache do storage direto
+
+### Prompt para AI gerar OG image
 ```
-Dados completos do workspace:
-
-COMERCIAL:
-- Leads novos (7d): 3
-- Deals com acao vencida: 2 (Cliente X - follow-up, Cliente Y - proposta)
-- Deals quentes parados: 1 (Cliente Z, sem acao ha 8 dias)
-- Propostas aguardando resposta: 2 (ha 5 e 7 dias)
-
-CLIENTES / RELACIONAMENTO:
-- Clientes sem contato >30d: 3 (Maria, Joao, Pedro)
-- Contratos vencendo em 15d: 1 (Contrato ABC - vence 10/03)
-- Mensagens nao respondidas: 2 (inbox aberto)
-- Clientes ativos: 8
-
-OPERACIONAL:
-- Entregas proximos 7d: 2
-- Projetos atrasados: 1 (Projeto XYZ, 3 dias atrasado)
-- Projetos inativos >7d: 2
-- Reunioes hoje: 1, amanha: 2
-
-FINANCEIRO:
-- A receber proximos 7d: R$15.000
-- Atrasados: R$5.000 (2 parcelas)
-- Pipeline aberto total: R$120.000
-
-PROSPECCAO:
-- Follow-ups para hoje: 3
-- Prospects sem interacao >7d: 5
-- Em negociacao: 4
-
-Gere o resumo executivo com highlights, acoes e mensagens sugeridas para clientes.
+Create a 1200x630 OG image with:
+- Solid blue background (#00A3D3)
+- Two logos side by side centered vertically with generous margins
+- Left logo: [client logo URL] rendered in black/dark
+- Right logo: SQUAD Film logo rendered in black/dark  
+- A "+" symbol between the logos in white
+- Below the logos, centered text: "[Project Title]" in white, clean sans-serif font
+- Minimalist, professional, with breathing room around all elements
+- NO other text or decorations
 ```
 
-### Novo schema de resposta da IA
-O campo `client_actions` e novo e permite que a IA sugira mensagens personalizadas para enviar aos clientes que precisam de atencao, com canal preferencial e nivel de urgencia.
-
+### Cache e invalidacao
+- Imagem gerada uma vez por projeto
+- Se logo do projeto mudar, regenerar (verificar `updated_at` do projeto vs timestamp do arquivo no storage)
+- Cache-Control de 5min no `og-portal` para permitir atualizacoes
