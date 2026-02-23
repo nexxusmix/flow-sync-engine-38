@@ -1,123 +1,71 @@
 
 
-## Plano de Melhorias Globais - Fase 1
+## Fix: Graceful Error Handling for AI Credit Exhaustion
 
-Como voce quer melhorar todas as areas (Dashboard, Login, CRM, Notificacoes) com todos os tipos de melhoria (UX, funcionalidades, IA, performance), vou organizar em uma fase inicial focada nas melhorias de maior impacto e menor risco.
+### Problem
+The `extract-project-from-document` edge function calls the Lovable AI gateway, which returns HTTP 402 (payment required / not enough credits). The function does not surface this error clearly to the user, and the frontend shows a blank screen.
 
----
+The same issue also affects `polo-ai-chat` (used by the new AI Daily Summary) and `extract-contract-from-file`.
 
-### 1. Login com Google (OAuth Social)
+### Root Cause
+All AI-calling edge functions catch 402 errors silently, logging them but returning generic error messages. The frontend has no special handling for "out of credits."
 
-Adicionar botao "Entrar com Google" na pagina de login, usando o sistema gerenciado do Lovable Cloud (sem necessidade de configurar credenciais).
+### Solution
 
-**Arquivo**: `src/pages/LoginPage.tsx`
-- Importar `lovable` de `@/integrations/lovable`
-- Adicionar botao estilizado "Continuar com Google" abaixo do formulario
-- Chamar `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`
-- Manter o formulario de email/senha existente como alternativa
+#### 1. Update `extract-project-from-document/index.ts`
+- In `extractPdfWithGemini` and `extractPdfWithPro` functions, detect 402 status and throw a specific error (e.g., `throw new Error("CREDITS_EXHAUSTED")`)
+- In the main handler, catch this specific error and return a clear JSON response: `{ error: "Creditos de IA esgotados. Aguarde a renovacao ou atualize seu plano.", code: "CREDITS_EXHAUSTED" }` with HTTP 402
 
----
+#### 2. Update `extract-contract-from-file/index.ts`
+- Same pattern: detect 402 from AI gateway and return a user-friendly 402 response
 
-### 2. Sistema de Notificacoes em Tempo Real
+#### 3. Update `polo-ai-chat/index.ts`
+- Fix the existing bug: `TypeError: messages is not iterable` (visible in the logs)
+- Also add 402 credit exhaustion handling
 
-Criar um sistema de notificacoes que aparece como badge no menu lateral e como dropdown ao clicar.
+#### 4. Update `AIDailySummary.tsx` (frontend)
+- Handle error state gracefully: show a card with "Resumo indisponivel - creditos esgotados" instead of breaking the page
+- Add `onError` or error state from React Query to display a fallback message
 
-**Tabela**: `notifications` (nova migração)
-- Colunas: id, user_id, title, message, type (info/warning/error/success), read (boolean), entity_type, entity_id, created_at
-- RLS: usuario so ve suas proprias notificacoes
+#### 5. Update the document upload pages (frontend)
+- In components that call `extract-project-from-document` and `extract-contract-from-file`, check for 402 responses and show a toast with a clear message about credits
 
-**Arquivos novos**:
-- `src/hooks/useNotifications.ts` - Hook com React Query + Realtime subscription para notificacoes nao lidas
-- `src/components/layout/NotificationDropdown.tsx` - Dropdown com lista de notificacoes, marcar como lida, limpar todas
+### Technical Details
 
-**Arquivo editado**: `src/components/layout/Sidebar.tsx`
-- Adicionar badge com contador de notificacoes nao lidas no item "Avisos"
-- Badge animado com pulse quando ha novas notificacoes
+**Edge function pattern (all 3 functions):**
+```typescript
+if (response.status === 402) {
+  return new Response(JSON.stringify({
+    error: "Creditos de IA esgotados. Aguarde a renovacao ou atualize seu plano.",
+    code: "CREDITS_EXHAUSTED"
+  }), {
+    status: 402,
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  });
+}
+```
 
----
+**Frontend pattern:**
+```typescript
+if (response.status === 402) {
+  toast.error("Creditos de IA esgotados. Tente novamente mais tarde.");
+  return;
+}
+```
 
-### 3. Dashboard - Resumo Diario com IA
+**polo-ai-chat bug fix:**
+The `messages is not iterable` error suggests the function receives the body in an unexpected format from the `AIDailySummary` component. The fix involves ensuring the function correctly parses the `message` field and constructs the messages array.
 
-Adicionar um card no topo do Dashboard com um resumo inteligente do dia gerado pelo Polo AI.
+### Files to Edit
 
-**Arquivo novo**: `src/components/dashboard/AIDailySummary.tsx`
-- Card com resumo gerado pela edge function `polo-ai-chat`
-- Conteudo: destaques do dia (tarefas pendentes, deals quentes, pagamentos proximos, entregas da semana)
-- Botao para regenerar o resumo
-- Skeleton loading enquanto a IA processa
-- Cache do resumo por sessao (evitar chamadas repetidas)
+| File | Change |
+|---|---|
+| `supabase/functions/extract-project-from-document/index.ts` | Add 402 handling in AI calls |
+| `supabase/functions/extract-contract-from-file/index.ts` | Add 402 handling in AI calls |
+| `supabase/functions/polo-ai-chat/index.ts` | Fix messages parsing bug + add 402 handling |
+| `src/components/dashboard/AIDailySummary.tsx` | Show error state instead of blank |
+| `src/components/finance/ContractAiUpdateDialog.tsx` | Handle 402 in processFile |
 
-**Arquivo editado**: `src/pages/Dashboard.tsx`
-- Inserir o componente `AIDailySummary` logo apos o header, antes dos metric cards
-
----
-
-### 4. Dashboard - Graficos Interativos
-
-Substituir os blocos estaticos do Dashboard por graficos interativos usando Recharts (ja instalado).
-
-**Arquivo novo**: `src/components/dashboard/RevenueChart.tsx`
-- Grafico de barras/area mostrando receita dos ultimos 6 meses
-- Tooltip interativo com valores formatados em BRL
-- Cores consistentes com o tema
-
-**Arquivo novo**: `src/components/dashboard/PipelineChart.tsx`
-- Grafico de funil ou donut mostrando distribuicao de deals por estagio
-- Clicavel para navegar ao CRM filtrado
-
-**Arquivo editado**: `src/pages/Dashboard.tsx`
-- Adicionar secao com os graficos em grid 2 colunas abaixo dos KPIs
-
----
-
-### 5. CRM - Filtros Avancados
-
-Adicionar barra de filtros no topo do Kanban do CRM.
-
-**Arquivo editado**: `src/pages/CRMPage.tsx`
-- Filtro por temperatura (hot/warm/cold)
-- Filtro por responsavel
-- Filtro por valor minimo/maximo
-- Busca por nome do deal ou contato
-- Botao "Limpar filtros"
-- Filtros persistidos no estado local (Zustand ou useState)
-
----
-
-### 6. Dark/Light Mode Toggle
-
-Adicionar alternador de tema no Sidebar (rodape, proximo ao usuario).
-
-**Arquivo editado**: `src/components/layout/Sidebar.tsx`
-- Botao de toggle sol/lua no rodape do sidebar
-- Usar `next-themes` (ja instalado) para alternar entre dark e light
-
-**Arquivo editado**: `src/App.tsx` ou provider raiz
-- Garantir que o `ThemeProvider` do next-themes esteja envolvendo a aplicacao
-
----
-
-### Resumo de Arquivos
-
-| Arquivo | Tipo | Mudanca |
-|---|---|---|
-| `src/pages/LoginPage.tsx` | Editar | Botao Google OAuth |
-| `src/components/layout/Sidebar.tsx` | Editar | Badge notificacoes + toggle tema |
-| `src/pages/Dashboard.tsx` | Editar | Resumo IA + graficos |
-| `src/components/dashboard/AIDailySummary.tsx` | Novo | Card resumo diario com IA |
-| `src/components/dashboard/RevenueChart.tsx` | Novo | Grafico receita mensal |
-| `src/components/dashboard/PipelineChart.tsx` | Novo | Grafico pipeline CRM |
-| `src/hooks/useNotifications.ts` | Novo | Hook notificacoes realtime |
-| `src/components/layout/NotificationDropdown.tsx` | Novo | Dropdown de notificacoes |
-| `src/pages/CRMPage.tsx` | Editar | Filtros avancados |
-| Migracao SQL | Novo | Tabela notifications + RLS |
-
-### Ordem de implementacao
-
-1. Login com Google (rapido, alto impacto)
-2. Dark/Light mode toggle (rapido, visual)
-3. Sistema de notificacoes (banco + frontend)
-4. Dashboard - Resumo IA
-5. Dashboard - Graficos interativos
-6. CRM - Filtros avancados
+### Immediate User Action
+You also need to **replenish your Lovable AI credits** -- without credits, all AI features (document extraction, daily summary, contract analysis) will remain non-functional regardless of code fixes.
 
