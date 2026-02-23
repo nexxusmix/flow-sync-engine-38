@@ -14,30 +14,30 @@ interface MenuItem {
 }
 
 const mainMenuItems: MenuItem[] = [
-  { name: "Overview", href: "/", icon: "dashboard" },
-  { name: "Tarefas", href: "/tarefas", icon: "task_alt" },
-  { name: "Projetos", href: "/projetos", icon: "movie_edit", badge: 8 },
+  { name: "Overview", href: "/", icon: "space_dashboard" },
+  { name: "Tarefas", href: "/tarefas", icon: "checklist" },
+  { name: "Projetos", href: "/projetos", icon: "movie_filter", badge: 8 },
   {
     name: "Studio & Marketing",
     href: "/marketing",
-    icon: "auto_awesome",
+    icon: "brush",
     children: [
-      { name: "Marketing", href: "/marketing", icon: "perm_media", badge: 12 },
-      { name: "Gerar Posts", href: "/marketing/studio?tab=templates", icon: "auto_awesome" },
-      { name: "Transcrição", href: "/marketing/transcricao", icon: "mic" },
+      { name: "Marketing", href: "/marketing", icon: "campaign", badge: 12 },
+      { name: "Gerar Posts", href: "/marketing/studio?tab=templates", icon: "edit_square" },
+      { name: "Transcrição", href: "/marketing/transcricao", icon: "subtitles" },
       { name: "Studio Criativo", href: "/marketing/studio", icon: "palette" },
     ],
   },
-  { name: "Central de Ações", href: "/central-acoes", icon: "bolt" },
-  { name: "CRM", href: "/crm", icon: "radar", badge: 3 },
-  { name: "Clientes", href: "/crm?tab=clients", icon: "group" },
+  { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
+  { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
+  { name: "Clientes", href: "/crm?tab=clients", icon: "groups" },
   { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
-  { name: "Calendário", href: "/calendario", icon: "calendar_month" },
-  { name: "Financeiro", href: "/financeiro", icon: "account_balance_wallet" },
-  { name: "Propostas", href: "/propostas", icon: "description" },
-  { name: "Contratos", href: "/contratos", icon: "contract" },
-  { name: "Relatórios", href: "/relatorios", icon: "monitoring" },
-  { name: "Avisos", href: "/avisos", icon: "notifications" },
+  { name: "Calendário", href: "/calendario", icon: "event" },
+  { name: "Financeiro", href: "/financeiro", icon: "payments" },
+  { name: "Propostas", href: "/propostas", icon: "request_quote" },
+  { name: "Contratos", href: "/contratos", icon: "gavel" },
+  { name: "Relatórios", href: "/relatorios", icon: "bar_chart" },
+  { name: "Avisos", href: "/avisos", icon: "notifications_active" },
 ];
 
 const settingsItems = [
