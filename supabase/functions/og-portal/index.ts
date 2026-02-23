@@ -8,6 +8,8 @@ const corsHeaders = {
 const SQUAD_LOGO = "https://gfyeuhfapscxvjnrssn.supabase.co/storage/v1/object/public/marketing-assets/squad-logo-og.png";
 const FALLBACK_TITLE = "SQUAD HUB | Portal do Cliente";
 const FALLBACK_DESC = "Acompanhe seu projeto em tempo real — entregas, prazos, pagamentos e aprovações.";
+const OG_BUCKET = "marketing-assets";
+const OG_FOLDER = "og";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -36,16 +38,46 @@ Deno.serve(async (req) => {
 
     const projectName = link?.project_name || "Projeto";
     const clientName = link?.client_name || "";
+    const projectId = link?.project_id;
 
-    // Try to get project logo/banner for OG image
+    // Try to get dynamic OG image (cached or generate)
     let ogImage = SQUAD_LOGO;
-    if (link?.project_id) {
-      const { data: project } = await supabase
-        .from("projects")
-        .select("logo_url")
-        .eq("id", link.project_id)
-        .single();
-      // Keep SQUAD logo as OG — brand consistency
+    
+    if (projectId) {
+      const ogPath = `${OG_FOLDER}/${projectId}.png`;
+      
+      // Check if cached OG image exists
+      const { data: cachedFiles } = await supabase.storage
+        .from(OG_BUCKET)
+        .list(OG_FOLDER, { search: `${projectId}.png` });
+
+      if (cachedFiles && cachedFiles.length > 0) {
+        // Use cached image
+        ogImage = `${supabaseUrl}/storage/v1/object/public/${OG_BUCKET}/${ogPath}`;
+      } else {
+        // Get project logo for generation
+        const { data: project } = await supabase
+          .from("projects")
+          .select("logo_url")
+          .eq("id", projectId)
+          .single();
+
+        // Trigger async generation (fire and forget — crawler will get SQUAD logo first time)
+        const generateUrl = `${supabaseUrl}/functions/v1/generate-og-image`;
+        const params = new URLSearchParams({
+          project_id: String(projectId),
+          project_name: projectName,
+        });
+        if (project?.logo_url) {
+          params.set("client_logo_url", project.logo_url);
+        }
+
+        // Fire-and-forget: generate in background
+        fetch(`${generateUrl}?${params.toString()}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${supabaseKey}` },
+        }).catch((e) => console.warn("[og-portal] generate-og-image fire-and-forget failed:", e));
+      }
     }
 
     const title = clientName
