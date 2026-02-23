@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { chatCompletionStream } from "../_shared/ai-client.ts";
+import { chatCompletion, chatCompletionStream } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -208,42 +208,51 @@ serve(async (req) => {
       systemPrompt += `\n\nConversa ID: ${context.conversationId}`;
     }
 
-    const { response } = await chatCompletionStream({
-      model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...userMessages,
-      ],
-      stream: true,
-    });
+    const wantStream = body.stream === true;
+    const aiMessages = [
+      { role: "system" as const, content: systemPrompt },
+      ...userMessages,
+    ];
 
-    if (!response.ok) {
-      const status = response.status;
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (wantStream) {
+      const { response } = await chatCompletionStream({
+        model: "google/gemini-3-flash-preview",
+        messages: aiMessages,
+        stream: true,
+      });
+
+      if (!response.ok) {
+        const status = response.status;
+        if (status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (status === 402) {
+          return new Response(JSON.stringify({ error: "Payment required" }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        console.error("AI error:", status);
+        return new Response(JSON.stringify({ error: "AI gateway error" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error("AI error:", status);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
+
+      return new Response(response.body, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    } else {
+      const result = await chatCompletion({
+        model: "google/gemini-3-flash-preview",
+        messages: aiMessages,
+        stream: false,
+      });
+      const text = result.choices?.[0]?.message?.content || "";
+      return new Response(JSON.stringify({ response: text }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // After streaming completes, save memories if present
-    // (memories are extracted client-side from the response)
-
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
   } catch (e) {
     console.error("Error:", e);
     return new Response(JSON.stringify({ error: String(e) }), {
