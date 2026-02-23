@@ -1,91 +1,104 @@
 
-## Adicionar URLs do Cliente (Site, Instagram, etc.) como Fonte de Identidade Visual
 
-### Objetivo
-Permitir que o usuário informe links do cliente (site, Instagram, Behance, Pinterest, etc.) para que a IA extraia automaticamente screenshots, cores, logos e elementos visuais — alimentando a **Galeria IA** e a aba **Identidade Visual** com dados reais da presença digital do cliente.
+## Migrar IA para Gemini Direto + OpenAI com Fallback Automático
 
----
+### Problema
+O saldo do Lovable AI Gateway esgotou, pausando todas as funcionalidades de IA do app (42 edge functions afetadas).
 
-### Visão Geral do Fluxo
+### Solução
+Criar um **módulo compartilhado** (`_shared/ai-client.ts`) que roteia chamadas de IA para Gemini direto ou OpenAI, com fallback automático. Todas as 42 edge functions passam a importar desse módulo em vez de chamar `ai.gateway.lovable.dev` diretamente.
+
+### Segredos necessários
+
+Antes de implementar, você precisará adicionar 2 chaves de API:
+
+1. **GEMINI_API_KEY** - Chave do Google AI Studio (https://aistudio.google.com/apikey)
+2. **OPENAI_API_KEY** - Chave da OpenAI (https://platform.openai.com/api-keys)
+
+### Arquitetura do Roteamento
 
 ```text
-Usuário cola URL do cliente
-        ↓
-Nova Edge Function: scrape-client-url
-  ├── Captura screenshot via Gemini Vision (URL → imagem)
-  ├── Extrai OG tags, favicon, cores, logos
-  └── Salva como project_asset (source_type=link, asset_type=image)
-        ↓
-process-asset (já existente) é chamado para enriquecer o asset
-        ↓
-Galeria IA + Identidade Visual exibem automaticamente
+Edge Function chama aiClient.chat(...)
+        |
+        v
+  Tenta GEMINI primeiro (gratuito/barato)
+        |
+   Sucesso? --> retorna resultado
+        |
+   Falha (429/500/timeout)?
+        |
+        v
+  Tenta OPENAI como fallback
+        |
+   Sucesso? --> retorna resultado
+        |
+   Falha? --> retorna erro
 ```
-
----
 
 ### Mudanças Técnicas
 
-#### 1. Nova Edge Function: `scrape-client-url`
+#### 1. Criar `supabase/functions/_shared/ai-client.ts`
 
-Responsável por receber uma URL do cliente e:
+Módulo compartilhado com:
+- Mapeamento de modelos Lovable para equivalentes nativos
+  - `google/gemini-2.5-flash` --> `gemini-2.5-flash` (API direta Google)
+  - `google/gemini-2.5-pro` --> `gemini-2.5-pro`
+  - `google/gemini-3-flash-preview` --> `gemini-2.5-flash` (fallback mais próximo)
+  - `openai/gpt-5` --> `gpt-4o` (OpenAI)
+  - `openai/gpt-5-mini` --> `gpt-4o-mini`
+- Função `chatCompletion({ messages, model, tools?, tool_choice?, temperature?, max_tokens? })` que:
+  1. Tenta Gemini (via `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`)
+  2. Se falhar, tenta OpenAI (`https://api.openai.com/v1/chat/completions`)
+  3. Se ambos falharem, tenta Lovable AI como último recurso (caso o saldo volte)
+- Logs de qual provedor foi usado
 
-- Buscar o HTML da página via `fetch()` para extrair: título, `og:image`, `og:title`, favicon, meta description, cores CSS
-- Chamar o Gemini Vision (`gemini-2.5-flash`) passando a URL da `og:image` para análise visual e extração de paleta/logo
-- Salvar o resultado como um `project_asset` com `source_type = 'link'`, `asset_type = 'image'` e `ai_entities` populado com cores e brand_name detectados
-- Suportar Instagram: detectar perfil, extrair imagem pública disponível via OG
+#### 2. Atualizar todas as 42 edge functions
 
-#### 2. UI — Novo Modal "Adicionar URL do Cliente" na Galeria IA
+Substituir o padrão atual:
+```typescript
+// ANTES
+const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  method: "POST",
+  headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+  body: JSON.stringify({ model: "google/gemini-2.5-flash", messages: [...] }),
+});
+```
 
-Um botão adicional **"+ URL / Site"** na toolbar da `GalleryTab`, abrindo um pequeno popover/dialog com:
+Por:
+```typescript
+// DEPOIS
+import { chatCompletion } from "../_shared/ai-client.ts";
 
-- Campo de texto: "URL do site ou perfil do Instagram, Behance, Pinterest..."
-- Sugestão de tipo detectado automaticamente (site, instagram, behance, etc.)
-- Botão **"Extrair Identidade"** que dispara a edge function
-- Feedback de progresso e toast de conclusão
+const response = await chatCompletion({
+  messages: [...],
+  model: "gemini-2.5-flash",
+  temperature: 0.3,
+});
+```
 
-#### 3. UI — Seção "Sites do Cliente" na Identidade Visual (`BrandIdentityTab`)
+A função retorna o mesmo formato de resposta (`choices[0].message.content` ou `tool_calls`), mantendo compatibilidade total.
 
-Acima do upload, uma seção colapsável **"Fontes Digitais"** exibindo:
-- Cards das URLs já processadas com ícone do domínio (favicon), título e status
-- Botão "+ Adicionar URL" que abre o mesmo popover
-- As cores e logos extraídos aparecem automaticamente no Kit de Marca abaixo
+#### 3. Mapeamento de modelos (Gemini API direta)
 
-#### 4. Detecção de Tipo por URL
-
-| Padrão de URL | Tipo detectado | Estratégia |
-|---|---|---|
-| `instagram.com/user` | Instagram | OG image + perfil público |
-| `behance.net/user` | Behance | OG image + thumbnail |
-| `pinterest.com` | Pinterest | OG image |
-| `youtube.com/channel` | YouTube | OG image + banner |
-| Qualquer outro | Site genérico | Screenshot via fetch + og:image |
-
-#### 5. Persistência
-
-Os links são armazenados como `project_asset` com:
-- `source_type = 'link'`
-- `url = URL_original`
-- `provider = 'generic' | 'instagram' | 'behance' | 'pinterest'`
-- `og_image_url` = imagem open graph capturada
-- `thumb_url` = a og:image salva no bucket `asset-thumbs`
-- `ai_entities.color_palette` = cores extraídas
-- `ai_entities.brand_name` = nome detectado
-
-Nenhuma nova tabela é necessária — usa a infraestrutura existente de `project_assets`.
-
----
+A API do Google AI Studio aceita o formato OpenAI-compatible via endpoint `/v1beta/openai/chat/completions`, o que permite manter a mesma estrutura de request/response sem adaptação.
 
 ### Arquivos a criar/modificar
 
-| Arquivo | Ação |
+| Arquivo | Acao |
 |---|---|
-| `supabase/functions/scrape-client-url/index.ts` | **Criar** — Edge Function principal |
-| `supabase/config.toml` | Registrar nova função |
-| `src/components/projects/detail/tabs/GalleryTab.tsx` | Adicionar botão "+ URL / Site" e lógica de chamada |
-| `src/components/projects/detail/tabs/BrandIdentityTab.tsx` | Adicionar seção "Fontes Digitais" com cards e botão |
+| `supabase/functions/_shared/ai-client.ts` | **Criar** -- Modulo de roteamento |
+| 42 edge functions em `supabase/functions/*/index.ts` | **Editar** -- Trocar fetch direto por import do ai-client |
 
----
+### Beneficios
 
-### Sem necessidade de migração de banco de dados
+- **Resiliencia**: Se um provedor cair, o outro assume automaticamente
+- **Custo otimizado**: Gemini como primario (mais barato), OpenAI como fallback
+- **Manutencao centralizada**: Trocar provedor ou adicionar novo exige mudar apenas 1 arquivo
+- **Zero breaking changes**: O formato de resposta permanece identico para todo o app
 
-Toda a infraestrutura de `project_assets` já suporta links (`source_type = 'link'`). Nenhuma coluna nova é necessária.
+### Ordem de execucao
+
+1. Adicionar segredos `GEMINI_API_KEY` e `OPENAI_API_KEY`
+2. Criar `_shared/ai-client.ts`
+3. Atualizar as edge functions em lotes (mais criticas primeiro: `ai-run`, `generate-ideas`, `generate-captions`, `creative-studio`, etc.)
+
