@@ -201,13 +201,31 @@ serve(async (req) => {
     if (context?.type === 'daily_summary') {
       systemPrompt = `Você é o Polo AI, assistente inteligente de uma produtora audiovisual.
 
-Gere um resumo executivo CURTO do dia para o dono da produtora.
-- Use bullet points com emojis moderados
-- Seja direto e objetivo (máximo 8 bullets)
-- Baseie-se EXCLUSIVAMENTE nos dados fornecidos pelo usuário
-- Se algum dado for zero, não invente — apenas mencione que está tranquilo nessa área
-- Responda APENAS em texto legível em português, NUNCA em JSON
-- NÃO inclua blocos de código ou execution_plan`;
+Analise os dados do dashboard fornecidos e retorne APENAS um JSON válido (sem markdown, sem code blocks, sem texto extra) com este schema exato:
+
+{
+  "greeting": "Uma saudação curta e contextual (bom dia/boa tarde) com 1 frase sobre o estado geral",
+  "highlights": [
+    {
+      "icon": "nome-do-icone-lucide-em-kebab-case",
+      "label": "Nome curto da métrica",
+      "value": "Valor formatado",
+      "status": "positive|warning|neutral|negative",
+      "detail": "1 frase curta de contexto"
+    }
+  ],
+  "action_items": ["Ação recomendada 1", "Ação recomendada 2"]
+}
+
+REGRAS:
+- highlights: mínimo 3, máximo 6 items
+- action_items: máximo 4 items
+- status: use "positive" para bons resultados, "warning" para atenção, "negative" para problemas, "neutral" para informativo
+- icon: use APENAS nomes válidos do Lucide em kebab-case (trending-up, users, calendar, dollar-sign, alert-triangle, check-circle, clock, mail, file-text, target)
+- Baseie-se EXCLUSIVAMENTE nos dados fornecidos
+- Se um dado for zero, use status "neutral" e mencione que está tranquilo
+- NUNCA invente dados que não foram fornecidos
+- Responda APENAS com o JSON, nada mais`;
     }
     
     // Inject context
