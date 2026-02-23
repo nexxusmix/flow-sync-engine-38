@@ -1,20 +1,56 @@
 /**
- * export-focus-pdf — Focus Mode execution plan PDF with SQUAD Swiss design
+ * export-focus-pdf — Focus Mode execution plan PDF via Gemini HTML
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SquadPdfBuilder, SQUAD, PAGE_W, PAGE_H, MARGIN, CONTENT_W, sanitize, formatDateShort } from "../_shared/pdf-design.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
+import { formatDateShort } from "../_shared/pdf-design.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const SQUAD_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@media print { @page { size: A4 landscape; margin: 15mm 20mm; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
+body { font-family: 'Space Grotesk', sans-serif; background: #000; color: #D9DEE3; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 20px 40px; border-bottom: 1px solid #1A1A1A; }
+.logo { width: 40px; height: 40px; border: 1px solid #009CCA; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #009CCA; }
+.header-right { font-size: 11px; color: #4A4A4A; letter-spacing: 2px; text-transform: uppercase; }
+.hero { padding: 40px 40px 24px; }
+.hero-subtitle { font-size: 11px; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+.hero-title { font-size: 36px; font-weight: 700; color: #FFF; line-height: 1.1; margin-bottom: 16px; }
+.hero-title .accent { color: #009CCA; }
+.accent-bar { width: 60px; height: 2px; background: #009CCA; margin-bottom: 12px; }
+.hero-desc { font-size: 13px; color: #8C8C8C; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 40px 24px; }
+.kpi-card { background: #0A0A0A; border: 1px solid #1A1A1A; border-radius: 10px; padding: 16px; text-align: center; }
+.kpi-value { font-size: 24px; font-weight: 700; color: #FFF; }
+.kpi-value.accent { color: #009CCA; }
+.kpi-value.success { color: #22C55E; }
+.kpi-label { font-size: 10px; color: #8C8C8C; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.section { padding: 0 40px 20px; }
+.section-title { font-size: 12px; font-weight: 600; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; border-bottom: 1px solid #1A1A1A; padding-bottom: 6px; }
+table { width: 100%; border-collapse: collapse; }
+thead th { font-size: 10px; color: #8C8C8C; text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; background: #0A0A0A; border-bottom: 1px solid #1A1A1A; }
+tbody td { font-size: 11px; padding: 10px 14px; border-bottom: 1px solid #0A0A0A; color: #D9DEE3; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; text-transform: uppercase; }
+.badge-accent { background: rgba(0,156,202,0.15); color: #009CCA; }
+.badge-warning { background: rgba(234,179,8,0.15); color: #EAB308; }
+.badge-muted { background: rgba(140,140,140,0.15); color: #8C8C8C; }
+.bold { font-weight: 600; color: #FFF; }
+.muted { color: #8C8C8C; }
+.tips { padding: 0 40px 20px; }
+.tip { font-size: 11px; color: #D9DEE3; margin-bottom: 6px; }
+.footer { padding: 20px 40px; text-align: center; border-top: 1px solid #1A1A1A; }
+.footer p { font-size: 11px; color: #4A4A4A; letter-spacing: 3px; text-transform: uppercase; }
+`.trim();
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { blocks, total_estimated_minutes, tips } = await req.json();
     if (!blocks || !Array.isArray(blocks)) throw new Error('Missing blocks data');
 
@@ -24,86 +60,60 @@ serve(async (req) => {
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
     const timeStr = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
-    const dateStr = formatDateShort();
 
-    const b = new SquadPdfBuilder();
-    await b.init();
-
-    // Cover
-    b.coverPage({
-      subtitle: "Modo Foco - Blocos Otimizados com IA",
-      titleLine1: "Plano de",
-      titleLine2: "Execucao",
-      description: `${totalBlocks} blocos | ${totalTasks} tarefas | ${timeStr} estimado`,
-      date: dateStr,
+    const dataPayload = JSON.stringify({
+      date: formatDateShort(),
+      kpis: { blocks: totalBlocks, tasks: totalTasks, time: timeStr, status: "ATIVO" },
+      blocks: blocks.map((b: any, i: number) => ({
+        title: b.title || `Bloco ${i + 1}`,
+        type: b.type,
+        technique: b.technique || '',
+        duration: `${b.duration_minutes || 0}min`,
+        progress: i === 0 ? 'Active' : i < 3 ? 'Queued' : 'Scheduled',
+      })),
+      tips: (tips || []).slice(0, 3),
     });
 
-    // Content page
-    b.newPage();
-    b.heroSection("Plano de", "Execucao.", "Blocos Estrategicos");
+    const systemPrompt = `You are a pixel-perfect HTML report generator for SQUAD FILM.
+Return ONLY a complete HTML document. No markdown code blocks.
 
-    b.kpiRow([
-      { label: "Blocos", value: `${totalBlocks}` },
-      { label: "Tarefas", value: `${totalTasks}` },
-      { label: "Tempo Estimado", value: timeStr, color: SQUAD.accent },
-      { label: "Status", value: "ATIVO", color: SQUAD.success },
-    ]);
+Use this EXACT CSS in <style>:
+${SQUAD_CSS}
 
-    // Blocks table
-    b.sectionTitle("Execucao Estrategica");
-    const colW = [200, 100, 100, 99];
-    b.tableHeader([
-      { text: "Bloco", width: colW[0] },
-      { text: "Metodo", width: colW[1] },
-      { text: "Duracao", width: colW[2] },
-      { text: "Progresso", width: colW[3] },
-    ]);
+Add in <head>:
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    for (let bIdx = 0; bIdx < blocks.length; bIdx++) {
-      const block = blocks[bIdx];
-      const isDeep = block.type === 'deep_work';
-      const isBreak = block.type === 'break';
-      const methodLabel = isBreak ? 'PAUSA' : isDeep ? 'DEEP WORK' : 'SHALLOW WORK';
-      const technique = sanitize(block.technique || '');
-      const duration = `${block.duration_minutes || 0}min`;
-      const durText = technique ? `${technique} ${duration}` : duration;
-      let progressLabel = 'Scheduled';
-      if (bIdx === 0) progressLabel = 'Active';
-      else if (bIdx < 3) progressLabel = 'Queued';
+STRUCTURE:
+1. div.header with div.logo "SQ" + span.header-right "SQUAD FILM | 2026"
+2. div.hero: subtitle "Modo Foco - Blocos Otimizados com IA", title "Plano de<br><span class='accent'>Execucao.</span>", accent-bar, desc with blocks/tasks/time summary
+3. div.kpi-row: Blocos, Tarefas, Tempo Estimado (accent), Status "ATIVO" (success)
+4. div.section "Execucao Estrategica" with table (Bloco, Metodo, Duracao, Progresso). 
+   - type=break: method "PAUSA" badge-warning, type=deep_work: "DEEP WORK" badge-accent, else "SHALLOW WORK" badge-muted
+   - First block Active (bold white), rest muted
+   - Bold block titles
+5. If tips exist: div.tips with section-title "Dicas de Produtividade" and tip items
+6. div.footer "SQUAD FILM | 2026"`;
 
-      const dotColor = isBreak ? SQUAD.warning : isDeep ? SQUAD.accent : SQUAD.muted;
-      b.tableRow([
-        { text: block.title || `Bloco ${bIdx + 1}`, width: colW[0], bold: true, color: dotColor },
-        { text: methodLabel, width: colW[1], color: SQUAD.muted },
-        { text: durText, width: colW[2], color: SQUAD.muted },
-        { text: progressLabel, width: colW[3], color: bIdx === 0 ? SQUAD.white : SQUAD.muted },
-      ]);
-    }
+    const aiResult = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Generate the HTML report:\n${dataPayload}` },
+      ],
+      temperature: 0.1,
+    });
 
-    // Tips
-    const tipsList = (tips || []).slice(0, 3);
-    if (tipsList.length > 0) {
-      b.sectionTitle("Dicas de Produtividade");
-      for (const tip of tipsList) {
-        b.text(`- ${tip}`, { size: 9, color: SQUAD.offWhite });
-      }
-    }
+    let html = aiResult.choices?.[0]?.message?.content || "";
+    html = html.replace(/^```html?\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+    if (!html.includes('<html') && !html.includes('<!DOCTYPE')) throw new Error("IA nao gerou HTML valido");
 
-    const pdfBytes = await b.save();
-    const fileName = `PLANO_FOCO_${dateStr}.pdf`;
-    const filePath = `focus-plans/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage.from('exports').upload(filePath, pdfBytes, { contentType: 'application/pdf', upsert: true });
-    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('exports').createSignedUrl(filePath, 1800);
-    if (signedUrlError) throw signedUrlError;
-
-    return new Response(JSON.stringify({
-      success: true, signed_url: signedUrlData.signedUrl, storage_path: filePath, file_name: fileName,
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: true, html, slug: `plano-foco-${formatDateShort()}` }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('[export-focus-pdf] Error:', error);
-    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed to export PDF' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed' }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
