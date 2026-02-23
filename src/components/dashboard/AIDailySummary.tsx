@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useKPIMetrics } from '@/hooks/useKPIMetrics';
-import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import {
   Sparkles, RefreshCw, AlertTriangle, TrendingUp, Users, Calendar,
@@ -90,9 +89,14 @@ export function AIDailySummary() {
   const summary: SummaryData | null = useMemo(() => {
     if (!rawSummary) return null;
     try {
-      const cleaned = typeof rawSummary === 'string'
+      let cleaned = typeof rawSummary === 'string'
         ? rawSummary.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
         : rawSummary;
+      // Extract JSON object if preceded by text
+      if (typeof cleaned === 'string') {
+        const jsonStart = cleaned.indexOf('{');
+        if (jsonStart > 0) cleaned = cleaned.substring(jsonStart);
+      }
       const parsed = typeof cleaned === 'string' ? JSON.parse(cleaned) : cleaned;
       if (parsed?.highlights && Array.isArray(parsed.highlights)) return parsed;
       return null;
@@ -126,15 +130,15 @@ export function AIDailySummary() {
         </button>
       </div>
 
-      {isLoading || kpi.isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-4 w-3/4" />
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
-            ))}
-          </div>
-          <Skeleton className="h-3 w-1/2" />
+      {isLoading || isFetching || kpi.isLoading ? (
+        <div className="flex flex-col items-center justify-center py-8 gap-3">
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Sparkles className="w-6 h-6 text-primary" />
+          </motion.div>
+          <p className="text-xs text-muted-foreground">Analisando dados...</p>
         </div>
       ) : error ? (
         <div className="flex items-start gap-2 text-xs text-muted-foreground">
@@ -199,8 +203,13 @@ export function AIDailySummary() {
             </motion.div>
           )}
         </div>
+      ) : rawSummary && !summary ? (
+        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p>Formato inesperado. Clique em atualizar para tentar novamente.</p>
+        </div>
       ) : (
-        <p className="text-xs text-muted-foreground">Gerando resumo...</p>
+        <p className="text-xs text-muted-foreground">Sem dados para resumo.</p>
       )}
     </motion.div>
   );
