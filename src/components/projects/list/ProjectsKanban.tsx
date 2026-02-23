@@ -4,7 +4,7 @@ import { useProjectsStore } from "@/stores/projectsStore";
 import { useProjects, ProjectWithStages } from "@/hooks/useProjects";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { PROJECT_STAGES, STAGE_COLORS, STATUS_CONFIG } from "@/data/projectTemplates";
-import { Ban, Plus, ChevronRight, GripVertical, Loader2 } from "lucide-react";
+import { Plus, ChevronRight, GripVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -72,9 +72,6 @@ function KanbanCard({
             {project.name}
           </h4>
         </div>
-        {project.has_payment_block && (
-          <Ban className="w-4 h-4 text-destructive flex-shrink-0" />
-        )}
       </div>
 
       {/* Value & Status */}

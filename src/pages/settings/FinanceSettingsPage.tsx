@@ -216,38 +216,6 @@ export default function FinanceSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Block Rules */}
-        <Card className="glass-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Regras de Bloqueio</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Dias de atraso para bloquear projeto</Label>
-              <Input
-                type="number"
-                min="1"
-                value={settings?.block_after_days || 15}
-                onChange={(e) => settings && setSettings({
-                  ...settings,
-                  block_after_days: parseInt(e.target.value) || 15,
-                })}
-                className="w-32"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Mensagem de bloqueio (portal do cliente)</Label>
-              <Textarea
-                value={settings?.block_message || ''}
-                onChange={(e) => settings && setSettings({
-                  ...settings,
-                  block_message: e.target.value,
-                })}
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

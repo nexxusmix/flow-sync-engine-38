@@ -235,20 +235,6 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
           <p className="text-sm font-bold text-foreground truncate">{project.client_name || '--'}</p>
         </div>
 
-        <div className="glass-card rounded-xl p-4 border-l-2 border-violet-500">
-          <div className="flex items-center gap-2 mb-2">
-            {hasPaymentBlock ? (
-              <Lock className="w-4 h-4 text-violet-500" />
-            ) : (
-              <Unlock className="w-4 h-4 text-violet-500" />
-            )}
-            <span className="text-[8px] font-bold text-violet-500 uppercase">Bloqueio</span>
-          </div>
-          <p className="text-[10px] text-muted-foreground mb-1">Bloqueio Financeiro</p>
-          <Badge variant={hasPaymentBlock ? 'destructive' : 'secondary'}>
-            {hasPaymentBlock ? 'Ativo' : 'Inativo'}
-          </Badge>
-        </div>
       </div>
     </div>
   );

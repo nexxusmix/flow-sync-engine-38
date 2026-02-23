@@ -130,16 +130,6 @@ export default function NotificationSettingsPage() {
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
               <div>
-                <p className="font-medium text-foreground">Bloqueios</p>
-                <p className="text-xs text-muted-foreground">Projetos bloqueados por pendência financeira</p>
-              </div>
-              <Switch
-                checked={settings?.blocks_enabled ?? true}
-                onCheckedChange={(v) => updateField('blocks_enabled', v)}
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-              <div>
                 <p className="font-medium text-foreground">Propostas Aceitas</p>
                 <p className="text-xs text-muted-foreground">Quando cliente aceita proposta</p>
               </div>

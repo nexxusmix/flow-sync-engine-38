@@ -156,7 +156,7 @@ export function useProjects() {
           start_date: input.start_date || null,
           due_date: input.due_date || null,
           contract_value: input.contract_value || 0,
-          has_payment_block: input.has_payment_block || false,
+          
           owner_name: ownerName,
           owner_id: ownerId,
           stage_current: 'briefing',

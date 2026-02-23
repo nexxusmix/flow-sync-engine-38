@@ -190,7 +190,7 @@ export default function ContractDetailPage() {
           end_date: variables.prazo_fim || null,
           renewal_type: contract.renewal_type,
           renewal_notice_days: contract.renewal_notice_days,
-          payment_block_on_breach: contract.payment_block_on_breach,
+          
           updated_at: new Date().toISOString(),
         })
         .eq('id', contract.id);
@@ -696,17 +696,6 @@ export default function ContractDetailPage() {
                   </div>
                 </Card>
 
-                <Card className="glass-card p-4">
-                  <h3 className="font-medium text-foreground mb-3">Regras</h3>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={contract.payment_block_on_breach}
-                      onCheckedChange={(v) => setContract({ ...contract, payment_block_on_breach: v })}
-                      disabled={isLocked}
-                    />
-                    <Label className="text-xs">Bloquear projeto em caso de inadimplência</Label>
-                  </div>
-                </Card>
 
                 <Card className="glass-card p-4">
                   <h3 className="font-medium text-foreground mb-3">Resumo</h3>

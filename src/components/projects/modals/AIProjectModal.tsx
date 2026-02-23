@@ -868,18 +868,6 @@ export function AIProjectModal({ open, onOpenChange }: AIProjectModalProps) {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between py-2">
-                    <div className="space-y-0.5">
-                      <Label>Bloquear entrega se inadimplente</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Impede entrega final se houver fatura em atraso
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.has_payment_block}
-                      onCheckedChange={(checked) => setFormData({ ...formData, has_payment_block: checked })}
-                    />
-                  </div>
                 </TabsContent>
 
                 {/* Tab: Escopo */}

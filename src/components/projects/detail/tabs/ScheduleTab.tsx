@@ -22,7 +22,7 @@ export function ScheduleTab({ project }: ScheduleTabProps) {
       progress: stage.status === 'completed' ? 100 : stage.status === 'in_progress' ? 50 : 0,
     })) || [],
     milestones: [],
-    hasPaymentBlock: project.has_payment_block || false,
+    
     currentStage: project.stage_current,
     lastUpdated: project.updated_at,
   }), [project]);
@@ -33,7 +33,7 @@ export function ScheduleTab({ project }: ScheduleTabProps) {
     <ProjectTimelineDetailed
       segments={timelineData.segments}
       milestones={timelineData.milestones}
-      hasPaymentBlock={project.has_payment_block || false}
+      
       currentStage={currentStageName}
       lastUpdated={project.updated_at}
       projectName={project.name}
