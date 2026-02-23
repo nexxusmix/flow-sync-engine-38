@@ -18,6 +18,8 @@ interface ChatCompletionOptions {
   response_format?: any;
   stream?: boolean;
   modalities?: string[];
+  /** Set true to add Lovable gateway as last-resort fallback (e.g. image generation) */
+  includeLovableFallback?: boolean;
 }
 
 interface ChatCompletionResult {
@@ -151,11 +153,13 @@ async function tryLovable(opts: ChatCompletionOptions): Promise<Response> {
  * Returns the parsed JSON response in OpenAI-compatible format.
  */
 export async function chatCompletion(opts: ChatCompletionOptions): Promise<ChatCompletionResult> {
-  const providers = [
+  const providers: { name: string; fn: (o: ChatCompletionOptions) => Promise<Response> }[] = [
     { name: "gemini", fn: tryGemini },
     { name: "openai", fn: tryOpenAI },
-    { name: "lovable", fn: tryLovable },
   ];
+  if (opts.includeLovableFallback) {
+    providers.push({ name: "lovable", fn: tryLovable });
+  }
 
   let lastError: Error | null = null;
 
@@ -205,11 +209,13 @@ export async function chatCompletion(opts: ChatCompletionOptions): Promise<ChatC
  */
 export async function chatCompletionStream(opts: ChatCompletionOptions): Promise<{ response: Response; provider: string }> {
   const streamOpts = { ...opts, stream: true };
-  const providers = [
+  const providers: { name: string; fn: (o: ChatCompletionOptions) => Promise<Response> }[] = [
     { name: "gemini", fn: tryGemini },
     { name: "openai", fn: tryOpenAI },
-    { name: "lovable", fn: tryLovable },
   ];
+  if (streamOpts.includeLovableFallback) {
+    providers.push({ name: "lovable", fn: tryLovable });
+  }
 
   let lastError: Error | null = null;
 

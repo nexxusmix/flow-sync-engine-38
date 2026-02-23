@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,9 +18,6 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     // Detect document vs audio/video
     const isDocument = (mimeType || '').includes('pdf') ||
                        (mimeType || '').includes('word') ||
@@ -34,49 +32,25 @@ serve(async (req) => {
       ? `Extraia todo o conteúdo textual do seguinte documento (${fileName || 'document'}). Retorne apenas o texto.`
       : `Transcreva o seguinte arquivo de mídia (${fileName || 'audio'}). Retorne apenas o texto transcrito.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemContent },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: userText },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType || 'application/octet-stream'};base64,${audioBase64}`
-                }
+    const aiResult = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemContent },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: userText },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType || 'application/octet-stream'};base64,${audioBase64}`
               }
-            ]
-          }
-        ],
-      }),
+            }
+          ]
+        }
+      ],
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Aguarde." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI error:", response.status, t);
-      throw new Error("Erro na API de IA");
-    }
-
-    const aiResult = await response.json();
     const transcription = aiResult.choices?.[0]?.message?.content || "";
 
     return new Response(JSON.stringify({ transcription }), {

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,7 +24,6 @@ function parsePaymentTerms(
 
   const terms = paymentTerms.toLowerCase().trim();
 
-  // Pattern: "entrada + N parcelas"
   const entradaMatch = terms.match(/entrada\s*\+\s*(\d+)\s*parcela/);
   if (entradaMatch) {
     const numInstallments = parseInt(entradaMatch[1]);
@@ -51,7 +51,6 @@ function parsePaymentTerms(
     return milestones;
   }
 
-  // Pattern: "Nx" or "N parcelas" or "N vezes"
   const nxMatch = terms.match(/(\d+)\s*(?:x|parcela|vezes)/);
   if (nxMatch) {
     const num = parseInt(nxMatch[1]);
@@ -72,7 +71,6 @@ function parsePaymentTerms(
     }
   }
 
-  // Pattern: percentages like "50% + 50%" or "40% + 40% + 20%"
   const percentMatches = terms.match(/(\d+)\s*%/g);
   if (percentMatches && percentMatches.length >= 2) {
     const percents = percentMatches.map((p) => parseInt(p.replace("%", "")));
@@ -119,7 +117,6 @@ async function generatePaymentTermsWithAI(
   template: string | null,
   totalValue: number,
   durationDays: number,
-  lovableApiKey: string
 ): Promise<string> {
   const prompt = `Você é um especialista em contratos para produtoras audiovisuais brasileiras.
 
@@ -136,25 +133,12 @@ Retorne APENAS uma string curta com as condições de pagamento padrão de merca
 Retorne somente o texto das condições, sem explicações adicionais.`;
 
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 100,
-      }),
+    const data = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 100,
     });
 
-    if (!response.ok) {
-      console.error("AI error:", response.status);
-      return "50% na assinatura + 50% na entrega";
-    }
-
-    const data = await response.json();
     const result = data.choices?.[0]?.message?.content?.trim() || "";
     return result || "50% na assinatura + 50% na entrega";
   } catch (e) {
@@ -177,13 +161,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use service role for writing data
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Validate user via getClaims (works with signing-keys runtime)
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -209,7 +191,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 1. Fetch project data
     const { data: project, error: projectError } = await supabaseAdmin
       .from("projects")
       .select("*")
@@ -231,7 +212,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 2. Check if contract exists
     const { data: existingContracts } = await supabaseAdmin
       .from("contracts")
       .select("*")
@@ -243,10 +223,7 @@ Deno.serve(async (req) => {
     let contractCreated = false;
     let contractUpdated = false;
 
-    // 3. Create or update contract
     if (!contract) {
-      // Generate AI payment_terms
-      const lovableApiKey = Deno.env.get("LOVABLE_API_KEY") || "";
       const durationDays = project.start_date && project.due_date
         ? Math.ceil((new Date(project.due_date).getTime() - new Date(project.start_date).getTime()) / (1000 * 60 * 60 * 24))
         : 30;
@@ -255,7 +232,6 @@ Deno.serve(async (req) => {
         project.template,
         contractValue,
         durationDays,
-        lovableApiKey
       );
 
       const { data: newContract, error: createContractError } = await supabaseAdmin
@@ -284,13 +260,11 @@ Deno.serve(async (req) => {
       contract = newContract;
       contractCreated = true;
     } else {
-      // Update existing contract if value changed
       const updates: Record<string, unknown> = {};
       if (Number(contract.total_value) !== contractValue) {
         updates.total_value = contractValue;
       }
       if (!contract.payment_terms) {
-        const lovableApiKey = Deno.env.get("LOVABLE_API_KEY") || "";
         const durationDays = project.start_date && project.due_date
           ? Math.ceil((new Date(project.due_date).getTime() - new Date(project.start_date).getTime()) / (1000 * 60 * 60 * 24))
           : 30;
@@ -298,7 +272,6 @@ Deno.serve(async (req) => {
           project.template,
           contractValue,
           durationDays,
-          lovableApiKey
         );
       }
       if (Object.keys(updates).length > 0) {
@@ -308,7 +281,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Check existing revenues for this contract
     const { data: existingRevenues } = await supabaseAdmin
       .from("revenues")
       .select("id")
@@ -333,12 +305,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 5. Delete existing revenues if force_regenerate
     if (hasRevenues && force_regenerate) {
       await supabaseAdmin.from("revenues").delete().eq("contract_id", contract.id);
     }
 
-    // 6. Generate and insert revenue milestones
     const startDate = project.start_date || new Date().toISOString().split("T")[0];
     const milestones = parsePaymentTerms(contract.payment_terms, contractValue, startDate);
 
@@ -367,7 +337,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 7. Log event
     await supabaseAdmin.from("event_logs").insert({
       action: "sync_project_finances",
       entity_type: "project",
