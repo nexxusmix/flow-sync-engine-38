@@ -1,104 +1,55 @@
 
 
-## Migrar IA para Gemini Direto + OpenAI com Fallback Automático
+## Melhorias de UX para Tarefas - Desktop e Mobile
 
-### Problema
-O saldo do Lovable AI Gateway esgotou, pausando todas as funcionalidades de IA do app (42 edge functions afetadas).
+### Problemas Encontrados
 
-### Solução
-Criar um **módulo compartilhado** (`_shared/ai-client.ts`) que roteia chamadas de IA para Gemini direto ou OpenAI, com fallback automático. Todas as 42 edge functions passam a importar desse módulo em vez de chamar `ai.gateway.lovable.dev` diretamente.
+A pagina de tarefas funciona bem no desktop, mas tem pontos de melhoria no mobile e em interacoes touch:
 
-### Segredos necessários
+1. **Mobile sem otimizacao**: Todos os 4 cards de coluna empilham verticalmente no mobile, forçando muito scroll. O componente Kanban (`TasksBoard`) ja tem um seletor de coluna mobile, mas o Quadro (`TasksBoardView`) nao.
+2. **Acoes invisiveis em touch**: Botoes de acao (editar/excluir) usam hover para aparecer, que nao funciona em dispositivos touch.
+3. **Modal apertado no mobile**: Header do modal com busca + ordenar fica comprimido em telas menores.
+4. **Toolbar com overflow**: Botoes de acao na toolbar podem transbordar em telas entre 768px e 1024px.
 
-Antes de implementar, você precisará adicionar 2 chaves de API:
+### Correcoes Propostas
 
-1. **GEMINI_API_KEY** - Chave do Google AI Studio (https://aistudio.google.com/apikey)
-2. **OPENAI_API_KEY** - Chave da OpenAI (https://platform.openai.com/api-keys)
+#### 1. Adicionar seletor de coluna mobile no TasksBoardView
 
-### Arquitetura do Roteamento
+Importar `useIsMobile()` e, quando em mobile, mostrar um seletor horizontal de colunas (igual ao Kanban) em vez de empilhar os 4 cards.
 
-```text
-Edge Function chama aiClient.chat(...)
-        |
-        v
-  Tenta GEMINI primeiro (gratuito/barato)
-        |
-   Sucesso? --> retorna resultado
-        |
-   Falha (429/500/timeout)?
-        |
-        v
-  Tenta OPENAI como fallback
-        |
-   Sucesso? --> retorna resultado
-        |
-   Falha? --> retorna erro
-```
+**Arquivo**: `src/components/tasks/TasksBoardView.tsx`
+- Importar `useIsMobile` de `@/hooks/use-mobile`
+- No mobile: mostrar tabs/botoes horizontais para selecionar coluna, exibindo apenas 1 card por vez
+- Manter a funcionalidade de clicar para abrir o modal
 
-### Mudanças Técnicas
+#### 2. Corrigir visibilidade de acoes em touch
 
-#### 1. Criar `supabase/functions/_shared/ai-client.ts`
+Trocar `opacity-0 group-hover:opacity-100` para `sm:opacity-0 sm:group-hover:opacity-100` nos botoes de acao, garantindo que fiquem visiveis no mobile.
 
-Módulo compartilhado com:
-- Mapeamento de modelos Lovable para equivalentes nativos
-  - `google/gemini-2.5-flash` --> `gemini-2.5-flash` (API direta Google)
-  - `google/gemini-2.5-pro` --> `gemini-2.5-pro`
-  - `google/gemini-3-flash-preview` --> `gemini-2.5-flash` (fallback mais próximo)
-  - `openai/gpt-5` --> `gpt-4o` (OpenAI)
-  - `openai/gpt-5-mini` --> `gpt-4o-mini`
-- Função `chatCompletion({ messages, model, tools?, tool_choice?, temperature?, max_tokens? })` que:
-  1. Tenta Gemini (via `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`)
-  2. Se falhar, tenta OpenAI (`https://api.openai.com/v1/chat/completions`)
-  3. Se ambos falharem, tenta Lovable AI como último recurso (caso o saldo volte)
-- Logs de qual provedor foi usado
+**Arquivo**: `src/components/tasks/TasksBoardView.tsx`
+- `ExpandedTaskRow`: Ajustar classe do botao de acao
+- Ou usar `@media (hover: hover)` para detectar suporte a hover
 
-#### 2. Atualizar todas as 42 edge functions
+#### 3. Layout responsivo do header do modal
 
-Substituir o padrão atual:
-```typescript
-// ANTES
-const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-  method: "POST",
-  headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-  body: JSON.stringify({ model: "google/gemini-2.5-flash", messages: [...] }),
-});
-```
+Ajustar o header do modal expandido para empilhar busca e ordenar verticalmente em telas pequenas.
 
-Por:
-```typescript
-// DEPOIS
-import { chatCompletion } from "../_shared/ai-client.ts";
+**Arquivo**: `src/components/tasks/TasksBoardView.tsx`
+- Trocar `flex items-center` no header por `flex flex-col sm:flex-row`
+- Busca e ordenar em linha separada no mobile
 
-const response = await chatCompletion({
-  messages: [...],
-  model: "gemini-2.5-flash",
-  temperature: 0.3,
-});
-```
+#### 4. Toolbar responsiva
 
-A função retorna o mesmo formato de resposta (`choices[0].message.content` ou `tool_calls`), mantendo compatibilidade total.
+Ajustar a toolbar de acoes para esconder botoes menos usados em telas medias.
 
-#### 3. Mapeamento de modelos (Gemini API direta)
+**Arquivo**: `src/pages/TasksPage.tsx`
+- Agrupar botoes secundarios em um dropdown "Mais" em telas menores
+- Ou usar `overflow-x-auto` com scroll horizontal
 
-A API do Google AI Studio aceita o formato OpenAI-compatible via endpoint `/v1beta/openai/chat/completions`, o que permite manter a mesma estrutura de request/response sem adaptação.
+### Resumo de Arquivos
 
-### Arquivos a criar/modificar
-
-| Arquivo | Acao |
+| Arquivo | Mudanca |
 |---|---|
-| `supabase/functions/_shared/ai-client.ts` | **Criar** -- Modulo de roteamento |
-| 42 edge functions em `supabase/functions/*/index.ts` | **Editar** -- Trocar fetch direto por import do ai-client |
-
-### Beneficios
-
-- **Resiliencia**: Se um provedor cair, o outro assume automaticamente
-- **Custo otimizado**: Gemini como primario (mais barato), OpenAI como fallback
-- **Manutencao centralizada**: Trocar provedor ou adicionar novo exige mudar apenas 1 arquivo
-- **Zero breaking changes**: O formato de resposta permanece identico para todo o app
-
-### Ordem de execucao
-
-1. Adicionar segredos `GEMINI_API_KEY` e `OPENAI_API_KEY`
-2. Criar `_shared/ai-client.ts`
-3. Atualizar as edge functions em lotes (mais criticas primeiro: `ai-run`, `generate-ideas`, `generate-captions`, `creative-studio`, etc.)
+| `src/components/tasks/TasksBoardView.tsx` | Seletor de coluna mobile, acoes touch, header responsivo do modal |
+| `src/pages/TasksPage.tsx` | Toolbar responsiva |
 
