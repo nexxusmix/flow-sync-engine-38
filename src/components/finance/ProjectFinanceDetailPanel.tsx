@@ -4,7 +4,6 @@ import { useFinancialStore } from '@/stores/financialStore';
 import { MilestonesList } from './MilestonesList';
 import { ProjectContractModal } from './ProjectContractModal';
 import { ContractAiUploadDialog } from './ContractAiUploadDialog';
-import { ContractAiUpdateDialog } from './ContractAiUpdateDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,8 +52,46 @@ export function ProjectFinanceDetailPanel({
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [isAiUploadOpen, setIsAiUploadOpen] = useState(false);
-  const [isAiUpdateOpen, setIsAiUpdateOpen] = useState(false);
   const [isGeneratingText, setIsGeneratingText] = useState(false);
+  const [isSyncingFinance, setIsSyncingFinance] = useState(false);
+
+  const handleSyncFinance = async () => {
+    setIsSyncingFinance(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-project-finances`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            project_id: project.project_id,
+            contract_id: contract?.id,
+            force_regenerate: true,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data?.error || "Erro ao sincronizar financeiro");
+      } else {
+        toast.success(data?.message || "Financeiro atualizado com IA!");
+        onRefresh();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao processar atualização financeira");
+    } finally {
+      setIsSyncingFinance(false);
+    }
+  };
 
   const handleGenerateContractText = async () => {
     if (!contract) return;
@@ -186,10 +223,15 @@ export function ProjectFinanceDetailPanel({
                 size="sm"
                 variant="outline"
                 className="flex-1"
-                onClick={() => setIsAiUpdateOpen(true)}
+                onClick={handleSyncFinance}
+                disabled={isSyncingFinance}
               >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Atualizar com IA
+                {isSyncingFinance ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                )}
+                {isSyncingFinance ? "Processando..." : "Atualizar com IA"}
               </Button>
               <Button
                 size="sm"
@@ -333,17 +375,8 @@ export function ProjectFinanceDetailPanel({
         onSuccess={handleRefresh}
       />
 
-      {/* Contract AI Update Dialog */}
-      {contract && (
-        <ContractAiUpdateDialog
-          open={isAiUpdateOpen}
-          onOpenChange={setIsAiUpdateOpen}
-          contractId={contract.id}
-          projectId={project.project_id}
-          projectName={project.project_name}
-          onSuccess={handleRefresh}
-        />
-      )}
+
+
 
       {/* Contract Modal */}
       <ProjectContractModal

@@ -172,21 +172,31 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: authError } = await supabaseUser.auth.getClaims(token);
-    if (authError || !claimsData?.claims?.sub) {
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) {
       return new Response(
         JSON.stringify({ error: "Não autorizado" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const userId = claimsData.claims.sub;
+    const userId = user.id;
 
-    const { project_id, force_regenerate = false } = await req.json();
+    const { project_id: rawProjectId, contract_id, force_regenerate = false } = await req.json();
+
+    // Allow calling with either project_id or contract_id
+    let project_id = rawProjectId;
+    if (!project_id && contract_id) {
+      const { data: contractLookup } = await supabaseAdmin
+        .from("contracts")
+        .select("project_id")
+        .eq("id", contract_id)
+        .single();
+      project_id = contractLookup?.project_id;
+    }
 
     if (!project_id) {
       return new Response(
-        JSON.stringify({ error: "project_id é obrigatório" }),
+        JSON.stringify({ error: "project_id ou contract_id é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
