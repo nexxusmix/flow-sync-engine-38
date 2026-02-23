@@ -105,6 +105,19 @@ export function usePortalRealtime(portalLinkId: string | undefined, projectId: s
           queryClient.invalidateQueries({ queryKey: ['client-portal'] });
         }
       )
+      // Project stages changes (timeline updates)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_stages',
+          filter: projectId ? `project_id=eq.${projectId}` : undefined,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['client-portal'] });
+        }
+      )
       .subscribe();
 
     return () => {
