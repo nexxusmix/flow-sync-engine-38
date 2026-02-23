@@ -1,0 +1,1 @@
+ALTER TABLE project_storyboard_scenes ADD COLUMN IF NOT EXISTS image_url TEXT;
