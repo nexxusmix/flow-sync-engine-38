@@ -1,53 +1,58 @@
 
 
-## Fix: polo-ai-chat streaming vs non-streaming mismatch
+## Corrigir "Resumo do Dia" para funcionar de verdade
 
-### Problem
-`polo-ai-chat` always uses `chatCompletionStream()` and returns `text/event-stream`. But `AIDailySummary.tsx` calls it via `supabase.functions.invoke()`, which expects a JSON response. The SSE stream can't be parsed as JSON, causing the component to fail and the dashboard to show a blank screen.
+### Problema
+O `polo-ai-chat` usa o system prompt do **executor autonomo** (que responde com JSON/execution_plan) para TODAS as chamadas, incluindo o resumo diario. Quando o dashboard pede um "resumo executivo", o Gemini responde com um JSON de execution plan em vez de texto legivel. O `data?.response` pode ate ter conteudo, mas e um bloco JSON ilegivel, ou o campo vem vazio porque o executor nao "entende" o pedido como uma acao.
 
-The edge function logs also show residual `TypeError: messages is not iterable` errors from an older deployment that has since been fixed.
+Alem disso, o componente `AIDailySummary` depende de dados reais (tarefas, CRM, pagamentos) que **nao sao enviados ao AI** -- ele pede "inclua tarefas pendentes" mas nao passa nenhum dado real. O AI inventa ou responde genericamente.
 
-### Solution
-Make `polo-ai-chat` support both streaming and non-streaming modes based on the request body.
+### Solucao
 
-### Changes
+**1. Criar um system prompt especifico para daily summary no `polo-ai-chat/index.ts`**
+- Quando `context.type === 'daily_summary'`, usar um prompt simplificado que pede resposta em markdown legivel (nao JSON)
+- Isso garante que o Gemini responda com bullet points legiveis
 
-**1. `supabase/functions/polo-ai-chat/index.ts`**
-- Import `chatCompletion` (non-streaming) alongside `chatCompletionStream`
-- Check `body.stream` flag (default to `false` when not provided)
-- When `stream === false` (or absent): use `chatCompletion()` and return a JSON response `{ response: "..." }`
-- When `stream === true`: use `chatCompletionStream()` and return SSE as before
-- This way, `AIDailySummary` (which sends `{ message: "..." }` without `stream: true`) gets a proper JSON response
+**2. Injetar dados reais do dashboard na chamada**
+- No `AIDailySummary.tsx`, buscar metricas reais usando o hook `useDashboardMetrics` que ja existe
+- Passar esses dados no corpo da mensagem ao AI para que ele gere um resumo baseado em dados reais
+- Isso transforma o resumo de "inventado" para "baseado em dados"
 
+**3. Tratar melhor a resposta no componente**
+- Garantir que o fallback so aparece quando realmente nao ha resposta
+
+### Arquivos a editar
+
+| Arquivo | Mudanca |
+|---|---|
+| `supabase/functions/polo-ai-chat/index.ts` | Adicionar system prompt especifico quando `context.type === 'daily_summary'` |
+| `src/components/dashboard/AIDailySummary.tsx` | Usar `useDashboardMetrics` para enviar dados reais ao AI |
+
+### Detalhe tecnico
+
+**polo-ai-chat - novo branch para daily_summary:**
 ```typescript
-// Determine streaming mode
-const wantStream = body.stream === true;
-
-if (wantStream) {
-  // existing streaming logic
-  const { response } = await chatCompletionStream({ ... });
-  return new Response(response.body, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
-} else {
-  // non-streaming: return JSON
-  const result = await chatCompletion({ model: "google/gemini-3-flash-preview", messages: [...], stream: false });
-  const text = result.choices?.[0]?.message?.content || "";
-  return new Response(JSON.stringify({ response: text }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
+if (context?.type === 'daily_summary') {
+  systemPrompt = `Voce e o Polo AI, assistente da produtora. Gere um resumo executivo curto do dia em markdown com bullet points. Seja direto, use emojis moderadamente. Responda APENAS em texto legivel, NUNCA em JSON. Use os dados fornecidos pelo usuario para basear o resumo.`;
 }
 ```
 
-**2. `src/components/dashboard/AIDailySummary.tsx`** (minor)
-- No changes needed -- it already reads `data?.response` which will now work correctly with the JSON response
+**AIDailySummary - enviar metricas reais:**
+```typescript
+const { data: dashData } = useDashboardMetrics();
+// ... na queryFn:
+const metricsContext = dashData ? `Dados atuais:
+- Projetos ativos: ${dashData.metrics.totalProjectsActive}
+- Projetos em risco: ${dashData.metrics.projectsAtRisk}
+- Receita do mes: R$${dashData.metrics.monthlyRevenue}
+- Pagamentos pendentes: R$${dashData.metrics.pendingPayments}
+- Deals no pipeline: ${dashData.metrics.totalDeals}
+- Eventos proximos: ${dashData.metrics.eventsNext30Days}` : '';
 
-**3. Deploy `polo-ai-chat`**
+message: `${metricsContext}\n\nGere o resumo do dia.`
+```
 
-### Files to edit
-| File | Change |
-|---|---|
-| `supabase/functions/polo-ai-chat/index.ts` | Add non-streaming branch using `chatCompletion` |
-
-### Result
-- Dashboard AI summary works again (non-streaming JSON response)
-- Polo AI chat panel still works (streaming SSE when `stream: true`)
-- No blank screen
+### Resultado
+- Resumo gerado com dados REAIS do dashboard
+- Texto legivel em markdown (nao JSON de execution plan)
+- Deploy automatico da edge function
