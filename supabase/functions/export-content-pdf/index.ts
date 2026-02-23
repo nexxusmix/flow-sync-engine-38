@@ -1,18 +1,49 @@
 /**
- * export-content-pdf — Content item PDF with SQUAD Swiss design
+ * export-content-pdf — Content item PDF via Gemini HTML
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SquadPdfBuilder, SQUAD, sanitize, formatDateShort } from "../_shared/pdf-design.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
+import { formatDateShort } from "../_shared/pdf-design.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-function formatDateBR(dateStr: string | null): string {
-  if (!dateStr) return "--";
-  try { return new Date(dateStr).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }); } catch { return "--"; }
+const SQUAD_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@media print { @page { size: A4; margin: 20mm 15mm; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
+body { font-family: 'Space Grotesk', sans-serif; background: #000; color: #D9DEE3; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 24px 40px; border-bottom: 1px solid #1A1A1A; }
+.logo { width: 40px; height: 40px; border: 1px solid #009CCA; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #009CCA; }
+.header-right { font-size: 11px; color: #4A4A4A; letter-spacing: 2px; text-transform: uppercase; }
+.hero { padding: 60px 40px 40px; }
+.hero-subtitle { font-size: 11px; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+.hero-title { font-size: 36px; font-weight: 700; color: #FFF; line-height: 1.1; margin-bottom: 24px; }
+.hero-title .accent { color: #009CCA; }
+.accent-bar { width: 60px; height: 2px; background: #009CCA; margin-bottom: 16px; }
+.hero-desc { font-size: 14px; color: #8C8C8C; }
+.section { padding: 0 40px 24px; }
+.section-title { font-size: 13px; font-weight: 600; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; border-bottom: 1px solid #1A1A1A; padding-bottom: 8px; }
+.field-label { font-size: 10px; font-weight: 700; color: #009CCA; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.field-value { font-size: 13px; color: #D9DEE3; margin-bottom: 16px; line-height: 1.6; }
+.checklist-item { font-size: 12px; margin-bottom: 6px; }
+.checklist-done { color: #22C55E; }
+.checklist-pending { color: #8C8C8C; font-weight: 600; }
+.comment { margin-bottom: 16px; }
+.comment-author { font-size: 10px; font-weight: 700; color: #4A4A4A; margin-bottom: 4px; }
+.comment-text { font-size: 12px; color: #D9DEE3; }
+.bold { font-weight: 600; color: #FFF; }
+.muted { color: #8C8C8C; }
+.footer { padding: 40px; text-align: center; border-top: 1px solid #1A1A1A; margin-top: 40px; }
+.footer p { font-size: 11px; color: #4A4A4A; letter-spacing: 3px; text-transform: uppercase; }
+`.trim();
+
+function fmtDateBR(d: string | null) {
+  if (!d) return "--";
+  try { return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }); } catch { return "--"; }
 }
 
 serve(async (req) => {
@@ -21,97 +52,69 @@ serve(async (req) => {
   try {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { content_item_id } = await req.json();
-    if (!content_item_id) throw new Error('Missing required field: content_item_id');
+    if (!content_item_id) throw new Error('Missing content_item_id');
 
-    const [{ data: content, error: contentError }, { data: checklist }, { data: comments }] = await Promise.all([
+    const [{ data: content, error: cErr }, { data: checklist }, { data: comments }] = await Promise.all([
       supabase.from('content_items').select('*').eq('id', content_item_id).single(),
       supabase.from('content_checklist').select('*').eq('content_item_id', content_item_id).order('created_at'),
       supabase.from('content_comments').select('*').eq('content_item_id', content_item_id).order('created_at', { ascending: false }).limit(20),
     ]);
-
-    if (contentError || !content) throw new Error(`Content not found: ${contentError?.message}`);
-
-    const b = new SquadPdfBuilder();
-    await b.init();
+    if (cErr || !content) throw new Error(`Content not found: ${cErr?.message}`);
 
     const statusLabels: Record<string, string> = { idea: "Ideia", scripting: "Roteiro", recording: "Gravacao", editing: "Edicao", review: "Revisao", scheduled: "Agendado", published: "Publicado" };
 
-    // Cover
-    b.coverPage({
-      subtitle: `${(content.channel || "--").toUpperCase()} | ${(statusLabels[content.status] || content.status || "Rascunho").toUpperCase()}`,
-      titleLine1: sanitize(content.title || "Conteudo"),
-      titleLine2: "Ficha",
-      description: `Formato: ${content.format || "--"} | Canal: ${content.channel || "--"}`,
+    const dataPayload = JSON.stringify({
+      title: content.title || "Conteudo",
+      channel: content.channel || "--",
+      status: statusLabels[content.status] || content.status || "Rascunho",
+      format: content.format || "--",
       date: formatDateShort(),
+      fields: {
+        hook: content.hook, caption_short: content.caption_short, caption_long: content.caption_long,
+        cta: content.cta, hashtags: content.hashtags, script: content.script, notes: content.notes, post_url: content.post_url,
+      },
+      dates: { due: fmtDateBR(content.due_at), scheduled: fmtDateBR(content.scheduled_at), published: fmtDateBR(content.published_at) },
+      checklist: (checklist || []).map((i: any) => ({ title: i.title, done: i.status === "done" })),
+      comments: (comments || []).map((c: any) => ({ author: c.author_name || "Usuario", date: fmtDateBR(c.created_at), text: c.text })),
     });
 
-    // Copy & Script
-    b.newPage();
-    b.heroSection("Copy e", "Roteiro.", "Textos de Producao");
+    const systemPrompt = `You are a pixel-perfect HTML report generator for SQUAD FILM.
+Return ONLY complete HTML. No markdown.
 
-    if (content.hook) { b.text("HOOK / GANCHO:", { size: 8, bold: true, color: SQUAD.accent }); b.text(content.hook, { size: 11 }); b.y -= 10; }
-    if (content.caption_short) { b.text("CAPTION CURTA:", { size: 8, bold: true, color: SQUAD.accent }); b.text(content.caption_short); b.y -= 10; }
-    if (content.caption_long) { b.text("CAPTION LONGA:", { size: 8, bold: true, color: SQUAD.accent }); b.text(content.caption_long); b.y -= 10; }
-    if (content.cta) { b.text("CTA:", { size: 8, bold: true, color: SQUAD.accent }); b.text(content.cta); b.y -= 10; }
-    if (content.hashtags) { b.text("HASHTAGS:", { size: 8, bold: true, color: SQUAD.accent }); b.text(content.hashtags, { size: 9, color: SQUAD.accent }); b.y -= 10; }
-    if (content.script) { b.text("ROTEIRO:", { size: 8, bold: true, color: SQUAD.accent }); b.text(content.script); b.y -= 10; }
+Use this CSS in <style>:
+${SQUAD_CSS}
 
-    // Briefing
-    if (content.notes) {
-      b.sectionTitle("Briefing");
-      b.text(content.notes, { color: SQUAD.muted });
-    }
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    // Dates
-    const dates = [];
-    if (content.due_at) dates.push(`Prazo: ${formatDateBR(content.due_at)}`);
-    if (content.scheduled_at) dates.push(`Agendado: ${formatDateBR(content.scheduled_at)}`);
-    if (content.published_at) dates.push(`Publicado: ${formatDateBR(content.published_at)}`);
-    if (dates.length > 0) { b.y -= 10; b.text(dates.join("  |  "), { size: 9, color: SQUAD.muted }); }
+STRUCTURE:
+1. div.header: logo "SQ" + "SQUAD FILM | 2026"
+2. div.hero: subtitle "CHANNEL | STATUS", title with content title + "<br><span class='accent'>Ficha.</span>", desc "Formato: X | Canal: Y"
+3. Section "Copy e Roteiro": For each non-null field (hook, caption_short, caption_long, cta, hashtags, script), render field-label + field-value. Hashtags in accent color.
+4. If notes: section "Briefing" with field-value
+5. Dates row: show due/scheduled/published dates if not "--", separated by " | ", in muted
+6. If checklist: section "Checklist" with items. Done=[x] in checklist-done, pending=[ ] in checklist-pending
+7. If comments: section "Comentarios de Revisao" with comment blocks
+8. If post_url: section "Publicacao" with link in accent
+9. Footer "SQUAD FILM | 2026"
+Skip empty sections.`;
 
-    // Checklist
-    if (checklist && checklist.length > 0) {
-      b.sectionTitle("Checklist");
-      for (const item of checklist) {
-        b.ensureSpace(20);
-        const isDone = item.status === "done";
-        const mark = isDone ? "[x]" : "[ ]";
-        const color = isDone ? SQUAD.success : SQUAD.muted;
-        b.text(`${mark} ${item.title}`, { color, bold: !isDone });
-      }
-    }
+    const aiResult = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate:\n${dataPayload}` }],
+      temperature: 0.1,
+    });
 
-    // Comments
-    if (comments && comments.length > 0) {
-      b.sectionTitle("Comentarios de Revisao");
-      for (const c of comments) {
-        b.ensureSpace(40);
-        b.text(`${c.author_name || "Usuario"} - ${formatDateBR(c.created_at)}`, { size: 9, bold: true, color: SQUAD.dim });
-        b.text(c.text, { color: SQUAD.offWhite });
-        b.y -= 8;
-      }
-    }
+    let html = aiResult.choices?.[0]?.message?.content || "";
+    html = html.replace(/^```html?\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+    if (!html.includes('<html') && !html.includes('<!DOCTYPE')) throw new Error("IA nao gerou HTML valido");
 
-    // Publication
-    if (content.post_url) {
-      b.sectionTitle("Publicacao");
-      b.text("Link do Post:", { size: 8, bold: true, color: SQUAD.accent });
-      b.text(content.post_url, { size: 9, color: SQUAD.accent });
-    }
-
-    const pdfBytes = await b.save();
-    const timestamp = Date.now();
-    const filePath = `exports/content/${content_item_id}/${timestamp}.pdf`;
-
-    const { error: uploadError } = await supabase.storage.from('exports').upload(filePath, pdfBytes, { contentType: 'application/pdf', upsert: true });
-    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('exports').createSignedUrl(filePath, 1800);
-    const url = signedUrlError ? supabase.storage.from('exports').getPublicUrl(filePath).data.publicUrl : signedUrlData.signedUrl;
-
-    return new Response(JSON.stringify({ success: true, signed_url: url, public_url: url, storage_path: filePath, file_name: `content_${content_item_id}_${timestamp}.pdf` }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: true, html, slug: `conteudo-${content_item_id}` }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('[export-content-pdf] Error:', error);
-    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed to export PDF' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed' }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

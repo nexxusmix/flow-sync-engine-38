@@ -1,14 +1,59 @@
 /**
- * export-finance-pdf — Standalone finance PDF with SQUAD Swiss design
+ * export-finance-pdf — Standalone finance PDF via Gemini HTML
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SquadPdfBuilder, SQUAD, sanitize, formatCurrency, formatDate, formatDateShort, getPeriodDates } from "../_shared/pdf-design.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
+import { formatCurrency, formatDate, formatDateShort, getPeriodDates } from "../_shared/pdf-design.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const SQUAD_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@media print { @page { size: A4; margin: 20mm 15mm; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
+body { font-family: 'Space Grotesk', sans-serif; background: #000; color: #D9DEE3; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 24px 40px; border-bottom: 1px solid #1A1A1A; }
+.logo { width: 40px; height: 40px; border: 1px solid #009CCA; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #009CCA; }
+.header-right { font-size: 11px; color: #4A4A4A; letter-spacing: 2px; text-transform: uppercase; }
+.hero { padding: 60px 40px 40px; }
+.hero-subtitle { font-size: 11px; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+.hero-title { font-size: 42px; font-weight: 700; color: #FFF; line-height: 1.1; margin-bottom: 24px; }
+.hero-title .accent { color: #009CCA; }
+.accent-bar { width: 60px; height: 2px; background: #009CCA; margin-bottom: 16px; }
+.hero-desc { font-size: 14px; color: #8C8C8C; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 40px 40px; }
+.kpi-card { background: #0A0A0A; border: 1px solid #1A1A1A; border-radius: 12px; padding: 20px; text-align: center; }
+.kpi-value { font-size: 28px; font-weight: 700; color: #FFF; margin-bottom: 4px; }
+.kpi-value.success { color: #22C55E; }
+.kpi-value.accent { color: #009CCA; }
+.kpi-value.warning { color: #EAB308; }
+.kpi-value.error { color: #EF4444; }
+.kpi-label { font-size: 11px; color: #8C8C8C; text-transform: uppercase; letter-spacing: 1px; }
+.section { padding: 0 40px 32px; }
+.section-title { font-size: 13px; font-weight: 600; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #1A1A1A; }
+table { width: 100%; border-collapse: collapse; }
+thead th { font-size: 10px; color: #8C8C8C; text-transform: uppercase; letter-spacing: 1px; padding: 12px 16px; text-align: left; background: #0A0A0A; border-bottom: 1px solid #1A1A1A; }
+tbody td { font-size: 12px; padding: 12px 16px; border-bottom: 1px solid #0A0A0A; color: #D9DEE3; }
+.pricing-card { background: #0A0A0A; border: 1px solid #1A1A1A; border-left: 3px solid #009CCA; border-radius: 8px; padding: 24px; margin: 0 40px 24px; }
+.pricing-subtitle { font-size: 10px; color: #8C8C8C; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.pricing-title { font-size: 16px; font-weight: 700; color: #FFF; margin-bottom: 12px; }
+.pricing-value { font-size: 28px; font-weight: 700; color: #009CCA; }
+.progress-row { padding: 4px 40px 12px; }
+.progress-label { font-size: 12px; color: #D9DEE3; display: flex; justify-content: space-between; margin-bottom: 4px; }
+.progress-track { background: #1A1A1A; height: 6px; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; }
+.alert-banner { background: #0A0A0A; border-left: 3px solid #EF4444; padding: 16px 20px; margin: 0 40px 24px; }
+.alert-title { font-size: 12px; font-weight: 700; color: #EF4444; margin-bottom: 4px; }
+.alert-msg { font-size: 11px; color: #8C8C8C; }
+.bold { font-weight: 600; color: #FFF; }
+.muted { color: #8C8C8C; }
+.footer { padding: 40px; text-align: center; border-top: 1px solid #1A1A1A; margin-top: 40px; }
+.footer p { font-size: 11px; color: #4A4A4A; letter-spacing: 3px; text-transform: uppercase; }
+`.trim();
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -30,7 +75,7 @@ serve(async (req) => {
     const received = revs.filter(r => r.status === "received").reduce((s, r) => s + Number(r.amount), 0);
     const paidExp = exps.filter(e => e.status === "paid").reduce((s, e) => s + Number(e.amount), 0);
     const balance = received - paidExp;
-    const pending = revs.filter(r => r.status === "pending" || r.status === "overdue").reduce((s, r) => s + Number(r.amount), 0);
+    const pending = revs.filter(r => r.status !== "received").reduce((s, r) => s + Number(r.amount), 0);
     const overdueRevs = revs.filter(r => r.status !== "received" && r.due_date < today);
     const overdueAmt = overdueRevs.reduce((s, r) => s + Number(r.amount), 0);
     const marginPct = received > 0 ? Math.round(((received - paidExp) / received) * 100) : 0;
@@ -40,94 +85,53 @@ serve(async (req) => {
       + revs.filter(r => r.status === "pending" && r.due_date <= days30).reduce((s, r) => s + Number(r.amount), 0)
       - exps.filter(e => e.status === "pending" && e.due_date <= days30).reduce((s, e) => s + Number(e.amount), 0);
 
-    const b = new SquadPdfBuilder();
-    await b.init();
-
-    b.coverPage({
-      subtitle: label,
-      titleLine1: "Relatorio",
-      titleLine2: "Financeiro",
-      description: "Panorama financeiro executivo",
-      date: formatDateShort(),
-    });
-
-    b.newPage();
-    b.heroSection("Indicadores", "Financeiros.", "Resumo Executivo");
-    b.kpiRow([
-      { label: "Saldo em Caixa", value: formatCurrency(balance), color: SQUAD.success },
-      { label: "Receita Pendente", value: formatCurrency(pending), color: SQUAD.accent },
-      { label: "Despesas Pagas", value: formatCurrency(paidExp), color: SQUAD.error },
-      { label: "Margem Liquida", value: `${marginPct}%`, color: SQUAD.warning },
-    ]);
-
-    // 30-day projection
-    b.sectionTitle("Projecao 30 Dias");
-    b.pricingCard({
-      subtitle: "Saldo Estimado em 30 dias",
-      title: proj30 >= balance ? "PREVISAO POSITIVA" : "ATENCAO",
-      value: formatCurrency(proj30),
-    });
-
-    // Aging
-    b.sectionTitle("Aging de Recebiveis");
-    const aging = [
-      { range: "A vencer", items: revs.filter(r => (r.status === "pending" || r.status === "overdue") && r.due_date >= today), color: SQUAD.success },
-      { range: "1-7 dias vencido", items: revs.filter(r => { if (r.status === "received") return false; const d = Math.floor((new Date(today).getTime() - new Date(r.due_date).getTime()) / 86400000); return d >= 1 && d <= 7; }), color: SQUAD.warning },
-      { range: "8-30 dias vencido", items: revs.filter(r => { if (r.status === "received") return false; const d = Math.floor((new Date(today).getTime() - new Date(r.due_date).getTime()) / 86400000); return d >= 8 && d <= 30; }), color: SQUAD.warning },
-      { range: "+30 dias vencido", items: revs.filter(r => { if (r.status === "received") return false; const d = Math.floor((new Date(today).getTime() - new Date(r.due_date).getTime()) / 86400000); return d > 30; }), color: SQUAD.error },
-    ];
-    for (const ag of aging) {
-      const val = ag.items.reduce((s, r) => s + Number(r.amount), 0);
-      b.progressBar(sanitize(ag.range), `${ag.items.length} itens - ${formatCurrency(val)}`, val > 0 ? Math.min(100, (val / Math.max(received, 1)) * 100) : 0, ag.color);
-    }
-
-    // Recent payments
-    b.sectionTitle("Pagamentos Recentes");
     const recent = revs.filter(r => r.status === "received" && r.received_date)
-      .sort((a, bb) => new Date(bb.received_date!).getTime() - new Date(a.received_date!).getTime())
-      .slice(0, 5);
+      .sort((a, b) => new Date(b.received_date!).getTime() - new Date(a.received_date!).getTime())
+      .slice(0, 5)
+      .map(p => ({ description: (p.description || "").substring(0, 40), date: formatDate(p.received_date), amount: formatCurrency(Number(p.amount)) }));
 
-    if (recent.length > 0) {
-      const colW = [220, 120, 159];
-      b.tableHeader([
-        { text: "Descricao", width: colW[0] },
-        { text: "Data", width: colW[1] },
-        { text: "Valor", width: colW[2] },
-      ]);
-      for (const p of recent) {
-        b.tableRow([
-          { text: (p.description || "").substring(0, 40), width: colW[0] },
-          { text: formatDate(p.received_date), width: colW[1], color: SQUAD.muted },
-          { text: `+${formatCurrency(Number(p.amount))}`, width: colW[2], color: SQUAD.success, bold: true },
-        ]);
-      }
-    } else {
-      b.text("Nenhum pagamento recebido recentemente", { color: SQUAD.muted });
-    }
+    const dataPayload = JSON.stringify({
+      period_label: label, date: formatDateShort(),
+      kpis: { balance: formatCurrency(balance), pending: formatCurrency(pending), expenses: formatCurrency(paidExp), margin: `${marginPct}%` },
+      projection: { value: formatCurrency(proj30), positive: proj30 >= balance },
+      recent_payments: recent,
+      overdue: { count: overdueRevs.length, amount: formatCurrency(overdueAmt) },
+    });
 
-    if (overdueRevs.length > 0) {
-      b.alertBanner("ALERTA DE INADIMPLENCIA", `${overdueRevs.length} receita(s) vencida(s) totalizando ${formatCurrency(overdueAmt)}`);
-    }
+    const systemPrompt = `You are a pixel-perfect HTML report generator for SQUAD FILM.
+Return ONLY complete HTML. No markdown.
 
-    const pdfBytes = await b.save();
-    const fileName = `finance_report_${Date.now()}.pdf`;
-    const filePath = `exports/pdf/${fileName}`;
+Use this CSS:
+${SQUAD_CSS}
 
-    const { error: uploadError } = await supabase.storage.from("exports").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
-    if (uploadError) {
-      const { error: fb } = await supabase.storage.from("project-files").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
-      if (fb) throw new Error(`Upload failed: ${fb.message}`);
-      const { data: signedFb } = await supabase.storage.from("project-files").createSignedUrl(filePath, 1800);
-      const fbUrl = signedFb?.signedUrl || supabase.storage.from("project-files").getPublicUrl(filePath).data.publicUrl;
-      return new Response(JSON.stringify({ success: true, signed_url: fbUrl, public_url: fbUrl, storage_path: filePath, file_name: fileName }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from("exports").createSignedUrl(filePath, 1800);
-    const url = signedUrlError ? supabase.storage.from("exports").getPublicUrl(filePath).data.publicUrl : signedUrlData.signedUrl;
+STRUCTURE:
+1. Header: logo "SQ" + "SQUAD FILM | 2026"
+2. Hero: subtitle=period_label, title "Relatorio<br><span class='accent'>Financeiro.</span>", desc "Panorama financeiro executivo | Gerado em DATE"
+3. KPI row: Saldo em Caixa (success), Receita Pendente (accent), Despesas Pagas (error), Margem Liquida (warning)
+4. Pricing card "Projecao 30 Dias": subtitle "Saldo Estimado em 30 dias", title based on positive flag, pricing-value
+5. Section "Pagamentos Recentes": table (Descricao, Data, Valor). Green bold amounts with "+". Muted dates. If empty show "Nenhum pagamento recente"
+6. If overdue.count > 0: alert-banner "ALERTA DE INADIMPLENCIA" with count + amount
+7. Footer "SQUAD FILM | 2026"`;
 
-    return new Response(JSON.stringify({ success: true, signed_url: url, public_url: url, storage_path: filePath, file_name: fileName }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const aiResult = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate:\n${dataPayload}` }],
+      temperature: 0.1,
+    });
+
+    let html = aiResult.choices?.[0]?.message?.content || "";
+    html = html.replace(/^```html?\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+    if (!html.includes('<html') && !html.includes('<!DOCTYPE')) throw new Error("IA nao gerou HTML valido");
+
+    return new Response(JSON.stringify({ success: true, html, slug: `financeiro-${period}` }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("export-finance-pdf error:", error);
-    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
