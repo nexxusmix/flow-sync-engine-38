@@ -1,55 +1,77 @@
 
 
-## Melhorias de UX para Tarefas - Desktop e Mobile
+## Reorganizacao do Menu Lateral (Sidebar)
 
-### Problemas Encontrados
+### Mudanca Solicitada
 
-A pagina de tarefas funciona bem no desktop, mas tem pontos de melhoria no mobile e em interacoes touch:
+Reordenar os itens do menu e criar um grupo expansivel "Studio Criativo e Marketing" que agrupa os sub-itens relacionados.
 
-1. **Mobile sem otimizacao**: Todos os 4 cards de coluna empilham verticalmente no mobile, forçando muito scroll. O componente Kanban (`TasksBoard`) ja tem um seletor de coluna mobile, mas o Quadro (`TasksBoardView`) nao.
-2. **Acoes invisiveis em touch**: Botoes de acao (editar/excluir) usam hover para aparecer, que nao funciona em dispositivos touch.
-3. **Modal apertado no mobile**: Header do modal com busca + ordenar fica comprimido em telas menores.
-4. **Toolbar com overflow**: Botoes de acao na toolbar podem transbordar em telas entre 768px e 1024px.
+### Nova Ordem do Menu
 
-### Correcoes Propostas
+1. Overview
+2. Tarefas
+3. Projetos
+4. **Studio Criativo e Marketing** (grupo expansivel com sub-itens):
+   - Marketing (dashboard)
+   - Gerar Posts
+   - Transcricao
+   - Studio Criativo
+5. Central de Acoes
+6. CRM
+7. Clientes (novo item - apontando para `/crm?tab=clients` ou rota dedicada)
+8. Prospeccao
+9. Calendario
+10. Financeiro
+11. Propostas
+12. Contratos
+13. Relatorios
+14. Avisos
 
-#### 1. Adicionar seletor de coluna mobile no TasksBoardView
+---
 
-Importar `useIsMobile()` e, quando em mobile, mostrar um seletor horizontal de colunas (igual ao Kanban) em vez de empilhar os 4 cards.
+### Detalhes Tecnicos
 
-**Arquivo**: `src/components/tasks/TasksBoardView.tsx`
-- Importar `useIsMobile` de `@/hooks/use-mobile`
-- No mobile: mostrar tabs/botoes horizontais para selecionar coluna, exibindo apenas 1 card por vez
-- Manter a funcionalidade de clicar para abrir o modal
+**Arquivo**: `src/components/layout/Sidebar.tsx`
 
-#### 2. Corrigir visibilidade de acoes em touch
+#### 1. Reestruturar o modelo de dados
 
-Trocar `opacity-0 group-hover:opacity-100` para `sm:opacity-0 sm:group-hover:opacity-100` nos botoes de acao, garantindo que fiquem visiveis no mobile.
+Trocar a lista plana `mainMenuItems` por uma estrutura que suporta itens com `children`:
 
-**Arquivo**: `src/components/tasks/TasksBoardView.tsx`
-- `ExpandedTaskRow`: Ajustar classe do botao de acao
-- Ou usar `@media (hover: hover)` para detectar suporte a hover
+```typescript
+interface MenuItem {
+  name: string;
+  href: string;
+  icon: string;
+  badge?: number;
+  children?: MenuItem[];
+}
+```
 
-#### 3. Layout responsivo do header do modal
+Os itens do grupo "Studio Criativo e Marketing" serao filhos com rotas existentes:
+- Marketing -> `/marketing`
+- Gerar Posts -> `/marketing/studio?tab=templates`
+- Transcricao -> `/marketing/transcricao`
+- Studio -> `/marketing/studio`
 
-Ajustar o header do modal expandido para empilhar busca e ordenar verticalmente em telas pequenas.
+#### 2. Adicionar estado local para controle do grupo
 
-**Arquivo**: `src/components/tasks/TasksBoardView.tsx`
-- Trocar `flex items-center` no header por `flex flex-col sm:flex-row`
-- Busca e ordenar em linha separada no mobile
+Usar `useState` para controlar a expansao/colapso do grupo. Auto-expandir quando qualquer rota filha estiver ativa.
 
-#### 4. Toolbar responsiva
+#### 3. Renderizacao condicional
 
-Ajustar a toolbar de acoes para esconder botoes menos usados em telas medias.
+- **Sidebar expandida**: Mostrar o grupo como um item clicavel que expande/colapsa, com os sub-itens indentados abaixo.
+- **Sidebar colapsada**: Mostrar apenas o icone do grupo pai. Ao passar o mouse ou clicar, nao expandir (manter comportamento simples de navegacao para a rota `/marketing`).
 
-**Arquivo**: `src/pages/TasksPage.tsx`
-- Agrupar botoes secundarios em um dropdown "Mais" em telas menores
-- Ou usar `overflow-x-auto` com scroll horizontal
+#### 4. Item "Clientes"
+
+Criar novo item apontando para `/crm` com tab de clientes (ou simplesmente `/crm` como entrada separada do CRM). O CRM ja gerencia clientes, entao o href sera `/crm` com icone `group`.
+
+#### 5. Animacao
+
+Manter o padrao existente de `framer-motion` para os sub-itens, usando `AnimatePresence` com altura animada para a expansao do grupo.
 
 ### Resumo de Arquivos
 
 | Arquivo | Mudanca |
 |---|---|
-| `src/components/tasks/TasksBoardView.tsx` | Seletor de coluna mobile, acoes touch, header responsivo do modal |
-| `src/pages/TasksPage.tsx` | Toolbar responsiva |
-
+| `src/components/layout/Sidebar.tsx` | Reordenar itens, criar grupo expansivel, adicionar item Clientes |
