@@ -1,10 +1,12 @@
 /**
  * export-pdf — Unified PDF Generator with SQUAD Swiss design
- * Supports: project, report_360, tasks, finance, portal, project_overview
+ * Project type uses Gemini AI to generate HTML, then client converts to PDF.
+ * Other types still use pdf-lib (SquadPdfBuilder) for now.
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SquadPdfBuilder, SQUAD, MARGIN, PAGE_W, CONTENT_W, sanitize, formatCurrency, formatDate, formatDateShort, getPeriodDates, slugify } from "../_shared/pdf-design.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,8 +21,47 @@ interface ExportInput {
   filters?: Record<string, unknown>;
 }
 
-// ─── Project PDF ──────────────────────────────────────────
-async function buildProjectPdf(supabase: any, projectId: string) {
+// ─── SQUAD Swiss CSS Design System ───────────────────────────
+const SQUAD_REPORT_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #000000; color: #D9DEE3; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 24px 40px; border-bottom: 1px solid #1A1A1A; }
+.logo { width: 40px; height: 40px; border: 1px solid #009CCA; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #009CCA; }
+.header-right { font-size: 11px; color: #4A4A4A; letter-spacing: 2px; text-transform: uppercase; }
+.hero { padding: 60px 40px 40px; }
+.hero-subtitle { font-size: 11px; font-weight: 500; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+.hero-title { font-size: 42px; font-weight: 700; color: #FFFFFF; line-height: 1.1; margin-bottom: 24px; }
+.hero-title .accent { color: #009CCA; }
+.accent-bar { width: 60px; height: 2px; background: #009CCA; margin-bottom: 16px; }
+.hero-desc { font-size: 14px; color: #8C8C8C; max-width: 600px; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 40px 40px; }
+.kpi-card { background: #0A0A0A; border: 1px solid #1A1A1A; border-radius: 12px; padding: 20px; text-align: center; }
+.kpi-value { font-size: 28px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px; }
+.kpi-value.success { color: #22C55E; }
+.kpi-value.accent { color: #009CCA; }
+.kpi-value.warning { color: #EAB308; }
+.kpi-value.error { color: #EF4444; }
+.kpi-label { font-size: 11px; color: #8C8C8C; text-transform: uppercase; letter-spacing: 1px; }
+.section { padding: 0 40px 32px; }
+.section-title { font-size: 13px; font-weight: 600; color: #009CCA; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #1A1A1A; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+thead th { font-size: 10px; font-weight: 600; color: #8C8C8C; text-transform: uppercase; letter-spacing: 1px; padding: 12px 16px; text-align: left; background: #0A0A0A; border-bottom: 1px solid #1A1A1A; }
+tbody td { font-size: 12px; padding: 12px 16px; border-bottom: 1px solid #0A0A0A; color: #D9DEE3; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-success { background: rgba(34, 197, 94, 0.15); color: #22C55E; }
+.badge-accent { background: rgba(0, 156, 202, 0.15); color: #009CCA; }
+.badge-muted { background: rgba(140, 140, 140, 0.15); color: #8C8C8C; }
+.badge-error { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+.badge-warning { background: rgba(234, 179, 8, 0.15); color: #EAB308; }
+.bold { font-weight: 600; color: #FFFFFF; }
+.muted { color: #8C8C8C; }
+.footer { padding: 40px; text-align: center; border-top: 1px solid #1A1A1A; margin-top: 40px; }
+.footer p { font-size: 11px; color: #4A4A4A; letter-spacing: 3px; text-transform: uppercase; }
+`.trim();
+
+// ─── Project HTML via Gemini ─────────────────────────────────
+async function buildProjectHtml(supabase: any, projectId: string): Promise<{ html: string; slug: string }> {
   const { data: project, error } = await supabase.from("projects").select("*").eq("id", projectId).single();
   if (error || !project) throw new Error(`Projeto nao encontrado: ${error?.message || "ID invalido"}`);
 
@@ -30,104 +71,88 @@ async function buildProjectPdf(supabase: any, projectId: string) {
     supabase.from("project_deliverables").select("*").eq("project_id", projectId).order("created_at"),
   ]);
 
-  const b = new SquadPdfBuilder();
-  await b.init();
-
-  const contractValue = Number(project.contract_value) || 0;
-  const healthScore = project.health_score || 100;
   const stageList = stages || [];
   const delivList = deliverables || [];
   const mileList = milestones || [];
+  const contractValue = Number(project.contract_value) || 0;
+  const healthScore = project.health_score || 100;
   const completedStages = stageList.filter((s: any) => s.status === "concluido").length;
   const progressPercent = stageList.length > 0 ? Math.round((completedStages / stageList.length) * 100) : 0;
-  const paidMilestones = mileList.filter((m: any) => m.status === "paid").reduce((s: number, m: any) => s + Number(m.amount || 0), 0);
-  const paymentPercent = contractValue > 0 ? Math.round((paidMilestones / contractValue) * 100) : 0;
+  const paidAmount = mileList.filter((m: any) => m.status === "paid").reduce((s: number, m: any) => s + Number(m.amount || 0), 0);
+  const paymentPercent = contractValue > 0 ? Math.round((paidAmount / contractValue) * 100) : 0;
 
-  // Cover
-  b.coverPage({
-    subtitle: "Relatorio do Projeto",
-    titleLine1: project.name || "Projeto",
-    titleLine2: "Relatorio",
-    description: `Cliente: ${project.client_name || "--"} | Gerado em ${formatDateShort()}`,
-    date: formatDateShort(),
+  const fmtCur = (v: number) => `R$ ${v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+  const fmtDt = (d: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR') : '--';
+
+  const dataPayload = JSON.stringify({
+    project_name: project.name || "Projeto",
+    client_name: project.client_name || "Cliente",
+    contract_value: fmtCur(contractValue),
+    health_score: healthScore,
+    progress: progressPercent,
+    payment: paymentPercent,
+    date: new Date().toLocaleDateString('pt-BR'),
+    stages: stageList.map((s: any) => ({
+      name: s.name, status: s.status,
+      start_date: fmtDt(s.start_date), end_date: fmtDt(s.end_date),
+    })),
+    deliverables: delivList.slice(0, 20).map((d: any) => ({
+      title: d.title, type: (d.type || 'outro').toUpperCase(),
+      status: d.status || 'rascunho', version: `v${d.version || 1}`,
+    })),
+    milestones: mileList.map((m: any) => ({
+      description: m.description || 'Parcela',
+      amount: fmtCur(Number(m.amount) || 0),
+      due_date: fmtDt(m.due_date), status: m.status,
+    })),
   });
 
-  // KPIs
-  b.newPage();
-  b.heroSection("Visao", "Geral.", "Indicadores do Projeto");
-  b.kpiRow([
-    { label: "Valor do Contrato", value: formatCurrency(contractValue) },
-    { label: "Saude", value: `${healthScore}%`, color: healthScore >= 80 ? SQUAD.success : healthScore >= 50 ? SQUAD.warning : SQUAD.error },
-    { label: "Progresso", value: `${progressPercent}%`, color: SQUAD.accent },
-    { label: "Pagamento", value: `${paymentPercent}%` },
-  ]);
+  const systemPrompt = `You are a pixel-perfect HTML report generator for SQUAD FILM.
+Return ONLY a complete HTML document starting with <!DOCTYPE html>. No markdown code blocks, no explanations, no text before or after the HTML.
 
-  // Stages
-  if (stageList.length > 0) {
-    b.sectionTitle("Cronograma de Etapas");
-    const colW = [180, 100, 110, 109];
-    b.tableHeader([
-      { text: "Etapa", width: colW[0] },
-      { text: "Status", width: colW[1] },
-      { text: "Inicio", width: colW[2] },
-      { text: "Fim Previsto", width: colW[3] },
-    ]);
-    for (const s of stageList) {
-      const sl = s.status === "concluido" ? "Concluido" : s.status === "em_andamento" ? "Em Andamento" : "Pendente";
-      const sc = s.status === "concluido" ? SQUAD.success : s.status === "em_andamento" ? SQUAD.accent : SQUAD.muted;
-      b.tableRow([
-        { text: s.name || "", width: colW[0], bold: true },
-        { text: sl, width: colW[1], color: sc },
-        { text: formatDate(s.start_date), width: colW[2], color: SQUAD.muted },
-        { text: formatDate(s.end_date), width: colW[3], color: SQUAD.muted },
-      ]);
-    }
+Use this EXACT CSS inside a <style> tag in the <head>:
+${SQUAD_REPORT_CSS}
+
+Also add in <head>:
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+DOCUMENT STRUCTURE:
+1. div.header with div.logo "SQ" and span.header-right "SQUAD FILM | 2026"
+2. div.hero with p.hero-subtitle "Relatorio do Projeto", h1.hero-title with project name then <br><span class="accent">Report.</span>, div.accent-bar, p.hero-desc with "Cliente: X | Gerado em DD/MM/YYYY"
+3. div.kpi-row with 4 div.kpi-card each containing div.kpi-value and div.kpi-label:
+   - "Valor do Contrato" (white)
+   - "Saude" with class success if >=80, warning if 50-79, error if <50
+   - "Progresso" with class accent
+   - "Pagamento" (white)
+4. If stages exist: div.section with h2.section-title "Cronograma de Etapas" and a table (Etapa, Status, Inicio, Fim Previsto). Use span.badge with badge-success for concluido, badge-accent for em_andamento, badge-muted for pendente.
+5. If deliverables exist: div.section with h2.section-title "Entregas" and table (Entrega, Tipo, Status, Versao). Use appropriate badge classes.
+6. If milestones exist: div.section with h2.section-title "Condicoes Financeiras" and table (Parcela, Valor, Vencimento, Status). badge-success for paid, badge-error for overdue, badge-muted for pending.
+7. div.footer with p "SQUAD FILM | 2026"
+
+Use class "bold" for names/amounts in table cells. Use class "muted" for date cells.
+Status labels: concluido->Concluido, em_andamento->Em Andamento, pendente->Pendente, paid->Pago, overdue->Vencido, pending->Pendente, aprovado->Aprovado, entregue->Entregue, revisao->Revisao, rascunho->Rascunho.
+If an array is empty, skip that section entirely.`;
+
+  console.log(`[export-pdf] Calling Gemini for project HTML: ${project.name}`);
+
+  const aiResult = await chatCompletion({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Generate the HTML report with this data:\n${dataPayload}` },
+    ],
+    temperature: 0.1,
+  });
+
+  let html = aiResult.choices?.[0]?.message?.content || "";
+  // Strip markdown code blocks if present
+  html = html.replace(/^```html?\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+
+  if (!html.includes('<html') && !html.includes('<!DOCTYPE')) {
+    throw new Error("IA nao gerou HTML valido");
   }
 
-  // Deliverables
-  if (delivList.length > 0) {
-    b.sectionTitle("Entregas");
-    const colW = [190, 80, 100, 129];
-    b.tableHeader([
-      { text: "Entrega", width: colW[0] },
-      { text: "Tipo", width: colW[1] },
-      { text: "Status", width: colW[2] },
-      { text: "Versao", width: colW[3] },
-    ]);
-    for (const d of delivList.slice(0, 20)) {
-      const sc = d.status === "aprovado" || d.status === "entregue" ? SQUAD.success : d.status === "revisao" ? SQUAD.warning : SQUAD.muted;
-      b.tableRow([
-        { text: d.title || "", width: colW[0] },
-        { text: (d.type || "outro").toUpperCase(), width: colW[1], color: SQUAD.muted },
-        { text: d.status || "rascunho", width: colW[2], color: sc },
-        { text: `v${d.version || 1}`, width: colW[3] },
-      ]);
-    }
-  }
-
-  // Milestones
-  if (mileList.length > 0) {
-    b.sectionTitle("Condicoes Financeiras");
-    const colW = [170, 120, 120, 89];
-    b.tableHeader([
-      { text: "Parcela", width: colW[0] },
-      { text: "Valor", width: colW[1] },
-      { text: "Vencimento", width: colW[2] },
-      { text: "Status", width: colW[3] },
-    ]);
-    for (const m of mileList) {
-      const sc = m.status === "paid" ? SQUAD.success : m.status === "overdue" ? SQUAD.error : SQUAD.muted;
-      const sl = m.status === "paid" ? "Pago" : m.status === "overdue" ? "Vencido" : "Pendente";
-      b.tableRow([
-        { text: m.description || "Parcela", width: colW[0] },
-        { text: formatCurrency(Number(m.amount) || 0), width: colW[1], bold: true },
-        { text: formatDate(m.due_date), width: colW[2], color: SQUAD.muted },
-        { text: sl, width: colW[3], color: sc },
-      ]);
-    }
-  }
-
-  return { bytes: await b.save(), slug: slugify(project.name || "projeto") };
+  return { html, slug: slugify(project.name || "projeto") };
 }
 
 // ─── Report 360 PDF ───────────────────────────────────────
@@ -303,7 +328,6 @@ async function buildFinancePdf(supabase: any, period: string) {
     { label: "Margem Liquida", value: `${marginPct}%`, color: SQUAD.warning },
   ]);
 
-  // 30-day projection
   b.sectionTitle("Projecao 30 Dias");
   b.pricingCard({
     subtitle: "Saldo Estimado",
@@ -311,7 +335,6 @@ async function buildFinancePdf(supabase: any, period: string) {
     value: formatCurrency(proj30),
   });
 
-  // Aging
   b.sectionTitle("Aging de Recebiveis");
   const agingGroups = [
     { range: "A vencer", items: revList.filter((r: any) => (r.status === "pending" || r.status === "overdue") && r.due_date >= today), color: SQUAD.success },
@@ -325,7 +348,6 @@ async function buildFinancePdf(supabase: any, period: string) {
     b.progressBar(sanitize(ag.range), `${ag.items.length} itens - ${formatCurrency(val)}`, val > 0 ? Math.min(100, (val / Math.max(received, 1)) * 100) : 0, ag.color);
   }
 
-  // Recent payments
   b.sectionTitle("Pagamentos Recentes");
   const recent = revList.filter((r: any) => r.status === "received" && r.received_date)
     .sort((a: any, bb: any) => new Date(bb.received_date).getTime() - new Date(a.received_date).getTime())
@@ -380,13 +402,26 @@ serve(async (req) => {
       if (user) userId = user.id;
     }
 
+    // ── HTML-based exports (Gemini AI) ──────────────────────
+    if (type === "project" || type === "portal") {
+      const projectId = id || "";
+      if (!projectId) throw new Error("ID do projeto e obrigatorio");
+
+      const { html, slug } = await buildProjectHtml(supabase, projectId);
+
+      console.log(`[export-pdf] Done (HTML via Gemini): ${slug}`);
+
+      return new Response(JSON.stringify({
+        success: true,
+        html,
+        slug: type === "portal" ? `portal-${slug}` : slug,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── PDF-binary exports (legacy pdf-lib) ─────────────────
     let result: { bytes: Uint8Array; slug: string };
 
     switch (type) {
-      case "project":
-        if (!id) throw new Error("ID do projeto e obrigatorio");
-        result = await buildProjectPdf(supabase, id);
-        break;
       case "report_360":
         result = await buildReport360Pdf(supabase, period);
         break;
@@ -400,16 +435,11 @@ serve(async (req) => {
         result = await buildReport360Pdf(supabase, period);
         result.slug = "command-center-projetos";
         break;
-      case "portal":
-        if (!id && !token) throw new Error("ID ou token do portal e obrigatorio");
-        result = await buildProjectPdf(supabase, id || "");
-        result.slug = `portal-${result.slug}`;
-        break;
       default:
         throw new Error(`Tipo nao suportado: ${type}`);
     }
 
-    // Upload
+    // Upload binary PDF to storage
     const now = new Date();
     const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const fileName = `${result.slug}-${now.getTime()}.pdf`;
