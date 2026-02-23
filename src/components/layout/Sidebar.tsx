@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "next-themes";
 import squadHubLogo from "@/assets/squad-hub-logo.png";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 
 interface MenuItem {
   name: string;
@@ -287,6 +289,7 @@ function SidebarMenuItem({
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
   return (
     <motion.aside
@@ -391,10 +394,21 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* User section */}
       <div
         className={cn(
-          "px-3 py-3 border-t border-white/[0.04]",
+          "px-3 py-3 border-t border-white/[0.04] space-y-2",
           collapsed && "px-2"
         )}
       >
+        {/* Theme toggle + Notifications */}
+        <div className={cn("flex items-center gap-1", collapsed ? "justify-center" : "justify-end")}>
+          <NotificationDropdown />
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-white/[0.04] transition-all"
+            title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </div>
         <div
           className={cn(
             "flex items-center gap-2.5",
