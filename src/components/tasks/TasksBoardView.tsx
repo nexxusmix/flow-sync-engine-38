@@ -5,7 +5,7 @@ import { ExecutionPlanBadge } from "@/components/tasks/ExecutionPlanBadge";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, ArrowUpDown, Search, ArrowRight, Plus,
-  Inbox, CalendarDays, Sun, CheckCircle2, Sparkles, X, Loader2
+  Inbox, CalendarDays, Sun, CheckCircle2, Sparkles, X, Loader2, Maximize2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,6 +15,9 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isPast } from "date-fns";
@@ -415,121 +418,119 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
         })}
       </div>
 
-      {/* Expanded Column Detail */}
-      <AnimatePresence>
-        {expandedColumn && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="overflow-hidden"
-          >
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0a0a0a]/60 backdrop-blur-xl p-5 space-y-4">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-medium text-foreground">
-                    {TASK_COLUMNS.find(c => c.key === expandedColumn)?.title}
-                  </h3>
-                  <span className="text-xs text-muted-foreground bg-white/[0.04] px-2 py-0.5 rounded-full">
-                    {expandedTasks.length} tarefa{expandedTasks.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative max-w-xs">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <Input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Buscar…"
-                      className="pl-8 h-8 text-xs bg-white/[0.02] border-white/[0.06]"
-                    />
+      {/* Expanded Column Modal */}
+      <Dialog open={!!expandedColumn} onOpenChange={(open) => { if (!open) { setExpandedColumn(null); setSearch(""); } }}>
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] flex flex-col p-0 gap-0 bg-[#0a0a0a] border-white/[0.08] overflow-hidden">
+          {expandedColumn && (() => {
+            const colConfig = COLUMN_CONFIG[expandedColumn];
+            const ColIcon = colConfig.icon;
+            return (
+              <>
+                {/* Header */}
+                <div className={cn(
+                  "p-6 pb-4 border-b border-white/[0.06] bg-gradient-to-r flex-shrink-0",
+                  colConfig.gradient
+                )}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.06]",
+                        colConfig.accentColor
+                      )}>
+                        <ColIcon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-medium text-foreground">
+                          {TASK_COLUMNS.find(c => c.key === expandedColumn)?.title}
+                        </h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {expandedTasks.length} tarefa{expandedTasks.length !== 1 ? 's' : ''}
+                          {getOverdueCount(expandedColumn) > 0 && expandedColumn !== 'done' && (
+                            <span className="text-destructive ml-2">
+                              · {getOverdueCount(expandedColumn)} vencida{getOverdueCount(expandedColumn) > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative max-w-[200px]">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="Buscar…"
+                          className="pl-8 h-8 text-xs bg-white/[0.04] border-white/[0.06] rounded-lg"
+                        />
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground">
+                            <ArrowUpDown className="w-3 h-3" />
+                            Ordenar
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setSortBy("created")}>Mais recentes</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setSortBy("due_date")}>Por prazo</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setSortBy("title")}>Alfabética</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground">
-                        <ArrowUpDown className="w-3 h-3" />
-                        Ordenar
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSortBy("created")}>Mais recentes</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy("due_date")}>Por prazo</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSortBy("title")}>Alfabética</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs text-muted-foreground"
-                    onClick={() => setExpandedColumn(null)}
-                  >
-                    Fechar
-                  </Button>
                 </div>
-              </div>
 
-              {/* Task list / Grid for backlog */}
-              {expandedColumn === 'backlog' ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-                  <AnimatePresence mode="popLayout">
-                    {expandedTasks.length === 0 ? (
-                      <motion.div
-                        key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="col-span-full text-center py-12 text-muted-foreground"
-                      >
-                        <p className="text-sm font-light">
-                          {search ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa nesta coluna"}
-                        </p>
-                      </motion.div>
-                    ) : (
-                      expandedTasks.map((task) => (
-                        <BacklogGridCard
-                          key={task.id}
-                          task={task}
-                          onEdit={() => onEditTask(task)}
-                          onToggle={() => toggleComplete(task.id)}
-                        />
-                      ))
-                    )}
-                  </AnimatePresence>
+                {/* Task list */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-1">
+                  {expandedColumn === 'backlog' ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {expandedTasks.length === 0 ? (
+                        <div className="col-span-full text-center py-16 text-muted-foreground">
+                          <ColIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                          <p className="text-sm font-light">
+                            {search ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa nesta coluna"}
+                          </p>
+                        </div>
+                      ) : (
+                        expandedTasks.map((task) => (
+                          <BacklogGridCard
+                            key={task.id}
+                            task={task}
+                            onEdit={() => onEditTask(task)}
+                            onToggle={() => toggleComplete(task.id)}
+                          />
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {expandedTasks.length === 0 ? (
+                        <div className="text-center py-16 text-muted-foreground">
+                          <ColIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                          <p className="text-sm font-light">
+                            {search ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa nesta coluna"}
+                          </p>
+                        </div>
+                      ) : (
+                        expandedTasks.map((task) => (
+                          <ExpandedTaskRow
+                            key={task.id}
+                            task={task}
+                            plan={getPlanForTask(task.id)}
+                            onEdit={() => onEditTask(task)}
+                            onToggle={() => toggleComplete(task.id)}
+                            onDelete={() => deleteTask(task.id)}
+                          />
+                        ))
+                      )}
+                    </>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-1">
-                  <AnimatePresence mode="popLayout">
-                    {expandedTasks.length === 0 ? (
-                      <motion.div
-                        key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-12 text-muted-foreground"
-                      >
-                        <p className="text-sm font-light">
-                          {search ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa nesta coluna"}
-                        </p>
-                      </motion.div>
-                    ) : (
-                      expandedTasks.map((task) => (
-                        <ExpandedTaskRow
-                          key={task.id}
-                          task={task}
-                          plan={getPlanForTask(task.id)}
-                          onEdit={() => onEditTask(task)}
-                          onToggle={() => toggleComplete(task.id)}
-                          onDelete={() => deleteTask(task.id)}
-                        />
-                      ))
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
