@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,29 +81,15 @@ ${interaction.transcript}
 Analise e extraia as informações estruturadas.`;
 
     // Call AI API
-    const aiResponse = await fetch("https://api.lovable.dev/ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${lovableApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      }),
+    const aiResult = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 2000,
     });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      throw new Error(`AI API error: ${errorText}`);
-    }
-
-    const aiResult = await aiResponse.json();
     const content = aiResult.choices?.[0]?.message?.content || "";
 
     // Parse the JSON response

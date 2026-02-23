@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,11 +22,6 @@ serve(async (req) => {
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { idea, brandKit, context } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     const systemPrompt = `Você é um roteirista de conteúdo profissional para redes sociais de uma produtora premium de vídeo.
 Sua tarefa é criar roteiros completos, shotlists, variações de legenda e hashtags.
@@ -62,83 +58,60 @@ Gere:
 4. 10-15 hashtags relevantes
 5. CTA persuasivo`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_script",
-              description: "Generate a complete content script with shotlist and captions",
-              parameters: {
-                type: "object",
-                properties: {
-                  script: {
-                    type: "string",
-                    description: "The complete script with dialogue and actions"
-                  },
-                  shotlist: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        order: { type: "number" },
-                        scene: { type: "string" },
-                        duration: { type: "string" },
-                        notes: { type: "string" }
-                      },
-                      required: ["order", "scene"]
-                    }
-                  },
-                  caption_variations: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "3 caption variations (short, medium, long)"
-                  },
-                  hashtags: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "10-15 relevant hashtags"
-                  },
-                  cta: {
-                    type: "string",
-                    description: "Call to action"
+    const data = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "generate_script",
+            description: "Generate a complete content script with shotlist and captions",
+            parameters: {
+              type: "object",
+              properties: {
+                script: {
+                  type: "string",
+                  description: "The complete script with dialogue and actions"
+                },
+                shotlist: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      order: { type: "number" },
+                      scene: { type: "string" },
+                      duration: { type: "string" },
+                      notes: { type: "string" }
+                    },
+                    required: ["order", "scene"]
                   }
                 },
-                required: ["script", "shotlist", "caption_variations", "hashtags", "cta"]
-              }
+                caption_variations: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "3 caption variations (short, medium, long)"
+                },
+                hashtags: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "10-15 relevant hashtags"
+                },
+                cta: {
+                  type: "string",
+                  description: "Call to action"
+                }
+              },
+              required: ["script", "shotlist", "caption_variations", "hashtags", "cta"]
             }
           }
-        ],
-        tool_choice: { type: "function", function: { name: "generate_script" } }
-      }),
+        }
+      ],
+      tool_choice: { type: "function", function: { name: "generate_script" } }
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a few seconds." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     
     if (!toolCall?.function?.arguments) {

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
@@ -29,11 +30,6 @@ serve(async (req) => {
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { text, audioBase64, imageBase64List, projectTitle, clientName } = await req.json() as ProcessRequest;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     let transcribedText = "";
     let imageDescriptions: string[] = [];
@@ -42,41 +38,33 @@ serve(async (req) => {
     if (audioBase64) {
       console.log("Processing audio for transcription...");
       
-      const audioResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Transcreva o áudio a seguir em português. Retorne apenas a transcrição, sem comentários adicionais."
-                },
-                {
-                  type: "input_audio",
-                  input_audio: {
-                    data: audioBase64,
-                    format: "mp3"
-                  }
+      const audioResult = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Transcreva o áudio a seguir em português. Retorne apenas a transcrição, sem comentários adicionais."
+              },
+              {
+                type: "input_audio",
+                input_audio: {
+                  data: audioBase64,
+                  format: "mp3"
                 }
-              ]
-            }
-          ]
-        }),
+              }
+            ]
+          }
+        ]
       });
 
-      if (audioResponse.ok) {
-        const audioResult = await audioResponse.json();
+      if (audioResult) {
         transcribedText = audioResult.choices?.[0]?.message?.content || "";
         console.log("Audio transcribed successfully");
       } else {
-        console.error("Audio transcription failed:", await audioResponse.text());
+        console.error("Audio transcription failed");
       }
     }
 
@@ -85,36 +73,28 @@ serve(async (req) => {
       console.log(`Processing ${imageBase64List.length} images...`);
       
       for (let i = 0; i < imageBase64List.length; i++) {
-        const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: "Analise esta imagem de uma conversa/print. Extraia todas as informações relevantes, pedidos do cliente, feedbacks e solicitações. Seja detalhado e objetivo."
-                  },
-                  {
-                    type: "image_url",
-                    image_url: {
-                      url: `data:image/jpeg;base64,${imageBase64List[i]}`
-                    }
+        const imageResult = await chatCompletion({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "Analise esta imagem de uma conversa/print. Extraia todas as informações relevantes, pedidos do cliente, feedbacks e solicitações. Seja detalhado e objetivo."
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${imageBase64List[i]}`
                   }
-                ]
-              }
-            ]
-          }),
+                }
+              ]
+            }
+          ]
         });
 
-        if (imageResponse.ok) {
-          const imageResult = await imageResponse.json();
+        if (imageResult) {
           const description = imageResult.choices?.[0]?.message?.content || "";
           if (description) {
             imageDescriptions.push(description);
@@ -163,36 +143,13 @@ Analise todo o conteúdo acima e gere um resumo estruturado seguindo EXATAMENTE 
 
 Responda APENAS com o JSON, sem texto adicional.`;
 
-    const summaryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Sempre responda em JSON válido." },
-          { role: "user", content: summaryPrompt }
-        ]
-      }),
+    const summaryResult = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: "Você é um assistente especializado em gestão de projetos audiovisuais. Sempre responda em JSON válido." },
+        { role: "user", content: summaryPrompt }
+      ]
     });
-
-    if (!summaryResponse.ok) {
-      const errorText = await summaryResponse.text();
-      console.error("Summary generation failed:", errorText);
-      
-      if (summaryResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns minutos." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      throw new Error("Failed to generate summary");
-    }
-
-    const summaryResult = await summaryResponse.json();
     const summaryContent = summaryResult.choices?.[0]?.message?.content || "";
     
     // Parse the JSON response

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,55 +69,34 @@ REGRAS:
 Retorne APENAS um JSON válido:
 {"title":"...","message":"...","type":"...","severity":"..."}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: contextText },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_alert",
-              description: "Generate a structured project alert",
-              parameters: {
-                type: "object",
-                properties: {
-                  title: { type: "string", description: "Emoji + short title" },
-                  message: { type: "string", description: "Contextual description" },
-                  type: { type: "string", enum: validTypes },
-                  severity: { type: "string", enum: ["info", "warning", "critical"] },
-                },
-                required: ["title", "message", "type", "severity"],
-                additionalProperties: false,
+    const data = await chatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: contextText },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "generate_alert",
+            description: "Generate a structured project alert",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Emoji + short title" },
+                message: { type: "string", description: "Contextual description" },
+                type: { type: "string", enum: validTypes },
+                severity: { type: "string", enum: ["info", "warning", "critical"] },
               },
+              required: ["title", "message", "type", "severity"],
+              additionalProperties: false,
             },
           },
-        ],
-        tool_choice: { type: "function", function: { name: "generate_alert" } },
-      }),
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "generate_alert" } },
     });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      throw new Error("AI gateway error");
-    }
-
-    const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) throw new Error("No tool call in response");
 

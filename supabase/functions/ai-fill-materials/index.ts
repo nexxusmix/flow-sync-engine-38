@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,8 +24,7 @@ serve(async (req) => {
       throw new Error("files array required");
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    // LOVABLE_API_KEY handled in ai-client.ts
 
     const fileDescriptions = files.map((f: any, i: number) => 
       `${i + 1}. "${f.fileName}" (${f.mimeType}, ${f.fileSize})`
@@ -65,38 +65,13 @@ IMPORTANTE: Retorne APENAS o JSON array, sem markdown, sem explicação.`;
       }
     }
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: hasImages ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite",
-        messages: [
-          { role: "system", content: "Você é um assistente que analisa nomes de arquivos e imagens de projetos criativos/audiovisuais e gera títulos profissionais. Quando imagens são fornecidas, analise visualmente o conteúdo. Responda sempre em JSON puro." },
-          { role: "user", content: hasImages ? contentParts : prompt },
-        ],
-      }),
+    const aiData = await chatCompletion({
+      model: hasImages ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite",
+      messages: [
+        { role: "system", content: "Você é um assistente que analisa nomes de arquivos e imagens de projetos criativos/audiovisuais e gera títulos profissionais. Quando imagens são fornecidas, analise visualmente o conteúdo. Responda sempre em JSON puro." },
+        { role: "user", content: hasImages ? contentParts : prompt },
+      ],
     });
-
-    if (!aiResp.ok) {
-      const errText = await aiResp.text();
-      console.error("AI error:", aiResp.status, errText);
-      if (aiResp.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, tente novamente em alguns segundos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResp.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA insuficientes." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error("AI gateway error");
-    }
-
-    const aiData = await aiResp.json();
     const content = aiData.choices?.[0]?.message?.content || "[]";
     const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     

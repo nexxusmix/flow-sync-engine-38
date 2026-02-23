@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,7 +110,8 @@ async function fetchPageMeta(url: string): Promise<{
 }
 
 async function analyzeWithGemini(
-  lovableApiKey: string,
+  // lovableApiKey parameter is now unused but kept for signature compatibility
+  _lovableApiKey: string,
   ogImageUrl: string,
   siteTitle: string,
   siteUrl: string
@@ -125,41 +127,25 @@ Extract the visual brand identity:
 Return ONLY valid JSON in this exact format, no markdown:
 {"color_palette":["#hex1","#hex2"],"brand_name":"Name","summary":"Description.","tags":["tag1","tag2"]}`;
 
-  const response = await fetch(
-    "https://ai.gateway.lovable.dev/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
+  const data = await chatCompletion({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      {
+        role: "user",
+        content: [
           {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: prompt,
-              },
-              {
-                type: "image_url",
-                image_url: { url: ogImageUrl },
-              },
-            ],
+            type: "text",
+            text: prompt,
+          },
+          {
+            type: "image_url",
+            image_url: { url: ogImageUrl },
           },
         ],
-        max_tokens: 500,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`);
-  }
-
-  const data = await response.json();
+      },
+    ],
+    max_tokens: 500,
+  });
   const content = data.choices?.[0]?.message?.content || "{}";
 
   // Strip markdown code blocks if present
