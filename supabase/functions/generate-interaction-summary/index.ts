@@ -128,7 +128,7 @@ Analise e extraia as informações estruturadas.`;
       throw new Error(`Failed to save summary: ${summaryError.message}`);
     }
 
-    // Optionally create action items as tasks
+    // Optionally create action items as project_action_items
     if (createTasks && summaryData.action_items?.length > 0) {
       const actionItemsToInsert = summaryData.action_items.map((item: any) => ({
         project_id: projectId,
@@ -142,6 +142,29 @@ Analise e extraia as informações estruturadas.`;
       await supabase
         .from("project_action_items")
         .insert(actionItemsToInsert);
+
+      // Also create tasks in the user's task board
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader) {
+        const token = authHeader.replace("Bearer ", "");
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user) {
+          const tasksToInsert = summaryData.action_items.map((item: any, i: number) => ({
+            user_id: user.id,
+            title: item.title,
+            description: `Ação extraída da reunião "${interaction.title}"${item.assignee ? ` — Responsável: ${item.assignee}` : ""}`,
+            status: 'backlog' as const,
+            category: 'operacao' as const,
+            tags: ['reunião', 'action-item'],
+            due_date: item.due_date ? parseDate(item.due_date) : null,
+            priority: 'normal',
+            project_id: projectId,
+            position: i,
+          }));
+
+          await supabase.from("tasks").insert(tasksToInsert);
+        }
+      }
     }
 
     return new Response(

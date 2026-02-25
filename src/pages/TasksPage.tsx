@@ -15,6 +15,8 @@ import { TaskExecutionGuide } from "@/components/tasks/TaskExecutionGuide";
 import { SavedFocusPlans } from "@/components/tasks/SavedFocusPlans";
 import { TaskAIDailySummary } from "@/components/tasks/TaskAIDailySummary";
 import { TaskAIPrioritySuggestions } from "@/components/tasks/TaskAIPrioritySuggestions";
+import { TaskAIDeadlineSuggestions } from "@/components/tasks/TaskAIDeadlineSuggestions";
+import { TaskDuplicateDetection } from "@/components/tasks/TaskDuplicateDetection";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
@@ -370,6 +372,8 @@ export default function TasksPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <TaskAIPrioritySuggestions />
+              <TaskAIDeadlineSuggestions />
+              <TaskDuplicateDetection />
               <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
                 <Sparkles className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">Criar com IA</span>
