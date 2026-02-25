@@ -218,6 +218,29 @@ export async function generateActionItems() {
       });
     });
 
+    // Fetch overdue/urgent tasks and create action items
+    const { data: overdueTasks } = await supabase
+      .from("tasks")
+      .select("id, title, due_date, priority, status, user_id")
+      .neq("status", "done")
+      .not("due_date", "is", null)
+      .lt("due_date", new Date().toISOString())
+      .limit(20);
+
+    overdueTasks?.forEach((task: any) => {
+      actions.push({
+        scope: "global",
+        type: "task_overdue",
+        title: `Tarefa atrasada: ${task.title}`,
+        description: `Venceu em ${new Date(task.due_date).toLocaleDateString("pt-BR")}`,
+        due_at: task.due_date,
+        priority: task.priority === "urgent" ? "P0" : "P1",
+        source: "system",
+        metadata: { task_id: task.id },
+        created_by: task.user_id,
+      });
+    });
+
     // Insert actions avoiding duplicates (use upsert-like logic)
     for (const action of actions) {
       // Check if similar open action exists

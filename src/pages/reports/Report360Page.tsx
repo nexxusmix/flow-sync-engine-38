@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useReport360Metrics, PeriodType } from '@/hooks/useReport360Metrics';
 import { useExportPdf } from '@/hooks/useExportPdf';
+import { TasksPendingSection } from '@/components/reports/TasksPendingSection';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell
@@ -253,6 +254,9 @@ export default function Report360Page() {
             )}
           </Card>
         </div>
+
+        {/* Tasks Pending Section */}
+        <TasksPendingSection />
 
         {/* Summary */}
         <Card className="glass-card p-6">
