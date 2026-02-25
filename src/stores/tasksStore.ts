@@ -12,6 +12,7 @@ export interface Task {
   due_date: string | null;
   completed_at: string | null;
   position: number;
+  priority: string;
   created_at: string;
   updated_at: string;
 }
