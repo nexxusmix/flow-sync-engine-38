@@ -23,6 +23,8 @@ export interface Task {
   completed_at: string | null;
   position: number;
   priority: string;
+  recurrence_rule: string | null;
+  recurrence_parent_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -238,7 +240,7 @@ export function useTasksUnified() {
   });
 
   // ── Convenience actions ────────────────────────────────
-  const toggleComplete = useCallback((id: string) => {
+  const toggleComplete = useCallback(async (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     const isCompleting = task.status !== 'done';
@@ -249,7 +251,22 @@ export function useTasksUnified() {
         completed_at: isCompleting ? new Date().toISOString() : null,
       },
     });
-  }, [tasks, updateMutation]);
+    // Trigger recurrence if completing a recurring task
+    if (isCompleting && task.recurrence_rule) {
+      try {
+        const { error } = await supabase.functions.invoke('handle-task-recurrence', {
+          body: { task_id: id },
+        });
+        if (error) console.error('Recurrence error:', error);
+        else {
+          toast.success('Próxima ocorrência criada automaticamente');
+          qc.invalidateQueries({ queryKey: ['tasks'] });
+        }
+      } catch (err) {
+        console.error('Recurrence error:', err);
+      }
+    }
+  }, [tasks, updateMutation, qc]);
 
   const moveTask = useCallback((taskId: string, newStatus: TaskStatus, newPosition?: number) => {
     const task = tasks.find(t => t.id === taskId);

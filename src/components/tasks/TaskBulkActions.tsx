@@ -167,9 +167,10 @@ export function TaskBulkActions({
           <Select onValueChange={bulkPriority}>
             <SelectTrigger className="h-7 w-[100px] text-[10px]">Prioridade</SelectTrigger>
             <SelectContent>
+              <SelectItem value="urgent">Urgente</SelectItem>
+              <SelectItem value="high">Alta</SelectItem>
               <SelectItem value="normal">Normal</SelectItem>
-              <SelectItem value="alta">Alta</SelectItem>
-              <SelectItem value="urgente">Urgente</SelectItem>
+              <SelectItem value="low">Baixa</SelectItem>
             </SelectContent>
           </Select>
 
