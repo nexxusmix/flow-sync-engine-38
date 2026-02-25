@@ -1,9 +1,9 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
-  Calendar, Search, Sparkles, X, Loader2
+  Calendar, Search, Sparkles, X, Loader2, GripVertical
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ interface TasksBoardViewProps {
   onEditTask: (task: Task) => void;
   onToggleComplete?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
+  onMoveTask?: (taskId: string, newStatus: Task['status']) => void;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
 }
@@ -42,10 +43,12 @@ const CATEGORY_BADGES: Record<Task['category'], { label: string; className: stri
 type StatusFilter = Task['status'] | 'all';
 type CategoryFilter = Task['category'] | 'all';
 
-export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask }: TasksBoardViewProps) {
+export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask, onMoveTask }: TasksBoardViewProps) {
   const isMobile = useIsMobile();
   const toggleComplete = onToggleComplete || (() => {});
   const deleteTask = onDeleteTask || (() => {});
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dropTargetStatus, setDropTargetStatus] = useState<Task['status'] | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
@@ -194,11 +197,28 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
             <button
               key={f.key}
               onClick={() => setStatusFilter(f.key)}
+              onDragOver={(e) => {
+                if (f.key === 'all' || !draggingTaskId) return;
+                e.preventDefault();
+                setDropTargetStatus(f.key as Task['status']);
+              }}
+              onDragLeave={() => setDropTargetStatus(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDropTargetStatus(null);
+                if (f.key === 'all' || !draggingTaskId) return;
+                const taskId = e.dataTransfer.getData('taskId');
+                if (taskId && onMoveTask) {
+                  onMoveTask(taskId, f.key as Task['status']);
+                  toast.success(`Tarefa movida para ${f.label}`);
+                }
+              }}
               className={cn(
                 "flex-shrink-0 px-3 py-1 rounded-lg text-[11px] font-light tracking-wide transition-all border",
                 statusFilter === f.key
                   ? "bg-white/[0.08] border-white/[0.15] text-foreground"
-                  : "bg-white/[0.02] border-white/[0.06] text-muted-foreground hover:bg-white/[0.05] hover:border-white/[0.1]"
+                  : "bg-white/[0.02] border-white/[0.06] text-muted-foreground hover:bg-white/[0.05] hover:border-white/[0.1]",
+                dropTargetStatus === f.key && "ring-2 ring-primary/50 bg-primary/10 border-primary/30 scale-105"
               )}
             >
               {f.label}
@@ -277,15 +297,31 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ delay: index * 0.02, duration: 0.25 }}
+                  draggable
+                  onDragStart={(e: any) => {
+                    setDraggingTaskId(task.id);
+                    e.dataTransfer.setData('taskId', task.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragEnd={() => {
+                    setDraggingTaskId(null);
+                    setDropTargetStatus(null);
+                  }}
                   onClick={() => onEditTask(task)}
                   className={cn(
-                    "group relative rounded-2xl p-3.5 cursor-pointer transition-all duration-300",
+                    "group relative rounded-2xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-300",
                     "bg-white/[0.02] backdrop-blur-xl border border-white/[0.06]",
                     "hover:bg-white/[0.05] hover:border-white/[0.12]",
-                    isDone && "opacity-60"
+                    isDone && "opacity-60",
+                    draggingTaskId === task.id && "opacity-40 ring-2 ring-primary/30"
                   )}
                 >
                   <div className="flex items-start gap-3">
+                    {/* Drag handle */}
+                    <div className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab">
+                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
+
                     {/* Checkbox */}
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleComplete(task.id); }}
