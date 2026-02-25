@@ -10,6 +10,7 @@ import { ActionHubOverviewCard } from "@/components/action-hub/ActionHubOverview
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { AIDailySummary } from "@/components/dashboard/AIDailySummary";
+import { TasksWidget } from "@/components/dashboard/TasksWidget";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { PipelineChart } from "@/components/dashboard/PipelineChart";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
@@ -356,6 +357,9 @@ export default function Dashboard() {
             </div>
           </div>
         </motion.div>
+
+        {/* Tasks Widget */}
+        <TasksWidget />
 
         {/* Key Metrics Row */}
         <motion.div 
