@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { useExecutionPlans } from "@/hooks/useExecutionPlans";
 import { ExecutionPlanPanel } from "@/components/tasks/ExecutionPlanPanel";
+import { TaskChecklistPanel } from "@/components/tasks/TaskChecklistPanel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
@@ -19,12 +20,12 @@ import {
 import {
   Sparkles, Loader2, Type, PenLine, FileText, BarChart3,
   ListChecks, Link2, Paperclip, X, ExternalLink, Trash2,
-  AlertTriangle, Flame,
+  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export type TaskPriority = 'normal' | 'alta' | 'urgente';
+export type TaskPriority = 'urgent' | 'high' | 'normal' | 'low';
 
 interface TaskLink {
   url: string;
@@ -214,9 +215,10 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
   };
 
   const priorityConfig: Record<TaskPriority, { label: string; icon: any; color: string }> = {
-    normal: { label: 'Normal', icon: null, color: 'text-muted-foreground' },
-    alta: { label: 'Alta', icon: AlertTriangle, color: 'text-amber-500' },
-    urgente: { label: 'Urgente', icon: Flame, color: 'text-destructive' },
+    urgent: { label: 'Urgente', icon: Flame, color: 'text-destructive' },
+    high: { label: 'Alta', icon: ArrowUp, color: 'text-amber-500' },
+    normal: { label: 'Normal', icon: Minus, color: 'text-muted-foreground' },
+    low: { label: 'Baixa', icon: ArrowDown, color: 'text-muted-foreground/60' },
   };
 
   if (!task) return null;
@@ -245,7 +247,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(['normal', 'alta', 'urgente'] as TaskPriority[]).map(p => {
+                {(['urgent', 'high', 'normal', 'low'] as TaskPriority[]).map(p => {
                   const PIcon = priorityConfig[p].icon;
                   return (
                     <SelectItem key={p} value={p}>
@@ -315,6 +317,13 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
               placeholder="Detalhes da tarefa..."
             />
           </div>
+
+          {/* Subtarefas */}
+          {task && (
+            <div className="border border-border/50 rounded-lg p-3">
+              <TaskChecklistPanel taskId={task.id} />
+            </div>
+          )}
 
           {/* AI Actions */}
           <div>
