@@ -117,6 +117,7 @@ export function useTasksUnified() {
           category: taskData.category || 'operacao',
           tags: taskData.tags || [],
           due_date: taskData.due_date || null,
+          priority: taskData.priority || 'normal',
           position: 0,
         }])
         .select()
