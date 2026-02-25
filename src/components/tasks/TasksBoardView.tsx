@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, Search, Sparkles, X, Loader2, GripVertical,
-  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock, ListChecks, MessageCircle
+  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock, ListChecks, MessageCircle, Repeat
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -560,6 +560,13 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                                 <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-muted-foreground/50">
                                   <MessageCircle className="w-3 h-3" />
                                   {commentCounts[task.id]}
+                                </span>
+                              )}
+
+                              {/* Recurrence indicator */}
+                              {(task as any).recurrence_rule && (
+                                <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-blue-400/60">
+                                  <Repeat className="w-3 h-3" />
                                 </span>
                               )}
 

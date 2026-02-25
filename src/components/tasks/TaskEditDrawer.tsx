@@ -21,7 +21,7 @@ import {
 import {
   Sparkles, Loader2, Type, PenLine, FileText, BarChart3,
   ListChecks, Link2, Paperclip, X, ExternalLink, Trash2,
-  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown,
+  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Repeat,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -69,6 +69,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
   const [links, setLinks] = useState<TaskLink[]>([]);
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [recurrenceRule, setRecurrenceRule] = useState<string>('none');
   const [aiLoading, setAiLoading] = useState<string | null>(null);
 
   // Load task data
@@ -85,6 +86,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
       setTags(task.tags?.join(', ') || '');
       setLinks((task as any).links || []);
       setAttachments((task as any).attachments || []);
+      setRecurrenceRule((task as any).recurrence_rule || 'none');
     }
   }, [task]);
 
@@ -304,6 +306,20 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
           <div>
             <Label className="text-xs">Tags (vírgula)</Label>
             <Input value={tags} onChange={e => setTags(e.target.value)} onBlur={handleTagsBlur} className="h-8 text-xs" placeholder="urgente, cliente" />
+          </div>
+
+          {/* Recurrence */}
+          <div>
+            <Label className="text-xs flex items-center gap-1"><Repeat className="w-3 h-3" /> Repetir</Label>
+            <Select value={recurrenceRule} onValueChange={(v) => { setRecurrenceRule(v); save('recurrence_rule', v === 'none' ? null : v); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nunca</SelectItem>
+                <SelectItem value="daily">Diário</SelectItem>
+                <SelectItem value="weekly">Semanal</SelectItem>
+                <SelectItem value="monthly">Mensal</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Description */}
