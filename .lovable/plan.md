@@ -1,100 +1,77 @@
 
 
-# Implementar Storyboard IA com Geracao de Imagens Automatica
+# Quadro de Tarefas Unificado
 
-## Resumo
+## O que muda
 
-O storyboard gera cenas via IA (texto) mas nao gera imagens. Vamos completar o fluxo para que apos salvar as cenas, imagens cinematograficas sejam geradas automaticamente usando Nano Banana Pro (google/gemini-3-pro-image-preview) com estetica Sony FX3 + GM 28-70mm f/2.8.
+O quadro de tarefas atual separa tudo em 4 colunas (Backlog, Esta Semana, Hoje, Concluído) como cards independentes. Isso vai ser substituído por uma **lista única unificada** onde todas as tarefas aparecem juntas, com badges de status e categoria visíveis em cada card, e filtros no topo.
 
-## Status Atual
+O design vai seguir o estilo "Liquid Glass" usado nos PDFs exportados: fundo escuro translúcido, bordas sutis, tipografia leve com tracking, badges minimalistas.
 
-- A edge function `generate-storyboard-ai` funciona (confirmado nos logs: sucesso via OpenAI)
-- As cenas sao salvas na tabela `project_storyboard_scenes` corretamente
-- A tabela NAO tem coluna `image_url` para armazenar imagens geradas
-- A edge function `generate-image` ja existe e usa Nano Banana Pro via Lovable Gateway
-- O componente `SceneCard` nao exibe imagens
+## Alterações
 
-## Alteracoes Necessarias
+### Arquivo: `src/components/tasks/TasksBoardView.tsx` (reescrita completa)
 
-### 1. Migracao de Banco - Adicionar coluna `image_url`
+**Remover:**
+- Grid de 4 colunas (backlog/week/today/done)
+- Cards de coluna com gradientes e ícones separados
+- Modal de coluna expandida
+- Seletor de coluna mobile
 
-```sql
-ALTER TABLE project_storyboard_scenes ADD COLUMN IF NOT EXISTS image_url TEXT;
-```
+**Novo layout:**
+- **Barra de filtros** no topo: chips clicáveis para Status (Todos, Backlog, Esta Semana, Hoje, Concluído) e Categoria (Todos, Operação, Pessoal, Projeto)
+- **Contador de resultados** abaixo dos filtros
+- **Lista unificada** com todos os tasks em rows estilo "Liquid Glass":
+  - Checkbox à esquerda
+  - Título + descrição truncada
+  - Badge de **status** (colorido conforme coluna antiga)
+  - Badge de **categoria** (Operação/Pessoal/Projeto)
+  - Tags
+  - Data de vencimento (com destaque se vencida)
+  - Menu de ações (editar/excluir)
+- **Empty state** quando nenhuma tarefa encontrada
+- Busca global + IA mantidos no topo
 
-### 2. Edge Function `generate-storyboard-ai/index.ts` - Adicionar geracao de imagens
+**Design Liquid Glass:**
+- Cards: `bg-white/[0.02] backdrop-blur-xl border border-white/[0.06] rounded-2xl`
+- Hover: `hover:bg-white/[0.05] hover:border-white/[0.12]`
+- Badges de status com cores sutis (violet para backlog, blue para semana, amber para hoje, emerald para done)
+- Tipografia: `font-light tracking-wider` nos labels, `text-xs uppercase` nos filtros
+- Animações com framer-motion (fade-in sequencial)
 
-Apos gerar as cenas via IA texto, para cada cena:
-- Pegar o `ai_prompt` gerado
-- Adicionar prefixo de estetica: "Shot on Sony FX3 with Sony GM 28-70mm f/2.8 lens. Cinema camera look, shallow depth of field, natural bokeh, cinematic color science."
-- Chamar Lovable Gateway com `google/gemini-3-pro-image-preview` e `modalities: ["image", "text"]`
-- Extrair base64, fazer upload ao storage `marketing-assets`, obter URL publica
-- Incluir `image_url` no JSON de resposta de cada cena
-
-A geracao de imagens sera feita em paralelo (todas as cenas ao mesmo tempo) para velocidade.
-
-### 3. Hook `useProjectStoryboards.ts` - Salvar image_url
-
-Atualizar o mapeamento de cenas na mutacao `generateMutation` para incluir `image_url` ao salvar em `project_storyboard_scenes`.
-
-### 4. Componente `StoryboardTab.tsx` - Exibir imagens + botao regenerar
-
-- `SceneCard`: Exibir imagem da cena (se existir) em destaque no topo do card
-- Adicionar botao "Gerar Imagem" por cena para regenerar manualmente
-- Ao regenerar, chamar `generate-image` com o prompt da cena + prefixo Sony FX3
-- Atualizar a cena no banco com a nova URL
-
-### 5. Estetica Sony FX3 GM 28-70mm
-
-Todos os prompts de imagem terao o seguinte prefixo adicionado automaticamente:
-
-```
-"Cinematic frame shot on Sony FX3 camera with Sony GM 28-70mm f/2.8 lens. 
-Shallow depth of field, natural film-like bokeh, rich color science, 
-S-Cinetone color profile. Professional cinematography, 16:9 widescreen frame."
-```
-
-## Detalhes Tecnicos
-
-### Edge Function - Fluxo de geracao de imagens
+### Visual dos filtros
 
 ```text
-generate-storyboard-ai
-  |
-  v
-[1] Gerar cenas (texto) via Gemini/OpenAI
-  |
-  v
-[2] Para cada cena em paralelo:
-    - Montar prompt = prefixo Sony FX3 + scene.ai_prompt
-    - POST Lovable Gateway (google/gemini-3-pro-image-preview, modalities: ["image","text"])
-    - Extrair base64 da resposta
-    - Upload para storage marketing-assets
-    - Obter URL publica
-    - Adicionar image_url ao objeto da cena
-  |
-  v
-[3] Retornar scenes[] com image_url ao frontend
+┌─────────────────────────────────────────────────────────┐
+│ [🔍 Buscar tarefas...]                        [✨ IA]  │
+├─────────────────────────────────────────────────────────┤
+│ Status: [Todos] [Backlog] [Semana] [Hoje] [Concluído]  │
+│ Tipo:   [Todos] [Operação] [Pessoal] [Projeto]         │
+├─────────────────────────────────────────────────────────┤
+│ 12 tarefas encontradas                                  │
+├─────────────────────────────────────────────────────────┤
+│ ☐ Criar briefing do cliente    │Semana│ │Operação│ 15mar│
+│ ☐ Revisar contrato             │Hoje│   │Pessoal│  14mar│
+│ ☑ Enviar proposta ~~riscado~~  │Done│   │Projeto│  ✓12m │
+│ ...                                                     │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Tratamento de erros
+### Visual de cada task row
 
-- Se a geracao de imagem de uma cena falhar (rate limit, timeout), a cena e retornada sem image_url
-- O usuario pode regenerar manualmente depois
-- Rate limits (429) e erros de pagamento (402) serao tratados com retry e mensagem adequada
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ ☐  Criar briefing completo        [Semana] [Operação]  15mar│
+│    Descrição truncada aqui...      #tag1 #tag2         ···  │
+└──────────────────────────────────────────────────────────────┘
+```
 
-### Frontend - SceneCard atualizado
+## Detalhes Técnicos
 
-- Imagem exibida em 16:9 com bordas arredondadas no topo do card
-- Botao "Gerar Imagem" aparece se nao houver imagem, ou como icone de refresh se ja houver
-- Loading spinner durante geracao individual
-- Ao gerar, chama `generate-image` edge function diretamente e atualiza `project_storyboard_scenes.image_url`
-
-## Sequencia de Implementacao
-
-1. Migracao SQL (adicionar coluna image_url)
-2. Atualizar `generate-storyboard-ai/index.ts` (gerar imagens em paralelo)
-3. Atualizar `useProjectStoryboards.ts` (salvar image_url)
-4. Atualizar `StoryboardTab.tsx` (exibir imagens + botao regenerar)
-5. Deploy da edge function
+- Filtros controlados por `useState` (statusFilter, categoryFilter)
+- `useMemo` para filtrar tasks por status + categoria + busca + IA
+- Sorting mantido (recentes, por prazo, alfabética)
+- Todas as callbacks existentes mantidas (onEditTask, onToggleComplete, onDeleteTask)
+- Mobile: filtros em scroll horizontal, rows mais compactos
+- Sem alteração em nenhum outro arquivo - apenas `TasksBoardView.tsx`
 
