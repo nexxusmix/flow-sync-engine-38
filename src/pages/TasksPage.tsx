@@ -6,6 +6,7 @@ import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksBoardView } from "@/components/tasks/TasksBoardView";
 import { TasksDashboardBI } from "@/components/tasks/TasksDashboardBI";
 import { TasksTimeline } from "@/components/tasks/TasksTimeline";
+import { TasksCalendarView } from "@/components/tasks/TasksCalendarView";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { TaskBulkActions } from "@/components/tasks/TaskBulkActions";
 import { TaskAnalysisPanel } from "@/components/tasks/TaskAnalysisPanel";
@@ -62,7 +63,7 @@ const defaultTaskForm: TaskFormData = {
   start_date: '',
 };
 
-type ViewMode = 'board' | 'kanban' | 'timeline' | 'dashboard' | 'focus';
+type ViewMode = 'board' | 'kanban' | 'timeline' | 'calendar' | 'dashboard' | 'focus';
 
 export default function TasksPage() {
   const {
@@ -301,6 +302,10 @@ export default function TasksPage() {
                   <CalendarIcon className="w-4 h-4" />
                   <span className="hidden sm:inline">Timeline</span>
                 </TabsTrigger>
+                <TabsTrigger value="calendar" className="gap-1.5">
+                  <CalendarIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Calendário</span>
+                </TabsTrigger>
                 <TabsTrigger value="dashboard" className="gap-1.5">
                   <LayoutDashboard className="w-4 h-4" />
                   <span className="hidden sm:inline">Dashboard</span>
@@ -376,6 +381,15 @@ export default function TasksPage() {
           </div>
         ) : viewMode === 'focus' ? (
           <SavedFocusPlans />
+        ) : viewMode === 'calendar' ? (
+          <TasksCalendarView
+            tasks={tasks}
+            onEditTask={handleEditTask}
+            onCreateTask={(date) => {
+              setTaskForm({ ...defaultTaskForm, due_date: date });
+              setIsNewTaskOpen(true);
+            }}
+          />
         ) : viewMode === 'board' ? (
           <TasksBoardView
             tasks={tasks}

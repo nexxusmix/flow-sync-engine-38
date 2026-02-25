@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Brain, Loader2, Trash2, FileDown, Clock, CheckCircle2, RotateCcw, Archive } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Brain, Loader2, Trash2, FileDown, Clock, CheckCircle2, RotateCcw, Archive, Maximize2, Minimize2, Play, Pause, RotateCw, CheckSquare, Square, PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { exportFocusPDF } from '@/services/pdfExportService';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTasksUnified } from '@/hooks/useTasksUnified';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,11 +34,175 @@ interface FocusPlan {
   created_at: string;
 }
 
+// ── Pomodoro Timer ──────────────────────────────────────
+function PomodoroTimer({ className }: { className?: string }) {
+  const [mode, setMode] = useState<'work' | 'break'>('work');
+  const [remaining, setRemaining] = useState(25 * 60);
+  const [isRunning, setIsRunning] = useState(false);
+  const [sessions, setSessions] = useState(0);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(() => {
+      setRemaining(prev => {
+        if (prev <= 1) {
+          setIsRunning(false);
+          if (mode === 'work') {
+            setSessions(s => s + 1);
+            setMode('break');
+            toast.success('🎉 Sessão completa! Hora de descansar.');
+            return 5 * 60;
+          } else {
+            setMode('work');
+            toast.info('💪 Descanso acabou! Hora de focar.');
+            return 25 * 60;
+          }
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isRunning, mode]);
+
+  const reset = () => {
+    setIsRunning(false);
+    setRemaining(mode === 'work' ? 25 * 60 : 5 * 60);
+  };
+
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const totalSecs = mode === 'work' ? 25 * 60 : 5 * 60;
+  const pct = ((totalSecs - remaining) / totalSecs) * 100;
+
+  return (
+    <div className={cn("flex items-center gap-3 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]", className)}>
+      <div className="relative w-14 h-14 shrink-0">
+        <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted-foreground/10" />
+          <circle
+            cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3"
+            strokeDasharray={`${2 * Math.PI * 24}`}
+            strokeDashoffset={`${2 * Math.PI * 24 * (1 - pct / 100)}`}
+            className={mode === 'work' ? 'text-primary' : 'text-emerald-500'}
+            strokeLinecap="round"
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center font-mono text-xs font-semibold">
+          {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+        </span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium">{mode === 'work' ? '🔥 Foco' : '☕ Descanso'}</p>
+        <p className="text-[10px] text-muted-foreground">{sessions} sessão{sessions !== 1 ? 'ões' : ''}</p>
+      </div>
+      <div className="flex gap-1">
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsRunning(!isRunning)}>
+          {isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={reset}>
+          <RotateCw className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Today Tasks Panel ───────────────────────────────────
+function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
+  const { tasks, toggleComplete } = useTasksUnified();
+
+  const todayTasks = useMemo(
+    () => tasks.filter(t => t.status === 'today'),
+    [tasks]
+  );
+
+  const completedCount = todayTasks.filter(t => t.status === 'done').length;
+  const total = todayTasks.length;
+  const allDone = total > 0 && completedCount === total;
+
+  useEffect(() => {
+    if (allDone) onAllComplete();
+  }, [allDone, onAllComplete]);
+
+  if (todayTasks.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-sm text-muted-foreground font-light">Nenhuma tarefa para hoje</p>
+        <p className="text-xs text-muted-foreground/50 mt-1">Mova tarefas para "Hoje" no quadro</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs uppercase tracking-widest text-muted-foreground font-light">Tarefas de Hoje</h4>
+        <span className="text-[10px] text-muted-foreground/50">{completedCount}/{total}</span>
+      </div>
+      <Progress value={total > 0 ? (completedCount / total) * 100 : 0} className="h-1.5" />
+      <div className="space-y-1">
+        {todayTasks.map(t => (
+          <div
+            key={t.id}
+            className={cn(
+              "flex items-center gap-2 p-2.5 rounded-lg transition-colors",
+              "bg-white/[0.02] border border-white/[0.04]",
+              t.status === 'done' && "opacity-50"
+            )}
+          >
+            <button onClick={() => toggleComplete(t.id)} className="shrink-0">
+              {t.status === 'done' ? (
+                <CheckSquare className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <Square className="w-4 h-4 text-muted-foreground/40 hover:text-foreground transition-colors" />
+              )}
+            </button>
+            <span className={cn("text-sm flex-1", t.status === 'done' && "line-through text-muted-foreground")}>
+              {t.title}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Confetti ────────────────────────────────────────────
+function ConfettiCelebration({ show }: { show: boolean }) {
+  if (!show) return null;
+
+  const pieces = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 0.5,
+    color: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A78BFA', '#34D399', '#F472B6'][Math.floor(Math.random() * 6)],
+    rotation: Math.random() * 360,
+  }));
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[100]">
+      {pieces.map(p => (
+        <motion.div
+          key={p.id}
+          className="absolute w-2 h-3 rounded-sm"
+          style={{ left: `${p.x}%`, backgroundColor: p.color }}
+          initial={{ top: '-5%', rotate: 0, opacity: 1 }}
+          animate={{ top: '110%', rotate: p.rotation + 720, opacity: 0 }}
+          transition={{ duration: 2 + Math.random(), delay: p.delay, ease: 'easeIn' }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Main Component ──────────────────────────────────────
 export function SavedFocusPlans() {
   const [plans, setPlans] = useState<FocusPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const fetchPlans = async () => {
     setIsLoading(true);
@@ -86,6 +251,28 @@ export function SavedFocusPlans() {
     } catch { toast.error('Erro ao restaurar'); }
   };
 
+  const handleAllComplete = useCallback(() => {
+    setShowConfetti(true);
+    toast.success('🎉 Todas as tarefas de hoje concluídas!');
+    setTimeout(() => setShowConfetti(false), 3000);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
   const blockTypeConfig: Record<string, { color: string; bg: string }> = {
     deep_work: { color: 'text-purple-500', bg: 'bg-purple-500/10' },
     shallow_work: { color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -99,16 +286,6 @@ export function SavedFocusPlans() {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (plans.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-        <Brain className="w-10 h-10 text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">Nenhum plano de foco salvo</p>
-        <p className="text-xs text-muted-foreground max-w-xs">Use o <strong>Modo Foco</strong> para gerar um plano e salve-o aqui para consulta posterior.</p>
       </div>
     );
   }
@@ -209,6 +386,26 @@ export function SavedFocusPlans() {
 
   return (
     <div className="space-y-6">
+      <ConfettiCelebration show={showConfetti} />
+
+      {/* Focus toolbar */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Modo Foco</h3>
+        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={toggleFullscreen}>
+          {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          {isFullscreen ? 'Sair' : 'Tela cheia'}
+        </Button>
+      </div>
+
+      {/* Pomodoro + Today tasks side by side */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <PomodoroTimer />
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <TodayTasksPanel onAllComplete={handleAllComplete} />
+        </div>
+      </div>
+
+      {/* Saved plans */}
       {activePlans.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Planos Ativos</h3>
@@ -217,6 +414,15 @@ export function SavedFocusPlans() {
           </div>
         </div>
       )}
+
+      {plans.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+          <Brain className="w-10 h-10 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">Nenhum plano de foco salvo</p>
+          <p className="text-xs text-muted-foreground max-w-xs">Use o <strong>Modo Foco</strong> para gerar um plano e salve-o aqui.</p>
+        </div>
+      )}
+
       {archivedPlans.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Arquivados</h3>
