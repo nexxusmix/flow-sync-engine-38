@@ -3,6 +3,7 @@ import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { useExecutionPlans } from "@/hooks/useExecutionPlans";
 import { ExecutionPlanPanel } from "@/components/tasks/ExecutionPlanPanel";
 import { TaskChecklistPanel } from "@/components/tasks/TaskChecklistPanel";
+import { TaskCommentsPanel } from "@/components/tasks/TaskCommentsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
@@ -322,6 +323,13 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
           {task && (
             <div className="border border-border/50 rounded-lg p-3">
               <TaskChecklistPanel taskId={task.id} />
+            </div>
+          )}
+
+          {/* Comentários */}
+          {task && (
+            <div className="border border-border/50 rounded-lg p-3">
+              <TaskCommentsPanel taskId={task.id} />
             </div>
           )}
 

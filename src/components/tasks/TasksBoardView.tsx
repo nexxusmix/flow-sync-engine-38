@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { useChecklistCounts } from "@/hooks/useTaskChecklist";
+import { useCommentCounts } from "@/hooks/useTaskComments";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, Search, Sparkles, X, Loader2, GripVertical,
-  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock, ListChecks
+  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock, ListChecks, MessageCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -61,6 +62,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
   // Fetch checklist counts for all visible tasks
   const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
   const { data: checklistCounts = {} } = useChecklistCounts(taskIds);
+  const { data: commentCounts = {} } = useCommentCounts(taskIds);
 
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dropTargetStatus, setDropTargetStatus] = useState<Task['status'] | null>(null);
@@ -550,6 +552,14 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                                 <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-muted-foreground/50">
                                   <ListChecks className="w-3 h-3" />
                                   {checklistCounts[task.id].completed}/{checklistCounts[task.id].total}
+                                </span>
+                              )}
+
+                              {/* Comment indicator */}
+                              {commentCounts[task.id] && commentCounts[task.id] > 0 && (
+                                <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-muted-foreground/50">
+                                  <MessageCircle className="w-3 h-3" />
+                                  {commentCounts[task.id]}
                                 </span>
                               )}
 
