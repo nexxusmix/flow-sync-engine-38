@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Task } from '@/stores/tasksStore';
+import { Task } from '@/hooks/useTasksUnified';
 import { useExecutionPlans } from '@/hooks/useExecutionPlans';
 import { DailyPlanWidget } from '@/components/tasks/DailyPlanWidget';
 import { Card } from '@/components/ui/card';
