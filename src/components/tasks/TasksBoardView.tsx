@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
+import { useChecklistCounts } from "@/hooks/useTaskChecklist";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, Search, Sparkles, X, Loader2, GripVertical,
-  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock
+  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock, ListChecks
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,6 +57,11 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
   const isMobile = useIsMobile();
   const toggleComplete = onToggleComplete || (() => {});
   const deleteTask = onDeleteTask || (() => {});
+
+  // Fetch checklist counts for all visible tasks
+  const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
+  const { data: checklistCounts = {} } = useChecklistCounts(taskIds);
+
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dropTargetStatus, setDropTargetStatus] = useState<Task['status'] | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
@@ -537,6 +543,14 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                                     <span className="text-[9px] text-muted-foreground/30">+{task.tags.length - 2}</span>
                                   )}
                                 </div>
+                              )}
+
+                              {/* Subtask indicator */}
+                              {checklistCounts[task.id] && checklistCounts[task.id].total > 0 && (
+                                <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-muted-foreground/50">
+                                  <ListChecks className="w-3 h-3" />
+                                  {checklistCounts[task.id].completed}/{checklistCounts[task.id].total}
+                                </span>
                               )}
 
                               {task.due_date && (

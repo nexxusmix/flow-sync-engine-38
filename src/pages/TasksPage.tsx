@@ -446,9 +446,10 @@ export default function TasksPage() {
                   <Select value={taskForm.priority} onValueChange={(v) => setTaskForm({ ...taskForm, priority: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="alta">Alta</SelectItem>
-                      <SelectItem value="urgente">Urgente</SelectItem>
+                      <SelectItem value="urgent">🔥 Urgente</SelectItem>
+                      <SelectItem value="high">↑ Alta</SelectItem>
+                      <SelectItem value="normal">— Normal</SelectItem>
+                      <SelectItem value="low">↓ Baixa</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
