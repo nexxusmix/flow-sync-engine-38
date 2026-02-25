@@ -76,6 +76,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [sortBy, setSortBy] = useState<"created" | "due_date" | "title" | "priority">("created");
   const [groupBy, setGroupBy] = useState<GroupBy>('none');
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
 
   // ── Metrics ────────────────────────────────────────────
   const metrics = useMemo(() => {
@@ -125,11 +126,34 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
     setAiFilteredIds(null);
   }, []);
 
+  // All unique tags
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach(t => t.tags?.forEach(tag => tagSet.add(tag)));
+    return Array.from(tagSet).sort();
+  }, [tasks]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag); else next.add(tag);
+      return next;
+    });
+  };
+
   // Filtered + sorted tasks
   const filteredTasks = useMemo(() => {
     let list = tasks;
     if (statusFilter !== 'all') list = list.filter(t => t.status === statusFilter);
     if (categoryFilter !== 'all') list = list.filter(t => t.category === categoryFilter);
+
+    // Tag filter (AND)
+    if (selectedTags.size > 0) {
+      list = list.filter(t => {
+        if (!t.tags || t.tags.length === 0) return false;
+        return Array.from(selectedTags).every(tag => t.tags.includes(tag));
+      });
+    }
 
     if (globalSearch.trim() && !aiFilteredIds) {
       const q = globalSearch.toLowerCase();
@@ -158,7 +182,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
     });
 
     return list;
-  }, [tasks, statusFilter, categoryFilter, globalSearch, aiFilteredIds, sortBy]);
+  }, [tasks, statusFilter, categoryFilter, globalSearch, aiFilteredIds, sortBy, selectedTags]);
 
   // ── Grouping ───────────────────────────────────────────
   const groupedTasks = useMemo(() => {
@@ -377,6 +401,35 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
             </button>
           ))}
         </div>
+
+        {/* Tags */}
+        {allTags.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-light flex-shrink-0">Tags</span>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className={cn(
+                  "flex-shrink-0 px-3 py-1 rounded-lg text-[11px] font-light tracking-wide transition-all border",
+                  selectedTags.has(tag)
+                    ? "bg-primary/15 border-primary/30 text-primary"
+                    : "bg-white/[0.02] border-white/[0.06] text-muted-foreground hover:bg-white/[0.05] hover:border-white/[0.1]"
+                )}
+              >
+                #{tag}
+              </button>
+            ))}
+            {selectedTags.size > 0 && (
+              <button
+                onClick={() => setSelectedTags(new Set())}
+                className="text-[10px] text-muted-foreground/50 hover:text-foreground transition-colors"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Results count + Sort + Group ────────────────── */}
