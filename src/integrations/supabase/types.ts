@@ -6617,6 +6617,7 @@ export type Database = {
           position: number
           priority: string
           progress: number
+          project_id: string | null
           recurrence_parent_id: string | null
           recurrence_rule: string | null
           start_date: string | null
@@ -6640,6 +6641,7 @@ export type Database = {
           position?: number
           priority?: string
           progress?: number
+          project_id?: string | null
           recurrence_parent_id?: string | null
           recurrence_rule?: string | null
           start_date?: string | null
@@ -6663,6 +6665,7 @@ export type Database = {
           position?: number
           priority?: string
           progress?: number
+          project_id?: string | null
           recurrence_parent_id?: string | null
           recurrence_rule?: string | null
           start_date?: string | null
@@ -6674,6 +6677,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_recurrence_parent_id_fkey"
             columns: ["recurrence_parent_id"]

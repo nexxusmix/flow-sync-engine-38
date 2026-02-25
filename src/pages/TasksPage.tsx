@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTasksUnified, Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
+import { useProjects } from "@/hooks/useProjects";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksBoardView } from "@/components/tasks/TasksBoardView";
 import { TasksDashboardBI } from "@/components/tasks/TasksDashboardBI";
@@ -12,6 +13,8 @@ import { TaskBulkActions } from "@/components/tasks/TaskBulkActions";
 import { TaskAnalysisPanel } from "@/components/tasks/TaskAnalysisPanel";
 import { TaskExecutionGuide } from "@/components/tasks/TaskExecutionGuide";
 import { SavedFocusPlans } from "@/components/tasks/SavedFocusPlans";
+import { TaskAIDailySummary } from "@/components/tasks/TaskAIDailySummary";
+import { TaskAIPrioritySuggestions } from "@/components/tasks/TaskAIPrioritySuggestions";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
@@ -50,6 +53,7 @@ interface TaskFormData {
   tags: string;
   due_date: string;
   start_date: string;
+  project_id: string;
 }
 
 const defaultTaskForm: TaskFormData = {
@@ -61,6 +65,7 @@ const defaultTaskForm: TaskFormData = {
   tags: '',
   due_date: '',
   start_date: '',
+  project_id: '',
 };
 
 type ViewMode = 'board' | 'kanban' | 'timeline' | 'calendar' | 'dashboard' | 'focus';
@@ -73,6 +78,7 @@ export default function TasksPage() {
   } = useTasksUnified();
 
   const { isExporting, exportTasks } = useExportPdf();
+  const { projects } = useProjects();
   const [viewMode, setViewMode] = useUrlState('view', 'board') as [ViewMode, (v: ViewMode) => void];
   useScrollPersistence('tasks');
 
@@ -172,6 +178,7 @@ export default function TasksPage() {
         due_date: taskForm.due_date || null,
         priority: taskForm.priority,
         start_date: taskForm.start_date || null,
+        project_id: taskForm.project_id || null,
       } as any);
       toast.success('Tarefa criada!');
       setIsNewTaskOpen(false);
@@ -362,6 +369,7 @@ export default function TasksPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <TaskAIPrioritySuggestions />
               <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
                 <Sparkles className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">Criar com IA</span>
@@ -373,6 +381,11 @@ export default function TasksPage() {
             </div>
           </div>
         </div>
+
+        {/* AI Daily Summary */}
+        {viewMode !== 'dashboard' && viewMode !== 'focus' && (
+          <TaskAIDailySummary />
+        )}
 
         {/* Content */}
         {isLoading ? (
@@ -477,6 +490,16 @@ export default function TasksPage() {
                   <Label>Data Limite</Label>
                   <Input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })} />
                 </div>
+              </div>
+              <div>
+                <Label>Projeto (opcional)</Label>
+                <Select value={taskForm.project_id || '_none'} onValueChange={(v) => setTaskForm({ ...taskForm, project_id: v === '_none' ? '' : v })}>
+                  <SelectTrigger><SelectValue placeholder="Sem projeto" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Sem projeto</SelectItem>
+                    {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Tags (vírgula)</Label>
