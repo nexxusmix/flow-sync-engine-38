@@ -382,6 +382,7 @@ export default function TasksPage() {
             onEditTask={handleEditTask}
             onToggleComplete={toggleComplete}
             onDeleteTask={deleteTask}
+            onMoveTask={moveTask}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
           />
