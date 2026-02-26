@@ -99,7 +99,7 @@ export function MkAppShell({ children, title, sectionCode, sectionLabel }: MkApp
         </header>
 
         {/* Main content */}
-        <main className={cn("flex-1 overflow-y-auto flex flex-col", isMobile ? "px-4 py-6" : "px-6 md:px-10 py-8")}>
+        <main className={cn("flex-1 overflow-y-auto flex flex-col min-h-0", isMobile ? "px-4 py-6" : "px-6 md:px-10 py-8")}>
           {/* Section title area */}
           {sectionCode && (
             <div className="mb-8">
