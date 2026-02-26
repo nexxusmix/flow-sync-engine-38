@@ -383,7 +383,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
                   key={key}
                   variant="outline"
                   size="sm"
-                  className="h-7 text-[10px] gap-1"
+                  className="h-7 text-mono gap-1"
                   disabled={!!aiLoading}
                   onClick={() => runAi(key)}
                 >
@@ -413,7 +413,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
             </Label>
             {links.map((link, i) => (
               <div key={i} className="flex items-center gap-2 mb-1.5 p-2 rounded-lg bg-muted/30">
-                <Badge variant="outline" className="text-[9px] shrink-0">{link.type}</Badge>
+                <Badge variant="outline" className="text-caption shrink-0">{link.type}</Badge>
                 <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate flex-1">
                   {link.title || link.url}
                 </a>
@@ -444,7 +444,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
             {attachments.map((att, i) => (
               <div key={i} className="flex items-center gap-2 mb-1.5 p-2 rounded-lg bg-muted/30">
                 <span className="text-xs truncate flex-1">{att.fileName}</span>
-                <span className="text-[9px] text-muted-foreground">{(att.size / 1024).toFixed(0)}KB</span>
+                <span className="text-caption text-muted-foreground">{(att.size / 1024).toFixed(0)}KB</span>
                 <a href={att.fileUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="w-3 h-3 text-muted-foreground hover:text-foreground" />
                 </a>

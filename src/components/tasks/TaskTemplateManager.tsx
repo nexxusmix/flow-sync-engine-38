@@ -138,12 +138,12 @@ export function TaskTemplateManager({ open, onOpenChange, onApplyTemplate }: Tas
                     </Button>
                   </div>
                 </div>
-                {t.description && <p className="text-[11px] text-muted-foreground line-clamp-1">{t.description}</p>}
+                {t.description && <p className="text-body-sm text-muted-foreground line-clamp-1">{t.description}</p>}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50">{t.category}</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50">{t.priority}</span>
+                  <span className="text-caption px-1.5 py-0.5 rounded bg-muted/50">{t.category}</span>
+                  <span className="text-caption px-1.5 py-0.5 rounded bg-muted/50">{t.priority}</span>
                   {t.checklist_items?.length > 0 && (
-                    <span className="text-[9px] text-muted-foreground">{t.checklist_items.length} subtarefas</span>
+                    <span className="text-caption text-muted-foreground">{t.checklist_items.length} subtarefas</span>
                   )}
                 </div>
               </div>

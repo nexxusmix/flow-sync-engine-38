@@ -97,7 +97,7 @@ export function AIChatSnippet() {
         <div className="icon-box bg-primary/20">
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
-        <span className="text-[10px] font-normal text-primary uppercase tracking-[0.3em]">SQUAD Agent Scout</span>
+        <span className="text-mono font-normal text-primary uppercase tracking-[0.3em]">SQUAD Agent Scout</span>
       </div>
 
       {/* Chat Messages */}
@@ -144,7 +144,7 @@ export function AIChatSnippet() {
               </div>
               <span className="text-xs text-muted-foreground font-mono">0:24</span>
             </div>
-            <p className="text-[10px] text-muted-foreground font-light flex items-center gap-2">
+            <p className="text-mono text-muted-foreground font-light flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">record_voice_over</span>
               ElevenLabs: Voz Consultor Senior
             </p>

@@ -116,7 +116,7 @@ export function KPIStrip() {
                 >
                   <card.icon className={`w-3.5 h-3.5 ${card.accent}`} />
                 </div>
-                <span className="text-[10px] font-light text-muted-foreground leading-tight group-hover:text-foreground transition-colors">
+                <span className="text-mono font-light text-muted-foreground leading-tight group-hover:text-foreground transition-colors">
                   {card.label}
                 </span>
               </div>
@@ -137,7 +137,7 @@ export function KPIStrip() {
                     </motion.p>
                   </span>
                 )}
-                <p className="text-[9px] text-muted-foreground/60 font-light mt-1 uppercase tracking-wider">
+                <p className="text-caption text-muted-foreground/60 font-light mt-1 uppercase tracking-wider">
                   {card.sublabel}
                 </p>
               </div>

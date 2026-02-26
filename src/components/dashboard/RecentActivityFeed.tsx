@@ -196,7 +196,7 @@ export function RecentActivityFeed() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="text-xl font-normal text-foreground">Recentes</h2>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-light">
+          <p className="text-mono text-muted-foreground uppercase tracking-wider font-light">
             Últimos itens criados em todos os módulos
           </p>
         </div>
@@ -208,7 +208,7 @@ export function RecentActivityFeed() {
         <button
           onClick={() => setActiveFilter("all")}
           className={cn(
-            "text-[10px] uppercase tracking-wider px-3 py-1 rounded-full border transition-colors",
+            "text-mono uppercase tracking-wider px-3 py-1 rounded-full border transition-colors",
             activeFilter === "all"
               ? "border-primary/50 bg-primary/10 text-primary"
               : "border-white/10 text-muted-foreground hover:border-white/20"
@@ -224,7 +224,7 @@ export function RecentActivityFeed() {
               key={m}
               onClick={() => setActiveFilter(m)}
               className={cn(
-                "flex items-center gap-1.5 text-[10px] uppercase tracking-wider px-3 py-1 rounded-full border transition-colors",
+                "flex items-center gap-1.5 text-mono uppercase tracking-wider px-3 py-1 rounded-full border transition-colors",
                 activeFilter === m
                   ? "border-primary/50 bg-primary/10 text-primary"
                   : "border-white/10 text-muted-foreground hover:border-white/20"
@@ -276,15 +276,15 @@ export function RecentActivityFeed() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-normal text-foreground truncate">{item.label}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{item.sub}</p>
+                    <p className="text-mono text-muted-foreground truncate">{item.sub}</p>
                   </div>
 
                   {/* Status + time */}
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className={cn("text-[9px] uppercase tracking-wide font-normal", item.statusColor)}>
+                    <span className={cn("text-caption uppercase tracking-wide font-normal", item.statusColor)}>
                       {item.status}
                     </span>
-                    <span className="text-[9px] text-muted-foreground/50">{timeAgo}</span>
+                    <span className="text-caption text-muted-foreground/50">{timeAgo}</span>
                   </div>
 
                   {/* Arrow on hover */}
@@ -301,7 +301,7 @@ export function RecentActivityFeed() {
         <div className="mt-4 pt-4 border-t border-white/[0.04] flex justify-center">
           <button
             onClick={() => navigate(activeFilter !== "all" ? MODULE_META[activeFilter].href : "/crm")}
-            className="text-[10px] uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+            className="text-mono uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
           >
             Ver mais <ArrowRight className="w-3 h-3" />
           </button>

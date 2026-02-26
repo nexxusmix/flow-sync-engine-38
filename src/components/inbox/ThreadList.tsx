@@ -100,7 +100,7 @@ export function ThreadList({ threads, selectedThreadId, onSelectThread, isLoadin
                 <span className="font-medium text-sm text-foreground truncate">
                   {thread.contact_name}
                 </span>
-                <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                <span className="text-mono text-muted-foreground flex-shrink-0">
                   {thread.last_message_at && formatDistanceToNow(new Date(thread.last_message_at), { 
                     addSuffix: true, 
                     locale: ptBR 

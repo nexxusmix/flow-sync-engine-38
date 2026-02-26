@@ -37,7 +37,7 @@ export function TasksWidget() {
           <CheckSquare className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-medium">Tarefas</h3>
         </div>
-        <Link to="/tarefas" className="text-[10px] uppercase tracking-widest text-primary/70 hover:text-primary flex items-center gap-1 transition-colors">
+        <Link to="/tarefas" className="text-mono uppercase tracking-widest text-primary/70 hover:text-primary flex items-center gap-1 transition-colors">
           Ver todas <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
@@ -85,7 +85,7 @@ export function TasksWidget() {
               </span>
               {t.due_date && (
                 <span className={cn(
-                  "text-[9px] shrink-0",
+                  "text-caption shrink-0",
                   isOverdue ? "text-destructive/60" : "text-muted-foreground/40"
                 )}>
                   {new Date(t.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}

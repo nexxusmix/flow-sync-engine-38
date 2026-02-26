@@ -24,7 +24,7 @@ export function TaskAssigneeSelect({ value, onChange, className, compact }: Task
 
   return (
     <Select value={value || '_none'} onValueChange={(v) => onChange(v === '_none' ? null : v)}>
-      <SelectTrigger className={cn(compact ? "h-7 text-[10px]" : "h-8 text-xs", className)}>
+      <SelectTrigger className={cn(compact ? "h-7 text-mono" : "h-8 text-xs", className)}>
         <SelectValue placeholder="Sem responsável" />
       </SelectTrigger>
       <SelectContent>
@@ -38,7 +38,7 @@ export function TaskAssigneeSelect({ value, onChange, className, compact }: Task
             <span className="flex items-center gap-1.5">
               <Avatar className="w-4 h-4">
                 <AvatarImage src={m.profile?.avatar_url || undefined} />
-                <AvatarFallback className="text-[8px]">{getInitials(m.profile?.full_name, m.profile?.email)}</AvatarFallback>
+                <AvatarFallback className="text-micro">{getInitials(m.profile?.full_name, m.profile?.email)}</AvatarFallback>
               </Avatar>
               {m.profile?.full_name || m.profile?.email?.split('@')[0] || 'Usuário'}
             </span>
@@ -59,7 +59,7 @@ export function TaskAssigneeAvatar({ userId }: { userId: string | null }) {
   return (
     <Avatar className="w-5 h-5 flex-shrink-0" title={member.profile?.full_name || member.profile?.email || ''}>
       <AvatarImage src={member.profile?.avatar_url || undefined} />
-      <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
+      <AvatarFallback className="text-micro bg-primary/10 text-primary">
         {getInitials(member.profile?.full_name, member.profile?.email)}
       </AvatarFallback>
     </Avatar>

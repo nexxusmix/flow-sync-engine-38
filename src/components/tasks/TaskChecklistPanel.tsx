@@ -61,7 +61,7 @@ export function TaskChecklistPanel({ taskId }: TaskChecklistPanelProps) {
         {total > 0 && (
           <div className="flex items-center gap-2">
             <Progress value={percent} className="h-1.5 flex-1" />
-            <span className="text-[10px] text-muted-foreground font-light">{percent}%</span>
+            <span className="text-mono text-muted-foreground font-light">{percent}%</span>
           </div>
         )}
 

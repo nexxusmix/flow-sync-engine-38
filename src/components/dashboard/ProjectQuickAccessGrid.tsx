@@ -86,7 +86,7 @@ export function ProjectQuickAccessGrid({ projects, isLoading }: ProjectQuickAcce
           </div>
           <div>
             <h2 className="text-sm font-medium text-foreground uppercase tracking-wide">Projetos Ativos</h2>
-            <p className="text-[10px] text-muted-foreground font-light">Acesso rápido</p>
+            <p className="text-mono text-muted-foreground font-light">Acesso rápido</p>
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -148,18 +148,18 @@ export function ProjectQuickAccessGrid({ projects, isLoading }: ProjectQuickAcce
                           <p className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
                             {project.name}
                           </p>
-                          <span className={`text-[8px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${st.className}`}>
+                          <span className={`text-micro font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${st.className}`}>
                             {st.label}
                           </span>
                         </div>
                         {project.client_name && (
-                          <p className="text-[10px] text-muted-foreground truncate">{project.client_name}</p>
+                          <p className="text-mono text-muted-foreground truncate">{project.client_name}</p>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-muted-foreground">{stageName}</span>
-                      <span className={`text-[9px] font-medium ${healthColor}`}>{project.health_score}%</span>
+                      <span className="text-caption text-muted-foreground">{stageName}</span>
+                      <span className={`text-caption font-medium ${healthColor}`}>{project.health_score}%</span>
                     </div>
                   </Card>
                 </Link>

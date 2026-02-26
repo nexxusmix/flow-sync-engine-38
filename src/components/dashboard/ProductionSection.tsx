@@ -128,7 +128,7 @@ export function ProductionSection() {
             </motion.span>
             <div>
               <h3 className="text-lg font-normal uppercase tracking-tighter text-foreground">Entregas</h3>
-              <span className="text-[9px] text-muted-foreground font-normal uppercase tracking-widest">Próximos 7 dias</span>
+              <span className="text-caption text-muted-foreground font-normal uppercase tracking-widest">Próximos 7 dias</span>
             </div>
           </div>
 

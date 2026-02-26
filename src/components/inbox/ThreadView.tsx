@@ -88,7 +88,7 @@ export function ThreadView({
         <div className="flex items-center gap-2">
           {/* Status Badge */}
           <span className={cn(
-            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+            "px-3 py-1 rounded-full text-mono font-bold uppercase tracking-wider",
             thread.status === 'open' && "bg-green-500/10 text-green-500",
             thread.status === 'pending' && "bg-amber-500/10 text-amber-500",
             thread.status === 'closed' && "bg-muted text-muted-foreground"
@@ -159,7 +159,7 @@ export function ThreadView({
               )}>
                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                 <p className={cn(
-                  "text-[10px] mt-1",
+                  "text-mono mt-1",
                   message.direction === 'out' ? "text-primary-foreground/70" : "text-muted-foreground"
                 )}>
                   {format(new Date(message.sent_at), "HH:mm", { locale: ptBR })}

@@ -98,13 +98,13 @@ export function AlertsTab({ project }: AlertsTabProps) {
             <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">{alert.message}</p>
           )}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span className="text-[10px] text-muted-foreground/50 uppercase">{typeLabels[alert.type] || alert.type}</span>
+            <span className="text-mono text-muted-foreground/50 uppercase">{typeLabels[alert.type] || alert.type}</span>
             {alert.due_at && (
-              <span className={cn("text-[10px]", isPast(new Date(alert.due_at)) ? 'text-red-400' : 'text-muted-foreground/40')}>
+              <span className={cn("text-mono", isPast(new Date(alert.due_at)) ? 'text-red-400' : 'text-muted-foreground/40')}>
                 {format(new Date(alert.due_at), 'dd/MM HH:mm')}
               </span>
             )}
-            <span className="text-[10px] text-muted-foreground/30">
+            <span className="text-mono text-muted-foreground/30">
               {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true, locale: ptBR })}
             </span>
           </div>
@@ -112,7 +112,7 @@ export function AlertsTab({ project }: AlertsTabProps) {
         <div className="flex items-center gap-1 flex-shrink-0">
           {alert.status === 'open' && (
             <>
-              <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] text-emerald-400/60 hover:text-emerald-400" onClick={() => handleResolve(alert.id)}>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-mono text-emerald-400/60 hover:text-emerald-400" onClick={() => handleResolve(alert.id)}>
                 <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Resolver
               </Button>
               <DropdownMenu>
@@ -197,7 +197,7 @@ export function AlertsTab({ project }: AlertsTabProps) {
           )}
           {statusFilter === 'all' && resolvedAlerts.length > 0 && (
             <>
-              <p className="text-[10px] uppercase tracking-wider text-emerald-400/60 font-medium pt-3">
+              <p className="text-mono uppercase tracking-wider text-emerald-400/60 font-medium pt-3">
                 Resolvidos ({resolvedAlerts.length})
               </p>
               <div className="space-y-1.5 opacity-60">

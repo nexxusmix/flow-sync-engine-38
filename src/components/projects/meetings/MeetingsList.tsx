@@ -78,7 +78,7 @@ export function MeetingsList({ interactions, selectedId, onSelect }: MeetingsLis
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={cn(
-                    "text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded",
+                    "text-caption uppercase tracking-wider font-bold px-1.5 py-0.5 rounded",
                     typeInfo.color,
                     "bg-current/10"
                   )}>
