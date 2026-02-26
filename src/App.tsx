@@ -87,6 +87,7 @@ import MarketingDashboard from "./pages/marketing/MarketingDashboard";
 import MarketingCalendarPage from "./pages/marketing/CalendarPage";
 import IdeasPage from "./pages/marketing/IdeasPage";
 import PipelinePage from "./pages/marketing/PipelinePage";
+import AiHistoryPage from "./pages/marketing/AiHistoryPage";
 import CampaignsPage from "./pages/marketing/CampaignsPage";
 import AssetsPage from "./pages/marketing/AssetsPage";
 import InstagramPage from "./pages/marketing/InstagramPage";
@@ -204,6 +205,7 @@ function AppRoutes() {
       <Route path="/marketing/studio/:workId" element={<ProtectedRoute><CreativeStudioPage /></ProtectedRoute>} />
       <Route path="/marketing/studio-legacy" element={<ProtectedRoute><StudioCreativoPage /></ProtectedRoute>} />
       <Route path="/marketing/automacoes" element={<ProtectedRoute><AutomationsPage /></ProtectedRoute>} />
+      <Route path="/marketing/ai-history" element={<ProtectedRoute><AiHistoryPage /></ProtectedRoute>} />
       <Route path="/marketing/transcricao" element={<ProtectedRoute><TranscribePage /></ProtectedRoute>} />
       <Route path="/conteudo" element={<Navigate to="/marketing" replace />} />
       <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
