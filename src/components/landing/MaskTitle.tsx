@@ -1,12 +1,16 @@
 import { motion, Variants } from 'framer-motion';
 
-interface NeonTitleProps {
+interface MaskTitleProps {
   text: string;
   highlightWord?: string;
   className?: string;
 }
 
-export function NeonTitle({ text, highlightWord, className = '' }: NeonTitleProps) {
+/**
+ * MaskTitle — editorial text-mask-reveal headline.
+ * Replaces NeonTitle with clean clip-path animation, no glow/neon effects.
+ */
+export function MaskTitle({ text, highlightWord, className = '' }: MaskTitleProps) {
   const words = text.split(' ');
 
   const containerVariants: Variants = {
@@ -22,20 +26,15 @@ export function NeonTitle({ text, highlightWord, className = '' }: NeonTitleProp
 
   const wordVariants: Variants = {
     hidden: { 
-      opacity: 0, 
-      y: 40,
-      rotateX: -90,
-      filter: 'blur(4px)',
+      y: "100%",
+      opacity: 0,
     },
     visible: { 
-      opacity: 1, 
-      y: 0,
-      rotateX: 0,
-      filter: 'blur(0px)',
+      y: "0%",
+      opacity: 1,
       transition: {
-        type: 'spring' as const,
-        damping: 12,
-        stiffness: 100,
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1],
       },
     },
   };
@@ -46,26 +45,23 @@ export function NeonTitle({ text, highlightWord, className = '' }: NeonTitleProp
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      style={{ perspective: '1000px' }}
     >
       {words.map((word, index) => {
         const isHighlighted = word.toLowerCase() === highlightWord?.toLowerCase();
         
         return (
-          <motion.span
-            key={index}
-            variants={wordVariants}
-            className={`inline-block mr-[0.3em] ${
-              isHighlighted 
-                ? 'text-primary font-normal' 
-                : ''
-            }`}
-            style={{
-              transformStyle: 'preserve-3d',
-            }}
-          >
-            {word}
-          </motion.span>
+          <span key={index} className="overflow-hidden inline-block mr-[0.25em]">
+            <motion.span
+              variants={wordVariants}
+              className={`inline-block ${
+                isHighlighted 
+                  ? 'text-primary font-normal' 
+                  : ''
+              }`}
+            >
+              {word}
+            </motion.span>
+          </span>
         );
       })}
     </motion.h1>
