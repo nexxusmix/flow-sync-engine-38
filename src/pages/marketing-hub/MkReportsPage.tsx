@@ -178,11 +178,10 @@ export default function MkReportsPage() {
   const tooltipStyle = { background: "#111114", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, color: "#fff" };
 
   return (
-    <MkAppShell title="Analytics">
+    <MkAppShell title="Analytics Conteúdo" sectionCode="09" sectionLabel="Content_Analytics">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90">Analytics de Conteúdo</h1>
-          <p className="text-sm text-white/30 mt-1">Performance e métricas dos posts publicados</p>
+          <p className="text-sm text-white/30">Performance e métricas dos posts publicados</p>
         </div>
         <button onClick={() => setInputOpen(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[hsl(210,100%,55%)] text-white text-sm font-medium hover:bg-[hsl(210,100%,50%)] transition-colors shrink-0">

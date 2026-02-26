@@ -103,18 +103,19 @@ export function MkAppShell({ children, title, sectionCode, sectionLabel }: MkApp
           {/* Section title area */}
           {sectionCode && (
             <div className="mb-8">
-              <p className="section-label mb-2">
-                Section_{sectionCode} // {sectionLabel || title}
-              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-sm text-[hsl(195,100%,50%)]">auto_awesome</span>
+                <span className="text-[11px] text-white/25 uppercase tracking-[0.15em] font-normal">Content_OS // V4.0</span>
+              </div>
               <div className="flex items-end justify-between">
                 <h1 className="text-4xl md:text-5xl font-light tracking-tight leading-none">
-                  <span className="text-white/60 font-light">{title.split(' ')[0]} </span>
+                  <span className="text-white/60 font-bold">{title.split(' ')[0]} </span>
                   <span className="text-[hsl(195,100%,45%)] font-semibold data-glow-blue">
                     {title.split(' ').slice(1).join(' ') || title}
                   </span>
                 </h1>
                 <div className="hidden md:block text-right">
-                  <p className="text-[10px] text-white/20 uppercase tracking-[0.15em] mb-1">Timeline_Ref</p>
+                  <p className="text-[10px] text-white/20 uppercase tracking-[0.15em] mb-1">Status_Clock</p>
                   <p className="text-lg text-white/80 font-light tracking-wide">{timeStr}</p>
                 </div>
               </div>

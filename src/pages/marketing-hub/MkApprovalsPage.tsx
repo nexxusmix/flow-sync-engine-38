@@ -112,11 +112,10 @@ export default function MkApprovalsPage() {
   };
 
   return (
-    <MkAppShell title="Aprovações">
+    <MkAppShell title="Fluxo Aprovação" sectionCode="08" sectionLabel="Approval_Flow">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90">Fluxo de Aprovação</h1>
-          <p className="text-sm text-white/30 mt-1">
+          <p className="text-sm text-white/30">
             {reviewCount} em revisão · {approvedCount} aprovados
           </p>
         </div>

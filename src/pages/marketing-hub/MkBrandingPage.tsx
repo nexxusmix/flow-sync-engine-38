@@ -30,11 +30,10 @@ export default function MkBrandingPage() {
   if (loading) return <MkAppShell title="Branding Studio"><div className="text-white/30 text-center py-20">Carregando...</div></MkAppShell>;
 
   return (
-    <MkAppShell title="Branding Studio">
+    <MkAppShell title="Branding Studio" sectionCode="06" sectionLabel="Brand_Identity">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90">Branding Studio</h1>
-          <p className="text-sm text-white/30 mt-1">Gerencie identidades visuais e brand kits</p>
+          <p className="text-sm text-white/30">Gerencie identidades visuais e brand kits</p>
         </div>
         <button onClick={createKit} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[hsl(210,100%,55%)] text-white text-sm font-medium hover:bg-[hsl(210,100%,50%)] transition-colors">
           <Plus className="w-4 h-4" /> Novo Kit
