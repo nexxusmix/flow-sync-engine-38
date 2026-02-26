@@ -2,6 +2,13 @@ import { useState, useCallback, useEffect } from 'react';
 import { Brain, Loader2, Play, X, Clock, FileDown, Save, ChevronDown, CalendarPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { TaskTimer, formatTime } from './TaskTimer';
@@ -70,7 +77,11 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
-
+  const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
+  const [scheduleTime, setScheduleTime] = useState(() => {
+    const n = new Date();
+    return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`;
+  });
   const pendingTasks = tasks.filter(t => t.status !== 'done');
 
   // Auto-advance blocks when all tasks in current block are done
@@ -196,7 +207,10 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Não autenticado');
 
-      let cursor = new Date();
+      const startDate = new Date(scheduleDate);
+      const [hh, mm] = scheduleTime.split(':').map(Number);
+      startDate.setHours(hh, mm, 0, 0);
+      let cursor = startDate;
       const blockColors: Record<string, string> = {
         deep_work: '#007399',
         shallow_work: '#64748b',
@@ -479,16 +493,49 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                         {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                         Salvar Plano
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
-                        onClick={handleScheduleToCalendar}
-                        disabled={isScheduling}
-                      >
-                        {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
-                        Agendar
-                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
+                            disabled={isScheduling}
+                          >
+                            {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
+                            Agendar
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-[60]" align="end">
+                          <div className="p-3 space-y-3">
+                            <p className="text-xs font-medium text-foreground">Início dos blocos</p>
+                            <Calendar
+                              mode="single"
+                              selected={scheduleDate}
+                              onSelect={(d) => d && setScheduleDate(d)}
+                              className="p-2 pointer-events-auto"
+                              initialFocus
+                            />
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-muted-foreground">Horário:</label>
+                              <input
+                                type="time"
+                                value={scheduleTime}
+                                onChange={(e) => setScheduleTime(e.target.value)}
+                                className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground"
+                              />
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full gap-1.5 text-xs"
+                              onClick={handleScheduleToCalendar}
+                              disabled={isScheduling}
+                            >
+                              {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
+                              Confirmar Agendamento
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                 </div>
