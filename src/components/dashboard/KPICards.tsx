@@ -69,7 +69,7 @@ export function KPICards() {
                 {kpi.icon}
               </motion.span>
               <motion.span 
-                className="text-[10px] text-muted-foreground font-light uppercase tracking-widest"
+                className="text-mono text-muted-foreground font-light uppercase tracking-widest"
                 initial={{ opacity: 0, x: 10, filter: "blur(4px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.3 + index * 0.08 }}
@@ -78,7 +78,7 @@ export function KPICards() {
               </motion.span>
             </div>
             <motion.h4 
-              className="text-[11px] text-muted-foreground font-light uppercase tracking-[0.4em] mb-2"
+              className="text-body-sm text-muted-foreground font-light uppercase tracking-[0.4em] mb-2"
               initial={{ opacity: 0, y: 5, filter: "blur(3px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ delay: 0.25 + index * 0.08 }}

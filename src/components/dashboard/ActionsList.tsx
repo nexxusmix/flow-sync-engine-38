@@ -57,7 +57,7 @@ export function ActionsList() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <h3 className="text-[11px] font-light text-muted-foreground uppercase tracking-[0.3em]">Próximas Ações</h3>
+      <h3 className="text-body-sm font-light text-muted-foreground uppercase tracking-[0.3em]">Próximas Ações</h3>
       
       {hasActions ? (
         <motion.div 
@@ -88,7 +88,7 @@ export function ActionsList() {
                 <p className="text-sm font-normal text-foreground group-hover:text-primary transition-colors">
                   {item.title}
                 </p>
-                <p className="text-[11px] text-muted-foreground font-light">{item.sub}</p>
+                <p className="text-body-sm text-muted-foreground font-light">{item.sub}</p>
                 {item.extra && (
                   <motion.span 
                     className="badge-info"

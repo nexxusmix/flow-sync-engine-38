@@ -114,35 +114,35 @@ export function ProjectCommandCenter({
             </div>
             <div>
               <h3 className="text-sm font-bold text-foreground">IA Command Center</h3>
-              <p className="text-[10px] text-muted-foreground truncate max-w-[280px]">{projectName}</p>
+              <p className="text-mono text-muted-foreground truncate max-w-[280px]">{projectName}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[9px] font-semibold text-green-500 uppercase">Ativo</span>
+            <span className="text-caption font-semibold text-green-500 uppercase">Ativo</span>
           </div>
         </div>
 
         {/* Project Context Bar */}
         <div className="px-4 py-2 border-b border-border bg-muted/30 flex flex-wrap gap-2 shrink-0">
           {projectContext?.status && (
-            <span className="text-[9px] px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 font-medium">
+            <span className="text-caption px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 font-medium">
               {projectContext.status}
             </span>
           )}
           {projectContext?.stage && (
-            <span className="text-[9px] px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+            <span className="text-caption px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
               {projectContext.stage}
             </span>
           )}
           {projectContext?.clientName && (
-            <span className="text-[9px] px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+            <span className="text-caption px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
               {projectContext.clientName}
             </span>
           )}
           {projectContext?.healthScore !== undefined && (
             <span className={cn(
-              "text-[9px] px-2 py-0.5 rounded border font-medium",
+              "text-caption px-2 py-0.5 rounded border font-medium",
               projectContext.healthScore >= 80 ? "bg-green-500/10 text-green-500 border-green-500/20" :
               projectContext.healthScore >= 50 ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
               "bg-red-500/10 text-red-500 border-red-500/20"
@@ -171,7 +171,7 @@ export function ProjectCommandCenter({
                     <button
                       key={chip.label}
                       onClick={() => handleSend(chip.prompt)}
-                      className="text-[11px] px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent hover:border-primary/30 transition-all text-muted-foreground hover:text-foreground"
+                      className="text-body-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent hover:border-primary/30 transition-all text-muted-foreground hover:text-foreground"
                     >
                       {chip.label}
                     </button>

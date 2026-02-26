@@ -83,7 +83,7 @@ export function TaskDuplicateDetection() {
             <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium">Duplicatas Detectadas</h3>
-                <p className="text-[10px] text-muted-foreground">{duplicates.length} grupo(s)</p>
+                <p className="text-mono text-muted-foreground">{duplicates.length} grupo(s)</p>
               </div>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowPanel(false)}>
                 <X className="w-3.5 h-3.5" />
@@ -106,15 +106,15 @@ export function TaskDuplicateDetection() {
                           t.id === group.keep ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
                         )}
                       >
-                        {t.id === group.keep && <span className="text-[9px] uppercase tracking-wider">manter</span>}
+                        {t.id === group.keep && <span className="text-caption uppercase tracking-wider">manter</span>}
                         <span className="truncate flex-1">"{t.title}"</span>
-                        <span className="text-[9px] text-muted-foreground/50">[{t.status}]</span>
+                        <span className="text-caption text-muted-foreground/50">[{t.status}]</span>
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-muted-foreground/60">{group.reason}</p>
+                  <p className="text-body-sm text-muted-foreground/60">{group.reason}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground/40">
+                    <span className="text-mono text-muted-foreground/40">
                       Título sugerido: "{group.merge_title}"
                     </span>
                     <div className="flex gap-1">

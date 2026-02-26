@@ -88,7 +88,7 @@ export function TaskAutomationManager({ open, onOpenChange }: TaskAutomationMana
             </p>
 
             <div>
-              <Label className="text-[10px]">Nome</Label>
+              <Label className="text-mono">Nome</Label>
               <Input
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -99,7 +99,7 @@ export function TaskAutomationManager({ open, onOpenChange }: TaskAutomationMana
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-[10px]">Gatilho</Label>
+                <Label className="text-mono">Gatilho</Label>
                 <Select value={triggerType} onValueChange={setTriggerType}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -110,7 +110,7 @@ export function TaskAutomationManager({ open, onOpenChange }: TaskAutomationMana
                 </Select>
               </div>
               <div>
-                <Label className="text-[10px]">Ação</Label>
+                <Label className="text-mono">Ação</Label>
                 <Select value={actionType} onValueChange={setActionType}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -126,7 +126,7 @@ export function TaskAutomationManager({ open, onOpenChange }: TaskAutomationMana
             {triggerType === 'on_status_change' && (
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-[10px]">De</Label>
+                  <Label className="text-mono">De</Label>
                   <Select value={conditionFrom} onValueChange={setConditionFrom}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -138,7 +138,7 @@ export function TaskAutomationManager({ open, onOpenChange }: TaskAutomationMana
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-[10px]">Para</Label>
+                  <Label className="text-mono">Para</Label>
                   <Select value={conditionTo} onValueChange={setConditionTo}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -154,7 +154,7 @@ export function TaskAutomationManager({ open, onOpenChange }: TaskAutomationMana
 
             {/* Action param */}
             <div>
-              <Label className="text-[10px]">
+              <Label className="text-mono">
                 {actionType === 'move_to_status' ? 'Status destino' : actionType === 'set_priority' ? 'Prioridade' : 'Tag'}
               </Label>
               {actionType === 'move_to_status' ? (
@@ -216,7 +216,7 @@ function RuleCard({ rule, onToggle, onDelete }: {
       />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-foreground truncate">{rule.name}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
+        <p className="text-mono text-muted-foreground mt-0.5">
           {trigger?.label || rule.trigger_type} → {action?.label || rule.action_json?.type}: {rule.action_json?.value}
         </p>
       </div>

@@ -41,7 +41,7 @@ export function AuditFeed() {
           Feed <span className="squad-logo-text font-light text-muted-foreground">Auditável</span>
         </h2>
         <motion.span 
-          className="text-[10px] text-muted-foreground font-light uppercase tracking-widest"
+          className="text-mono text-muted-foreground font-light uppercase tracking-widest"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -76,11 +76,11 @@ export function AuditFeed() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-normal text-foreground">{event.action}</span>
-                    <span className="text-[10px] text-muted-foreground">• {event.actor}</span>
+                    <span className="text-mono text-muted-foreground">• {event.actor}</span>
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{event.description}</p>
                 </div>
-                <span className="text-[10px] text-muted-foreground font-normal">{timeStr}</span>
+                <span className="text-mono text-muted-foreground font-normal">{timeStr}</span>
               </motion.div>
             );
           })}

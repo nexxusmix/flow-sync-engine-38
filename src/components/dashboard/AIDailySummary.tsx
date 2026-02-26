@@ -197,7 +197,7 @@ export function AIDailySummary() {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-medium text-foreground">Resumo do Dia — Visão 360°</h3>
-          <span className="text-[8px] bg-primary/15 text-primary px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Polo AI</span>
+          <span className="text-micro bg-primary/15 text-primary px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Polo AI</span>
         </div>
         <button
           onClick={() => setRefreshKey(k => k + 1)}
@@ -254,10 +254,10 @@ export function AIDailySummary() {
                 >
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <IconComp className={`w-3.5 h-3.5 ${colors.text}`} />
-                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{h.label}</span>
+                    <span className="text-mono text-muted-foreground font-medium uppercase tracking-wide">{h.label}</span>
                   </div>
                   <p className={`text-sm font-semibold ${colors.text}`}>{h.value}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{h.detail}</p>
+                  <p className="text-mono text-muted-foreground mt-0.5 leading-tight">{h.detail}</p>
                 </motion.div>
               );
             })}
@@ -271,7 +271,7 @@ export function AIDailySummary() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
             >
-              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Ações recomendadas</p>
+              <p className="text-mono text-muted-foreground font-medium uppercase tracking-wide">Ações recomendadas</p>
               {summary.action_items.map((item, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                   <CheckCircle className="w-3 h-3 text-primary flex-shrink-0 mt-0.5" />
@@ -291,7 +291,7 @@ export function AIDailySummary() {
             >
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Clientes para Contatar</p>
+                <p className="text-mono text-muted-foreground font-medium uppercase tracking-wide">Clientes para Contatar</p>
               </div>
 
               {summary.client_actions.map((action, i) => {
@@ -307,23 +307,23 @@ export function AIDailySummary() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-foreground">{action.client_name}</span>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium uppercase ${urgency.bg} ${urgency.text}`}>
+                        <span className={`text-caption px-1.5 py-0.5 rounded-full font-medium uppercase ${urgency.bg} ${urgency.text}`}>
                           {action.urgency === 'high' ? 'Alta' : action.urgency === 'medium' ? 'Média' : 'Baixa'}
                         </span>
                       </div>
-                      <span className="text-[9px] text-muted-foreground capitalize">{action.channel}</span>
+                      <span className="text-caption text-muted-foreground capitalize">{action.channel}</span>
                     </div>
 
-                    <p className="text-[10px] text-muted-foreground">{action.reason}</p>
+                    <p className="text-mono text-muted-foreground">{action.reason}</p>
 
                     <div className="bg-muted/30 rounded-lg p-2">
-                      <p className="text-[11px] text-foreground/80 leading-relaxed">{action.suggested_message}</p>
+                      <p className="text-body-sm text-foreground/80 leading-relaxed">{action.suggested_message}</p>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => copyMessage(action.suggested_message)}
-                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                        className="flex items-center gap-1 text-mono text-muted-foreground hover:text-primary transition-colors"
                       >
                         <Copy className="w-3 h-3" />
                         Copiar
@@ -333,7 +333,7 @@ export function AIDailySummary() {
                           href={getWhatsAppLink(undefined, action.suggested_message)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors"
+                          className="flex items-center gap-1 text-mono text-emerald-400 hover:text-emerald-300 transition-colors"
                         >
                           <ExternalLink className="w-3 h-3" />
                           WhatsApp
