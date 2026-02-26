@@ -16,6 +16,7 @@ interface MkMenuItem {
 
 const menuItems: MkMenuItem[] = [
   { name: "Dashboard", href: "/m", icon: "space_dashboard" },
+  { name: "Ideias", href: "/m/ideias", icon: "lightbulb" },
   { name: "Campanhas", href: "/m/campanhas", icon: "campaign" },
   { name: "Conteúdos", href: "/m/conteudos", icon: "article" },
   { name: "Calendário", href: "/m/calendario", icon: "calendar_month" },
