@@ -18,13 +18,15 @@ import { TaskAIPrioritySuggestions } from "@/components/tasks/TaskAIPrioritySugg
 import { TaskAIDeadlineSuggestions } from "@/components/tasks/TaskAIDeadlineSuggestions";
 import { TaskDuplicateDetection } from "@/components/tasks/TaskDuplicateDetection";
 import { TaskTemplateManager } from "@/components/tasks/TaskTemplateManager";
+import { TaskGanttView } from "@/components/tasks/TaskGanttView";
+import { TaskAutomationManager } from "@/components/tasks/TaskAutomationManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
-  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain, MoreHorizontal
+  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain, MoreHorizontal, BarChart3, Zap
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -71,7 +73,7 @@ const defaultTaskForm: TaskFormData = {
   project_id: '',
 };
 
-type ViewMode = 'board' | 'kanban' | 'timeline' | 'calendar' | 'dashboard' | 'focus';
+type ViewMode = 'board' | 'kanban' | 'timeline' | 'calendar' | 'dashboard' | 'focus' | 'gantt';
 
 export default function TasksPage() {
   const {
@@ -93,6 +95,7 @@ export default function TasksPage() {
   const [taskForm, setTaskForm] = useState<TaskFormData>(defaultTaskForm);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isTemplateOpen, setIsTemplateOpen] = useState(false);
+  const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [aiText, setAiText] = useState(() => {
     try { return localStorage.getItem('tasks-ai-text') || ''; } catch { return ''; }
   });
@@ -325,6 +328,10 @@ export default function TasksPage() {
                   <Brain className="w-4 h-4" />
                   <span className="hidden sm:inline">Foco</span>
                 </TabsTrigger>
+                <TabsTrigger value="gantt" className="gap-1.5">
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Gantt</span>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="hidden md:flex items-center gap-2 lg:gap-3 flex-wrap">
@@ -384,6 +391,10 @@ export default function TasksPage() {
                 <FileText className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">Templates</span>
               </Button>
+              <Button variant="outline" onClick={() => setIsAutomationOpen(true)}>
+                <Zap className="w-4 h-4 mr-2" />
+                <span className="hidden lg:inline">Automações</span>
+              </Button>
               <Button onClick={() => setIsNewTaskOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">Nova Tarefa</span>
@@ -428,6 +439,8 @@ export default function TasksPage() {
           <TasksDashboardBI tasks={tasks} stats={stats} />
         ) : viewMode === 'timeline' ? (
           <TasksTimeline tasks={tasks} onEditTask={handleEditTask} />
+        ) : viewMode === 'gantt' ? (
+          <TaskGanttView tasks={tasks} onEditTask={handleEditTask} />
         ) : (
           <TasksBoard
             tasks={tasks}
@@ -555,6 +568,9 @@ export default function TasksPage() {
             setIsNewTaskOpen(true);
           }}
         />
+
+        {/* Automation Manager */}
+        <TaskAutomationManager open={isAutomationOpen} onOpenChange={setIsAutomationOpen} />
 
         {/* AI Sheet */}
         <Sheet open={isAISheetOpen} onOpenChange={handleAISheetChange}>
