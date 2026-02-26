@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Brain, RefreshCw, Pin, PinOff, Loader2, Clock, Zap, Play,
   CheckCircle2, Coffee, Sun, AlertTriangle, Sparkles, CalendarClock
@@ -38,6 +39,7 @@ export function ExecutionPlanPanel({
   task, plan, isGenerating, onGenerate, onUpdate, onTogglePin,
 }: ExecutionPlanPanelProps) {
   const [notes, setNotes] = useState(plan?.user_notes || "");
+  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && task.status !== "done";
 
   const handleGenerate = () => {
@@ -49,6 +51,19 @@ export function ExecutionPlanPanel({
       onUpdate(task.id, { user_notes: notes || null });
     }
   };
+
+  const toggleStep = (idx: number) => {
+    setCheckedSteps(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const microSteps = plan?.micro_steps || [];
+  const stepsTotal = microSteps.length;
+  const stepsDone = checkedSteps.size;
 
   return (
     <div className="space-y-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
@@ -139,10 +154,7 @@ export function ExecutionPlanPanel({
                   <span className="text-[9px] text-muted-foreground">Carga Cognitiva</span>
                   <span className="text-xs font-medium">{plan.cognitive_load}%</span>
                 </div>
-                <Progress
-                  value={plan.cognitive_load}
-                  className="h-1"
-                />
+                <Progress value={plan.cognitive_load} className="h-1" />
               </div>
             )}
           </div>
@@ -158,19 +170,39 @@ export function ExecutionPlanPanel({
             </div>
           )}
 
-          {/* Micro steps */}
-          {plan.micro_steps?.length > 0 && (
+          {/* Micro steps — now checkable */}
+          {stepsTotal > 0 && (
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Micro-passos</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Micro-passos</p>
+                <span className="text-[10px] text-muted-foreground font-mono">{stepsDone}/{stepsTotal}</span>
+              </div>
+              {stepsTotal > 1 && (
+                <Progress value={(stepsDone / stepsTotal) * 100} className="h-1 mb-2" />
+              )}
               <div className="space-y-1.5">
-                {plan.micro_steps.map((step, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-foreground/80">
-                    <span className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center text-[10px] font-medium flex-shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
-                    <span className="leading-snug">{step}</span>
-                  </div>
-                ))}
+                {microSteps.map((step, i) => {
+                  const isDone = checkedSteps.has(i);
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "flex items-start gap-2 text-xs cursor-pointer group rounded-md p-1.5 -mx-1.5 transition-colors hover:bg-white/[0.03]",
+                        isDone && "opacity-60"
+                      )}
+                      onClick={() => toggleStep(i)}
+                    >
+                      <Checkbox
+                        checked={isDone}
+                        onCheckedChange={() => toggleStep(i)}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <span className={cn("leading-snug", isDone && "line-through text-muted-foreground")}>
+                        {step}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -8,6 +8,7 @@ import { exportFocusPDF } from '@/services/pdfExportService';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTasksUnified } from '@/hooks/useTasksUnified';
+import { isToday, parseISO } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,11 +36,20 @@ interface FocusPlan {
 }
 
 // ── Pomodoro Timer ──────────────────────────────────────
-function PomodoroTimer({ className }: { className?: string }) {
+function PomodoroTimer({ className, durationMinutes, blockLabel }: { className?: string; durationMinutes?: number; blockLabel?: string }) {
+  const workDuration = durationMinutes || 25;
   const [mode, setMode] = useState<'work' | 'break'>('work');
-  const [remaining, setRemaining] = useState(25 * 60);
+  const [remaining, setRemaining] = useState(workDuration * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [sessions, setSessions] = useState(0);
+
+  // Reset timer when durationMinutes changes
+  useEffect(() => {
+    if (mode === 'work') {
+      setRemaining(workDuration * 60);
+      setIsRunning(false);
+    }
+  }, [workDuration]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -55,23 +65,23 @@ function PomodoroTimer({ className }: { className?: string }) {
           } else {
             setMode('work');
             toast.info('💪 Descanso acabou! Hora de focar.');
-            return 25 * 60;
+            return workDuration * 60;
           }
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isRunning, mode]);
+  }, [isRunning, mode, workDuration]);
 
   const reset = () => {
     setIsRunning(false);
-    setRemaining(mode === 'work' ? 25 * 60 : 5 * 60);
+    setRemaining(mode === 'work' ? workDuration * 60 : 5 * 60);
   };
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
-  const totalSecs = mode === 'work' ? 25 * 60 : 5 * 60;
+  const totalSecs = mode === 'work' ? workDuration * 60 : 5 * 60;
   const pct = ((totalSecs - remaining) / totalSecs) * 100;
 
   return (
@@ -92,8 +102,8 @@ function PomodoroTimer({ className }: { className?: string }) {
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium">{mode === 'work' ? '🔥 Foco' : '☕ Descanso'}</p>
-        <p className="text-[10px] text-muted-foreground">{sessions} sessão{sessions !== 1 ? 'ões' : ''}</p>
+        <p className="text-xs font-medium truncate">{mode === 'work' ? (blockLabel ? `🔥 ${blockLabel}` : '🔥 Foco') : '☕ Descanso'}</p>
+        <p className="text-[10px] text-muted-foreground">{sessions} sessão{sessions !== 1 ? 'ões' : ''} · {workDuration}min</p>
       </div>
       <div className="flex gap-1">
         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsRunning(!isRunning)}>
@@ -111,8 +121,12 @@ function PomodoroTimer({ className }: { className?: string }) {
 function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
   const { tasks, toggleComplete } = useTasksUnified();
 
+  // BUG FIX: Include tasks completed today (status=done + completed_at is today)
   const todayTasks = useMemo(
-    () => tasks.filter(t => t.status === 'today'),
+    () => tasks.filter(t =>
+      t.status === 'today' ||
+      (t.status === 'done' && t.completed_at && isToday(parseISO(t.completed_at)))
+    ),
     [tasks]
   );
 
@@ -203,6 +217,9 @@ export function SavedFocusPlans() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [activeExecutionPlanId, setActiveExecutionPlanId] = useState<string | null>(null);
+
+  const { toggleComplete } = useTasksUnified();
 
   const fetchPlans = async () => {
     setIsLoading(true);
@@ -251,6 +268,39 @@ export function SavedFocusPlans() {
     } catch { toast.error('Erro ao restaurar'); }
   };
 
+  // Toggle task completion within a saved plan — persists to DB + syncs real task
+  const handleToggleTaskInPlan = async (planId: string, taskId: string) => {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
+    const wasCompleted = plan.completed_tasks.includes(taskId);
+    const newCompleted = wasCompleted
+      ? plan.completed_tasks.filter(id => id !== taskId)
+      : [...plan.completed_tasks, taskId];
+
+    // Optimistic update
+    setPlans(prev => prev.map(p => p.id === planId ? { ...p, completed_tasks: newCompleted } : p));
+
+    // Persist to DB
+    try {
+      await supabase
+        .from('saved_focus_plans')
+        .update({ completed_tasks: newCompleted as any })
+        .eq('id', planId);
+
+      // Also toggle the real task status
+      toggleComplete(taskId);
+
+      if (!wasCompleted) {
+        toast.success('Tarefa concluída!');
+      }
+    } catch {
+      // Rollback
+      setPlans(prev => prev.map(p => p.id === planId ? { ...p, completed_tasks: plan.completed_tasks } : p));
+      toast.error('Erro ao atualizar tarefa');
+    }
+  };
+
   const handleAllComplete = useCallback(() => {
     setShowConfetti(true);
     toast.success('🎉 Todas as tarefas de hoje concluídas!');
@@ -282,6 +332,19 @@ export function SavedFocusPlans() {
   const activePlans = plans.filter(p => p.status === 'active');
   const archivedPlans = plans.filter(p => p.status === 'archived');
 
+  // Get active execution plan's current block for Pomodoro
+  const activeExecPlan = activeExecutionPlanId ? plans.find(p => p.id === activeExecutionPlanId) : null;
+  const activeBlock = useMemo(() => {
+    if (!activeExecPlan) return null;
+    const blocks = activeExecPlan.plan_data?.blocks || [];
+    // Find first block with incomplete tasks
+    for (const block of blocks) {
+      const hasIncomplete = block.tasks?.some((t: any) => !activeExecPlan.completed_tasks.includes(t.id));
+      if (hasIncomplete) return block;
+    }
+    return blocks[0] || null;
+  }, [activeExecPlan]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -300,21 +363,41 @@ export function SavedFocusPlans() {
     const mins = totalMinutes % 60;
     const timeStr = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
     const isExpanded = expandedId === plan.id;
+    const isExecuting = activeExecutionPlanId === plan.id;
     const dateStr = new Date(plan.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const allDone = totalTasks > 0 && completedCount === totalTasks;
 
     return (
       <motion.div
         key={plan.id}
-        className="rounded-xl border border-border bg-card p-4 space-y-3 transition-all hover:border-primary/20"
+        className={cn(
+          "rounded-xl border bg-card p-4 space-y-3 transition-all hover:border-primary/20",
+          isExecuting ? "border-primary/40 ring-1 ring-primary/20" : "border-border"
+        )}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : plan.id)}>
-            <h3 className="text-sm font-semibold text-foreground truncate">{plan.title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground truncate">{plan.title}</h3>
+              {allDone && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">{dateStr}</p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            {/* Resume / Execute button */}
+            {plan.status === 'active' && !allDone && (
+              <Button
+                variant={isExecuting ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-[10px] gap-1"
+                onClick={() => setActiveExecutionPlanId(isExecuting ? null : plan.id)}
+              >
+                <Play className="w-3 h-3" />
+                {isExecuting ? 'Pausar' : 'Retomar'}
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
@@ -367,8 +450,18 @@ export function SavedFocusPlans() {
                     {block.tasks?.map((task: any) => {
                       const isDone = plan.completed_tasks.includes(task.id);
                       return (
-                        <div key={task.id} className={cn("flex items-center gap-2 text-xs", isDone && "line-through text-muted-foreground")}>
-                          <span className={cn("w-2 h-2 rounded-full shrink-0", isDone ? "bg-green-500" : "bg-muted-foreground/30")} />
+                        <div
+                          key={task.id}
+                          className={cn("flex items-center gap-2 text-xs cursor-pointer group", isDone && "line-through text-muted-foreground")}
+                          onClick={() => plan.status === 'active' && handleToggleTaskInPlan(plan.id, task.id)}
+                        >
+                          <button className="shrink-0">
+                            {isDone ? (
+                              <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+                            ) : (
+                              <Square className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-foreground transition-colors" />
+                            )}
+                          </button>
                           <span className="flex-1">{task.title}</span>
                           <span className="text-muted-foreground">{task.estimated_minutes}min</span>
                         </div>
@@ -399,7 +492,10 @@ export function SavedFocusPlans() {
 
       {/* Pomodoro + Today tasks side by side */}
       <div className="grid gap-4 md:grid-cols-2">
-        <PomodoroTimer />
+        <PomodoroTimer
+          durationMinutes={activeBlock?.duration_minutes}
+          blockLabel={activeBlock?.title}
+        />
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
           <TodayTasksPanel onAllComplete={handleAllComplete} />
         </div>
