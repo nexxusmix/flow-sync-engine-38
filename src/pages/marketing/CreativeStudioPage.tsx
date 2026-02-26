@@ -1,12 +1,13 @@
 /**
- * CreativeStudioPage — SQUAD FILM / Liquid Glass
+ * CreativeStudioPage — SolaFlux Holographic Design
  * 3-panel layout: Sidebar (blocks+context) | Editor | Copilot+Actions
+ * Now wrapped in MkAppShell for consistent Marketing Hub look
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 import {
   StudioSidebar,
   StudioCopilot,
@@ -22,7 +23,7 @@ import type { CreativeBlockType, NarrativeScriptContent, BriefContent, ShotlistC
 import type { StudioNavItem } from '@/components/creative-studio/StudioSidebar';
 import type { BrandKit } from '@/types/marketing';
 import { TemplateStudioPanel } from '@/components/studio/TemplateStudioPanel';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { MkAppShell } from '@/components/marketing-hub/MkAppShell';
 
 const BLOCK_LABELS: Record<CreativeBlockType, string> = {
   brief: 'Brief',
@@ -67,7 +68,7 @@ export default function CreativeStudioPage() {
   useEffect(() => {
     if (!work?.project_id || !workId) return;
     const briefBlock = getBlock('brief');
-    if (briefBlock?.content) return; // Brief already has content
+    if (briefBlock?.content) return;
 
     const fillBriefFromProject = async () => {
       const { data: project } = await supabase
@@ -78,7 +79,6 @@ export default function CreativeStudioPage() {
 
       if (!project) return;
 
-      // Fetch deliverables
       const { data: milestones } = await (supabase
         .from('payment_milestones' as any)
         .select('title')
@@ -130,8 +130,6 @@ export default function CreativeStudioPage() {
     }
   };
 
-  // No longer auto-create — user must explicitly create via button or arrive with an ID
-
   const handleGenerate = async () => {
     if (!work) return;
     setIsGenerating(true);
@@ -144,7 +142,6 @@ export default function CreativeStudioPage() {
       });
       if (error) throw error;
       if (data?.content) {
-        // Apply directly for non-narrative blocks
         await upsertBlock.mutateAsync({
           type: currentBlockType,
           content: data.content,
@@ -183,7 +180,6 @@ export default function CreativeStudioPage() {
 
   const handleRegenerate = async () => { await handleGenerate(); };
 
-  // Generic save handler for all block types
   const handleSaveBlock = useCallback(async (content: Record<string, unknown>) => {
     await upsertBlock.mutateAsync({
       type: currentBlockType,
@@ -246,7 +242,6 @@ export default function CreativeStudioPage() {
     }
   };
 
-  // -- Actions --
   const handleDuplicate = async () => {
     if (!work) return;
     try {
@@ -257,7 +252,6 @@ export default function CreativeStudioPage() {
         campaign_id: work.campaign_id,
         brand_kit_id: work.brand_kit_id,
       });
-      // Copy blocks
       for (const block of blocks) {
         await supabase.from('creative_blocks').insert({
           work_id: newWork.id,
@@ -288,33 +282,53 @@ export default function CreativeStudioPage() {
     }
   };
 
+  // ── Empty state (no workId) ──
   if (!workId) {
     return (
-      <DashboardLayout title="Studio Criativo">
-        <div className="h-[60vh] flex flex-col items-center justify-center text-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <span className="material-symbols-outlined text-3xl text-primary" style={{ fontVariationSettings: "'wght' 200" }}>movie_creation</span>
-          </div>
-          <h2 className="text-xl font-medium text-foreground">Studio Criativo</h2>
-          <p className="text-sm text-muted-foreground max-w-md">
-            Crie roteiros, storyboards, moodboards e mais — tudo assistido por IA.
-          </p>
-          <Button onClick={handleCreateNewWork} disabled={isCreating} className="gap-2">
+      <MkAppShell title="Studio Criativo" sectionCode="05" sectionLabel="Creative_Studio">
+        <div className="flex-1 flex flex-col items-center justify-center py-20 text-center gap-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, type: "spring", stiffness: 80 }}
+            className="w-20 h-20 rounded-2xl bg-[rgba(0,156,202,0.08)] border border-[rgba(0,156,202,0.15)] flex items-center justify-center"
+          >
+            <span className="material-symbols-outlined text-4xl text-[hsl(195,100%,50%)]" style={{ fontVariationSettings: "'wght' 200" }}>movie_creation</span>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 className="text-xl font-light text-white/80 mb-2">Studio Criativo</h2>
+            <p className="text-sm text-white/30 max-w-md">
+              Crie roteiros, storyboards, moodboards e mais — tudo assistido por IA.
+            </p>
+          </motion.div>
+          <motion.button
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={handleCreateNewWork}
+            disabled={isCreating}
+            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[hsl(195,100%,40%)] text-white text-sm hover:bg-[hsl(195,100%,45%)] transition-colors disabled:opacity-40"
+          >
             {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {isCreating ? 'Criando...' : 'Novo Trabalho Criativo'}
-          </Button>
+          </motion.button>
         </div>
-      </DashboardLayout>
+      </MkAppShell>
     );
   }
 
+  // ── Loading ──
   if (isLoading) {
     return (
-      <DashboardLayout title="Studio Criativo">
-        <div className="h-full flex items-center justify-center">
-          <div className="text-muted-foreground">Carregando...</div>
+      <MkAppShell title="Studio Criativo" sectionCode="05" sectionLabel="Creative_Studio">
+        <div className="flex-1 flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-[hsl(195,100%,50%)]" />
         </div>
-      </DashboardLayout>
+      </MkAppShell>
     );
   }
 
@@ -380,10 +394,11 @@ export default function CreativeStudioPage() {
     }
   };
 
+  // ── Main 3-panel layout inside MkAppShell ──
   return (
-    <DashboardLayout title="Studio Criativo">
-      <div className="h-[calc(100vh-4rem)] flex">
-        {/* Sidebar */}
+    <MkAppShell title="Studio Criativo" sectionCode="05" sectionLabel="Creative_Studio">
+      <div className="-mx-6 md:-mx-10 -mb-8 flex flex-1 min-h-0">
+        {/* Blocks Sidebar */}
         <StudioSidebar
           work={work || null}
           blocks={blocks}
@@ -394,8 +409,8 @@ export default function CreativeStudioPage() {
         />
 
         {/* Main Editor */}
-        <div className="flex-1 bg-background overflow-hidden relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[200px] bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.04)_0%,transparent_70%)] pointer-events-none z-0" />
+        <div className="flex-1 overflow-hidden relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[200px] bg-[radial-gradient(ellipse_at_50%_0%,rgba(0,156,202,0.04)_0%,transparent_70%)] pointer-events-none z-0" />
           <div className="relative z-10 h-full">
             {activeBlock === 'templates' ? (
               <div className="h-full p-4">
@@ -420,6 +435,6 @@ export default function CreativeStudioPage() {
           onArchive={handleArchive}
         />
       </div>
-    </DashboardLayout>
+    </MkAppShell>
   );
 }
