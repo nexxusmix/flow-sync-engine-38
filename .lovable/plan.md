@@ -1,59 +1,45 @@
 
 
-## Problema Identificado
+## Refinar Modo Foco — Layout Compacto, Premium, com Mais Funcionalidades
 
-Modais e popups com `position: fixed` não funcionam corretamente porque estão renderizados **dentro** de elementos com `transform` CSS (framer-motion). Quando um elemento pai tem `transform`, o browser trata `fixed` como `absolute` relativo àquele pai — quebrando o posicionamento.
+### Problema
+O layout atual tem muito espaço vazio — o Pomodoro e o painel de tarefas ocupam uma grid 2 colunas mas são pequenos, deixando grande área morta (como na screenshot). Faltam funcionalidades extras e efeitos premium.
 
-### Elementos causadores:
-- `DashboardLayout.tsx` linha 106-113: `motion.div` com `animate={{ marginLeft }}` aplica `transform`
-- `PageTransition.tsx`: aplica `scale`, `y`, `filter` via framer-motion
-- `DashboardLayout.tsx` linha 126: `zoom: 1.2` no `<main>`
+### Plano de Implementação
 
-### Solução: Usar React Portals
+**1. Reestruturar layout para preencher o espaço**
+- Trocar grid `md:grid-cols-2` por layout de 3 colunas: Timer | Tarefas Hoje | Stats/Métodos
+- Timer fica compacto à esquerda com visual 3D (perspective + rotateX hover)
+- Tarefas no centro com scroll area
+- Nova coluna direita com widgets úteis
 
-Mover todos os modais/popups `fixed` para fora da árvore DOM transformada, renderizando-os via `createPortal` diretamente no `document.body`.
+**2. Adicionar novos widgets no card (coluna direita)**
+- **Método de Foco** — seletor entre Pomodoro, Deep Work (90min), Flowtime (sem timer fixo), 52/17 (técnica alternativa)
+- **Streak counter** — dias consecutivos de foco (animação de fogo)
+- **Ambient Sound toggle** — botões para ativar sons (chuva, lo-fi, silêncio) via label visual
+- **Mini stats** — tempo total focado hoje, sessões completadas, tarefas concluídas
 
-### Arquivos a modificar:
+**3. Efeitos visuais premium**
+- Cards com `perspective: 1000px` e `rotateX/rotateY` suave no hover (3D tilt)
+- Glassmorphism mais forte: `backdrop-blur-2xl`, gradientes multi-layer
+- Timer ring com glow animado pulsante via SVG filter + gradient stroke
+- Partículas sutis flutuando no background do card quando timer está rodando
+- Border gradient animado (conic-gradient rotate) nos cards ativos
+- Hover states com `translateZ` e shadow depth progression
 
-1. **Criar `src/components/ui/Portal.tsx`** — Componente utilitário que renderiza children via `createPortal(children, document.body)`
+**4. Compactar seções existentes**
+- Reduzir padding do timer de `p-5` para `p-4`
+- Tarefas com `max-h` e `overflow-y-auto` via ScrollArea
+- Stats row inline mais denso
+- Remover espaçamento vertical excessivo (`space-y-8` → `space-y-5`)
 
-2. **`src/components/tasks/TaskDetailModal.tsx`** — Envolver o conteúdo `fixed inset-0` com `<Portal>`
+**5. Animações melhoradas**
+- Entry: cards com `spring` + `rotateX: -8deg → 0` (3D flip-in)
+- Timer digits: morphing transition com `layoutId`
+- Progress bars com gradient shimmer contínuo
+- Checkbox completion: ripple effect + scale bounce
+- Floating particles (pequenos dots) no background quando em modo foco ativo
 
-3. **`src/components/tasks/TaskAnalysisPanel.tsx`** — Envolver com `<Portal>`
-
-4. **`src/components/tasks/TaskExecutionGuide.tsx`** — Envolver com `<Portal>`
-
-5. **`src/components/tasks/TaskAIPrioritySuggestions.tsx`** — Envolver com `<Portal>`
-
-6. **`src/components/tasks/TaskAIDeadlineSuggestions.tsx`** — Envolver com `<Portal>`
-
-7. **`src/components/tasks/TaskDuplicateDetection.tsx`** — Envolver com `<Portal>`
-
-### Detalhes técnicos
-
-```text
-Antes:
-  DashboardLayout (motion.div com transform)
-    └─ PageTransition (motion.div com transform)
-        └─ TasksPage
-            └─ TaskDetailModal (fixed inset-0) ← QUEBRADO
-
-Depois:
-  DashboardLayout (motion.div com transform)
-    └─ PageTransition (motion.div com transform)
-        └─ TasksPage
-            └─ TaskDetailModal → Portal → document.body (fixed inset-0) ← FUNCIONA
-```
-
-O componente Portal:
-```tsx
-import { createPortal } from "react-dom";
-import { ReactNode } from "react";
-
-export function Portal({ children }: { children: ReactNode }) {
-  return createPortal(children, document.body);
-}
-```
-
-Cada modal terá apenas 2 linhas alteradas: importar `Portal` e envolver o `AnimatePresence`/container com `<Portal>`.
+### Arquivos modificados
+- `src/components/tasks/SavedFocusPlans.tsx` — rewrite do layout principal e adição dos novos widgets
 
