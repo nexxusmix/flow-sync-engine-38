@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Brain, Loader2, Trash2, FileDown, Clock, CheckCircle2, RotateCcw, Archive, Maximize2, Minimize2, Play, Pause, RotateCw, CheckSquare, Square, PartyPopper } from 'lucide-react';
+import { Brain, Loader2, Trash2, FileDown, Clock, CheckCircle2, RotateCcw, Archive, Maximize2, Minimize2, Play, Pause, RotateCw, CheckSquare, Square, PartyPopper, Sparkles, Zap, Target, Timer, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +35,7 @@ interface FocusPlan {
   created_at: string;
 }
 
-// ── Pomodoro Timer ──────────────────────────────────────
+// ── Premium Pomodoro Timer ──────────────────────────────────
 function PomodoroTimer({ className, durationMinutes, blockLabel }: { className?: string; durationMinutes?: number; blockLabel?: string }) {
   const workDuration = durationMinutes || 25;
   const [mode, setMode] = useState<'work' | 'break'>('work');
@@ -43,7 +43,6 @@ function PomodoroTimer({ className, durationMinutes, blockLabel }: { className?:
   const [isRunning, setIsRunning] = useState(false);
   const [sessions, setSessions] = useState(0);
 
-  // Reset timer when durationMinutes changes
   useEffect(() => {
     if (mode === 'work') {
       setRemaining(workDuration * 60);
@@ -83,37 +82,146 @@ function PomodoroTimer({ className, durationMinutes, blockLabel }: { className?:
   const secs = remaining % 60;
   const totalSecs = mode === 'work' ? workDuration * 60 : 5 * 60;
   const pct = ((totalSecs - remaining) / totalSecs) * 100;
+  const circumference = 2 * Math.PI * 44;
 
   return (
-    <div className={cn("flex items-center gap-3 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]", className)}>
-      <div className="relative w-14 h-14 shrink-0">
-        <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-          <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted-foreground/10" />
-          <circle
-            cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3"
-            strokeDasharray={`${2 * Math.PI * 24}`}
-            strokeDashoffset={`${2 * Math.PI * 24 * (1 - pct / 100)}`}
-            className={mode === 'work' ? 'text-primary' : 'text-emerald-500'}
-            strokeLinecap="round"
-          />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center font-mono text-xs font-semibold">
-          {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-        </span>
+    <motion.div
+      className={cn(
+        "relative group rounded-2xl border border-border/50 overflow-hidden transition-all duration-500",
+        "bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl",
+        "hover:border-primary/30 hover:shadow-[0_0_40px_-10px_hsl(var(--primary)/0.3)]",
+        isRunning && "border-primary/40 shadow-[0_0_30px_-5px_hsl(var(--primary)/0.2)]",
+        className
+      )}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Ambient glow when running */}
+      <AnimatePresence>
+        {isRunning && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.02]" />
+            <motion.div
+              className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+              animate={{ opacity: [0.3, 0.8, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="relative z-10 p-5 flex items-center gap-5">
+        {/* Circular Progress */}
+        <div className="relative w-24 h-24 shrink-0">
+          <svg className="w-24 h-24 -rotate-90 drop-shadow-lg" viewBox="0 0 96 96">
+            {/* Background track */}
+            <circle cx="48" cy="48" r="44" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/20" />
+            {/* Glow filter */}
+            <defs>
+              <filter id="glow-timer">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            {/* Progress arc */}
+            <motion.circle
+              cx="48" cy="48" r="44" fill="none"
+              stroke="currentColor" strokeWidth="4"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - pct / 100)}
+              className={mode === 'work' ? 'text-primary' : 'text-emerald-500'}
+              strokeLinecap="round"
+              filter="url(#glow-timer)"
+              initial={false}
+              animate={{ strokeDashoffset: circumference * (1 - pct / 100) }}
+              transition={{ duration: 0.5 }}
+            />
+            {/* Dot indicator */}
+            {pct > 0 && (
+              <motion.circle
+                cx="48" cy="4" r="3" fill="currentColor"
+                className={mode === 'work' ? 'text-primary' : 'text-emerald-500'}
+                filter="url(#glow-timer)"
+                style={{
+                  transformOrigin: '48px 48px',
+                  rotate: `${pct * 3.6}deg`,
+                }}
+              />
+            )}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <motion.span
+              className="font-mono text-2xl font-bold tracking-tight"
+              key={remaining}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.1 }}
+            >
+              {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+            </motion.span>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0 space-y-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <motion.div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  mode === 'work' ? "bg-primary" : "bg-emerald-500",
+                  isRunning && "shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
+                )}
+                animate={isRunning ? { scale: [1, 1.3, 1], opacity: [1, 0.7, 1] } : {}}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground/80">
+                {mode === 'work' ? (blockLabel || 'Foco') : 'Descanso'}
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+              <Flame className="w-3 h-3 text-primary/60" />
+              {sessions} sessão{sessions !== 1 ? 'ões' : ''} · {workDuration}min cada
+            </p>
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-2">
+            <motion.button
+              onClick={() => setIsRunning(!isRunning)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300",
+                isRunning
+                  ? "bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+              )}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              {isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              {isRunning ? 'Pausar' : 'Iniciar'}
+            </motion.button>
+            <motion.button
+              onClick={reset}
+              className="p-2 rounded-xl border border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-accent/50 transition-all duration-200"
+              whileHover={{ scale: 1.05, rotate: -90 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+            </motion.button>
+          </div>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium truncate">{mode === 'work' ? (blockLabel ? `🔥 ${blockLabel}` : '🔥 Foco') : '☕ Descanso'}</p>
-        <p className="text-[10px] text-muted-foreground">{sessions} sessão{sessions !== 1 ? 'ões' : ''} · {workDuration}min</p>
-      </div>
-      <div className="flex gap-1">
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setIsRunning(!isRunning)}>
-          {isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-        </Button>
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={reset}>
-          <RotateCw className="w-3.5 h-3.5" />
-        </Button>
-      </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -121,7 +229,6 @@ function PomodoroTimer({ className, durationMinutes, blockLabel }: { className?:
 function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
   const { tasks, toggleComplete } = useTasksUnified();
 
-  // BUG FIX: Include tasks completed today (status=done + completed_at is today)
   const todayTasks = useMemo(
     () => tasks.filter(t =>
       t.status === 'today' ||
@@ -140,7 +247,14 @@ function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
 
   if (todayTasks.length === 0) {
     return (
-      <div className="text-center py-6">
+      <div className="text-center py-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-muted/30 mb-3"
+        >
+          <Target className="w-5 h-5 text-muted-foreground/50" />
+        </motion.div>
         <p className="text-sm text-muted-foreground font-light">Nenhuma tarefa para hoje</p>
         <p className="text-xs text-muted-foreground/50 mt-1">Mova tarefas para "Hoje" no quadro</p>
       </div>
@@ -148,33 +262,60 @@ function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs uppercase tracking-widest text-muted-foreground font-light">Tarefas de Hoje</h4>
-        <span className="text-[10px] text-muted-foreground/50">{completedCount}/{total}</span>
+        <div className="flex items-center gap-2">
+          <Zap className="w-3.5 h-3.5 text-primary/70" />
+          <h4 className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Tarefas de Hoje</h4>
+        </div>
+        <span className="text-[10px] text-muted-foreground/50 font-mono">{completedCount}/{total}</span>
       </div>
-      <Progress value={total > 0 ? (completedCount / total) * 100 : 0} className="h-1.5" />
+      <div className="relative h-1.5 rounded-full bg-muted/30 overflow-hidden">
+        <motion.div
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-primary/70"
+          initial={{ width: 0 }}
+          animate={{ width: `${total > 0 ? (completedCount / total) * 100 : 0}%` }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        />
+        {/* Shimmer on progress */}
+        <motion.div
+          className="absolute inset-y-0 w-20 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          animate={{ left: ['-20%', '120%'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear', repeatDelay: 3 }}
+        />
+      </div>
       <div className="space-y-1">
-        {todayTasks.map(t => (
-          <div
+        {todayTasks.map((t, i) => (
+          <motion.div
             key={t.id}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.04 }}
             className={cn(
-              "flex items-center gap-2 p-2.5 rounded-lg transition-colors",
-              "bg-white/[0.02] border border-white/[0.04]",
-              t.status === 'done' && "opacity-50"
+              "flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-300 group cursor-pointer",
+              "border border-transparent",
+              t.status === 'done'
+                ? "opacity-50"
+                : "hover:bg-accent/40 hover:border-border/50 hover:shadow-sm"
             )}
+            onClick={() => toggleComplete(t.id)}
           >
-            <button onClick={() => toggleComplete(t.id)} className="shrink-0">
+            <div className="shrink-0 relative">
               {t.status === 'done' ? (
-                <CheckSquare className="w-4 h-4 text-emerald-500" />
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                  <CheckSquare className="w-4 h-4 text-emerald-500" />
+                </motion.div>
               ) : (
-                <Square className="w-4 h-4 text-muted-foreground/40 hover:text-foreground transition-colors" />
+                <Square className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary/70 transition-colors duration-200" />
               )}
-            </button>
-            <span className={cn("text-sm flex-1", t.status === 'done' && "line-through text-muted-foreground")}>
+            </div>
+            <span className={cn(
+              "text-sm flex-1 transition-all duration-200",
+              t.status === 'done' && "line-through text-muted-foreground"
+            )}>
               {t.title}
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>
@@ -268,7 +409,6 @@ export function SavedFocusPlans() {
     } catch { toast.error('Erro ao restaurar'); }
   };
 
-  // Toggle task completion within a saved plan — persists to DB + syncs real task
   const handleToggleTaskInPlan = async (planId: string, taskId: string) => {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
@@ -278,24 +418,16 @@ export function SavedFocusPlans() {
       ? plan.completed_tasks.filter(id => id !== taskId)
       : [...plan.completed_tasks, taskId];
 
-    // Optimistic update
     setPlans(prev => prev.map(p => p.id === planId ? { ...p, completed_tasks: newCompleted } : p));
 
-    // Persist to DB
     try {
       await supabase
         .from('saved_focus_plans')
         .update({ completed_tasks: newCompleted as any })
         .eq('id', planId);
-
-      // Also toggle the real task status
       toggleComplete(taskId);
-
-      if (!wasCompleted) {
-        toast.success('Tarefa concluída!');
-      }
+      if (!wasCompleted) toast.success('Tarefa concluída!');
     } catch {
-      // Rollback
       setPlans(prev => prev.map(p => p.id === planId ? { ...p, completed_tasks: plan.completed_tasks } : p));
       toast.error('Erro ao atualizar tarefa');
     }
@@ -323,21 +455,19 @@ export function SavedFocusPlans() {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  const blockTypeConfig: Record<string, { color: string; bg: string }> = {
-    deep_work: { color: 'text-purple-500', bg: 'bg-purple-500/10' },
-    shallow_work: { color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    break: { color: 'text-green-500', bg: 'bg-green-500/10' },
+  const blockTypeConfig: Record<string, { color: string; bg: string; icon: typeof Brain; glow: string }> = {
+    deep_work: { color: 'text-purple-400', bg: 'bg-purple-500/10', icon: Brain, glow: 'shadow-purple-500/10' },
+    shallow_work: { color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Zap, glow: 'shadow-blue-500/10' },
+    break: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: Timer, glow: 'shadow-emerald-500/10' },
   };
 
   const activePlans = plans.filter(p => p.status === 'active');
   const archivedPlans = plans.filter(p => p.status === 'archived');
 
-  // Get active execution plan's current block for Pomodoro
   const activeExecPlan = activeExecutionPlanId ? plans.find(p => p.id === activeExecutionPlanId) : null;
   const activeBlock = useMemo(() => {
     if (!activeExecPlan) return null;
     const blocks = activeExecPlan.plan_data?.blocks || [];
-    // Find first block with incomplete tasks
     for (const block of blocks) {
       const hasIncomplete = block.tasks?.some((t: any) => !activeExecPlan.completed_tasks.includes(t.id));
       if (hasIncomplete) return block;
@@ -347,13 +477,25 @@ export function SavedFocusPlans() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        >
+          <Brain className="w-8 h-8 text-primary/50" />
+        </motion.div>
+        <motion.p
+          className="text-sm text-muted-foreground"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          Carregando planos de foco...
+        </motion.p>
       </div>
     );
   }
 
-  const renderPlanCard = (plan: FocusPlan) => {
+  const renderPlanCard = (plan: FocusPlan, index: number) => {
     const blocks = plan.plan_data?.blocks || [];
     const totalTasks = blocks.reduce((s: number, b: any) => s + (b.tasks?.length || 0), 0);
     const completedCount = plan.completed_tasks.length;
@@ -371,165 +513,263 @@ export function SavedFocusPlans() {
       <motion.div
         key={plan.id}
         className={cn(
-          "rounded-xl border bg-card p-4 space-y-3 transition-all hover:border-primary/20",
-          isExecuting ? "border-primary/40 ring-1 ring-primary/20" : "border-border"
+          "group relative rounded-2xl border overflow-hidden transition-all duration-500",
+          "bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-xl",
+          isExecuting
+            ? "border-primary/40 shadow-[0_0_40px_-8px_hsl(var(--primary)/0.25)]"
+            : "border-border/50 hover:border-primary/20 hover:shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.15)]"
         )}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 16, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: index * 0.06, duration: 0.4 }}
+        whileHover={{ y: -2 }}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : plan.id)}>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-foreground truncate">{plan.title}</h3>
-              {allDone && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+        {/* Top accent line */}
+        <div className={cn(
+          "absolute top-0 left-0 right-0 h-px transition-all duration-500",
+          isExecuting
+            ? "bg-gradient-to-r from-transparent via-primary to-transparent"
+            : "bg-gradient-to-r from-transparent via-border to-transparent group-hover:via-primary/50"
+        )} />
+
+        <div className="relative z-10 p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : plan.id)}>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-foreground truncate group-hover:text-primary/90 transition-colors duration-300">
+                  {plan.title}
+                </h3>
+                {allDone && (
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]" />
+                  </motion.div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">{dateStr}</p>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{dateStr}</p>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Resume / Execute button */}
-            {plan.status === 'active' && !allDone && (
-              <Button
-                variant={isExecuting ? "default" : "outline"}
-                size="sm"
-                className="h-7 text-[10px] gap-1"
-                onClick={() => setActiveExecutionPlanId(isExecuting ? null : plan.id)}
-              >
-                <Play className="w-3 h-3" />
-                {isExecuting ? 'Pausar' : 'Retomar'}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                  <FileDown className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 shrink-0">
+              {plan.status === 'active' && !allDone && (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    variant={isExecuting ? "default" : "outline"}
+                    size="sm"
+                    className={cn(
+                      "h-7 text-[10px] gap-1 rounded-lg",
+                      isExecuting && "shadow-lg shadow-primary/20"
+                    )}
+                    onClick={() => setActiveExecutionPlanId(isExecuting ? null : plan.id)}
+                  >
+                    <Play className="w-3 h-3" />
+                    {isExecuting ? 'Pausar' : 'Retomar'}
+                  </Button>
+                </motion.div>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-accent/50">
+                    <FileDown className="w-3.5 h-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => exportFocusPDF(plan.plan_data, 'landscape')}>PDF Horizontal</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportFocusPDF(plan.plan_data, 'portrait')}>PDF Vertical</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {plan.status === 'active' ? (
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-accent/50" onClick={() => handleArchive(plan.id)}>
+                  <Archive className="w-3.5 h-3.5" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportFocusPDF(plan.plan_data, 'landscape')}>PDF Horizontal</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportFocusPDF(plan.plan_data, 'portrait')}>PDF Vertical</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {plan.status === 'active' ? (
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleArchive(plan.id)}>
-                <Archive className="w-3.5 h-3.5" />
+              ) : (
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-accent/50" onClick={() => handleRestore(plan.id)}>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(plan.id)}>
+                <Trash2 className="w-3.5 h-3.5" />
               </Button>
-            ) : (
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRestore(plan.id)}>
-                <RotateCcw className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => setDeleteId(plan.id)}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><Brain className="w-3 h-3" /> {blocks.length} blocos</span>
-          <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {completedCount}/{totalTasks}</span>
-          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {timeStr}</span>
-        </div>
-        <Progress value={progressPct} className="h-1.5" />
+          {/* Stats row */}
+          <div className="flex items-center gap-3">
+            {[
+              { icon: Brain, label: `${blocks.length} blocos`, color: 'text-primary/70' },
+              { icon: CheckCircle2, label: `${completedCount}/${totalTasks}`, color: 'text-emerald-500/70' },
+              { icon: Clock, label: timeStr, color: 'text-muted-foreground' },
+            ].map((stat, si) => (
+              <div key={si} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <stat.icon className={cn("w-3 h-3", stat.color)} />
+                <span>{stat.label}</span>
+              </div>
+            ))}
+          </div>
 
-        <AnimatePresence>
-          {isExpanded && (
+          {/* Progress bar */}
+          <div className="relative h-1.5 rounded-full bg-muted/20 overflow-hidden">
             <motion.div
-              className="space-y-2 pt-2 border-t border-border"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              {blocks.map((block: any, bIdx: number) => {
-                const cfg = blockTypeConfig[block.type] || blockTypeConfig.shallow_work;
-                return (
-                  <div key={block.id || bIdx} className={cn("rounded-lg p-2.5 space-y-1", cfg.bg)}>
-                    <div className="flex items-center justify-between">
-                      <span className={cn("text-xs font-semibold", cfg.color)}>{block.title}</span>
-                      <span className="text-[10px] text-muted-foreground">{block.duration_minutes}min</span>
-                    </div>
-                    {block.tasks?.map((task: any) => {
-                      const isDone = plan.completed_tasks.includes(task.id);
-                      return (
-                        <div
-                          key={task.id}
-                          className={cn("flex items-center gap-2 text-xs cursor-pointer group", isDone && "line-through text-muted-foreground")}
-                          onClick={() => plan.status === 'active' && handleToggleTaskInPlan(plan.id, task.id)}
-                        >
-                          <button className="shrink-0">
-                            {isDone ? (
-                              <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
-                            ) : (
-                              <Square className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-foreground transition-colors" />
-                            )}
-                          </button>
-                          <span className="flex-1">{task.title}</span>
-                          <span className="text-muted-foreground">{task.estimated_minutes}min</span>
+              className={cn(
+                "absolute inset-y-0 left-0 rounded-full",
+                allDone
+                  ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  : "bg-gradient-to-r from-primary to-primary/70"
+              )}
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            />
+          </div>
+
+          {/* Expanded blocks */}
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                className="space-y-2 pt-3 border-t border-border/30"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {blocks.map((block: any, bIdx: number) => {
+                  const cfg = blockTypeConfig[block.type] || blockTypeConfig.shallow_work;
+                  const BlockIcon = cfg.icon;
+                  return (
+                    <motion.div
+                      key={block.id || bIdx}
+                      className={cn(
+                        "rounded-xl p-3 space-y-1.5 border border-transparent transition-all duration-300",
+                        cfg.bg,
+                        `hover:border-${block.type === 'deep_work' ? 'purple' : block.type === 'break' ? 'emerald' : 'blue'}-500/20`,
+                        `hover:shadow-lg ${cfg.glow}`
+                      )}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: bIdx * 0.05 }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <BlockIcon className={cn("w-3.5 h-3.5", cfg.color)} />
+                          <span className={cn("text-xs font-semibold", cfg.color)}>{block.title}</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                        <span className="text-[10px] text-muted-foreground font-mono">{block.duration_minutes}min</span>
+                      </div>
+                      {block.tasks?.map((task: any) => {
+                        const isDone = plan.completed_tasks.includes(task.id);
+                        return (
+                          <motion.div
+                            key={task.id}
+                            className={cn(
+                              "flex items-center gap-2 text-xs cursor-pointer group/task py-1 px-1 rounded-lg transition-all duration-200",
+                              isDone ? "opacity-50" : "hover:bg-background/50"
+                            )}
+                            onClick={() => plan.status === 'active' && handleToggleTaskInPlan(plan.id, task.id)}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <div className="shrink-0">
+                              {isDone ? (
+                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                                  <CheckSquare className="w-3.5 h-3.5 text-emerald-500" />
+                                </motion.div>
+                              ) : (
+                                <Square className="w-3.5 h-3.5 text-muted-foreground/40 group-hover/task:text-foreground transition-colors" />
+                              )}
+                            </div>
+                            <span className={cn("flex-1", isDone && "line-through")}>{task.title}</span>
+                            <span className="text-muted-foreground/50 font-mono">{task.estimated_minutes}min</span>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <ConfettiCelebration show={showConfetti} />
 
       {/* Focus toolbar */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Modo Foco</h3>
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={toggleFullscreen}>
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/10"
+            animate={{ boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 0 8px hsl(var(--primary) / 0.1)', '0 0 0 0 hsl(var(--primary) / 0)'] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+          </motion.div>
+          <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Modo Foco</h3>
+        </div>
+        <Button variant="ghost" size="sm" className="gap-1.5 text-xs hover:bg-accent/50 rounded-xl" onClick={toggleFullscreen}>
           {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           {isFullscreen ? 'Sair' : 'Tela cheia'}
         </Button>
       </div>
 
-      {/* Pomodoro + Today tasks side by side */}
+      {/* Pomodoro + Today tasks */}
       <div className="grid gap-4 md:grid-cols-2">
         <PomodoroTimer
           durationMinutes={activeBlock?.duration_minutes}
           blockLabel={activeBlock?.title}
         />
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+        <motion.div
+          className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl p-5 hover:border-primary/20 hover:shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.1)] transition-all duration-500"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
           <TodayTasksPanel onAllComplete={handleAllComplete} />
-        </div>
+        </motion.div>
       </div>
 
       {/* Saved plans */}
       {activePlans.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Planos Ativos</h3>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {activePlans.map(renderPlanCard)}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Target className="w-3.5 h-3.5 text-primary/60" />
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Planos Ativos</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono">{activePlans.length}</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {activePlans.map((p, i) => renderPlanCard(p, i))}
           </div>
         </div>
       )}
 
       {plans.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-          <Brain className="w-10 h-10 text-muted-foreground/50" />
+        <motion.div
+          className="flex flex-col items-center justify-center py-16 gap-4 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div
+            className="w-16 h-16 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Brain className="w-7 h-7 text-primary/40" />
+          </motion.div>
           <p className="text-sm text-muted-foreground">Nenhum plano de foco salvo</p>
-          <p className="text-xs text-muted-foreground max-w-xs">Use o <strong>Modo Foco</strong> para gerar um plano e salve-o aqui.</p>
-        </div>
+          <p className="text-xs text-muted-foreground/60 max-w-xs">Use o <strong>Modo Foco</strong> para gerar um plano e salve-o aqui.</p>
+        </motion.div>
       )}
 
       {archivedPlans.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Arquivados</h3>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 opacity-60">
-            {archivedPlans.map(renderPlanCard)}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 opacity-50 hover:opacity-70 transition-opacity duration-500">
+            {archivedPlans.map((p, i) => renderPlanCard(p, i))}
           </div>
         </div>
       )}
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-border/50 bg-card/95 backdrop-blur-xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir plano de foco?</AlertDialogTitle>
             <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
