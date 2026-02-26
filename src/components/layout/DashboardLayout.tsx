@@ -5,6 +5,7 @@ import { SearchModal } from "../search/SearchModal";
 import { AICommandButton } from "../ai/AICommandButton";
 import { PoweredByFooter } from "./PoweredByFooter";
 import { PageTransition } from "./PageTransition";
+import { BottomNav } from "./BottomNav";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -120,7 +121,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
           ref={mainRef}
           className={cn(
             "flex-1 overflow-y-auto py-6 flex flex-col",
-            isMobile ? "px-4" : "px-4 md:px-6 lg:px-8"
+            isMobile ? "px-4 pb-24" : "px-4 md:px-6 lg:px-8"
           )} 
           style={isMobile ? undefined : { zoom: 1.2 }}
         >
@@ -146,6 +147,9 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       
       {/* Floating AI Command Button */}
       <AICommandButton />
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && <BottomNav />}
     </div>
   );
 }
