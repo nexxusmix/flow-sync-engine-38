@@ -60,6 +60,7 @@ function formatTime(minutes: number): string {
 interface TaskSelectionStepProps {
   tasks: Task[];
   onConfirm: (orderedIds: string[]) => void;
+  excludeIds?: string[];
 }
 
 /* ── Sortable item ─────────────────────────────────────── */
@@ -96,7 +97,13 @@ function SortableTask({ task, index }: { task: Task; index: number }) {
 }
 
 /* ── Main component ────────────────────────────────────── */
-export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) {
+export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: TaskSelectionStepProps) {
+  const tasks = useMemo(() => {
+    if (!excludeIds || excludeIds.length === 0) return rawTasks;
+    const excluded = new Set(excludeIds);
+    return rawTasks.filter(t => !excluded.has(t.id));
+  }, [rawTasks, excludeIds]);
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(tasks.map(t => t.id)));
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');

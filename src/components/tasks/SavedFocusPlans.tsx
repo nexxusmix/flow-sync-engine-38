@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Brain, Loader2, Trash2, FileDown, Clock, CheckCircle2, RotateCcw, Archive, Maximize2, Minimize2, Play, Pause, RotateCw, CheckSquare, Square, PartyPopper, Sparkles, Zap, Target, Timer, Flame, CloudRain, Music, VolumeX, TrendingUp, Award, Coffee, Headphones } from 'lucide-react';
+import { Brain, Loader2, Trash2, FileDown, Clock, CheckCircle2, RotateCcw, Archive, Maximize2, Minimize2, Play, Pause, RotateCw, CheckSquare, Square, PartyPopper, Sparkles, Zap, Target, Timer, Flame, CloudRain, Music, VolumeX, TrendingUp, Award, Coffee, Headphones, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,6 +10,13 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { useTasksUnified } from '@/hooks/useTasksUnified';
 import { isToday, parseISO } from 'date-fns';
+import { TaskSelectionStep } from './TaskSelectionStep';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -428,6 +435,9 @@ export function SavedFocusPlans() {
   const [focusMethod, setFocusMethod] = useState('pomodoro');
   const [ambientSound, setAmbientSound] = useState('silence');
 
+  const [addingTasksToPlanId, setAddingTasksToPlanId] = useState<string | null>(null);
+  const [regeneratingPlanId, setRegeneratingPlanId] = useState<string | null>(null);
+
   const { toggleComplete, tasks } = useTasksUnified();
 
   const todayCompleted = useMemo(() =>
@@ -507,6 +517,103 @@ export function SavedFocusPlans() {
     toast.success('🎉 Todas as tarefas de hoje concluídas!');
     setTimeout(() => setShowConfetti(false), 3000);
   }, []);
+
+  // ── Dynamic Plan Actions ──────────────────────────────
+  const getTaskIdsFromPlan = (plan: FocusPlan): string[] => {
+    const blocks = plan.plan_data?.blocks || [];
+    return blocks.flatMap((b: any) => (b.tasks || []).map((t: any) => t.id));
+  };
+
+  const handleAddTasks = async (planId: string, orderedIds: string[]) => {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
+    const newTasks = orderedIds
+      .map(id => tasks.find(t => t.id === id))
+      .filter(Boolean)
+      .map(t => ({
+        id: t!.id,
+        title: t!.title,
+        estimated_minutes: ({ urgent: 45, high: 35, normal: 25, low: 15 }[t!.priority] || 25),
+        cognitive_type: t!.priority === 'urgent' || t!.priority === 'high' ? 'deep' : 'shallow',
+      }));
+
+    if (newTasks.length === 0) return;
+
+    const updatedPlanData = {
+      ...plan.plan_data,
+      blocks: [
+        ...(plan.plan_data?.blocks || []),
+        {
+          id: `block_added_${Date.now()}`,
+          title: 'Novas Tarefas',
+          type: 'shallow_work',
+          technique: 'Adicionadas manualmente',
+          duration_minutes: newTasks.reduce((s, t) => s + t.estimated_minutes, 0),
+          tasks: newTasks,
+        },
+      ],
+      total_estimated_minutes: (plan.plan_data?.total_estimated_minutes || 0) + newTasks.reduce((s, t) => s + t.estimated_minutes, 0),
+    };
+
+    try {
+      await supabase.from('saved_focus_plans').update({ plan_data: updatedPlanData as any }).eq('id', planId);
+      setPlans(prev => prev.map(p => p.id === planId ? { ...p, plan_data: updatedPlanData } : p));
+      toast.success(`${newTasks.length} tarefa(s) adicionada(s) ao plano`);
+    } catch {
+      toast.error('Erro ao adicionar tarefas');
+    }
+    setAddingTasksToPlanId(null);
+  };
+
+  const handleRegenerate = async (planId: string, excludeCompleted: boolean) => {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
+    setRegeneratingPlanId(planId);
+    try {
+      let taskIds = getTaskIdsFromPlan(plan);
+      if (excludeCompleted) {
+        taskIds = taskIds.filter(id => !plan.completed_tasks.includes(id));
+      }
+
+      const planTasks = taskIds
+        .map(id => tasks.find(t => t.id === id))
+        .filter(Boolean)
+        .map(t => ({
+          id: t!.id,
+          title: t!.title,
+          priority: t!.priority,
+          category: t!.category,
+          due_date: t!.due_date,
+          tags: t!.tags,
+        }));
+
+      if (planTasks.length === 0) {
+        toast.error('Nenhuma tarefa pendente para regenerar');
+        setRegeneratingPlanId(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-execution-blocks', {
+        body: { tasks: planTasks },
+      });
+
+      if (error) throw error;
+
+      const newCompleted = excludeCompleted ? [] : plan.completed_tasks;
+      await supabase.from('saved_focus_plans').update({
+        plan_data: data as any,
+        completed_tasks: newCompleted as any,
+      }).eq('id', planId);
+
+      setPlans(prev => prev.map(p => p.id === planId ? { ...p, plan_data: data, completed_tasks: newCompleted } : p));
+      toast.success('Plano regenerado com sucesso!');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao regenerar plano');
+    }
+    setRegeneratingPlanId(null);
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -641,12 +748,49 @@ export function SavedFocusPlans() {
           <AnimatePresence>
             {isExpanded && (
               <motion.div
-                className="space-y-1 pt-2 border-t border-border/10"
+                className="space-y-2 pt-2 border-t border-border/10"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 120, damping: 14 }}
               >
+                {/* ── Plan Action Buttons ── */}
+                {plan.status === 'active' && (
+                  <div className="flex flex-wrap gap-1.5 pb-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[9px] gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
+                      onClick={() => setAddingTasksToPlanId(plan.id)}
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                      Adicionar Tarefas
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[9px] gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
+                      disabled={regeneratingPlanId === plan.id}
+                      onClick={() => handleRegenerate(plan.id, false)}
+                    >
+                      {regeneratingPlanId === plan.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <RefreshCw className="w-2.5 h-2.5" />}
+                      Regenerar
+                    </Button>
+                    {completedCount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-[9px] gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
+                        disabled={regeneratingPlanId === plan.id}
+                        onClick={() => handleRegenerate(plan.id, true)}
+                      >
+                        {regeneratingPlanId === plan.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <RefreshCw className="w-2.5 h-2.5" />}
+                        Só Pendentes
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 {blocks.map((block: any, bIdx: number) => {
                   const cfg = blockTypeConfig[block.type] || blockTypeConfig.shallow_work;
                   const BlockIcon = cfg.icon;
@@ -762,6 +906,25 @@ export function SavedFocusPlans() {
           </div>
         </div>
       )}
+
+      {/* Add Tasks Dialog */}
+      <Dialog open={!!addingTasksToPlanId} onOpenChange={(open) => !open && setAddingTasksToPlanId(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto border-border/30 bg-card">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <Plus className="w-4 h-4 text-primary" />
+              Adicionar Tarefas ao Plano
+            </DialogTitle>
+          </DialogHeader>
+          {addingTasksToPlanId && (
+            <TaskSelectionStep
+              tasks={tasks.filter(t => t.status !== 'done')}
+              excludeIds={getTaskIdsFromPlan(plans.find(p => p.id === addingTasksToPlanId)!)}
+              onConfirm={(ids) => handleAddTasks(addingTasksToPlanId, ids)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="border-border/30 bg-card">
