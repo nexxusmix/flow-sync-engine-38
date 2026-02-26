@@ -3,6 +3,7 @@ import { Brain, Loader2, Trash2, FileDown, Clock, CheckCircle2, RotateCcw, Archi
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { exportFocusPDF } from '@/services/pdfExportService';
@@ -655,9 +656,55 @@ export function SavedFocusPlans() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <Loader2 className="w-6 h-6 text-primary/40 animate-spin" />
-        <p className="text-xs text-muted-foreground">Carregando planos...</p>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-primary/60" />
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.12em]">Modo Foco</h3>
+        </div>
+        <div className="grid gap-2 grid-cols-1 md:grid-cols-3">
+          {[0, 1, 2].map(i => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="rounded-2xl border border-border/20 bg-card/30 p-4 space-y-3 h-[280px]"
+            >
+              <Skeleton className="h-28 w-28 rounded-full mx-auto bg-muted/20" />
+              <Skeleton className="h-3 w-20 mx-auto bg-muted/30" />
+              <Skeleton className="h-2 w-16 mx-auto bg-muted/15" />
+              <div className="flex gap-2 justify-center pt-2">
+                <Skeleton className="h-8 w-20 rounded-xl bg-muted/20" />
+                <Skeleton className="h-8 w-8 rounded-xl bg-muted/15" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-2.5 w-24 bg-muted/20" />
+          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map(i => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + i * 0.06 }}
+                className="rounded-xl border border-border/15 bg-card/30 p-3 space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-32 bg-muted/30" />
+                  <Skeleton className="h-5 w-14 rounded-md bg-muted/15" />
+                </div>
+                <div className="flex gap-3">
+                  <Skeleton className="h-2 w-14 bg-muted/15" />
+                  <Skeleton className="h-2 w-10 bg-muted/15" />
+                  <Skeleton className="h-2 w-12 bg-muted/15" />
+                </div>
+                <Skeleton className="h-0.5 w-full rounded-full bg-muted/10" />
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
