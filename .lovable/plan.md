@@ -19,7 +19,17 @@
 # Plano Ciclo 4 — Dashboard Executivo, Colaboração, Integrações, Mobile
 
 ## Fase 13 — Dashboard Executivo ✅
-## Fase 14 — Workspace Colaborativo
+## Fase 14 — Workspace Colaborativo ✅
+
+### Implementado:
+- **Presença em tempo real**: `useWorkspacePresence` hook com Supabase Realtime presence channel
+- **Indicadores online**: Dots verdes nos avatares de membros online no TeamManagement e Dashboard
+- **Activity Feed**: Componente `ActivityFeed` lendo event_logs com labels em PT-BR, ícones por entity_type
+- **Dashboard integrado**: Feed de atividade + painel "Online Agora" no Dashboard Executivo
+- **Permission Gate**: `useWorkspacePermissions` hook + `PermissionGate` component para controle de acesso por role
+- **Fluxo de convite completo**: TeamManagement agora chama edge function `invite-user` que gera link de convite real via auth
+- **Roles por workspace**: owner, admin, editor, viewer com permissões mapeadas
+
 ## Fase 15 — Integrações Externas
 
 ## Fase 16 — Mobile & PWA ✅

@@ -10,6 +10,8 @@ import {
   ListTodo, Target, BarChart3, Activity, Zap, Users, CheckCircle2,
   AlertTriangle, Clock, Timer, Flame, FileText
 } from 'lucide-react';
+import { ActivityFeed } from '@/components/workspace/ActivityFeed';
+import { useWorkspacePresence } from '@/hooks/useWorkspacePresence';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid,
@@ -37,6 +39,7 @@ const stagger = {
 
 export default function ExecutiveDashboardPage() {
   const { data, isLoading } = useExecutiveDashboard();
+  const { onlineUsers } = useWorkspacePresence();
   const printRef = useRef<HTMLDivElement>(null);
 
   const handleExportPDF = useCallback(() => {
@@ -396,6 +399,47 @@ export default function ExecutiveDashboardPage() {
               </div>
             </div>
           </Card>
+        </motion.div>
+
+        {/* Activity Feed + Online Users */}
+        <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-4" variants={stagger}>
+          <motion.div variants={fadeUp} className="lg:col-span-2">
+            <Card className="glass-card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-medium text-foreground">Atividade Recente</h3>
+              </div>
+              <ActivityFeed limit={15} />
+            </Card>
+          </motion.div>
+          <motion.div variants={fadeUp}>
+            <Card className="glass-card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-4 h-4 text-emerald-500" />
+                <h3 className="text-sm font-medium text-foreground">Online Agora</h3>
+                <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded-full">
+                  {onlineUsers.length}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {onlineUsers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Ninguém online</p>
+                ) : (
+                  onlineUsers.map((u) => (
+                    <div key={u.user_id} className="flex items-center gap-3 p-2 rounded-lg">
+                      <div className="relative">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                          {(u.full_name || "?").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+                      </div>
+                      <span className="text-sm text-foreground truncate">{u.full_name || "Anônimo"}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          </motion.div>
         </motion.div>
       </motion.div>
     </DashboardLayout>

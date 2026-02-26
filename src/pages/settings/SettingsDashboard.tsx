@@ -17,6 +17,7 @@ const settingsSections = [
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     adminOnly: false,
+    permission: 'manage_settings' as const,
   },
   {
     id: 'team',

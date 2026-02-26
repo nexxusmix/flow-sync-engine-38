@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useWorkspaceMembers, WorkspaceRole } from "@/hooks/useWorkspaceMembers";
+import { useWorkspacePresence } from "@/hooks/useWorkspacePresence";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { cn } from "@/lib/utils";
 import { UserPlus, Shield, Crown, Eye, Pencil, Trash2, X, Mail, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const roleLabels: Record<WorkspaceRole, string> = {
   owner: "Proprietário",
@@ -51,17 +54,40 @@ export function TeamManagement() {
     removeMember,
     cancelInvite,
   } = useWorkspaceMembers();
+  const { isOnline } = useWorkspacePresence();
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<WorkspaceRole>("editor");
 
-  const handleInvite = () => {
+  const [inviteLoading, setInviteLoading] = useState(false);
+
+  const handleInvite = async () => {
     if (!email.trim()) return;
-    inviteMember.mutate(
-      { email: email.trim(), role },
-      { onSuccess: () => { setEmail(""); setInviteOpen(false); } }
-    );
+    setInviteLoading(true);
+    try {
+      // Call edge function to send actual invite email
+      const { data, error } = await supabase.functions.invoke("invite-user", {
+        body: { email: email.trim(), role },
+      });
+      if (error) throw error;
+
+      // Also create workspace invite record
+      inviteMember.mutate(
+        { email: email.trim(), role },
+        {
+          onSuccess: () => {
+            setEmail("");
+            setInviteOpen(false);
+            toast.success(`Convite enviado para ${email.trim()}`);
+          },
+        }
+      );
+    } catch (err: any) {
+      toast.error("Erro ao enviar convite: " + (err.message || "erro desconhecido"));
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -120,10 +146,10 @@ export function TeamManagement() {
                 </div>
                 <Button
                   onClick={handleInvite}
-                  disabled={!email.trim() || inviteMember.isPending}
+                  disabled={!email.trim() || inviteLoading}
                   className="w-full"
                 >
-                  {inviteMember.isPending ? "Enviando..." : "Enviar convite"}
+                  {inviteLoading ? "Enviando..." : "Enviar convite"}
                 </Button>
               </div>
             </DialogContent>
@@ -148,12 +174,17 @@ export function TeamManagement() {
                 transition={{ delay: i * 0.03 }}
                 className="flex items-center gap-3 p-3 rounded-xl bg-card/50 border border-border/50 hover:border-border transition-colors"
               >
+              <div className="relative">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={profile?.avatar_url ?? undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-light">
                     {getInitials(profile?.full_name, profile?.email)}
                   </AvatarFallback>
                 </Avatar>
+                {isOnline(member.user_id) && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+                )}
+              </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
