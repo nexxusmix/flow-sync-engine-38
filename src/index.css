@@ -619,17 +619,14 @@
       0 0 60px -30px hsl(var(--primary) / 0.15);
   }
 
-  /* Glow Effect - with defocused halo */
+  /* Glow Effect — subtle border highlight */
   .hover-glow {
-    transition: box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.5s ease, filter 0.5s ease;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
   }
 
   .hover-glow:hover {
-    box-shadow: 
-      0 0 40px -5px hsl(var(--primary) / 0.35),
-      0 0 80px -20px hsl(var(--primary) / 0.15),
-      inset 0 0 20px -10px hsl(var(--primary) / 0.08);
-    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 20px -8px hsl(var(--primary) / 0.2);
+    border-color: hsl(var(--primary) / 0.15);
   }
 
   /* Scale Effect with depth */
@@ -957,16 +954,10 @@
 
   @keyframes pulseGlowBlur {
     0%, 100% {
-      box-shadow: 
-        0 0 20px -5px hsl(var(--primary) / 0.3),
-        0 0 60px -20px hsl(var(--primary) / 0.1);
-      filter: blur(0px);
+      box-shadow: 0 0 12px -4px hsl(var(--primary) / 0.15);
     }
     50% {
-      box-shadow: 
-        0 0 40px -5px hsl(var(--primary) / 0.5),
-        0 0 100px -20px hsl(var(--primary) / 0.2);
-      filter: blur(0.5px);
+      box-shadow: 0 0 20px -4px hsl(var(--primary) / 0.25);
     }
   }
 
