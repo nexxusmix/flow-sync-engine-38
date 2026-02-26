@@ -106,12 +106,27 @@ export default {
           from: { opacity: "0", transform: "translateX(-10px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        "marquee": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "text-reveal": {
+          from: { transform: "translateY(100%)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
+        },
+        "image-reveal": {
+          from: { opacity: "0", transform: "scale(1.06)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.4s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
+        "marquee": "marquee 30s linear infinite",
+        "text-reveal": "text-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "image-reveal": "image-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both",
       },
     },
   },

@@ -1,14 +1,8 @@
 import { motion } from "framer-motion";
 
 const tools = [
-  "Gestão de tarefas",
-  "CRM",
-  "Financeiro",
-  "Planejamento editorial",
-  "Storyboard",
-  "IA",
-  "Armazenamento",
-  "Portal cliente",
+  "Gestão de tarefas", "CRM", "Financeiro", "Planejamento editorial",
+  "Storyboard", "IA", "Armazenamento", "Portal cliente",
 ];
 
 export function LandingPriceJustification() {
@@ -22,7 +16,7 @@ export function LandingPriceJustification() {
           viewport={{ once: true, margin: "-100px" }}
         >
           <h2 className="text-3xl md:text-4xl font-light text-foreground mb-8 tracking-tight">
-            Por que o preço é <span className="text-primary neon-text">justo</span>?
+            Por que o preço é <span className="text-primary">justo</span>?
           </h2>
           <p className="text-muted-foreground mb-8">Ferramentas separadas custariam:</p>
 
@@ -30,7 +24,7 @@ export function LandingPriceJustification() {
             {tools.map((t, i) => (
               <motion.span
                 key={i}
-                className="px-3 py-1.5 rounded-full text-xs border border-border/50 text-muted-foreground bg-muted/30"
+                className="px-3 py-1.5 rounded-full text-xs border border-border/30 text-muted-foreground bg-muted/30"
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
@@ -56,7 +50,7 @@ export function LandingPriceJustification() {
             <div className="text-4xl text-muted-foreground/30 hidden md:block">→</div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1 uppercase tracking-wider">Hub Completo</p>
-              <p className="text-5xl font-light text-primary neon-text">R$ 149,90</p>
+              <p className="text-5xl font-light text-primary">R$ 149,90</p>
               <p className="text-xs text-muted-foreground/60 mt-1">/ mês</p>
             </div>
           </motion.div>

@@ -20,10 +20,10 @@ function PlanCard({ icon: Icon, emoji, name, ideal, price, features, recommended
 
   return (
     <motion.div
-      className={`relative glass-card rounded-2xl border overflow-hidden flex flex-col ${
+      className={`relative rounded-2xl border overflow-hidden flex flex-col bg-card transition-all duration-500 ${
         recommended
-          ? "border-primary/40 shadow-[0_0_60px_-20px_hsl(var(--primary)/0.3)]"
-          : "border-border/50"
+          ? "border-primary/30 shadow-[0_0_40px_-20px_hsl(var(--primary)/0.2)]"
+          : "border-border/30 hover:border-primary/15"
       }`}
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -60,16 +60,14 @@ function PlanCard({ icon: Icon, emoji, name, ideal, price, features, recommended
           ))}
         </ul>
 
-        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-          <Button
-            className={`w-full gap-2 h-12 ${recommended ? "neon-button bg-primary hover:bg-primary/90" : ""}`}
-            variant={recommended ? "default" : "outline"}
-            onClick={() => navigate('/login')}
-          >
-            Começar Agora
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </motion.div>
+        <Button
+          className={`w-full gap-2 h-12 hover-invert ${recommended ? "bg-primary hover:bg-primary/90" : ""}`}
+          variant={recommended ? "default" : "outline"}
+          onClick={() => navigate('/login')}
+        >
+          Começar Agora
+          <ArrowRight className="w-4 h-4" />
+        </Button>
       </div>
     </motion.div>
   );
@@ -86,62 +84,15 @@ export function LandingPricing() {
           viewport={{ once: true, margin: "-100px" }}
         >
           <h2 className="text-3xl md:text-5xl font-light text-foreground mb-4 tracking-tight">
-            Você escolhe o <span className="text-primary neon-text">plano</span>
+            Você escolhe o <span className="text-primary">plano</span>
           </h2>
           <p className="text-muted-foreground">Preço justo Brasil. Produto nível global.</p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8 items-start">
-          <PlanCard
-            icon={Clapperboard}
-            emoji="🎬"
-            name="Produtora"
-            ideal="Ideal para produtoras, filmmakers e equipes audiovisuais."
-            price="R$ 57"
-            features={[
-              "Gestão completa de projetos",
-              "Controle financeiro",
-              "Entregáveis com preview",
-              "IA de automação",
-              "PDF premium",
-            ]}
-            delay={0}
-          />
-
-          <PlanCard
-            icon={Zap}
-            emoji="⚡"
-            name="Hub Completo"
-            ideal="Produtora + Marketing integrados. Fluxo completo."
-            price="R$ 129"
-            recommended
-            features={[
-              "Acesso às duas plataformas",
-              "Fluxo completo do projeto à entrega",
-              "Gestão criativa + execução",
-              "Inteligência artificial total",
-              "Automação completa",
-            ]}
-            delay={0.1}
-          />
-
-          <PlanCard
-            icon={Palette}
-            emoji="🎨"
-            name="Marketing & Design"
-            ideal="Ideal para agências, social media e designers."
-            price="R$ 99"
-            accent="hsl(210,100%,55%)"
-            features={[
-              "Planejamento de conteúdo",
-              "Branding",
-              "Roteiros com IA",
-              "Gestão de clientes",
-              "Organização criativa",
-              "Exportações profissionais",
-            ]}
-            delay={0.2}
-          />
+          <PlanCard icon={Clapperboard} emoji="🎬" name="Produtora" ideal="Ideal para produtoras, filmmakers e equipes audiovisuais." price="R$ 57" features={["Gestão completa de projetos", "Controle financeiro", "Entregáveis com preview", "IA de automação", "PDF premium"]} delay={0} />
+          <PlanCard icon={Zap} emoji="⚡" name="Hub Completo" ideal="Produtora + Marketing integrados. Fluxo completo." price="R$ 129" recommended features={["Acesso às duas plataformas", "Fluxo completo do projeto à entrega", "Gestão criativa + execução", "Inteligência artificial total", "Automação completa"]} delay={0.1} />
+          <PlanCard icon={Palette} emoji="🎨" name="Marketing & Design" ideal="Ideal para agências, social media e designers." price="R$ 99" accent="hsl(var(--primary))" features={["Planejamento de conteúdo", "Branding", "Roteiros com IA", "Gestão de clientes", "Organização criativa", "Exportações profissionais"]} delay={0.2} />
         </div>
       </div>
     </section>

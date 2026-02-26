@@ -62,7 +62,7 @@ export function LandingSolution() {
             <span className="text-xs text-primary font-medium uppercase tracking-wider">A solução</span>
           </div>
           <h2 className="text-3xl md:text-5xl font-light text-foreground mb-4 tracking-tight">
-            O HUB nasceu para <span className="text-primary neon-text">centralizar tudo</span>
+            O HUB nasceu para <span className="text-primary">centralizar tudo</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Você escolhe como quer usar:
@@ -72,13 +72,13 @@ export function LandingSolution() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Film Hub */}
           <motion.div
-            className="glass-card rounded-2xl border border-border/50 overflow-hidden group hover:border-primary/30 transition-colors duration-500"
+            className="rounded-2xl border border-border/30 overflow-hidden group hover:border-primary/20 transition-all duration-500 bg-card image-ease-in"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="p-8 border-b border-border/30 bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="p-8 border-b border-border/20">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Clapperboard className="w-6 h-6 text-primary" />
@@ -97,19 +97,19 @@ export function LandingSolution() {
 
           {/* Marketing Hub */}
           <motion.div
-            className="glass-card rounded-2xl border border-border/50 overflow-hidden group hover:border-[hsl(210,100%,55%)]/30 transition-colors duration-500"
+            className="rounded-2xl border border-border/30 overflow-hidden group hover:border-primary/20 transition-all duration-500 bg-card image-ease-in"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <div className="p-8 border-b border-border/30 bg-gradient-to-r from-[hsl(210,100%,55%)]/5 to-transparent">
+            <div className="p-8 border-b border-border/20">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-[hsl(210,100%,55%)]/10 flex items-center justify-center">
-                  <Palette className="w-6 h-6 text-[hsl(210,100%,55%)]" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Palette className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <span className="text-xs text-[hsl(210,100%,55%)]/60 uppercase tracking-wider font-medium">🎨</span>
+                  <span className="text-xs text-primary/60 uppercase tracking-wider font-medium">🎨</span>
                   <h3 className="text-xl font-medium text-foreground">Hub Marketing & Design</h3>
                 </div>
               </div>

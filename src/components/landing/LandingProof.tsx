@@ -17,7 +17,7 @@ export function LandingProof() {
           viewport={{ once: true, margin: "-100px" }}
         >
           <h2 className="text-3xl md:text-4xl font-light text-foreground tracking-tight">
-            Prova de <span className="text-primary neon-text">visão</span>
+            Prova de <span className="text-primary">visão</span>
           </h2>
         </motion.div>
 
@@ -34,7 +34,7 @@ export function LandingProof() {
               <div className="px-6 py-5 rounded-xl bg-destructive/5 border border-destructive/10 text-sm text-muted-foreground/60 italic">
                 {c.them}
               </div>
-              <div className="px-6 py-5 rounded-xl bg-primary/5 border border-primary/15 text-sm text-foreground/80 font-medium">
+              <div className="px-6 py-5 rounded-xl bg-primary/5 border border-primary/10 text-sm text-foreground/80 font-medium">
                 {c.us}
               </div>
             </motion.div>

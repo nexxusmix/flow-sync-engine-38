@@ -24,7 +24,7 @@ export function LandingDifferentials() {
           viewport={{ once: true, margin: "-100px" }}
         >
           <h2 className="text-3xl md:text-5xl font-light text-foreground mb-4 tracking-tight">
-            Não é só gestão. É <span className="text-primary neon-text">inteligência operacional</span>
+            Não é só gestão. É <span className="text-primary">inteligência operacional</span>
           </h2>
         </motion.div>
 
@@ -32,13 +32,13 @@ export function LandingDifferentials() {
           {items.map((item, i) => (
             <motion.div
               key={i}
-              className="flex items-center gap-4 px-6 py-5 rounded-xl glass-card border border-border/30 group hover:border-primary/20 transition-colors duration-500"
+              className="flex items-center gap-4 px-6 py-5 rounded-xl border border-border/20 bg-card group hover:border-primary/15 transition-all duration-500 image-ease-in"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
                 <item.icon className="w-5 h-5 text-primary" />
               </div>
               <span className="text-sm text-foreground/80 font-medium">{item.text}</span>

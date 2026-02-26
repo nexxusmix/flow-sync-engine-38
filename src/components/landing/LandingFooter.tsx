@@ -1,31 +1,40 @@
-import { motion } from "framer-motion";
 import squadLogo from "@/assets/squad-hub-logo.png";
 
-export function LandingFooter() {
-  return (
-    <footer className="relative z-10 px-6 md:px-12 py-10 border-t border-border/30">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <motion.div
-            className="flex items-center gap-3"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            <img src={squadLogo} alt="SQUAD Hub" className="h-8 max-h-8 object-contain opacity-50" />
-          </motion.div>
+const marqueeItems = [
+  "SQUAD HUB",
+  "•",
+  "Produtora + Marketing",
+  "•",
+  "Tecnologia Brasileira",
+  "•",
+  "Preço Justo",
+  "•",
+  "Mentalidade Global",
+  "•",
+  "powered by SQUAD",
+  "•",
+];
 
-          <div className="text-center md:text-right">
-            <p className="text-sm text-foreground/60 mb-1">
-              Produtora + Marketing em um só lugar.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              © 2026 HUB · Tecnologia Brasileira · Preço Justo · Mentalidade Global
-            </p>
-            <p className="text-[10px] text-muted-foreground/40 mt-1">
-              powered by SQUAD
-            </p>
-          </div>
+export function LandingFooter() {
+  const marqueeText = marqueeItems.join("  ");
+
+  return (
+    <footer className="relative z-10 border-t border-border/30">
+      {/* Marquee */}
+      <div className="overflow-hidden py-4 border-b border-border/10">
+        <div className="marquee">
+          <span className="marquee-content text-xs uppercase tracking-[0.3em] text-muted-foreground/40 font-light">
+            {marqueeText}&nbsp;&nbsp;{marqueeText}&nbsp;&nbsp;
+          </span>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <img src={squadLogo} alt="SQUAD Hub" className="h-6 max-h-6 object-contain opacity-40" />
+          <p className="text-xs text-muted-foreground/40">
+            © 2026 SQUAD HUB · Todos os direitos reservados
+          </p>
         </div>
       </div>
     </footer>
