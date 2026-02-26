@@ -12,6 +12,7 @@ import { UndoRedoProvider } from "./components/layout/UndoRedoProvider";
 import { BackgroundUploadIndicator } from "./components/ui/BackgroundUploadIndicator";
 
 import Dashboard from "./pages/Dashboard";
+import ExecutiveDashboardPage from "./pages/ExecutiveDashboardPage";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
@@ -139,6 +140,7 @@ function AppRoutes() {
       {/* Invite accept page — always public so the token hash can be processed */}
       <Route path="/auth" element={<AcceptInvitePage />} />
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <LandingPage />} />
+      <Route path="/executivo" element={<ProtectedRoute><ExecutiveDashboardPage /></ProtectedRoute>} />
       <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
       <Route path="/tarefas" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
       <Route path="/avisos" element={<ProtectedRoute><AlertsBoardPage /></ProtectedRoute>} />
