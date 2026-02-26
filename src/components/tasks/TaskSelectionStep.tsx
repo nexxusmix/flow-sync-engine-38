@@ -1,9 +1,26 @@
 import { useState, useMemo } from 'react';
-import { Check, Brain, Minus, Search, ArrowUpDown, Calendar, AlertTriangle } from 'lucide-react';
+import { Check, Brain, Minus, Search, ArrowUpDown, AlertTriangle, GripVertical, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { isPast, parseISO, isToday, format } from 'date-fns';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '@/hooks/useTasksUnified';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -20,20 +37,61 @@ const PRIORITY_DOT: Record<string, string> = {
 };
 
 type StatusFilter = 'all' | 'today' | 'week' | 'urgent';
+type Step = 'select' | 'reorder';
 
 interface TaskSelectionStepProps {
   tasks: Task[];
-  onConfirm: (selectedIds: Set<string>) => void;
+  onConfirm: (orderedIds: string[]) => void;
 }
 
+/* ── Sortable item ─────────────────────────────────────── */
+function SortableTask({ task, index }: { task: Task; index: number }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  const priorityColor = PRIORITY_DOT[task.priority] || PRIORITY_DOT.normal;
+  const overdue = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && task.status !== 'done';
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-card/50 border border-border/30 transition-shadow",
+        isDragging && "shadow-lg shadow-primary/10 z-50 opacity-90"
+      )}
+    >
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground">
+        <GripVertical className="w-3.5 h-3.5" />
+      </div>
+      <span className="text-[10px] font-mono text-muted-foreground/50 w-4 text-right shrink-0">{index + 1}</span>
+      <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", priorityColor)} />
+      <span className="flex-1 text-[12px] text-foreground/80 font-medium truncate">{task.title}</span>
+      <span className="text-[9px] font-mono text-muted-foreground/50 uppercase">{CATEGORY_LABELS[task.category] || task.category}</span>
+      {task.due_date && (
+        <span className={cn("text-[9px] font-mono flex items-center gap-0.5 shrink-0", overdue ? "text-red-400" : "text-muted-foreground")}>
+          {overdue && <AlertTriangle className="w-2.5 h-2.5" />}
+          {format(parseISO(task.due_date), 'dd/MM')}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ── Main component ────────────────────────────────────── */
 export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(tasks.map(t => t.id)));
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [step, setStep] = useState<Step>('select');
+  const [orderedTasks, setOrderedTasks] = useState<Task[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const filteredTasks = useMemo(() => {
     let result = tasks;
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(t =>
@@ -41,18 +99,14 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
         t.tags?.some(tag => tag.toLowerCase().includes(q))
       );
     }
-
-    if (statusFilter === 'today') {
-      result = result.filter(t => t.status === 'today');
-    } else if (statusFilter === 'week') {
-      result = result.filter(t => t.status === 'week');
-    } else if (statusFilter === 'urgent') {
+    if (statusFilter === 'today') result = result.filter(t => t.status === 'today');
+    else if (statusFilter === 'week') result = result.filter(t => t.status === 'week');
+    else if (statusFilter === 'urgent') {
       result = result.filter(t =>
         t.priority === 'urgent' || t.priority === 'high' ||
         (t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date)))
       );
     }
-
     return result;
   }, [tasks, searchQuery, statusFilter]);
 
@@ -90,6 +144,23 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
     });
   };
 
+  const goToReorder = () => {
+    const selected = tasks.filter(t => selectedIds.has(t.id));
+    setOrderedTasks(selected);
+    setStep('reorder');
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setOrderedTasks(prev => {
+        const oldIndex = prev.findIndex(t => t.id === active.id);
+        const newIndex = prev.findIndex(t => t.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
+
   const allFilteredIds = filteredTasks.map(t => t.id);
   const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedIds.has(id));
   const noneSelected = !allFilteredIds.some(id => selectedIds.has(id));
@@ -104,6 +175,44 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
     { key: 'urgent', label: 'Urgentes' },
   ];
 
+  /* ── Reorder step ──────────────────────────────────────── */
+  if (step === 'reorder') {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setStep('select')} className="text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-mono">
+            Ordenar execução · {orderedTasks.length} tarefas
+          </p>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Arraste para definir a ordem de execução. A primeira tarefa será executada primeiro.
+        </p>
+
+        <div className="space-y-1 max-h-[45vh] overflow-y-auto pr-1">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={orderedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              {orderedTasks.map((task, idx) => (
+                <SortableTask key={task.id} task={task} index={idx} />
+              ))}
+            </SortableContext>
+          </DndContext>
+        </div>
+
+        <Button
+          onClick={() => onConfirm(orderedTasks.map(t => t.id))}
+          className="w-full gap-2"
+        >
+          <Brain className="w-4 h-4" />
+          Gerar Plano ({orderedTasks.length} {orderedTasks.length === 1 ? 'tarefa' : 'tarefas'})
+        </Button>
+      </div>
+    );
+  }
+
+  /* ── Select step ───────────────────────────────────────── */
   return (
     <div className="space-y-3">
       {/* Search */}
@@ -218,13 +327,8 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
                       )}>
                         {checked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
                       </div>
-
-                      {/* Priority dot */}
                       <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", priorityColor)} />
-
                       <span className="flex-1 text-[12px] text-foreground/80 font-medium truncate">{task.title}</span>
-
-                      {/* Due date */}
                       {task.due_date && (
                         <span className={cn(
                           "text-[9px] font-mono flex items-center gap-0.5 shrink-0",
@@ -234,8 +338,6 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
                           {format(parseISO(task.due_date), 'dd/MM')}
                         </span>
                       )}
-
-                      {/* Tags */}
                       {!task.due_date && task.tags?.length > 0 && (
                         <span className="text-[9px] text-muted-foreground/60 font-mono truncate max-w-[100px]">
                           {task.tags.slice(0, 2).join(', ')}
@@ -250,14 +352,14 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
         })}
       </div>
 
-      {/* Confirm */}
+      {/* Next: reorder step */}
       <Button
-        onClick={() => onConfirm(selectedIds)}
+        onClick={goToReorder}
         disabled={selectedIds.size === 0}
         className="w-full gap-2"
       >
         <Brain className="w-4 h-4" />
-        Gerar Plano ({selectedIds.size} {selectedIds.size === 1 ? 'tarefa' : 'tarefas'})
+        Ordenar e Gerar Plano ({selectedIds.size} {selectedIds.size === 1 ? 'tarefa' : 'tarefas'})
       </Button>
     </div>
   );

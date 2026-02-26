@@ -107,11 +107,13 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
     setError(null);
   };
 
-  const generatePlan = async (selectedIds: Set<string>) => {
+  const generatePlan = async (orderedIds: string[]) => {
     setShowSelection(false);
     setIsLoading(true);
     setError(null);
-    const tasksToSend = pendingTasks.filter(t => selectedIds.has(t.id));
+    const idSet = new Set(orderedIds);
+    const tasksMap = new Map(pendingTasks.map(t => [t.id, t]));
+    const tasksToSend = orderedIds.map(id => tasksMap.get(id)).filter(Boolean) as typeof pendingTasks;
     try {
       const { data, error: fnError } = await supabase.functions.invoke('generate-execution-blocks', {
         body: {
