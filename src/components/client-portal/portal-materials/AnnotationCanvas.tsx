@@ -11,6 +11,7 @@
 
 import { memo, useRef, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Portal } from "@/components/ui/Portal";
 import {
   Pencil,
   ArrowRight,
@@ -330,14 +331,16 @@ function AnnotationCanvasComponent({
 
   if (!imageLoaded) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
-        <div className="text-white">Carregando...</div>
-      </div>
+      <Portal>
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
+          <div className="text-white">Carregando...</div>
+        </div>
+      </Portal>
     );
   }
 
   return (
-    <motion.div
+    <Portal><motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -481,7 +484,7 @@ function AnnotationCanvasComponent({
           onTouchEnd={handleTouchEnd}
         />
       </div>
-    </motion.div>
+    </motion.div></Portal>
   );
 }
 

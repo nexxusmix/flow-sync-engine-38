@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Portal } from '@/components/ui/Portal';
 import type { Alert } from '@/hooks/useAlerts';
 
 interface AIComposerDrawerProps {
@@ -128,7 +129,7 @@ export function AIComposerDrawer({ open, onOpenChange, alert, projectContext }: 
   };
 
   return (
-    <AnimatePresence>
+    <Portal><AnimatePresence>
       {open && (
         <>
           <motion.div
@@ -288,6 +289,6 @@ export function AIComposerDrawer({ open, onOpenChange, alert, projectContext }: 
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence></Portal>
   );
 }

@@ -3,6 +3,7 @@ import { Search, X, FolderKanban, FileText, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProjects } from "@/hooks/useProjects";
 import { useFinancialStore } from "@/stores/financialStore";
+import { Portal } from "@/components/ui/Portal";
 
 interface SearchModalProps {
   open: boolean;
@@ -120,7 +121,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   }, {} as Record<string, SearchResult[]>);
 
   return (
-    <>
+    <Portal>
       {/* Backdrop */}
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
@@ -204,6 +205,6 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           <span>Esc Fechar</span>
         </div>
       </div>
-    </>
+    </Portal>
   );
 }

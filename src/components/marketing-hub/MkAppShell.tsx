@@ -8,6 +8,7 @@ import { SearchModal } from "@/components/search/SearchModal";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Portal } from "@/components/ui/Portal";
 import "@/styles/mk-holographic.css";
 
 interface MkAppShellProps {
@@ -50,12 +51,12 @@ export function MkAppShell({ children, title, sectionCode, sectionLabel }: MkApp
       {/* Mobile Sidebar */}
       <AnimatePresence>
         {isMobile && mobileSidebarOpen && (
-          <>
+          <Portal>
             <motion.div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileSidebarOpen(false)} />
             <motion.div className="fixed left-0 top-0 z-50 h-[100dvh]" initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: "spring", stiffness: 300, damping: 30 }}>
               <MkSidebar collapsed={false} onToggle={() => setMobileSidebarOpen(false)} />
             </motion.div>
-          </>
+          </Portal>
         )}
       </AnimatePresence>
 

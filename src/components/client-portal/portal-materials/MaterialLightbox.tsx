@@ -5,6 +5,7 @@
 
 import { memo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Portal } from "@/components/ui/Portal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -119,7 +120,7 @@ function MaterialLightboxComponent({
   };
 
   return (
-    <AnimatePresence>
+    <Portal><AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -354,7 +355,7 @@ function MaterialLightboxComponent({
           </div>
         </div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence></Portal>
   );
 }
 
