@@ -57,6 +57,7 @@ import ContractSettingsPage from "./pages/settings/ContractSettingsPage";
 import MarketingSettingsPage from "./pages/settings/MarketingSettingsPage";
 import ProspectingSettingsPage from "./pages/settings/ProspectingSettingsPage";
 import IntegrationsSettingsPage from "./pages/settings/IntegrationsSettingsPage";
+import IntegrationsPage from "./pages/settings/IntegrationsPage";
 import NotificationSettingsPage from "./pages/settings/NotificationSettingsPage";
 import BrandingSettingsPage from "./pages/settings/BrandingSettingsPage";
 import AuditSettingsPage from "./pages/settings/AuditSettingsPage";
@@ -221,7 +222,7 @@ function AppRoutes() {
       <Route path="/configuracoes/contratos" element={<ProtectedRoute><ContractSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/marketing" element={<ProtectedRoute><MarketingSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/prospeccao" element={<ProtectedRoute><ProspectingSettingsPage /></ProtectedRoute>} />
-      <Route path="/configuracoes/integracoes" element={<ProtectedRoute><IntegrationsSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/integracoes" element={<ProtectedRoute><IntegrationsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/branding" element={<ProtectedRoute><BrandingSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/usuarios" element={<ProtectedRoute><UsersSettingsPage /></ProtectedRoute>} />
