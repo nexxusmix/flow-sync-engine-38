@@ -1,6 +1,6 @@
 // Contract Types for SQUAD Hub
 
-export type ContractStatus = 'draft' | 'active' | 'sent' | 'viewed' | 'signed' | 'completed' | 'cancelled' | 'expired';
+export type ContractStatus = 'draft' | 'active' | 'sent' | 'viewed' | 'signed' | 'completed' | 'cancelled' | 'expired' | 'terminated' | 'archived';
 export type ServiceType = 'filme' | 'reels' | 'foto' | 'drone' | 'tour360' | 'motion' | 'landing' | 'trafego' | 'pacote' | 'outro';
 export type RenewalType = 'none' | 'monthly' | 'quarterly' | 'yearly';
 export type SignatureType = 'accept_click' | 'upload_signed_pdf' | 'govbr';
@@ -137,6 +137,8 @@ export const STATUS_CONFIG: Record<ContractStatus, { label: string; color: strin
   completed: { label: 'Concluído', color: 'bg-primary/20 text-primary' },
   cancelled: { label: 'Cancelado', color: 'bg-red-500/20 text-red-500' },
   expired: { label: 'Expirado', color: 'bg-zinc-500/20 text-zinc-500' },
+  terminated: { label: 'Encerrado', color: 'bg-orange-500/20 text-orange-500' },
+  archived: { label: 'Arquivado', color: 'bg-slate-500/20 text-slate-500' },
 };
 
 export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {

@@ -9,7 +9,8 @@ import {
 } from "@/types/contracts";
 import {
   FileSignature, Save, Eye, Link2, Plus, ArrowLeft, History, FileText,
-  Users, Calendar, DollarSign, AlertTriangle, Check, Upload, Banknote, Loader2, ScanLine
+  Users, Calendar, DollarSign, AlertTriangle, Check, Upload, Banknote, Loader2, ScanLine,
+  MoreVertical, Trash2, Archive, XCircle, CheckCircle2, Ban
 } from "lucide-react";
 import { SignatureScanPanel } from "@/components/contracts/SignatureScanPanel";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,13 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -51,6 +59,45 @@ export default function ContractDetailPage() {
   const [variables, setVariables] = useState(DEFAULT_CONTRACT_VARIABLES);
   const [showAddendumModal, setShowAddendumModal] = useState(false);
   const [newAddendum, setNewAddendum] = useState({ title: "", body: "" });
+  const [confirmAction, setConfirmAction] = useState<{ type: ContractStatus | 'delete'; label: string; description: string } | null>(null);
+
+  const handleContractAction = async (action: ContractStatus | 'delete') => {
+    if (!contract) return;
+
+    if (action === 'delete') {
+      // Delete contract and related data
+      await supabase.from('contract_versions').delete().eq('contract_id', contract.id);
+      await supabase.from('contract_addendums').delete().eq('contract_id', contract.id);
+      await supabase.from('contract_links').delete().eq('contract_id', contract.id);
+      await supabase.from('contract_signatures').delete().eq('contract_id', contract.id);
+      await supabase.from('contract_alerts').delete().eq('contract_id', contract.id);
+      const { error } = await supabase.from('contracts').delete().eq('id', contract.id);
+      if (error) {
+        toast.error("Erro ao excluir contrato");
+        return;
+      }
+      toast.success("Contrato excluído");
+      navigate('/contratos');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('contracts')
+      .update({ status: action, updated_at: new Date().toISOString() })
+      .eq('id', contract.id);
+
+    if (error) {
+      toast.error("Erro ao atualizar status");
+      return;
+    }
+
+    const labels: Record<string, string> = {
+      completed: 'concluído', cancelled: 'cancelado', terminated: 'encerrado', archived: 'arquivado',
+    };
+    toast.success(`Contrato ${labels[action] || action}!`);
+    setConfirmAction(null);
+    fetchContract();
+  };
 
   useEffect(() => {
     if (contractId) {
@@ -349,6 +396,75 @@ export default function ContractDetailPage() {
               <Save className="w-4 h-4 mr-2" />
               {saving ? "Salvando..." : "Salvar"}
             </Button>
+
+            {/* Actions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {contract.status !== 'completed' && contract.status !== 'cancelled' && contract.status !== 'archived' && (
+                  <DropdownMenuItem
+                    onClick={() => setConfirmAction({
+                      type: 'completed',
+                      label: 'Concluir Contrato',
+                      description: 'O contrato será marcado como concluído. Essa ação pode ser revertida.'
+                    })}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" />
+                    Concluir
+                  </DropdownMenuItem>
+                )}
+                {contract.status !== 'terminated' && contract.status !== 'cancelled' && contract.status !== 'archived' && (
+                  <DropdownMenuItem
+                    onClick={() => setConfirmAction({
+                      type: 'terminated',
+                      label: 'Encerrar Contrato',
+                      description: 'O contrato será encerrado antecipadamente. Parcelas pendentes não serão afetadas.'
+                    })}
+                  >
+                    <Ban className="w-4 h-4 mr-2 text-orange-500" />
+                    Encerrar
+                  </DropdownMenuItem>
+                )}
+                {contract.status !== 'cancelled' && contract.status !== 'archived' && (
+                  <DropdownMenuItem
+                    onClick={() => setConfirmAction({
+                      type: 'cancelled',
+                      label: 'Cancelar Contrato',
+                      description: 'O contrato será cancelado. Essa ação pode ser revertida.'
+                    })}
+                  >
+                    <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                    Cancelar
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={() => setConfirmAction({
+                    type: 'archived',
+                    label: 'Arquivar Contrato',
+                    description: 'O contrato será arquivado e não aparecerá mais na listagem principal.'
+                  })}
+                >
+                  <Archive className="w-4 h-4 mr-2 text-slate-500" />
+                  Arquivar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setConfirmAction({
+                    type: 'delete',
+                    label: 'Excluir Contrato',
+                    description: 'O contrato e todos os dados relacionados (versões, aditivos, assinaturas) serão excluídos permanentemente. Essa ação NÃO pode ser desfeita.'
+                  })}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -926,6 +1042,25 @@ export default function ContractDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Action Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={() => setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmAction?.label}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmAction?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className={confirmAction?.type === 'delete' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+              onClick={() => confirmAction && handleContractAction(confirmAction.type)}
+            >
+              {confirmAction?.type === 'delete' ? 'Excluir permanentemente' : 'Confirmar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
