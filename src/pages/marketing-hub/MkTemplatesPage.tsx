@@ -13,8 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Sparkles, FileText, Copy, Check, ChevronLeft, Wand2, Camera, LayoutGrid,
-  MessageSquare, Palette, Loader2, Film, Image as ImageIcon, BookOpen
+  MessageSquare, Palette, Loader2, Film, Image as ImageIcon, BookOpen,
+  Plus, Pencil, Trash2, Lock
 } from "lucide-react";
+import { CustomTemplateDialog } from "@/components/marketing-hub/CustomTemplateDialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TemplateVar { key: string; label: string; default_value: string; }
 interface TemplateSection { key: string; label: string; ai_instruction: string; }
@@ -65,6 +71,10 @@ export default function MkTemplatesPage() {
   const [generation, setGeneration] = useState<Generation | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [filterFormat, setFilterFormat] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [filterOwnership, setFilterOwnership] = useState<"all" | "system" | "custom">("all");
 
   useEffect(() => {
     fetchTemplates();
@@ -141,7 +151,16 @@ export default function MkTemplatesPage() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const filtered = filterFormat ? templates.filter(t => t.format === filterFormat) : templates;
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("content_templates").delete().eq("id", id);
+    if (error) toast.error("Erro ao excluir template");
+    else { toast.success("Template excluído"); fetchTemplates(); }
+    setDeletingId(null);
+  };
+
+  const filtered = templates
+    .filter(t => !filterFormat || t.format === filterFormat)
+    .filter(t => filterOwnership === "all" ? true : filterOwnership === "system" ? t.is_system : !t.is_system);
 
   // ── Template Grid View ──
   if (!selectedTemplate) {
@@ -154,10 +173,34 @@ export default function MkTemplatesPage() {
               <BookOpen className="w-4 h-4 text-[hsl(195,100%,50%)]" />
             </div>
             <div>
-              <h1 className="text-lg font-medium text-white/90 tracking-tight">Templates de Conteúdo</h1>
-              <p className="text-[11px] text-white/30">Biblioteca de formatos reutilizáveis com geração IA</p>
+              <h1 className="text-lg font-medium text-foreground tracking-tight">Templates de Conteúdo</h1>
+              <p className="text-[11px] text-muted-foreground">Biblioteca de formatos reutilizáveis com geração IA</p>
             </div>
           </div>
+          <Button size="sm" className="gap-1.5 text-xs" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="w-3.5 h-3.5" /> Novo Template
+          </Button>
+        </div>
+        {/* Ownership filter */}
+        <div className="flex gap-2 mb-2">
+          {(["all", "system", "custom"] as const).map(key => {
+            const labels = { all: "Todos", system: "Sistema", custom: "Meus Templates" };
+            return (
+              <button
+                key={key}
+                onClick={() => setFilterOwnership(key)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.1em] font-medium border transition-all",
+                  filterOwnership === key
+                    ? "bg-primary/10 border-primary/30 text-primary"
+                    : "border-border/20 text-muted-foreground hover:text-foreground hover:border-border/40"
+                )}
+              >
+                {key === "system" && <Lock className="w-2.5 h-2.5 inline mr-1" />}
+                {labels[key]}
+              </button>
+            );
+          })}
         </div>
 
         {/* Format filter pills */}
@@ -225,10 +268,31 @@ export default function MkTemplatesPage() {
                         <p className="text-[11px] text-white/30 mt-0.5 line-clamp-2">{t.description}</p>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-white/20 uppercase tracking-wider">
-                          {CATEGORY_LABELS[t.category || "geral"]}
-                        </span>
-                        <span className="text-[9px] text-white/15 font-mono">{t.use_count}× usado</span>
+                        <div className="flex items-center gap-1.5">
+                          {t.is_system && <Lock className="w-2.5 h-2.5 text-muted-foreground/30" />}
+                          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">
+                            {CATEGORY_LABELS[t.category || "geral"]}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {!t.is_system && (
+                            <>
+                              <button
+                                onClick={e => { e.stopPropagation(); setEditingTemplate(t); }}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted/30 transition-all"
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setDeletingId(t.id); }}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 transition-all"
+                              >
+                                <Trash2 className="w-3 h-3 text-destructive/60" />
+                              </button>
+                            </>
+                          )}
+                          <span className="text-[9px] text-muted-foreground/30 font-mono">{t.use_count}×</span>
+                        </div>
                       </div>
                     </div>
                   </MkCard>
@@ -237,6 +301,42 @@ export default function MkTemplatesPage() {
             })}
           </div>
         )}
+
+        {/* Create/Edit Dialog */}
+        <CustomTemplateDialog
+          open={showCreateDialog || !!editingTemplate}
+          onOpenChange={open => { if (!open) { setShowCreateDialog(false); setEditingTemplate(null); } }}
+          editTemplate={editingTemplate ? {
+            id: editingTemplate.id,
+            title: editingTemplate.title,
+            description: editingTemplate.description || "",
+            format: editingTemplate.format,
+            category: editingTemplate.category || "geral",
+            thumbnail_emoji: editingTemplate.thumbnail_emoji || "📝",
+            prompt_template: editingTemplate.prompt_template || "",
+            variables: editingTemplate.variables || [],
+            sections: editingTemplate.sections || [],
+          } : null}
+          onSaved={fetchTemplates}
+        />
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deletingId} onOpenChange={open => !open && setDeletingId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-sm">Excluir template?</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs">
+                Esta ação não pode ser desfeita. O template será removido permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="text-xs h-8">Cancelar</AlertDialogCancel>
+              <AlertDialogAction className="text-xs h-8 bg-destructive hover:bg-destructive/90" onClick={() => deletingId && handleDelete(deletingId)}>
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
