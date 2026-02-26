@@ -9,29 +9,26 @@ interface PageTransitionProps {
 const pageVariants = {
   initial: {
     opacity: 0,
-    scale: 0.96,
-    filter: "blur(6px)",
-    y: 12,
+    y: 8,
+    filter: "blur(4px)",
   },
   animate: {
     opacity: 1,
-    scale: 1,
-    filter: "blur(0px)",
     y: 0,
+    filter: "blur(0px)",
   },
   exit: {
     opacity: 0,
-    scale: 0.97,
-    filter: "blur(4px)",
-    y: -8,
+    y: -6,
+    filter: "blur(3px)",
   },
 };
 
 const pageTransition = {
   type: "spring" as const,
-  stiffness: 100,
-  damping: 20,
-  mass: 0.8,
+  stiffness: 200,
+  damping: 24,
+  mass: 0.6,
 };
 
 export function PageTransition({ children }: PageTransitionProps) {
