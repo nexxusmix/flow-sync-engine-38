@@ -39,6 +39,24 @@ const PRIORITY_DOT: Record<string, string> = {
 type StatusFilter = 'all' | 'today' | 'week' | 'urgent';
 type Step = 'select' | 'reorder';
 
+const ESTIMATED_MINUTES: Record<string, number> = {
+  urgent: 45,
+  high: 35,
+  normal: 25,
+  low: 15,
+};
+
+function estimateTotal(tasks: Task[]): number {
+  return tasks.reduce((sum, t) => sum + (ESTIMATED_MINUTES[t.priority] || 25), 0);
+}
+
+function formatTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `~${m}min`;
+  return m > 0 ? `~${h}h ${m}min` : `~${h}h`;
+}
+
 interface TaskSelectionStepProps {
   tasks: Task[];
   onConfirm: (orderedIds: string[]) => void;
@@ -206,7 +224,7 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
           className="w-full gap-2"
         >
           <Brain className="w-4 h-4" />
-          Gerar Plano ({orderedTasks.length} {orderedTasks.length === 1 ? 'tarefa' : 'tarefas'})
+          Gerar Plano ({orderedTasks.length} {orderedTasks.length === 1 ? 'tarefa' : 'tarefas'}) · {formatTime(estimateTotal(orderedTasks))}
         </Button>
       </div>
     );
@@ -359,7 +377,7 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
         className="w-full gap-2"
       >
         <Brain className="w-4 h-4" />
-        Ordenar e Gerar Plano ({selectedIds.size} {selectedIds.size === 1 ? 'tarefa' : 'tarefas'})
+        Ordenar e Gerar ({selectedIds.size} {selectedIds.size === 1 ? 'tarefa' : 'tarefas'}) · {formatTime(estimateTotal(tasks.filter(t => selectedIds.has(t.id))))}
       </Button>
     </div>
   );
