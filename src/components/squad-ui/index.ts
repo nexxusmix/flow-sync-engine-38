@@ -6,4 +6,4 @@ export { ActionButton } from './ActionButton';
 export { AIButton } from './AIButton';
 export { DataGlow } from './DataGlow';
 export { ProjectedTable, ProjectedTableRow, ProjectedTableCell } from './ProjectedTable';
-export { ScrollMotion, ScrollMotionWord, ScrollMotionStagger, ScrollMotionItem, ScrollMotionAccordion, StickyLabel } from './ScrollMotion';
+export { ScrollMotion, ScrollMotionWord, ScrollMotionStagger, ScrollMotionItem, ScrollMotionAccordion, ScrollMotionParallax, StickyLabel } from './ScrollMotion';
