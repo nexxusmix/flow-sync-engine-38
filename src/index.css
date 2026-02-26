@@ -1242,6 +1242,36 @@
     transform: scale(1.015);
   }
 
+  /* Sidebar links — opacity hover */
+  .sidebar-link {
+    transition: opacity 0.25s ease, background-color 0.2s ease;
+  }
+  .sidebar-link:not(.sidebar-link--active):hover {
+    opacity: 0.7;
+  }
+
+  /* Table rows — subtle hover */
+  .table-row-hover {
+    transition: background-color 0.2s ease;
+  }
+  .table-row-hover:hover {
+    background-color: hsl(var(--muted) / 0.4);
+  }
+
+  /* Dashboard main — smooth scroll */
+  .dashboard-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /* Modal entrance — soft scale+fade */
+  .modal-enter {
+    animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes modalEnter {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); filter: blur(4px); }
+    to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+  }
+
   /* ========================================
      SONANCE PRIMITIVES
      ========================================*/

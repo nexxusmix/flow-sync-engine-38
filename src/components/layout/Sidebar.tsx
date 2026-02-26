@@ -113,9 +113,9 @@ function SidebarMenuItem({
         <button
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group relative",
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group relative sidebar-link",
             groupActive
-              ? "text-primary"
+              ? "text-primary sidebar-link--active"
               : "text-muted-foreground/80 hover:text-foreground hover:bg-white/[0.04]"
           )}
         >
@@ -157,9 +157,9 @@ function SidebarMenuItem({
                       key={child.name}
                       to={child.href}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 group relative",
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 group relative sidebar-link",
                         childActive
-                          ? "bg-white text-black"
+                          ? "bg-white text-black sidebar-link--active"
                           : "text-muted-foreground/80 hover:text-foreground hover:bg-white/[0.04]"
                       )}
                     >
@@ -211,9 +211,9 @@ function SidebarMenuItem({
           to={item.href}
           title={item.name}
           className={cn(
-            "w-full flex items-center justify-center px-2 py-2.5 rounded-lg transition-all duration-150 group relative",
+            "w-full flex items-center justify-center px-2 py-2.5 rounded-lg transition-all duration-150 group relative sidebar-link",
             groupActive
-              ? "bg-white text-black"
+              ? "bg-white text-black sidebar-link--active"
               : "text-muted-foreground/80 hover:text-foreground hover:bg-white/[0.04]"
           )}
         >
@@ -243,9 +243,9 @@ function SidebarMenuItem({
         to={item.href}
         title={collapsed ? item.name : undefined}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group relative",
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group relative sidebar-link",
           isActive
-            ? "bg-white text-black"
+            ? "bg-white text-black sidebar-link--active"
             : "text-muted-foreground/80 hover:text-foreground hover:bg-white/[0.04]",
           collapsed && "justify-center px-2"
         )}

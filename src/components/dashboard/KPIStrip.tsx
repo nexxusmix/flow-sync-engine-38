@@ -17,9 +17,23 @@ interface KPICardData {
   value: string | number;
   icon: React.ElementType;
   href: string;
-  accent: string; // tailwind text color class
-  bgAccent: string; // tailwind bg color class
+  accent: string;
+  bgAccent: string;
 }
+
+const maskContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.3 } },
+};
+
+const maskChild = {
+  hidden: { y: "100%", opacity: 0 },
+  visible: {
+    y: "0%",
+    opacity: 1,
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
+  },
+};
 
 export function KPIStrip() {
   const kpi = useKPIMetrics();
@@ -84,24 +98,17 @@ export function KPIStrip() {
   return (
     <motion.div
       className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"
-      initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ delay: 0.3, type: "spring", stiffness: 80, damping: 18 }}
+      variants={maskContainer}
+      initial="hidden"
+      animate="visible"
     >
       {cards.map((card, idx) => (
         <motion.div
           key={card.label}
-          initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{
-            delay: 0.32 + idx * 0.05,
-            type: "spring",
-            stiffness: 120,
-            damping: 20,
-          }}
+          variants={maskChild}
         >
           <Link to={card.href} className="block h-full">
-            <div className="glass-card rounded-xl p-4 flex flex-col gap-3 h-full hover:border-primary/30 hover:bg-muted/40 transition-all group cursor-pointer">
+            <div className="glass-card rounded-xl p-4 flex flex-col gap-3 h-full hover:border-primary/15 hover:bg-muted/30 transition-all group cursor-pointer hover-card-zoom">
               {/* Icon + label row */}
               <div className="flex items-center gap-2">
                 <div
@@ -114,14 +121,21 @@ export function KPIStrip() {
                 </span>
               </div>
 
-              {/* Value */}
+              {/* Value — text mask reveal */}
               <div>
                 {kpi.isLoading ? (
                   <div className="h-6 w-12 bg-muted/50 rounded animate-pulse" />
                 ) : (
-                  <p className={`text-xl font-normal ${card.accent} leading-none`}>
-                    {card.value}
-                  </p>
+                  <span className="overflow-hidden inline-block">
+                    <motion.p
+                      className={`text-xl font-normal ${card.accent} leading-none`}
+                      initial={{ y: "100%", opacity: 0 }}
+                      animate={{ y: "0%", opacity: 1 }}
+                      transition={{ delay: 0.4 + idx * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      {card.value}
+                    </motion.p>
+                  </span>
                 )}
                 <p className="text-[9px] text-muted-foreground/60 font-light mt-1 uppercase tracking-wider">
                   {card.sublabel}
