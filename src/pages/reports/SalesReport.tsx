@@ -4,13 +4,14 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useReportMetrics } from "@/hooks/useReportMetrics";
 import { SalesMetrics } from "@/types/reports";
 import {
-  TrendingUp, ArrowLeft, Download, FileText, Eye, CheckCircle, XCircle
+  TrendingUp, ArrowLeft, Download, FileText, Eye, CheckCircle, XCircle, Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { useExportPdf } from "@/hooks/useExportPdf";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
@@ -20,6 +21,7 @@ const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 export default function SalesReport() {
   const navigate = useNavigate();
   const { fetchSalesMetrics } = useReportMetrics();
+  const { isExporting, exportFinance } = useExportPdf();
 
   const [metrics, setMetrics] = useState<SalesMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,9 +80,9 @@ export default function SalesReport() {
               <p className="text-sm text-muted-foreground">Funil e performance comercial</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" disabled>
-            <Download className="w-4 h-4 mr-2" />
-            Exportar PDF
+          <Button variant="outline" size="sm" disabled={isExporting} onClick={() => exportFinance("6m")}>
+            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            {isExporting ? "Gerando..." : "Exportar PDF"}
           </Button>
         </div>
 

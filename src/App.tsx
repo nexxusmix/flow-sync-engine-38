@@ -46,6 +46,7 @@ import FinanceReportPage from "./pages/reports/FinanceReportPage";
 import MarketingReport from "./pages/reports/MarketingReport";
 import ProjectsReport from "./pages/reports/ProjectsReport";
 import ClientsReport from "./pages/reports/ClientsReport";
+import CRMReport from "./pages/reports/CRMReport";
 // Settings Pages
 import SettingsDashboard from "./pages/settings/SettingsDashboard";
 import WorkspaceSettingsPage from "./pages/settings/WorkspaceSettingsPage";
@@ -212,6 +213,7 @@ function AppRoutes() {
       <Route path="/relatorios/marketing" element={<ProtectedRoute><MarketingReport /></ProtectedRoute>} />
       <Route path="/relatorios/projetos" element={<ProtectedRoute><ProjectsReport /></ProtectedRoute>} />
       <Route path="/relatorios/clientes" element={<ProtectedRoute><ClientsReport /></ProtectedRoute>} />
+      <Route path="/relatorios/crm" element={<ProtectedRoute><CRMReport /></ProtectedRoute>} />
       {/* Configurações */}
       <Route path="/configuracoes" element={<ProtectedRoute><SettingsDashboard /></ProtectedRoute>} />
       <Route path="/configuracoes/workspace" element={<ProtectedRoute><WorkspaceSettingsPage /></ProtectedRoute>} />

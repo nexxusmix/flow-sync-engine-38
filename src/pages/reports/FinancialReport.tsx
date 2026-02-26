@@ -5,13 +5,14 @@ import { useReportMetrics } from "@/hooks/useReportMetrics";
 import { FinancialMetrics } from "@/types/reports";
 import {
   DollarSign, ArrowLeft, Download, TrendingUp, TrendingDown, AlertTriangle,
-  Clock, CheckCircle, Ban
+  Clock, CheckCircle, Ban, Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { useExportPdf } from "@/hooks/useExportPdf";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line
 } from "recharts";
@@ -19,7 +20,7 @@ import {
 export default function FinancialReport() {
   const navigate = useNavigate();
   const { fetchFinancialMetrics } = useReportMetrics();
-
+  const { isExporting, exportFinance } = useExportPdf();
   const [metrics, setMetrics] = useState<FinancialMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -75,9 +76,9 @@ export default function FinancialReport() {
               <p className="text-sm text-muted-foreground">Real vs previsto</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" disabled>
-            <Download className="w-4 h-4 mr-2" />
-            Exportar PDF
+          <Button variant="outline" size="sm" disabled={isExporting} onClick={() => exportFinance("6m")}>
+            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            {isExporting ? "Gerando..." : "Exportar PDF"}
           </Button>
         </div>
 
