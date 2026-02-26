@@ -22,8 +22,12 @@ Deno.serve(async (req) => {
 
     // ACTION: oauth-url — generate Google OAuth URL
     if (action === "oauth-url") {
+      const { login_hint } = body;
       const scopes = "https://www.googleapis.com/auth/calendar";
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`;
+      let url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`;
+      if (login_hint) {
+        url += `&login_hint=${encodeURIComponent(login_hint)}`;
+      }
       return new Response(JSON.stringify({ url }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
