@@ -29,21 +29,31 @@ const variantMap: Record<ScrollMotionVariant, Variants> = {
     visible: { opacity: 1, scale: 1, filter: "blur(0px)", transition: { duration: 0.5, ease: "easeOut" } },
   },
   textMask: {
-    hidden: { opacity: 0, y: "100%", filter: "blur(2px)" },
+    hidden: {
+      clipPath: "inset(100% 0 0 0)",
+      y: "100%",
+      opacity: 0,
+    },
     visible: {
-      opacity: 1,
+      clipPath: "inset(0% 0 0 0)",
       y: "0%",
-      filter: "blur(0px)",
+      opacity: 1,
       transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
     },
   },
   imageReveal: {
-    hidden: { opacity: 0, scale: 1.08, filter: "blur(8px)" },
+    hidden: {
+      opacity: 0,
+      scale: 1.1,
+      filter: "blur(12px)",
+      clipPath: "inset(8% 8% 8% 8%)",
+    },
     visible: {
       opacity: 1,
       scale: 1,
       filter: "blur(0px)",
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      clipPath: "inset(0% 0% 0% 0%)",
+      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
     },
   },
 };
@@ -119,8 +129,9 @@ export function ScrollMotionWord({
   const wordVariants: Variants =
     variant === "textMask"
       ? {
-          hidden: { y: "100%", opacity: 0 },
+          hidden: { clipPath: "inset(100% 0 0 0)", y: "100%", opacity: 0 },
           visible: {
+            clipPath: "inset(0% 0 0 0)",
             y: "0%",
             opacity: 1,
             transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
@@ -221,14 +232,22 @@ export function ScrollMotionItem({ children, className }: ScrollMotionItemProps)
   );
 }
 
-// --- ScrollMotionAccordion: expand/collapse with spring ---
+// --- ScrollMotionAccordion: expand/collapse with refined spring physics ---
 interface ScrollMotionAccordionProps {
   children: ReactNode;
   isOpen: boolean;
   className?: string;
+  stiffness?: number;
+  damping?: number;
 }
 
-export function ScrollMotionAccordion({ children, isOpen, className }: ScrollMotionAccordionProps) {
+export function ScrollMotionAccordion({
+  children,
+  isOpen,
+  className,
+  stiffness = 140,
+  damping = 16,
+}: ScrollMotionAccordionProps) {
   return (
     <motion.div
       className={className}
@@ -236,35 +255,68 @@ export function ScrollMotionAccordion({ children, isOpen, className }: ScrollMot
       animate={{
         height: isOpen ? "auto" : 0,
         opacity: isOpen ? 1 : 0,
+        scale: isOpen ? 1 : 0.98,
       }}
-      transition={{ type: "spring", ...SPRING }}
-      style={{ overflow: "hidden" }}
+      transition={{
+        height: { type: "spring", stiffness, damping, mass: 0.8 },
+        opacity: { duration: 0.2, ease: "easeOut" },
+        scale: { type: "spring", stiffness: 200, damping: 20 },
+      }}
+      style={{ overflow: "hidden", transformOrigin: "top" }}
     >
       {children}
     </motion.div>
   );
 }
 
-// --- StickyLabel: section label that sticks to top during scroll ---
+// --- ScrollMotionParallax: parallax offset on scroll ---
+interface ScrollMotionParallaxProps {
+  children: ReactNode;
+  className?: string;
+  speed?: number; // -1 to 1, negative = opposite direction
+}
+
+export function ScrollMotionParallax({ children, className, speed = 0.15 }: ScrollMotionParallaxProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const rawY = useTransform(scrollYProgress, [0, 1], [speed * -100, speed * 100]);
+  const y = useSpring(rawY, { stiffness: 80, damping: 30 });
+
+  return (
+    <motion.div ref={ref} className={className} style={{ y, willChange: "transform" }}>
+      {children}
+    </motion.div>
+  );
+}
+
+// --- StickyLabel: section label that sticks to top and gets pushed by next ---
 interface StickyLabelProps {
   children: ReactNode;
   className?: string;
   offsetTop?: number;
+  zIndex?: number;
 }
 
-export function StickyLabel({ children, className, offsetTop = 80 }: StickyLabelProps) {
+export function StickyLabel({ children, className, offsetTop = 80, zIndex = 30 }: StickyLabelProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: false, margin: "-40px" });
+
   return (
     <div
-      className={`z-30 ${className ?? ""}`}
+      ref={ref}
+      className={className ?? ""}
       style={{
         position: "sticky",
         top: offsetTop,
+        zIndex,
       }}
     >
       <motion.div
-        initial={{ opacity: 0, x: -12 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
+        initial={{ opacity: 0, x: -16 }}
+        animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0.4, x: -8 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       >
         {children}
