@@ -19,6 +19,7 @@ const menuItems: MkMenuItem[] = [
   { name: "Campanhas", href: "/m/campanhas", icon: "campaign" },
   { name: "Conteúdos", href: "/m/conteudos", icon: "article" },
   { name: "Calendário", href: "/m/calendario", icon: "calendar_month" },
+  { name: "Instagram", href: "/m/instagram", icon: "photo_camera" },
   { name: "Branding", href: "/m/branding", icon: "palette" },
   { name: "Assets", href: "/m/assets", icon: "perm_media" },
   { name: "Aprovações", href: "/m/aprovacoes", icon: "check_circle" },
