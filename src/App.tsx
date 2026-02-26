@@ -98,6 +98,7 @@ import ReferencesPage from "./pages/marketing/ReferencesPage";
 import AutomationsPage from "./pages/marketing/AutomationsPage";
 import TranscribePage from "./pages/marketing/TranscribePage";
 import UnifiedCalendarPage from "./pages/CalendarPage";
+import AgendaPage from "./pages/AgendaPage";
 import TasksPage from "./pages/TasksPage";
 import AlertsBoardPage from "./pages/AlertsBoardPage";
 import ActionHubPage from "./pages/ActionHubPage";
@@ -145,6 +146,7 @@ function AppRoutes() {
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <LandingPage />} />
       <Route path="/executivo" element={<ProtectedRoute><ExecutiveDashboardPage /></ProtectedRoute>} />
       <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
+      <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
       <Route path="/tarefas" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
       <Route path="/avisos" element={<ProtectedRoute><AlertsBoardPage /></ProtectedRoute>} />
       <Route path="/central-acoes" element={<ProtectedRoute><ActionHubPage /></ProtectedRoute>} />

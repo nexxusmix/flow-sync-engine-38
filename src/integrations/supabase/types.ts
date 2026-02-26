@@ -1079,6 +1079,7 @@ export type Database = {
           description: string | null
           end_at: string
           event_type: string | null
+          google_event_id: string | null
           id: string
           location: string | null
           meet_url: string | null
@@ -1089,6 +1090,8 @@ export type Database = {
           recurrence: string | null
           related_id: string | null
           related_type: string | null
+          reminder_minutes: number[] | null
+          source: string
           start_at: string
           status: string | null
           timezone: string | null
@@ -1106,6 +1109,7 @@ export type Database = {
           description?: string | null
           end_at: string
           event_type?: string | null
+          google_event_id?: string | null
           id?: string
           location?: string | null
           meet_url?: string | null
@@ -1116,6 +1120,8 @@ export type Database = {
           recurrence?: string | null
           related_id?: string | null
           related_type?: string | null
+          reminder_minutes?: number[] | null
+          source?: string
           start_at: string
           status?: string | null
           timezone?: string | null
@@ -1133,6 +1139,7 @@ export type Database = {
           description?: string | null
           end_at?: string
           event_type?: string | null
+          google_event_id?: string | null
           id?: string
           location?: string | null
           meet_url?: string | null
@@ -1143,6 +1150,8 @@ export type Database = {
           recurrence?: string | null
           related_id?: string | null
           related_type?: string | null
+          reminder_minutes?: number[] | null
+          source?: string
           start_at?: string
           status?: string | null
           timezone?: string | null
@@ -3024,6 +3033,53 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      event_reminders: {
+        Row: {
+          channel: string
+          created_at: string
+          error_message: string | null
+          event_id: string
+          id: string
+          recipient: string | null
+          remind_at: string
+          sent_at: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          id?: string
+          recipient?: string | null
+          remind_at: string
+          sent_at?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          id?: string
+          recipient?: string | null
+          remind_at?: string
+          sent_at?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
