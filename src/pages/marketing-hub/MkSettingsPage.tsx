@@ -57,11 +57,10 @@ export default function MkSettingsPage() {
   if (loading) return <MkAppShell title="Configurações"><div className="text-white/30 text-center py-20">Carregando...</div></MkAppShell>;
 
   return (
-    <MkAppShell title="Configurações">
+    <MkAppShell title="Configurações Hub" sectionCode="11" sectionLabel="Hub_Settings">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90">Configurações</h1>
-          <p className="text-sm text-white/30 mt-1">Pilares, canais e formatos do marketing</p>
+          <p className="text-sm text-white/30">Pilares, canais e formatos do marketing</p>
         </div>
         <button onClick={save} disabled={saving}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[hsl(210,100%,55%)] text-white text-sm font-medium hover:bg-[hsl(210,100%,50%)] transition-colors disabled:opacity-50">

@@ -93,12 +93,11 @@ export default function MkCalendarPage() {
   const unscheduledCount = contentItems.filter(i => !i.scheduled_at && !i.published_at).length;
 
   return (
-    <MkAppShell title="Calendário Editorial">
+    <MkAppShell title="Calendário Editorial" sectionCode="04" sectionLabel="Editorial_Calendar">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground/90">Calendário Editorial</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-white/30">
             {scheduledCount} agendados · {unscheduledCount} sem data
           </p>
         </div>

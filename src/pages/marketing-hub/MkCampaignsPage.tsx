@@ -52,12 +52,11 @@ export default function MkCampaignsPage() {
   };
 
   return (
-    <MkAppShell title="Campanhas">
+    <MkAppShell title="Gestão Campanhas" sectionCode="03" sectionLabel="Campaign_Manager">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90">Campanhas</h1>
-          <p className="text-sm text-white/30 mt-1">{campaigns.length} campanhas no total</p>
+          <p className="text-sm text-white/30">{campaigns.length} campanhas no total</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">

@@ -52,11 +52,10 @@ export default function MkContentsPage() {
   };
 
   return (
-    <MkAppShell title="Conteúdos">
+    <MkAppShell title="Pipeline Conteúdos" sectionCode="02" sectionLabel="Content_Pipeline">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90">Pipeline de Conteúdos</h1>
-          <p className="text-sm text-white/30 mt-1">{contentItems.length} itens no total</p>
+          <p className="text-sm text-white/30">{contentItems.length} itens no total</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-56">

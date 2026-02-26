@@ -62,11 +62,10 @@ export default function MkAssetsPage() {
   });
 
   return (
-    <MkAppShell title="Assets & Mídia">
+    <MkAppShell title="Assets & Mídia" sectionCode="07" sectionLabel="Media_Library">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90">Assets & Mídia</h1>
-          <p className="text-sm text-white/30 mt-1">{assets.length} arquivos</p>
+          <p className="text-sm text-white/30">{assets.length} arquivos</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative sm:w-56">

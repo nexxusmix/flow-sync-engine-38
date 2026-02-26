@@ -94,11 +94,10 @@ export default function MkAutomationsPage() {
   const ignored = suggestions.filter(s => s.status === "ignored");
 
   return (
-    <MkAppShell title="Automações">
+    <MkAppShell title="Automações Inteligentes" sectionCode="10" sectionLabel="Smart_Automations">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white/90 mb-1">Automações Inteligentes</h1>
           <p className="text-sm text-white/30">Análise automática do seu conteúdo com sugestões acionáveis</p>
         </div>
         <button

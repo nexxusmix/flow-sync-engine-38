@@ -1,12 +1,12 @@
 /**
  * Marketing Hub Dashboard — SolaFlux Holographic Design
- * Connected to content_items + content_metrics for real data
+ * Matches the CONTENT_OS // V4.0 reference layout
  */
 import { MkAppShell } from "@/components/marketing-hub/MkAppShell";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useContentAnalytics } from "@/hooks/useContentAnalytics";
-import { Loader2, BarChart3, Eye, Heart, MessageCircle, Share2, TrendingUp, Calendar, FileText, Send, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import { Loader2, Calendar, FileText, Send, CheckCircle, AlertTriangle, Clock, Eye } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -20,24 +20,6 @@ function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
-}
-
-function HoloMetricCard({ label, value, icon: Icon, delay = 0 }: {
-  label: string; value: string; icon: React.ElementType; delay?: number;
-}) {
-  return (
-    <motion.div {...fadeUp(delay)} className="holographic-card rounded-lg p-5 flex flex-col justify-between min-h-[130px]">
-      <div className="flex items-start justify-between">
-        <div className="w-8 h-8 rounded border border-[rgba(0,156,202,0.2)] flex items-center justify-center bg-[rgba(0,156,202,0.05)]">
-          <Icon className="w-4 h-4 text-[hsl(195,100%,50%)]" />
-        </div>
-      </div>
-      <div className="mt-auto">
-        <p className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-1">{label}</p>
-        <p className="text-2xl font-light text-white data-glow tracking-tight">{value}</p>
-      </div>
-    </motion.div>
-  );
 }
 
 const STATUS_MAP: Record<string, { label: string; type: string }> = {
@@ -56,145 +38,119 @@ export default function MkDashboardPage() {
   const navigate = useNavigate();
   const { data: kpis, isLoading } = useContentAnalytics();
 
+  const now = new Date();
+  const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
   return (
-    <MkAppShell title="RESUMO MARKETING" sectionCode="01" sectionLabel="Marketing_Summary">
+    <MkAppShell title="MARKETING & CONTEÚDO" sectionCode="MK" sectionLabel="Marketing_Overview">
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-[hsl(195,100%,50%)]" />
         </div>
       ) : (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <HoloMetricCard
-              label="Conteúdos"
-              value={String(kpis?.totalItems || 0)}
-              icon={FileText}
-              delay={0.1}
-            />
-            <HoloMetricCard
-              label="Publicados_Mês"
-              value={String(kpis?.publishedThisMonth || 0)}
-              icon={Send}
-              delay={0.15}
-            />
-            <HoloMetricCard
-              label="Taxa_Aprovação"
-              value={`${(kpis?.approvalRate || 0).toFixed(0)}%`}
-              icon={CheckCircle}
-              delay={0.2}
-            />
-            <HoloMetricCard
-              label="Atrasados"
-              value={String(kpis?.overdueCount || 0)}
-              icon={AlertTriangle}
-              delay={0.25}
-            />
-          </div>
+          {/* Subtitle */}
+          <motion.p {...fadeUp(0.05)} className="text-[11px] text-white/25 uppercase tracking-[0.2em] mb-8 -mt-4">
+            Visão Geral da Produção de Conteúdo
+          </motion.p>
 
-          {/* Secondary KPI row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-            <HoloMetricCard
-              label="Alcance_Total"
-              value={formatNumber(kpis?.totalReach || 0)}
-              icon={BarChart3}
-              delay={0.3}
-            />
-            <HoloMetricCard
-              label="Visualizações"
-              value={formatNumber(kpis?.totalViews || 0)}
-              icon={Eye}
-              delay={0.35}
-            />
-            <HoloMetricCard
-              label="Engajamento"
-              value={`${(kpis?.engagementRate || 0).toFixed(1)}%`}
-              icon={TrendingUp}
-              delay={0.4}
-            />
-            <HoloMetricCard
-              label="Em_Review"
-              value={String(kpis?.reviewCount || 0)}
-              icon={Clock}
-              delay={0.45}
-            />
-          </div>
-
-          {/* Second row: Engagement breakdown + Status breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-            {/* Engagement metrics */}
-            <div className="lg:col-span-4 space-y-3">
-              <motion.div {...fadeUp(0.3)} className="holographic-card rounded-lg p-5">
-                <p className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-4">Métricas_Engajamento</p>
-                <div className="space-y-3">
-                  {[
-                    { icon: Heart, label: 'Curtidas', value: kpis?.totalLikes || 0 },
-                    { icon: MessageCircle, label: 'Comentários', value: kpis?.totalComments || 0 },
-                    { icon: Share2, label: 'Compartilhamentos', value: kpis?.totalShares || 0 },
-                  ].map((m) => (
-                    <div key={m.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <m.icon className="w-3.5 h-3.5 text-[hsl(195,100%,55%)]" />
-                        <span className="text-xs text-white/50">{m.label}</span>
-                      </div>
-                      <span className="text-sm font-mono text-white/80 data-glow">{formatNumber(m.value)}</span>
-                    </div>
-                  ))}
+          {/* 6 KPI Cards — single row */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+            {[
+              { label: "Em Produção", sublabel: "Active", value: String(kpis?.totalItems || 0), delay: 0.1 },
+              { label: "Publicados", sublabel: `Este Mês`, value: String(kpis?.publishedThisMonth || 0), highlight: kpis?.publishedThisMonth ? `+${kpis.publishedThisMonth}` : undefined, delay: 0.13 },
+              { label: "Atrasados", sublabel: undefined, value: String(kpis?.overdueCount || 0), danger: (kpis?.overdueCount || 0) > 0, delay: 0.16 },
+              { label: "Em Revisão", sublabel: undefined, value: String(kpis?.reviewCount || 0), delay: 0.19 },
+              { label: "Aprovados", sublabel: undefined, value: String(kpis?.approvedCount || 0), delay: 0.22 },
+              { label: "Agendados", sublabel: "Esta Semana", value: String(kpis?.scheduledCount || 0), delay: 0.25 },
+            ].map((card, i) => (
+              <motion.div
+                key={card.label}
+                {...fadeUp(card.delay)}
+                className={cn(
+                  "holographic-card rounded-lg p-4 flex flex-col justify-between min-h-[100px]",
+                  card.danger && "border-red-500/20"
+                )}
+              >
+                <div className="flex items-center gap-1">
+                  <span className={cn(
+                    "text-[10px] uppercase tracking-[0.12em] font-normal",
+                    card.danger ? "text-red-400" : "text-[hsl(195,100%,55%)]"
+                  )}>
+                    {card.label}
+                  </span>
+                  {card.sublabel && (
+                    <span className="text-[9px] text-white/20 uppercase tracking-wider">{card.sublabel}</span>
+                  )}
+                </div>
+                <div className="flex items-end gap-2 mt-auto">
+                  <span className={cn(
+                    "text-3xl font-light tracking-tight data-glow",
+                    card.danger ? "text-red-400" : "text-white"
+                  )}>
+                    {card.value}
+                  </span>
+                  {card.highlight && (
+                    <span className="text-[10px] text-[hsl(195,100%,55%)] mb-1">{card.highlight}</span>
+                  )}
                 </div>
               </motion.div>
+            ))}
+          </div>
 
-              {/* Status breakdown */}
-              <motion.div {...fadeUp(0.35)} className="holographic-card rounded-lg p-5">
-                <p className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-4">Status_Pipeline</p>
-                <div className="space-y-2.5">
-                  {[
-                    { label: 'Publicados', value: kpis?.publishedCount || 0, color: 'bg-emerald-500' },
-                    { label: 'Aprovados', value: kpis?.approvedCount || 0, color: 'bg-green-400' },
-                    { label: 'Agendados', value: kpis?.scheduledCount || 0, color: 'bg-[hsl(195,100%,50%)]' },
-                    { label: 'Em Review', value: kpis?.reviewCount || 0, color: 'bg-amber-500' },
-                    { label: 'Rascunhos', value: kpis?.draftCount || 0, color: 'bg-white/20' },
-                    { label: 'Atrasados', value: kpis?.overdueCount || 0, color: 'bg-red-500' },
-                  ].map((s) => (
-                    <div key={s.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-2 h-2 rounded-full", s.color)} />
-                        <span className="text-xs text-white/50">{s.label}</span>
-                      </div>
-                      <span className="text-sm font-mono text-white/80">{s.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Channel breakdown */}
-              {kpis && kpis.channelBreakdown.length > 0 && (
-                <motion.div {...fadeUp(0.4)} className="holographic-card rounded-lg p-5">
-                  <p className="text-[10px] text-white/25 uppercase tracking-[0.12em] mb-4">Por_Canal</p>
-                  <div className="space-y-2">
-                    {kpis.channelBreakdown.slice(0, 5).map((ch) => (
-                      <div key={ch.channel} className="flex items-center justify-between">
-                        <span className="text-xs text-white/50 capitalize">{ch.channel}</span>
-                        <span className="text-sm font-mono text-white/80">{ch.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+          {/* ── AÇÕES RÁPIDAS ── */}
+          <motion.div {...fadeUp(0.3)} className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-px bg-white/[0.08]" />
+              <span className="text-[11px] text-white/25 uppercase tracking-[0.2em] font-normal">Ações Rápidas</span>
             </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {[
+                { icon: "auto_awesome", label: "Studio Criativo", href: "/marketing/studio" },
+                { icon: "add", label: "Nova Ideia", href: "/m/conteudos" },
+                { icon: "calendar_month", label: "Ver Calendário", href: "/m/calendario" },
+                { icon: "campaign", label: "Campanhas", href: "/m/campanhas" },
+                { icon: "photo_camera", label: "Instagram Preview", href: "/m/instagram" },
+                { icon: "bookmark", label: "Referências", href: "/m/branding" },
+                { icon: "palette", label: "Assets & Brand", href: "/m/assets" },
+                { icon: "smart_toy", label: "Automações", href: "/m/automacoes" },
+                { icon: "record_voice_over", label: "Transcrição IA", href: "/m/templates" },
+                { icon: "bolt", label: "Gerar Plano 30 dias", href: "/m/templates" },
+              ].map((action, i) => (
+                <motion.button
+                  key={action.label}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 + i * 0.03 }}
+                  onClick={() => navigate(action.href)}
+                  className="group holographic-card rounded-lg px-4 py-3.5 flex items-center gap-3 text-left hover:border-[rgba(0,156,202,0.25)] transition-all duration-300"
+                >
+                  <span className="material-symbols-outlined text-lg text-[hsl(195,100%,50%)] group-hover:text-[hsl(195,100%,65%)] transition-colors">
+                    {action.icon}
+                  </span>
+                  <span className="text-[12px] text-white/50 group-hover:text-white/70 transition-colors font-normal tracking-wide">
+                    {action.label}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
 
+          {/* Content Pipeline + Side Stats */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Content pipeline table */}
             <div className="lg:col-span-8">
-              <motion.div {...fadeUp(0.3)} className="glass-projection rounded-lg overflow-hidden">
+              <motion.div {...fadeUp(0.4)} className="glass-projection rounded-lg overflow-hidden">
                 <div className="flex items-center justify-between px-6 py-4">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[hsl(195,100%,45%)]" />
-                    <span className="text-[11px] text-white/40 uppercase tracking-[0.12em]">Latest_Content_Pipeline</span>
+                    <span className="text-[11px] text-white/40 uppercase tracking-[0.12em]">Conteúdo Andamento</span>
                   </div>
                   <button
                     onClick={() => navigate("/m/conteudos")}
                     className="text-[11px] text-[hsl(195,100%,55%)] uppercase tracking-[0.1em] hover:text-[hsl(195,100%,70%)] transition-colors"
                   >
-                    Full_Log_View
+                    Ver Todos
                   </button>
                 </div>
                 <div className="px-6 pb-4">
@@ -233,7 +189,7 @@ export default function MkDashboardPage() {
                               key={item.id}
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.35 + i * 0.05 }}
+                              transition={{ delay: 0.45 + i * 0.05 }}
                               className="border-b border-white/[0.04] last:border-0"
                             >
                               <td className="py-3 text-sm text-white/30 font-mono">{dateStr}</td>
@@ -269,31 +225,77 @@ export default function MkDashboardPage() {
                 </div>
               </motion.div>
             </div>
-          </div>
 
-          {/* Quick actions */}
-          <div className="mt-8">
-            <p className="section-label mb-4">● Quick_Actions</p>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { icon: "campaign", label: "Nova Campanha", desc: "Criar campanha com IA", href: "/m/campanhas" },
-                { icon: "calendar_month", label: "Calendário Editorial", desc: "Planeje o mês", href: "/m/calendario" },
-                { icon: "palette", label: "Brand Kit", desc: "Identidade visual", href: "/m/branding" },
-                { icon: "auto_awesome", label: "Gerar com IA", desc: "Posts, copies e roteiros", href: "/marketing/studio" },
-              ].map((a, i) => (
-                <motion.button
-                  key={a.label}
-                  {...fadeUp(0.5 + i * 0.05)}
-                  onClick={() => navigate(a.href)}
-                  className="group holographic-card rounded-lg p-5 text-left hover:border-[rgba(0,156,202,0.25)] transition-all duration-300"
-                >
-                  <div className="w-10 h-10 rounded border border-[rgba(0,156,202,0.15)] flex items-center justify-center mb-4 group-hover:border-[rgba(0,156,202,0.3)] group-hover:bg-[rgba(0,156,202,0.05)] transition-all">
-                    <span className="material-symbols-outlined text-xl text-[hsl(195,100%,50%)]">{a.icon}</span>
+            {/* Side stats */}
+            <div className="lg:col-span-4 space-y-3">
+              {/* Status Pipeline */}
+              <motion.div {...fadeUp(0.4)} className="holographic-card rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-[hsl(195,100%,45%)]" />
+                  <span className="text-[10px] text-white/25 uppercase tracking-[0.12em]">Status_Pipeline</span>
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    { label: 'Publicados', value: kpis?.publishedCount || 0, color: 'bg-emerald-500' },
+                    { label: 'Aprovados', value: kpis?.approvedCount || 0, color: 'bg-green-400' },
+                    { label: 'Agendados', value: kpis?.scheduledCount || 0, color: 'bg-[hsl(195,100%,50%)]' },
+                    { label: 'Em Review', value: kpis?.reviewCount || 0, color: 'bg-amber-500' },
+                    { label: 'Rascunhos', value: kpis?.draftCount || 0, color: 'bg-white/20' },
+                    { label: 'Atrasados', value: kpis?.overdueCount || 0, color: 'bg-red-500' },
+                  ].map((s) => (
+                    <div key={s.label} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={cn("w-2 h-2 rounded-full", s.color)} />
+                        <span className="text-xs text-white/50">{s.label}</span>
+                      </div>
+                      <span className="text-sm font-mono text-white/80">{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Próximas Entregas */}
+              <motion.div {...fadeUp(0.45)} className="holographic-card rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="text-[10px] text-white/25 uppercase tracking-[0.12em]">Próximas_Entregas</span>
+                </div>
+                {kpis && kpis.recentItems.filter(i => i.scheduled_at).length > 0 ? (
+                  <div className="space-y-2">
+                    {kpis.recentItems
+                      .filter(i => i.scheduled_at)
+                      .slice(0, 4)
+                      .map(item => (
+                        <div key={item.id} className="flex items-center justify-between">
+                          <span className="text-xs text-white/50 truncate max-w-[150px]">{item.title}</span>
+                          <span className="text-[10px] font-mono text-white/30">
+                            {format(parseISO(item.scheduled_at!), 'dd/MM')}
+                          </span>
+                        </div>
+                      ))}
                   </div>
-                  <p className="text-sm text-white/60 font-normal mb-1">{a.label}</p>
-                  <p className="text-[10px] text-white/20 tracking-wide">{a.desc}</p>
-                </motion.button>
-              ))}
+                ) : (
+                  <p className="text-xs text-white/15 text-center py-4">Sem entregas agendadas</p>
+                )}
+              </motion.div>
+
+              {/* Channel breakdown */}
+              {kpis && kpis.channelBreakdown.length > 0 && (
+                <motion.div {...fadeUp(0.5)} className="holographic-card rounded-lg p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                    <span className="text-[10px] text-white/25 uppercase tracking-[0.12em]">Por_Canal</span>
+                  </div>
+                  <div className="space-y-2">
+                    {kpis.channelBreakdown.slice(0, 5).map((ch) => (
+                      <div key={ch.channel} className="flex items-center justify-between">
+                        <span className="text-xs text-white/50 capitalize">{ch.channel}</span>
+                        <span className="text-sm font-mono text-white/80">{ch.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
             </div>
           </div>
         </>
