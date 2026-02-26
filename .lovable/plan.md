@@ -43,3 +43,38 @@
 ---
 
 ## Ordem: Fase 6 → Fase 7 → Fase 8
+
+---
+
+# Plano Ciclo 3 — Subtarefas, Automações, Gantt e Comentários
+
+## Fase 9 — Subtarefas Aninhadas
+- Migração: criar tabela `subtasks` (id, task_id FK, title, completed, position, created_at)
+- RLS via join com tasks.user_id
+- Componente `SubtaskList` com checkbox, reordenação, progresso (ex: 3/5)
+- Integrar no `TaskEditDrawer`
+- Barra de progresso no card da tarefa
+
+## Fase 10 — Comentários e Atividade
+- Migração: criar tabela `task_comments` (id, task_id FK, user_id, content, created_at)
+- RLS por user_id do workspace
+- Componente `TaskActivityFeed` com comentários + histórico de mudanças
+- Integrar no `TaskEditDrawer` como aba ou seção
+- Avatar + nome do autor via profiles
+
+## Fase 11 — Visão Gantt / Timeline
+- Componente `TaskGanttView` com barras horizontais por tarefa
+- Eixo X = dias, Eixo Y = tarefas com due_date
+- Linhas de dependência visual (task_dependencies)
+- Toggle entre Board / Gantt na TasksPage
+
+## Fase 12 — Automações / Regras
+- Migração: criar tabela `task_automation_rules` (id, user_id, trigger_type, condition_json, action_json, enabled, created_at)
+- Triggers: on_status_change, on_due_date, on_create
+- Actions: move_to_status, set_priority, add_tag, notify
+- UI `TaskAutomationManager` para criar/gerenciar regras
+- Engine de execução via hook ou edge function
+
+---
+
+## Ordem: Fase 9 → Fase 10 → Fase 11 → Fase 12
