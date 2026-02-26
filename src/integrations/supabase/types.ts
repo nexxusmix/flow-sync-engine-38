@@ -1839,6 +1839,60 @@ export type Database = {
           },
         ]
       }
+      content_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          format: string
+          id: string
+          is_system: boolean
+          prompt_template: string | null
+          sections: Json
+          thumbnail_emoji: string | null
+          title: string
+          updated_at: string
+          use_count: number
+          variables: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          format?: string
+          id?: string
+          is_system?: boolean
+          prompt_template?: string | null
+          sections?: Json
+          thumbnail_emoji?: string | null
+          title: string
+          updated_at?: string
+          use_count?: number
+          variables?: Json | null
+          workspace_id?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          format?: string
+          id?: string
+          is_system?: boolean
+          prompt_template?: string | null
+          sections?: Json
+          thumbnail_emoji?: string | null
+          title?: string
+          updated_at?: string
+          use_count?: number
+          variables?: Json | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       contract_addendums: {
         Row: {
           body: string | null
@@ -7063,6 +7117,66 @@ export type Database = {
             columns: ["recurrence_parent_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_generations: {
+        Row: {
+          captions: Json | null
+          content_item_id: string | null
+          created_at: string
+          created_by: string | null
+          design_prompt: string | null
+          format: string
+          id: string
+          script: Json | null
+          shotlist: Json | null
+          template_id: string | null
+          variables_used: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          captions?: Json | null
+          content_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          design_prompt?: string | null
+          format: string
+          id?: string
+          script?: Json | null
+          shotlist?: Json | null
+          template_id?: string | null
+          variables_used?: Json | null
+          workspace_id?: string
+        }
+        Update: {
+          captions?: Json | null
+          content_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          design_prompt?: string | null
+          format?: string
+          id?: string
+          script?: Json | null
+          shotlist?: Json | null
+          template_id?: string | null
+          variables_used?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_generations_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_generations_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "content_templates"
             referencedColumns: ["id"]
           },
         ]

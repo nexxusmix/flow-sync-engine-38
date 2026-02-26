@@ -116,6 +116,7 @@ import MkReportsPage from "./pages/marketing-hub/MkReportsPage";
 import MkAutomationsPage from "./pages/marketing-hub/MkAutomationsPage";
 import MkSettingsPage from "./pages/marketing-hub/MkSettingsPage";
 import MkInstagramPage from "./pages/marketing-hub/MkInstagramPage";
+import MkTemplatesPage from "./pages/marketing-hub/MkTemplatesPage";
 
 const queryClient = new QueryClient();
 
@@ -243,6 +244,7 @@ function AppRoutes() {
       <Route path="/m/conteudos" element={<ProtectedRoute><MkContentsPage /></ProtectedRoute>} />
       <Route path="/m/calendario" element={<ProtectedRoute><MkCalendarPage /></ProtectedRoute>} />
       <Route path="/m/instagram" element={<ProtectedRoute><MkInstagramPage /></ProtectedRoute>} />
+      <Route path="/m/templates" element={<ProtectedRoute><MkTemplatesPage /></ProtectedRoute>} />
       <Route path="/m/branding" element={<ProtectedRoute><MkBrandingPage /></ProtectedRoute>} />
       <Route path="/m/assets" element={<ProtectedRoute><MkAssetsPage /></ProtectedRoute>} />
       <Route path="/m/aprovacoes" element={<ProtectedRoute><MkApprovalsPage /></ProtectedRoute>} />
