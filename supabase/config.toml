@@ -193,3 +193,6 @@ verify_jwt = false
 [functions.score-lead]
 verify_jwt = false
 
+[functions.generate-content-ai]
+verify_jwt = false
+
