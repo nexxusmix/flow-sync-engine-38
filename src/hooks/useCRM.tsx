@@ -28,6 +28,9 @@ export interface Deal {
   nextActionAt: string | null;
   linkedProjectId: string | null;
   lostReason: string | null;
+  lastActivityAt: string | null;
+  followUpDueAt: string | null;
+  staleDays: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -111,12 +114,15 @@ export function useCRM() {
         contactName: deal.contact?.name || 'Sem contato',
         company: deal.contact?.company || '',
         source: deal.source,
-        score: deal.score,
+        score: deal.lead_score || deal.score || 0,
         temperature: deal.temperature,
         nextAction: deal.next_action,
         nextActionAt: deal.next_action_at,
         linkedProjectId: deal.project_id,
         lostReason: deal.lost_reason,
+        lastActivityAt: deal.last_activity_at,
+        followUpDueAt: deal.follow_up_due_at,
+        staleDays: deal.stale_days || 0,
         createdAt: deal.created_at,
         updatedAt: deal.updated_at,
       }));

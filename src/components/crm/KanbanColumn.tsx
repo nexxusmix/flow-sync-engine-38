@@ -10,9 +10,10 @@ interface KanbanColumnProps {
   stageKey: string;
   onDeleteDeal?: (id: string) => void;
   onMoveDeal?: (dealId: string, toStage: string) => void;
+  onOpenDeal?: (id: string) => void;
 }
 
-export function KanbanColumn({ title, count, deals, color, stageKey, onDeleteDeal, onMoveDeal }: KanbanColumnProps) {
+export function KanbanColumn({ title, count, deals, color, stageKey, onDeleteDeal, onMoveDeal, onOpenDeal }: KanbanColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -67,7 +68,7 @@ export function KanbanColumn({ title, count, deals, color, stageKey, onDeleteDea
       {/* Cards Container */}
       <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar pb-4">
         {deals.map(deal => (
-          <KanbanCard key={deal.id} deal={deal} onDelete={onDeleteDeal} />
+          <KanbanCard key={deal.id} deal={deal} onDelete={onDeleteDeal} onOpen={onOpenDeal} />
         ))}
         <button className="w-full p-4 border border-dashed border-border rounded-2xl text-[10px] font-black text-muted-foreground uppercase tracking-wider hover:border-primary/30 hover:text-primary transition-all flex items-center justify-center gap-2">
           <Plus className="w-4 h-4" />

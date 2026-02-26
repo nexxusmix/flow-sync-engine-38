@@ -32,9 +32,10 @@ export interface Deal {
 interface KanbanCardProps {
   deal: Deal;
   onDelete?: (id: string) => void;
+  onOpen?: (id: string) => void;
 }
 
-export function KanbanCard({ deal, onDelete }: KanbanCardProps) {
+export function KanbanCard({ deal, onDelete, onOpen }: KanbanCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -62,6 +63,7 @@ export function KanbanCard({ deal, onDelete }: KanbanCardProps) {
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onClick={() => onOpen?.(deal.id)}
         className={`glass-card rounded-2xl p-4 space-y-3 group cursor-grab active:cursor-grabbing hover:border-primary/30 transition-all duration-300 relative overflow-hidden ${
           isDragging ? 'opacity-40 scale-95 ring-2 ring-primary/30' : ''
         }`}
