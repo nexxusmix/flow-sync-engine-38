@@ -4248,6 +4248,56 @@ export type Database = {
           },
         ]
       }
+      portal_chat_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          mentions: Json | null
+          portal_link_id: string
+          sender_email: string | null
+          sender_name: string
+          sender_type: string
+          sender_user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          mentions?: Json | null
+          portal_link_id: string
+          sender_email?: string | null
+          sender_name: string
+          sender_type?: string
+          sender_user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          mentions?: Json | null
+          portal_link_id?: string
+          sender_email?: string | null
+          sender_name?: string
+          sender_type?: string
+          sender_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_chat_messages_portal_link_id_fkey"
+            columns: ["portal_link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_comments: {
         Row: {
           annotation_data: Json | null
@@ -4437,8 +4487,11 @@ export type Database = {
       }
       portal_links: {
         Row: {
+          allow_chat: boolean | null
           blocked_by_payment: boolean | null
+          client_email: string | null
           client_name: string | null
+          client_phone: string | null
           created_at: string
           expires_at: string | null
           id: string
@@ -4448,8 +4501,11 @@ export type Database = {
           share_token: string
         }
         Insert: {
+          allow_chat?: boolean | null
           blocked_by_payment?: boolean | null
+          client_email?: string | null
           client_name?: string | null
+          client_phone?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -4459,8 +4515,11 @@ export type Database = {
           share_token: string
         }
         Update: {
+          allow_chat?: boolean | null
           blocked_by_payment?: boolean | null
+          client_email?: string | null
           client_name?: string | null
+          client_phone?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -4470,6 +4529,50 @@ export type Database = {
           share_token?: string
         }
         Relationships: []
+      }
+      portal_timeline_events: {
+        Row: {
+          actor_name: string | null
+          actor_type: string | null
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          portal_link_id: string
+          title: string
+        }
+        Insert: {
+          actor_name?: string | null
+          actor_type?: string | null
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          portal_link_id: string
+          title: string
+        }
+        Update: {
+          actor_name?: string | null
+          actor_type?: string | null
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          portal_link_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_timeline_events_portal_link_id_fkey"
+            columns: ["portal_link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
