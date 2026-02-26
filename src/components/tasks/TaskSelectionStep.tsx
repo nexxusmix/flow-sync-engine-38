@@ -290,8 +290,8 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
         </div>
       </div>
 
-      {/* Task list */}
-      <div className="space-y-3 max-h-[42vh] overflow-y-auto pr-1">
+      {/* Task grid */}
+      <div className="space-y-4 max-h-[42vh] overflow-y-auto pr-1">
         {filteredTasks.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-6 font-mono">Nenhuma tarefa encontrada</p>
         )}
@@ -305,7 +305,7 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
             <div key={cat}>
               <button
                 onClick={() => toggleAll(catIds, !catAllSelected)}
-                className="flex items-center gap-2 mb-1.5 group cursor-pointer w-full"
+                className="flex items-center gap-2 mb-2.5 group cursor-pointer w-full"
               >
                 <div className={cn(
                   "w-3.5 h-3.5 rounded border flex items-center justify-center transition-all",
@@ -324,7 +324,7 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
                 </span>
               </button>
 
-              <div className="space-y-0.5 pl-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {catTasks.map(task => {
                   const checked = selectedIds.has(task.id);
                   const overdue = isOverdue(task);
@@ -335,32 +335,38 @@ export function TaskSelectionStep({ tasks, onConfirm }: TaskSelectionStepProps) 
                       key={task.id}
                       onClick={() => toggle(task.id)}
                       className={cn(
-                        "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150",
-                        checked ? "bg-primary/[0.06]" : "opacity-40 hover:opacity-60"
+                        "flex flex-col gap-2 p-3 rounded-xl text-left transition-all duration-150 border min-h-[72px]",
+                        checked
+                          ? "bg-primary/[0.08] border-primary/30 shadow-[0_0_12px_-4px_hsl(var(--primary)/0.2)]"
+                          : "bg-card/30 border-border/20 opacity-50 hover:opacity-75 hover:border-border/40"
                       )}
                     >
-                      <div className={cn(
-                        "w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-all duration-150",
-                        checked ? "bg-primary border-primary" : "border-muted-foreground/40"
-                      )}>
-                        {checked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
-                      </div>
-                      <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", priorityColor)} />
-                      <span className="flex-1 text-[12px] text-foreground/80 font-medium truncate">{task.title}</span>
-                      {task.due_date && (
-                        <span className={cn(
-                          "text-[9px] font-mono flex items-center gap-0.5 shrink-0",
-                          overdue ? "text-red-400" : "text-muted-foreground"
+                      <div className="flex items-start justify-between gap-1.5">
+                        <div className={cn(
+                          "w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-all duration-150 mt-0.5",
+                          checked ? "bg-primary border-primary" : "border-muted-foreground/40"
                         )}>
-                          {overdue && <AlertTriangle className="w-2.5 h-2.5" />}
-                          {format(parseISO(task.due_date), 'dd/MM')}
-                        </span>
-                      )}
-                      {!task.due_date && task.tags?.length > 0 && (
-                        <span className="text-[9px] text-muted-foreground/60 font-mono truncate max-w-[100px]">
-                          {task.tags.slice(0, 2).join(', ')}
-                        </span>
-                      )}
+                          {checked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                        </div>
+                        <div className={cn("w-2 h-2 rounded-full shrink-0 mt-1", priorityColor)} />
+                      </div>
+                      <span className="text-[12px] text-foreground/80 font-medium leading-snug line-clamp-2">{task.title}</span>
+                      <div className="mt-auto flex items-center gap-1.5 flex-wrap">
+                        {task.due_date && (
+                          <span className={cn(
+                            "text-[9px] font-mono flex items-center gap-0.5 shrink-0",
+                            overdue ? "text-red-400" : "text-muted-foreground/70"
+                          )}>
+                            {overdue && <AlertTriangle className="w-2.5 h-2.5" />}
+                            {format(parseISO(task.due_date), 'dd/MM')}
+                          </span>
+                        )}
+                        {task.tags && task.tags.length > 0 && (
+                          <span className="text-[9px] text-muted-foreground/50 font-mono truncate max-w-[80px]">
+                            {task.tags.slice(0, 2).join(', ')}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
