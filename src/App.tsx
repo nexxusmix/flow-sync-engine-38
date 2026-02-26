@@ -117,6 +117,7 @@ import MkAutomationsPage from "./pages/marketing-hub/MkAutomationsPage";
 import MkSettingsPage from "./pages/marketing-hub/MkSettingsPage";
 import MkInstagramPage from "./pages/marketing-hub/MkInstagramPage";
 import MkTemplatesPage from "./pages/marketing-hub/MkTemplatesPage";
+import MkIdeasPage from "./pages/marketing-hub/MkIdeasPage";
 
 const queryClient = new QueryClient();
 
@@ -240,6 +241,7 @@ function AppRoutes() {
       <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
       {/* Marketing Hub — /m/* */}
       <Route path="/m" element={<ProtectedRoute><MkDashboardPage /></ProtectedRoute>} />
+      <Route path="/m/ideias" element={<ProtectedRoute><MkIdeasPage /></ProtectedRoute>} />
       <Route path="/m/campanhas" element={<ProtectedRoute><MkCampaignsPage /></ProtectedRoute>} />
       <Route path="/m/conteudos" element={<ProtectedRoute><MkContentsPage /></ProtectedRoute>} />
       <Route path="/m/calendario" element={<ProtectedRoute><MkCalendarPage /></ProtectedRoute>} />
