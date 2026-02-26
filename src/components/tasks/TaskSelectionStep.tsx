@@ -82,12 +82,12 @@ function SortableTask({ task, index }: { task: Task; index: number }) {
       <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground">
         <GripVertical className="w-3.5 h-3.5" />
       </div>
-      <span className="text-[10px] font-mono text-muted-foreground/50 w-4 text-right shrink-0">{index + 1}</span>
+      <span className="text-mono font-mono text-muted-foreground/50 w-4 text-right shrink-0">{index + 1}</span>
       <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", priorityColor)} />
-      <span className="flex-1 text-[12px] text-foreground/80 font-medium truncate">{task.title}</span>
-      <span className="text-[9px] font-mono text-muted-foreground/50 uppercase">{CATEGORY_LABELS[task.category] || task.category}</span>
+      <span className="flex-1 text-card-title text-foreground/80 font-medium truncate">{task.title}</span>
+      <span className="text-caption font-mono text-muted-foreground/50 uppercase">{CATEGORY_LABELS[task.category] || task.category}</span>
       {task.due_date && (
-        <span className={cn("text-[9px] font-mono flex items-center gap-0.5 shrink-0", overdue ? "text-red-400" : "text-muted-foreground")}>
+        <span className={cn("text-caption font-mono flex items-center gap-0.5 shrink-0", overdue ? "text-red-400" : "text-muted-foreground")}>
           {overdue && <AlertTriangle className="w-2.5 h-2.5" />}
           {format(parseISO(task.due_date), 'dd/MM')}
         </span>
@@ -208,11 +208,11 @@ export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: Ta
           <button onClick={() => setStep('select')} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-mono">
+          <p className="type-caption tracking-[0.25em] text-muted-foreground font-mono">
             Ordenar execução · {orderedTasks.length} tarefas
           </p>
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-body-sm text-muted-foreground">
           Arraste para definir a ordem de execução. A primeira tarefa será executada primeiro.
         </p>
 
@@ -258,7 +258,7 @@ export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: Ta
             key={f.key}
             onClick={() => setStatusFilter(f.key)}
             className={cn(
-              "text-[10px] font-mono px-2.5 py-1 rounded-md transition-all",
+              "text-mono font-mono px-2.5 py-1 rounded-md transition-all",
               statusFilter === f.key
                 ? "bg-primary/15 text-primary border border-primary/30"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent"
@@ -271,26 +271,26 @@ export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: Ta
 
       {/* Header controls */}
       <div className="flex items-center justify-between">
-        <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-mono">
+        <p className="type-caption tracking-[0.25em] text-muted-foreground font-mono">
           {selectedIds.size}/{tasks.length} selecionadas
         </p>
         <div className="flex gap-1">
           <button
             onClick={() => toggleAll(allFilteredIds, true)}
-            className={cn("text-[10px] font-mono px-2 py-1 rounded transition-colors", allSelected ? "text-muted-foreground" : "text-primary hover:bg-primary/10")}
+            className={cn("text-mono font-mono px-2 py-1 rounded transition-colors", allSelected ? "text-muted-foreground" : "text-primary hover:bg-primary/10")}
           >
             Todos
           </button>
           <button
             onClick={invertSelection}
-            className="text-[10px] font-mono px-2 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="text-mono font-mono px-2 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             title="Inverter seleção"
           >
             <ArrowUpDown className="w-3 h-3" />
           </button>
           <button
             onClick={() => toggleAll(allFilteredIds, false)}
-            className={cn("text-[10px] font-mono px-2 py-1 rounded transition-colors", noneSelected ? "text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+            className={cn("text-mono font-mono px-2 py-1 rounded transition-colors", noneSelected ? "text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
           >
             Limpar
           </button>
@@ -323,10 +323,10 @@ export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: Ta
                   {catAllSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
                   {!catAllSelected && catSomeSelected && <Minus className="w-2.5 h-2.5 text-primary" />}
                 </div>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-mono">
+                <span className="text-mono uppercase tracking-[0.2em] text-muted-foreground font-mono">
                   {CATEGORY_LABELS[cat] || cat}
                 </span>
-                <span className="text-[9px] text-muted-foreground/60 font-mono ml-auto">
+                <span className="text-caption text-muted-foreground/60 font-mono ml-auto">
                   {catSelectedCount}/{catIds.length}
                 </span>
               </button>
@@ -357,11 +357,11 @@ export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: Ta
                         </div>
                         <div className={cn("w-2 h-2 rounded-full shrink-0 mt-1", priorityColor)} />
                       </div>
-                      <span className="text-[12px] text-foreground/80 font-medium leading-snug line-clamp-2">{task.title}</span>
+                      <span className="text-card-title text-foreground/80 font-medium leading-snug line-clamp-2">{task.title}</span>
                       <div className="mt-auto flex items-center gap-1.5 flex-wrap">
                         {task.due_date && (
                           <span className={cn(
-                            "text-[9px] font-mono flex items-center gap-0.5 shrink-0",
+                            "text-caption font-mono flex items-center gap-0.5 shrink-0",
                             overdue ? "text-red-400" : "text-muted-foreground/70"
                           )}>
                             {overdue && <AlertTriangle className="w-2.5 h-2.5" />}
@@ -369,7 +369,7 @@ export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: Ta
                           </span>
                         )}
                         {task.tags && task.tags.length > 0 && (
-                          <span className="text-[9px] text-muted-foreground/50 font-mono truncate max-w-[80px]">
+                          <span className="text-caption text-muted-foreground/50 font-mono truncate max-w-[80px]">
                             {task.tags.slice(0, 2).join(', ')}
                           </span>
                         )}

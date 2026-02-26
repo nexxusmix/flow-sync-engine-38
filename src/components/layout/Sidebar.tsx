@@ -127,7 +127,7 @@ function SidebarMenuItem({
           >
             {item.icon}
           </span>
-          <span className="text-[13px] font-light uppercase tracking-wider flex-1 text-left">
+          <span className="text-body font-light uppercase tracking-wider flex-1 text-left">
             {item.name}
           </span>
           <ChevronDown
@@ -172,13 +172,13 @@ function SidebarMenuItem({
                         {child.icon}
                       </span>
                       <div className="flex items-center gap-2 flex-1">
-                        <span className="text-[12px] font-light uppercase tracking-wider flex-1">
+                        <span className="text-card-title font-light uppercase tracking-wider flex-1">
                           {child.name}
                         </span>
                         {child.badge && (
                           <span
                             className={cn(
-                              "flex items-center justify-center h-5 min-w-5 px-1.5 rounded text-[10px] font-light",
+                              "flex items-center justify-center h-5 min-w-5 px-1.5 rounded text-mono font-light",
                               childActive ? "bg-black/10 text-black" : "bg-primary/15 text-primary"
                             )}
                           >
@@ -267,13 +267,13 @@ function SidebarMenuItem({
               exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.15 }}
             >
-              <span className="text-[13px] font-light uppercase tracking-wider flex-1">
+              <span className="text-body font-light uppercase tracking-wider flex-1">
                 {item.name}
               </span>
               {item.badge && (
                 <span
                   className={cn(
-                    "flex items-center justify-center h-5 min-w-5 px-1.5 rounded text-[10px] font-light",
+                    "flex items-center justify-center h-5 min-w-5 px-1.5 rounded text-mono font-light",
                     isActive ? "bg-black/10 text-black" : "bg-primary/15 text-primary"
                   )}
                 >
@@ -376,7 +376,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <AnimatePresence mode="wait">
                   {!collapsed && (
                     <motion.span
-                      className="text-[13px] font-light uppercase tracking-wider"
+                      className="text-body font-light uppercase tracking-wider"
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -8 }}
@@ -416,7 +416,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             collapsed && "justify-center"
           )}
         >
-          <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center text-primary text-[11px] font-light flex-shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center text-primary text-body-sm font-light flex-shrink-0">
             RS
           </div>
           <AnimatePresence mode="wait">
@@ -428,8 +428,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.15 }}
               >
-                <p className="text-[11px] text-foreground/90 font-light uppercase truncate tracking-wider">Rodrigo S.</p>
-                <p className="text-[10px] text-muted-foreground/60 font-light uppercase tracking-wider">Admin Root</p>
+                <p className="text-body-sm text-foreground/90 font-light uppercase truncate tracking-wider">Rodrigo S.</p>
+                <p className="text-mono text-muted-foreground/60 font-light uppercase tracking-wider">Admin Root</p>
               </motion.div>
             )}
           </AnimatePresence>

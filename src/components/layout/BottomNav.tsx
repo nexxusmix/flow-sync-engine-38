@@ -53,7 +53,7 @@ export function BottomNav() {
                 {item.icon}
               </motion.span>
               <span className={cn(
-                "text-[9px] font-light tracking-wider uppercase transition-colors",
+                "text-caption font-light tracking-wider uppercase transition-colors",
                 active ? "text-primary" : "text-muted-foreground/40"
               )}>
                 {item.name}

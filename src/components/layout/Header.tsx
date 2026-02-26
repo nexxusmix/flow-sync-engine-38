@@ -155,7 +155,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
               <Menu className="w-5 h-5" strokeWidth={1.5} />
             </button>
           )}
-          <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em]">
+          <div className="hidden md:flex items-center gap-2 text-mono text-muted-foreground/60 uppercase tracking-[0.2em]">
             <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-pulse" />
             <span>Hub v2.4</span>
           </div>
@@ -172,7 +172,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
         >
           <Search className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
           <span className="text-xs text-muted-foreground/70 flex-1 text-left truncate">Buscar...</span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/50 bg-white/[0.04] px-1.5 py-0.5 rounded">
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-mono text-muted-foreground/50 bg-white/[0.04] px-1.5 py-0.5 rounded">
             <span>⌘</span>
             <span>K</span>
           </kbd>
@@ -217,7 +217,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
               onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
             >
-              <span className="text-[10px] font-light text-foreground/90 uppercase tracking-wider">
+              <span className="text-mono font-light text-foreground/90 uppercase tracking-wider">
                 {roles.find((r) => r.id === selectedRole)?.label}
               </span>
               <ChevronDown 
@@ -254,7 +254,7 @@ export function Header({ title, onOpenSearch, onOpenMobileSidebar }: HeaderProps
                           toast.success(`Modo: ${role.label}`);
                         }}
                         className={cn(
-                          "w-full px-3 py-2 text-left text-[10px] font-light uppercase tracking-wider transition-colors",
+                          "w-full px-3 py-2 text-left text-mono font-light uppercase tracking-wider transition-colors",
                           selectedRole === role.id
                             ? "text-primary bg-primary/10"
                             : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
