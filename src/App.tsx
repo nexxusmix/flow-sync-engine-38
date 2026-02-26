@@ -62,6 +62,7 @@ import BrandingSettingsPage from "./pages/settings/BrandingSettingsPage";
 import AuditSettingsPage from "./pages/settings/AuditSettingsPage";
 import DangerZoneSettingsPage from "./pages/settings/DangerZoneSettingsPage";
 import UsersSettingsPage from "./pages/settings/UsersSettingsPage";
+import TeamSettingsPage from "./pages/settings/TeamSettingsPage";
 
 // Prospecção Pages
 import ProspectingPage from "./pages/prospecting/ProspectingPage";
@@ -224,6 +225,7 @@ function AppRoutes() {
       <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/branding" element={<ProtectedRoute><BrandingSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/usuarios" element={<ProtectedRoute><UsersSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/equipe" element={<ProtectedRoute><TeamSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/auditoria" element={<ProtectedRoute><AuditSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/danger-zone" element={<ProtectedRoute><DangerZoneSettingsPage /></ProtectedRoute>} />
       <Route path="/plataforma" element={<Navigate to="/" replace />} />

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Building2, Users, Shield, FolderKanban, DollarSign, FileText, FileSignature,
-  Megaphone, Target, Plug, Bell, Palette, ScrollText, AlertTriangle
+  Megaphone, Target, Plug, Bell, Palette, ScrollText, AlertTriangle, UsersRound
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -16,6 +16,16 @@ const settingsSections = [
     path: '/configuracoes/workspace',
     color: 'text-primary',
     bgColor: 'bg-primary/10',
+    adminOnly: false,
+  },
+  {
+    id: 'team',
+    title: 'Equipe',
+    description: 'Membros, convites e papéis do workspace',
+    icon: UsersRound,
+    path: '/configuracoes/equipe',
+    color: 'text-teal-500',
+    bgColor: 'bg-teal-500/10',
     adminOnly: false,
   },
   {

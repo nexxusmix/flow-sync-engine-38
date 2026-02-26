@@ -7015,6 +7015,72 @@ export type Database = {
           },
         ]
       }
+      workspace_invites: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          status: string
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          status?: string
+          token?: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          status?: string
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       workspace_settings: {
         Row: {
           company_document: string | null
@@ -7066,11 +7132,19 @@ export type Database = {
         Args: { p_project_id: string }
         Returns: number
       }
+      get_workspace_role: {
+        Args: { _user_id: string; _workspace_id?: string }
+        Returns: Database["public"]["Enums"]["workspace_role"]
+      }
       has_app_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_workspace_member: {
+        Args: { _user_id: string; _workspace_id?: string }
         Returns: boolean
       }
     }
@@ -7138,6 +7212,7 @@ export type Database = {
         | "sent"
         | "failed"
         | "canceled"
+      workspace_role: "owner" | "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7334,6 +7409,7 @@ export const Constants = {
         "failed",
         "canceled",
       ],
+      workspace_role: ["owner", "admin", "editor", "viewer"],
     },
   },
 } as const
