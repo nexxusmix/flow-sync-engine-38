@@ -80,6 +80,15 @@ const reportTypes = [
     color: 'text-cyan-500',
     bgColor: 'bg-cyan-500/10',
   },
+  {
+    id: 'crm',
+    title: 'CRM / Pipeline',
+    description: 'Funil de deals, lead scoring, temperatura e conversão',
+    icon: TrendingUp,
+    path: '/relatorios/crm',
+    color: 'text-rose-500',
+    bgColor: 'bg-rose-500/10',
+  },
 ];
 
 export default function ReportsDashboard() {
