@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
 import { ContentItem, ContentItemStatus, CONTENT_ITEM_STAGES, CONTENT_CHANNELS, CONTENT_FORMATS } from "@/types/marketing";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Plus, Search, MoreHorizontal, Calendar, AlertTriangle,
-  Link as LinkIcon, ExternalLink
+  Link as LinkIcon, ExternalLink, LayoutTemplate, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -257,7 +258,35 @@ export default function PipelinePage() {
     pillar: '' as any,
     campaign_id: '',
     due_at: '',
+    template_id: '' as string,
   });
+
+  // Content templates for inline selector
+  const [contentTemplates, setContentTemplates] = useState<any[]>([]);
+  const [templateSearch, setTemplateSearch] = useState('');
+
+  useEffect(() => {
+    supabase.from('content_templates').select('*').order('use_count', { ascending: false }).then(({ data }) => {
+      if (data) setContentTemplates(data);
+    });
+  }, []);
+
+  const filteredTemplates = useMemo(() => {
+    if (!templateSearch) return contentTemplates.slice(0, 6);
+    const q = templateSearch.toLowerCase();
+    return contentTemplates.filter(t => t.title.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q)).slice(0, 6);
+  }, [contentTemplates, templateSearch]);
+
+  const handleSelectTemplate = (template: any) => {
+    setNewItem(prev => ({
+      ...prev,
+      title: prev.title || template.title,
+      format: template.format || prev.format,
+      template_id: template.id,
+    }));
+    // Increment use_count
+    supabase.from('content_templates').update({ use_count: (template.use_count || 0) + 1 }).eq('id', template.id);
+  };
 
   useEffect(() => {
     if (searchParams.get('new') === 'true') {
@@ -284,10 +313,11 @@ export default function PipelinePage() {
       pillar: newItem.pillar || undefined,
       campaign_id: newItem.campaign_id || undefined,
       due_at: newItem.due_at || undefined,
+      template_id: newItem.template_id || undefined,
       status: 'briefing',
     });
 
-    setNewItem({ title: '', channel: '', format: '', pillar: '', campaign_id: '', due_at: '' });
+    setNewItem({ title: '', channel: '', format: '', pillar: '', campaign_id: '', due_at: '', template_id: '' });
     setIsNewItemOpen(false);
     toast.success('Conteúdo criado');
   };
@@ -404,6 +434,55 @@ export default function PipelinePage() {
               <DialogTitle>Novo Conteúdo</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              {/* Inline Template Selector */}
+              {contentTemplates.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-xs">
+                    <LayoutTemplate className="w-3.5 h-3.5 text-primary/60" />
+                    Usar Template (opcional)
+                  </Label>
+                  {contentTemplates.length > 6 && (
+                    <Input
+                      value={templateSearch}
+                      onChange={(e) => setTemplateSearch(e.target.value)}
+                      placeholder="Buscar template..."
+                      className="h-7 text-xs"
+                    />
+                  )}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {filteredTemplates.map(t => {
+                      const isSelected = newItem.template_id === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => handleSelectTemplate(t)}
+                          className={`flex items-start gap-2 p-2 rounded-lg border text-left transition-all duration-200 ${
+                            isSelected
+                              ? 'bg-primary/8 border-primary/25'
+                              : 'border-border/20 hover:border-border/40 hover:bg-accent/10'
+                          }`}
+                        >
+                          <span className="text-sm shrink-0">{t.thumbnail_emoji || '📄'}</span>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-medium text-foreground truncate">{t.title}</p>
+                            <p className="text-[9px] text-muted-foreground/50 truncate">{t.format} {t.category ? `· ${t.category}` : ''}</p>
+                          </div>
+                          {isSelected && <Sparkles className="w-3 h-3 text-primary shrink-0 mt-0.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {newItem.template_id && (
+                    <button
+                      onClick={() => setNewItem(prev => ({ ...prev, template_id: '' }))}
+                      className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      ✕ Remover template
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div>
                 <Label>Título *</Label>
                 <Input

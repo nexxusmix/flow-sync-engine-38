@@ -88,6 +88,9 @@ export interface ContentItem {
   notes?: string;
   assets?: string[];
   ai_generated?: boolean;
+  template_id?: string;
+  template_fields?: Record<string, any>;
+  brand_kit_snapshot?: Record<string, any>;
   created_at: string;
   updated_at: string;
   campaign?: Campaign;
