@@ -9,29 +9,34 @@ interface LandingHeroProps {
   scrollContainerRef?: RefObject<HTMLDivElement>;
 }
 
+/* Text mask reveal: each line slides up from behind a clip mask */
+const maskContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.3 } },
+};
+
+const maskChild = {
+  hidden: { y: "100%", opacity: 0 },
+  visible: {
+    y: "0%",
+    opacity: 1,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
+  },
+};
+
 export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
   const navigate = useNavigate();
-
-  const wordVariants = {
-    hidden: { opacity: 0, y: 40, filter: "blur(4px)" },
-    visible: (i: number) => ({
-      opacity: 1, y: 0, filter: "blur(0px)",
-      transition: { delay: 0.3 + i * 0.12, type: "spring" as const, damping: 12, stiffness: 100 },
-    }),
-  };
 
   const words = ["Construa.", "Gerencie.", "Execute.", "Venda."];
 
   return (
-    <section
-      className="relative z-10 px-6 md:px-12 pt-32 pb-12 md:pt-44 md:pb-28 min-h-screen flex items-center"
-    >
+    <section className="relative z-10 px-6 md:px-12 pt-32 pb-12 md:pt-44 md:pb-28 min-h-screen flex items-center">
       <div className="max-w-7xl mx-auto w-full">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Text */}
           <div className="space-y-8">
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 neon-badge"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -39,28 +44,29 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
               <span className="text-sm text-primary font-medium">Duas plataformas. Um ecossistema.</span>
             </motion.div>
 
-            {/* Animated headline */}
+            {/* Text mask headline */}
             <motion.h1
               className="text-4xl md:text-6xl lg:text-7xl font-light text-foreground tracking-tight leading-[1.1]"
+              variants={maskContainer}
               initial="hidden"
               animate="visible"
-              style={{ perspective: "1000px" }}
             >
-              {words.map((word, i) => (
-                <motion.span
-                  key={i}
-                  custom={i}
-                  variants={wordVariants}
-                  className={`inline-block mr-[0.25em] ${i === words.length - 1 ? "text-primary neon-text font-normal" : ""}`}
-                >
-                  {word}
-                </motion.span>
-              ))}
-              <br />
+              <span className="flex flex-wrap">
+                {words.map((word, i) => (
+                  <span key={i} className="overflow-hidden mr-[0.25em]">
+                    <motion.span
+                      variants={maskChild}
+                      className={`inline-block ${i === words.length - 1 ? "text-primary font-normal" : ""}`}
+                    >
+                      {word}
+                    </motion.span>
+                  </span>
+                ))}
+              </span>
               <motion.span
-                className="text-2xl md:text-3xl text-muted-foreground font-light block mt-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                className="text-2xl md:text-3xl text-muted-foreground font-light block mt-4 overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 1, duration: 0.6 }}
               >
                 Tudo em um único Hub inteligente.
@@ -92,25 +98,29 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
               </p>
             </motion.div>
 
-            {/* CTA */}
+            {/* CTA — hover-invert style */}
             <motion.div
               className="flex flex-wrap gap-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 1.4 }}
             >
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="lg" onClick={() => navigate('/login')} className="gap-2 neon-button bg-primary hover:bg-primary/90 text-lg px-8 h-14">
-                  Começar Agora
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="lg" variant="outline" className="gap-2 border-border/50 hover:border-primary/30 hover:bg-primary/5 h-14 px-8">
-                  <Play className="w-4 h-4" />
-                  Ver Planos
-                </Button>
-              </motion.div>
+              <Button
+                size="lg"
+                onClick={() => navigate('/login')}
+                className="gap-2 bg-primary hover:bg-primary/90 text-lg px-8 h-14 hover-invert"
+              >
+                Começar Agora
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2 border-border/50 hover:border-primary/30 hover:bg-primary/5 h-14 px-8"
+              >
+                <Play className="w-4 h-4" />
+                Ver Planos
+              </Button>
             </motion.div>
 
             {/* Stats */}
@@ -131,16 +141,14 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
             </motion.div>
           </div>
 
-          {/* Hero visual */}
+          {/* Hero visual — simplified, no floating animation */}
           <motion.div
-            className="relative floating-video"
-            initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-            transition={{ duration: 1, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ perspective: "1000px" }}
+            className="relative"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="video-aura" />
-            <div className="aspect-video rounded-2xl overflow-hidden border border-border/30 shadow-2xl bg-black relative">
+            <div className="aspect-video rounded-2xl overflow-hidden border border-border/30 shadow-2xl bg-black relative image-ease-in">
               <video
                 src="/videos/hero-demo.mp4"
                 autoPlay loop muted playsInline
@@ -148,16 +156,6 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent pointer-events-none" />
             </div>
-            <motion.div
-              className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-primary/20 blur-2xl"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="absolute -bottom-6 -left-6 w-16 h-16 rounded-full bg-primary/15 blur-2xl"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            />
           </motion.div>
         </div>
       </div>

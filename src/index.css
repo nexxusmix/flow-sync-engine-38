@@ -171,10 +171,10 @@
     }
   }
 
-  /* Minimal scrollbar */
+  /* Ultra-thin scrollbar with fade */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 3px;
+    height: 3px;
   }
 
   ::-webkit-scrollbar-track {
@@ -182,11 +182,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    @apply bg-border/50 rounded-full;
+    transition: background 0.3s;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(0 0% 20%);
+    @apply bg-border;
   }
 }
 
@@ -1234,130 +1235,95 @@
      NEON & LANDING PAGE EFFECTS
      ======================================== */
 
-  /* Neon Text Glow - SQUAD Blue #009CCA */
-  .neon-text {
-    text-shadow:
-      0 0 10px rgba(0, 156, 202, 0.5),
-      0 0 20px rgba(0, 156, 202, 0.3),
-      0 0 40px rgba(0, 156, 202, 0.2),
-      0 0 80px rgba(0, 156, 202, 0.1);
-    animation: neonPulse 3s ease-in-out infinite;
-  }
+  /* ========================================
+     SONANCE PRIMITIVES
+     ======================================== */
 
-  @keyframes neonPulse {
-    0%, 100% {
-      text-shadow:
-        0 0 10px rgba(0, 156, 202, 0.5),
-        0 0 20px rgba(0, 156, 202, 0.3),
-        0 0 40px rgba(0, 156, 202, 0.2),
-        0 0 80px rgba(0, 156, 202, 0.1);
-    }
-    50% {
-      text-shadow:
-        0 0 15px rgba(0, 156, 202, 0.7),
-        0 0 30px rgba(0, 156, 202, 0.5),
-        0 0 60px rgba(0, 156, 202, 0.3),
-        0 0 100px rgba(0, 156, 202, 0.2);
-    }
-  }
-
-  /* Neon Button Glow */
-  .neon-button {
-    position: relative;
-    transition: all 0.3s ease;
-  }
-
-  .neon-button::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: inherit;
-    background: linear-gradient(45deg, rgba(0, 156, 202, 0.5), rgba(0, 200, 255, 0.5), rgba(0, 156, 202, 0.5));
-    background-size: 200% 200%;
-    animation: neonBorderRotate 3s linear infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: -1;
-    filter: blur(8px);
-  }
-
-  .neon-button:hover::before {
-    opacity: 1;
-  }
-
-  @keyframes neonBorderRotate {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  /* Neon Badge Scanner Effect */
-  .neon-badge {
-    position: relative;
+  /* Text Mask Reveal — clip container + slide child */
+  .text-mask-reveal {
     overflow: hidden;
+    display: inline-block;
   }
 
-  .neon-badge::after {
+  .text-mask-reveal > * {
+    display: inline-block;
+    animation: textMaskSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes textMaskSlide {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Image Ease-in — opacity + scale */
+  .image-ease-in {
+    animation: imageEaseIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes imageEaseIn {
+    from { opacity: 0; transform: scale(1.06); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* Hover Invert — black↔white on hover */
+  .hover-invert {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hover-invert:hover {
+    background: hsl(var(--foreground)) !important;
+    color: hsl(var(--background)) !important;
+    border-color: hsl(var(--foreground)) !important;
+  }
+
+  /* Hover Underline Sweep — left to right */
+  .hover-underline-sweep {
+    position: relative;
+    display: inline-block;
+  }
+
+  .hover-underline-sweep::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: -100%;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: hsl(var(--foreground));
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hover-underline-sweep:hover::after {
     width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(0, 156, 202, 0.4),
-      transparent
-    );
-    animation: scannerEffect 2s ease-in-out infinite;
   }
 
-  @keyframes scannerEffect {
-    0% { left: -100%; }
-    50%, 100% { left: 100%; }
+  /* Marquee — continuous horizontal scroll */
+  .marquee {
+    display: flex;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
-  /* Floating Video Container */
-  .floating-video {
-    animation: videoFloat 6s ease-in-out infinite;
-    transform-style: preserve-3d;
+  .marquee-content {
+    display: inline-block;
+    animation: marqueeScroll 30s linear infinite;
   }
 
-  @keyframes videoFloat {
-    0%, 100% {
-      transform: translateY(0) rotateX(2deg) rotateY(-2deg);
-    }
-    50% {
-      transform: translateY(-10px) rotateX(-2deg) rotateY(2deg);
-    }
+  @keyframes marqueeScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
 
-  /* Video Glow Aura */
-  .video-aura {
-    position: absolute;
-    inset: -20px;
-    background: radial-gradient(
-      ellipse at center,
-      rgba(0, 156, 202, 0.3) 0%,
-      rgba(0, 156, 202, 0.1) 40%,
-      transparent 70%
-    );
-    filter: blur(40px);
-    animation: auraBreath 4s ease-in-out infinite;
-    z-index: -1;
+  /* Link hover — opacity 60% */
+  .link-hover-fade {
+    transition: opacity 0.3s ease;
   }
 
-  @keyframes auraBreath {
-    0%, 100% {
-      opacity: 0.6;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.1);
-    }
+  .link-hover-fade:hover {
+    opacity: 0.6;
   }
+
+  /* (removed floating-video and video-aura — replaced by simpler approach) */
 
   /* Glassmorphism Nav */
   .glass-nav {
