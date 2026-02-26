@@ -4,6 +4,9 @@ import { useExecutionPlans } from "@/hooks/useExecutionPlans";
 import { ExecutionPlanPanel } from "@/components/tasks/ExecutionPlanPanel";
 import { TaskChecklistPanel } from "@/components/tasks/TaskChecklistPanel";
 import { TaskCommentsPanel } from "@/components/tasks/TaskCommentsPanel";
+import { TaskAssigneeSelect } from "@/components/tasks/TaskAssigneeSelect";
+import { TaskDependenciesPanel } from "@/components/tasks/TaskDependenciesPanel";
+import { useTasksUnified } from "@/hooks/useTasksUnified";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
@@ -56,6 +59,7 @@ function detectLinkType(url: string): TaskLink['type'] {
 }
 
 export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }: TaskEditDrawerProps) {
+  const { tasks } = useTasksUnified();
   const { getPlanForTask, generatePlan, isGenerating: isPlanGenerating, updatePlan, togglePin } = useExecutionPlans();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -70,6 +74,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [recurrenceRule, setRecurrenceRule] = useState<string>('none');
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState<string | null>(null);
 
   // Load task data
@@ -87,6 +92,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
       setLinks((task as any).links || []);
       setAttachments((task as any).attachments || []);
       setRecurrenceRule((task as any).recurrence_rule || 'none');
+      setAssigneeId((task as any).assignee_id || null);
     }
   }, [task]);
 
@@ -321,6 +327,19 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
               </SelectContent>
             </Select>
           </div>
+
+          {/* Assignee */}
+          <div>
+            <Label className="text-xs">Responsável</Label>
+            <TaskAssigneeSelect value={assigneeId} onChange={(v) => { setAssigneeId(v); save('assignee_id', v); }} />
+          </div>
+
+          {/* Dependencies */}
+          {task && (
+            <div className="border border-border/50 rounded-lg p-3">
+              <TaskDependenciesPanel taskId={task.id} allTasks={tasks} />
+            </div>
+          )}
 
           {/* Description */}
           <div>

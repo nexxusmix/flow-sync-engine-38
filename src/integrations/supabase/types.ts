@@ -6535,6 +6535,42 @@ export type Database = {
           },
         ]
       }
+      task_dependencies: {
+        Row: {
+          created_at: string
+          depends_on_task_id: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on_task_id: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          depends_on_task_id?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_dependencies_depends_on_task_id_fkey"
+            columns: ["depends_on_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_execution_plans: {
         Row: {
           break_pattern: string | null
@@ -6603,9 +6639,49 @@ export type Database = {
           },
         ]
       }
+      task_templates: {
+        Row: {
+          category: string | null
+          checklist_items: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          priority: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          checklist_items?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          checklist_items?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           ai_refined: boolean
+          assignee_id: string | null
           attachments: Json | null
           category: string
           completed_at: string | null
@@ -6630,6 +6706,7 @@ export type Database = {
         }
         Insert: {
           ai_refined?: boolean
+          assignee_id?: string | null
           attachments?: Json | null
           category?: string
           completed_at?: string | null
@@ -6654,6 +6731,7 @@ export type Database = {
         }
         Update: {
           ai_refined?: boolean
+          assignee_id?: string | null
           attachments?: Json | null
           category?: string
           completed_at?: string | null
@@ -6677,6 +6755,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "tasks_project_id_fkey"
             columns: ["project_id"]

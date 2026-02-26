@@ -17,6 +17,7 @@ import { TaskAIDailySummary } from "@/components/tasks/TaskAIDailySummary";
 import { TaskAIPrioritySuggestions } from "@/components/tasks/TaskAIPrioritySuggestions";
 import { TaskAIDeadlineSuggestions } from "@/components/tasks/TaskAIDeadlineSuggestions";
 import { TaskDuplicateDetection } from "@/components/tasks/TaskDuplicateDetection";
+import { TaskTemplateManager } from "@/components/tasks/TaskTemplateManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportPdf } from "@/hooks/useExportPdf";
 import { useUrlState } from "@/hooks/useUrlState";
@@ -91,6 +92,7 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskForm, setTaskForm] = useState<TaskFormData>(defaultTaskForm);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   const [aiText, setAiText] = useState(() => {
     try { return localStorage.getItem('tasks-ai-text') || ''; } catch { return ''; }
   });
@@ -378,6 +380,10 @@ export default function TasksPage() {
                 <Sparkles className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">Criar com IA</span>
               </Button>
+              <Button variant="outline" onClick={() => setIsTemplateOpen(true)}>
+                <FileText className="w-4 h-4 mr-2" />
+                <span className="hidden lg:inline">Templates</span>
+              </Button>
               <Button onClick={() => setIsNewTaskOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">Nova Tarefa</span>
@@ -414,6 +420,7 @@ export default function TasksPage() {
             onToggleComplete={toggleComplete}
             onDeleteTask={deleteTask}
             onMoveTask={moveTask}
+            onReorder={(taskId, newPos) => updateTask(taskId, { position: newPos } as any)}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
           />
@@ -530,6 +537,23 @@ export default function TasksPage() {
           }}
           onUpdate={updateTask}
           onDelete={deleteTask}
+        />
+
+        {/* Template Manager */}
+        <TaskTemplateManager
+          open={isTemplateOpen}
+          onOpenChange={setIsTemplateOpen}
+          onApplyTemplate={(template) => {
+            setTaskForm({
+              ...defaultTaskForm,
+              title: template.title,
+              description: template.description || '',
+              category: template.category as any,
+              priority: template.priority,
+              tags: template.tags?.join(', ') || '',
+            });
+            setIsNewTaskOpen(true);
+          }}
         />
 
         {/* AI Sheet */}

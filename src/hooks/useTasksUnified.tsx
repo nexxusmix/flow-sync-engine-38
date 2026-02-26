@@ -26,6 +26,7 @@ export interface Task {
   recurrence_rule: string | null;
   recurrence_parent_id: string | null;
   project_id: string | null;
+  assignee_id: string | null;
   created_at: string;
   updated_at: string;
 }
