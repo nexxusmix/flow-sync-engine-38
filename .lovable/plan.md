@@ -1,59 +1,51 @@
 
-# Plano Ciclo 2 — Evolução do Quadro de Tarefas
 
-## Fase 6 — Drag-and-Drop Vertical + Atribuição a Membros ✅
-## Fase 7 — Templates de Tarefa ✅
-## Fase 8 — Dependências entre Tarefas ✅
+## Plano: Refinamento do Modo Foco, Planos Ativos e Execução
 
----
+### Problemas Identificados
 
-# Plano Ciclo 3 — Subtarefas, Automações, Gantt e Comentários
+1. **TodayTasksPanel bug**: Filtra por `t.status === 'today'` mas depois verifica `t.status === 'done'` para contar completadas — tarefas completadas saem do filtro `today`, então `completedCount` é sempre 0 e o progresso nunca avança.
 
-## Fase 9 — Subtarefas Aninhadas ✅
-## Fase 10 — Comentários e Atividade ✅
-## Fase 11 — Visão Gantt / Timeline ✅
-## Fase 12 — Automações / Regras ✅
+2. **Modo Foco (SavedFocusPlans)**: 
+   - Planos salvos não permitem marcar tarefas como concluídas interativamente (só exibem estado salvo)
+   - Sem forma de retomar/executar um plano ativo (abrir no modo de execução)
+   - Timer Pomodoro desconectado dos planos — não sabe qual bloco está ativo
 
----
+3. **TaskExecutionGuide (modal Modo Foco)**:
+   - `completeTask` só marca visualmente (state local) mas não persiste no DB nem atualiza o plano salvo
+   - Avanço de blocos automático não funciona (activeBlockIdx nunca muda)
+   - Ao salvar plano, `completed_tasks` não é atualizado depois
 
-# Plano Ciclo 4 — Dashboard Executivo, Colaboração, Integrações, Mobile
+4. **Planos de Execução individuais (ExecutionPlanPanel)**: Funcionam para gerar/visualizar, mas micro-steps não são checkáveis — sem tracking de progresso real
 
-## Fase 13 — Dashboard Executivo ✅
-## Fase 14 — Workspace Colaborativo ✅
+### Implementação
 
-### Implementado:
-- **Presença em tempo real**: `useWorkspacePresence` hook com Supabase Realtime presence channel
-- **Indicadores online**: Dots verdes nos avatares de membros online no TeamManagement e Dashboard
-- **Activity Feed**: Componente `ActivityFeed` lendo event_logs com labels em PT-BR, ícones por entity_type
-- **Dashboard integrado**: Feed de atividade + painel "Online Agora" no Dashboard Executivo
-- **Permission Gate**: `useWorkspacePermissions` hook + `PermissionGate` component para controle de acesso por role
-- **Fluxo de convite completo**: TeamManagement agora chama edge function `invite-user` que gera link de convite real via auth
-- **Roles por workspace**: owner, admin, editor, viewer com permissões mapeadas
+#### 1. Corrigir TodayTasksPanel (SavedFocusPlans.tsx)
+- Usar `tasks.filter(t => t.status === 'today' || (t.status === 'done' && t.completed_at && isToday(parseISO(t.completed_at))))` para incluir tarefas completadas hoje
+- Corrigir contagem: filtrar `done` dentro do conjunto correto
 
-## Fase 15 — Integrações Externas
+#### 2. Tornar planos salvos executáveis (SavedFocusPlans.tsx)
+- Adicionar botão "Retomar" em cada plano ativo que abre o modo de execução (reutilizando a UI do TaskExecutionGuide)
+- Permitir marcar tarefas como concluídas dentro do plano expandido (checkbox interativo)
+- Persistir `completed_tasks` no banco ao marcar/desmarcar
+- Sincronizar com `toggleComplete` do useTasksUnified para que a tarefa real também mude de status
 
-## Fase 16 — Mobile & PWA ✅
+#### 3. Corrigir execução no TaskExecutionGuide
+- Ao `completeTask`, chamar `onComplete(taskId)` para persistir no DB (já faz) E avançar `activeTaskIdx`
+- Quando todas as tarefas de um bloco são concluídas, avançar `activeBlockIdx` automaticamente
+- Ao salvar plano, incluir o estado atual de `completedTasks`
 
-### Implementado:
-- **PWA completo**: vite-plugin-pwa com manifest, service worker, cache offline
-- **Ícones PWA**: 192x192 e 512x512 (maskable)
-- **Meta tags mobile**: apple-mobile-web-app, theme-color, viewport-fit=cover
-- **Bottom Navigation**: Barra inferior com 5 itens (Home, Projetos, Tarefas, CRM, Mais) com indicador animado
-- **Responsividade**: Sidebar oculta no mobile, padding extra para bottom nav, safe-area-inset
-- **Cache offline**: Google Fonts (CacheFirst) + API calls (NetworkFirst com timeout)
-- **Instalação**: Automática via browser prompt (Add to Home Screen)
+#### 4. Tornar micro-steps checkáveis (ExecutionPlanPanel.tsx)
+- Adicionar estado local de `checkedSteps: Set<number>` para os micro-steps
+- Renderizar cada step com checkbox interativo
+- Mostrar progresso visual (ex: 3/5 concluídos)
 
----
+#### 5. Conectar Pomodoro ao plano ativo
+- Quando há um plano em execução, o Pomodoro usa o `duration_minutes` do bloco ativo como duração de sessão (ao invés de fixo 25min)
+- Mostrar nome do bloco/tarefa ativa no timer
 
-## Ordem: Fase 13 ✅ → Fase 16 ✅ → Fase 14 ✅ → Fase 15 (parcial)
+### Arquivos a Modificar
+- `src/components/tasks/SavedFocusPlans.tsx` — fix TodayTasksPanel, planos executáveis, Pomodoro conectado
+- `src/components/tasks/TaskExecutionGuide.tsx` — fix avanço automático de blocos, persistência
+- `src/components/tasks/ExecutionPlanPanel.tsx` — micro-steps checkáveis
 
----
-
-# Plano Ciclo 5 — Evolução Avançada
-
-## Fase 17 — CRM Avançado
-## Fase 18 — Relatórios & Analytics ✅
-## Fase 19 — Portal do Cliente v2
-## Fase 20 — IA & Automações v2
-
-## Ordem: Fase 17 → Fase 18 → Fase 19 → Fase 20
