@@ -45,4 +45,15 @@
 
 ---
 
-## Ordem: Fase 13 ✅ → Fase 16 ✅ → Fase 14 → Fase 15
+## Ordem: Fase 13 ✅ → Fase 16 ✅ → Fase 14 ✅ → Fase 15 (parcial)
+
+---
+
+# Plano Ciclo 5 — Evolução Avançada
+
+## Fase 17 — CRM Avançado
+## Fase 18 — Relatórios & Analytics
+## Fase 19 — Portal do Cliente v2
+## Fase 20 — IA & Automações v2
+
+## Ordem: Fase 17 → Fase 18 → Fase 19 → Fase 20
