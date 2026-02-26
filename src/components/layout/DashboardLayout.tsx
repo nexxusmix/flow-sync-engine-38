@@ -89,11 +89,11 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
               onClick={() => setMobileSidebarOpen(false)}
             />
             <motion.div
-              className="fixed left-0 top-0 z-50 h-[100dvh]"
-              initial={{ x: -280 }}
+              className="fixed left-0 top-0 z-50 h-[100dvh] w-[280px] max-w-[85vw]"
+              initial={{ x: "-100%" }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 350, damping: 32 }}
             >
               <Sidebar 
                 collapsed={false} 
@@ -122,7 +122,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
           ref={mainRef}
           className={cn(
             "flex-1 overflow-y-auto py-6 flex flex-col dashboard-scroll",
-            isMobile ? "px-4 pb-24" : "px-4 md:px-6 lg:px-8"
+            isMobile ? "px-3 pb-24" : "px-4 md:px-6 lg:px-8"
           )} 
           style={isMobile ? undefined : { zoom: 1.2 }}
         >
