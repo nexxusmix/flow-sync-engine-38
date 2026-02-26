@@ -9,6 +9,7 @@ import { BottomNav } from "./BottomNav";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Portal } from "@/components/ui/Portal";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -79,7 +80,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isMobile && mobileSidebarOpen && (
-          <>
+          <Portal>
             <motion.div
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               initial={{ opacity: 0 }}
@@ -99,7 +100,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
                 onToggle={() => setMobileSidebarOpen(false)} 
               />
             </motion.div>
-          </>
+          </Portal>
         )}
       </AnimatePresence>
       
