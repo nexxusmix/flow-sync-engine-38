@@ -1,27 +1,59 @@
 
 
-## Plano: Melhorar UX da Seleção de Tarefas no Modo Foco
+## Problema Identificado
 
-### Contexto
-O `TaskSelectionStep` já existe com funcionalidade básica (selecionar/deselecionar, agrupamento por categoria). Vamos enriquecer a experiência com mais informações visuais e filtros rápidos.
+Modais e popups com `position: fixed` não funcionam corretamente porque estão renderizados **dentro** de elementos com `transform` CSS (framer-motion). Quando um elemento pai tem `transform`, o browser trata `fixed` como `absolute` relativo àquele pai — quebrando o posicionamento.
 
-### Melhorias no `TaskSelectionStep.tsx`
+### Elementos causadores:
+- `DashboardLayout.tsx` linha 106-113: `motion.div` com `animate={{ marginLeft }}` aplica `transform`
+- `PageTransition.tsx`: aplica `scale`, `y`, `filter` via framer-motion
+- `DashboardLayout.tsx` linha 126: `zoom: 1.2` no `<main>`
 
-1. **Filtros rápidos por status** — Botões para selecionar apenas tarefas "Hoje", "Semana" ou "Urgentes" com um clique
-2. **Indicadores visuais de prioridade** — Dot colorido (vermelho=urgente, laranja=alta, azul=normal, cinza=baixa) ao lado de cada tarefa
-3. **Data de vencimento visível** — Mostrar due_date quando existir, com destaque em vermelho se atrasada
-4. **Busca/filtro por texto** — Campo de busca para encontrar tarefas rapidamente em listas longas
-5. **Contagem por categoria** — Mostrar "2/5 selecionadas" no header de cada categoria
-6. **Animação suave** — Transição ao marcar/desmarcar para feedback visual mais claro
-7. **Botão "Inverter Seleção"** — Atalho para inverter todas as seleções rapidamente
+### Solução: Usar React Portals
 
-### Arquivo modificado
-- `src/components/tasks/TaskSelectionStep.tsx` — Refatorar com filtros, busca, indicadores de prioridade/due_date e contadores por categoria
+Mover todos os modais/popups `fixed` para fora da árvore DOM transformada, renderizando-os via `createPortal` diretamente no `document.body`.
+
+### Arquivos a modificar:
+
+1. **Criar `src/components/ui/Portal.tsx`** — Componente utilitário que renderiza children via `createPortal(children, document.body)`
+
+2. **`src/components/tasks/TaskDetailModal.tsx`** — Envolver o conteúdo `fixed inset-0` com `<Portal>`
+
+3. **`src/components/tasks/TaskAnalysisPanel.tsx`** — Envolver com `<Portal>`
+
+4. **`src/components/tasks/TaskExecutionGuide.tsx`** — Envolver com `<Portal>`
+
+5. **`src/components/tasks/TaskAIPrioritySuggestions.tsx`** — Envolver com `<Portal>`
+
+6. **`src/components/tasks/TaskAIDeadlineSuggestions.tsx`** — Envolver com `<Portal>`
+
+7. **`src/components/tasks/TaskDuplicateDetection.tsx`** — Envolver com `<Portal>`
 
 ### Detalhes técnicos
-- Adicionar estado `searchQuery` e `statusFilter` para filtros
-- Usar `useMemo` para filtrar tarefas por texto e status antes do agrupamento
-- Indicador de prioridade via map `{ urgent: 'bg-red-500', high: 'bg-orange-400', normal: 'bg-blue-400', low: 'bg-slate-500' }`
-- Comparar `due_date` com `new Date()` para highlight de atrasadas
-- Manter compatibilidade total com a interface `TaskSelectionStepProps` existente
+
+```text
+Antes:
+  DashboardLayout (motion.div com transform)
+    └─ PageTransition (motion.div com transform)
+        └─ TasksPage
+            └─ TaskDetailModal (fixed inset-0) ← QUEBRADO
+
+Depois:
+  DashboardLayout (motion.div com transform)
+    └─ PageTransition (motion.div com transform)
+        └─ TasksPage
+            └─ TaskDetailModal → Portal → document.body (fixed inset-0) ← FUNCIONA
+```
+
+O componente Portal:
+```tsx
+import { createPortal } from "react-dom";
+import { ReactNode } from "react";
+
+export function Portal({ children }: { children: ReactNode }) {
+  return createPortal(children, document.body);
+}
+```
+
+Cada modal terá apenas 2 linhas alteradas: importar `Portal` e envolver o `AnimatePresence`/container com `<Portal>`.
 
