@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Brain, Loader2, Play, X, Clock, FileDown, Save, ChevronDown } from 'lucide-react';
+import { Brain, Loader2, Play, X, Clock, FileDown, Save, ChevronDown, CalendarPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,6 +68,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
 
   const pendingTasks = tasks.filter(t => t.status !== 'done');
@@ -185,6 +186,48 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
       await exportFocusPDF(plan, orientation);
     } finally {
       setIsExportingPdf(false);
+    }
+  };
+
+  const handleScheduleToCalendar = async () => {
+    if (!plan) return;
+    setIsScheduling(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+
+      let cursor = new Date();
+      const blockColors: Record<string, string> = {
+        deep_work: '#007399',
+        shallow_work: '#64748b',
+        break: '#f59e0b',
+      };
+
+      const events = plan.blocks.map((block) => {
+        const start = new Date(cursor);
+        const end = new Date(start.getTime() + block.duration_minutes * 60 * 1000);
+        cursor = end;
+        const desc = block.tasks.map(t => `• ${t.title} (${t.estimated_minutes}min)`).join('\n');
+        return {
+          title: `${block.type === 'break' ? '☕ ' : '🎯 '}${block.title}`,
+          start_at: start.toISOString(),
+          end_at: end.toISOString(),
+          event_type: 'task',
+          description: desc,
+          color: blockColors[block.type] || '#007399',
+          source: 'manual',
+          provider: 'internal',
+          workspace_id: '00000000-0000-0000-0000-000000000000',
+        };
+      });
+
+      const { error } = await supabase.from('calendar_events').insert(events);
+      if (error) throw error;
+      toast.success('Blocos agendados no calendário!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao agendar no calendário');
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -435,6 +478,16 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                       >
                         {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                         Salvar Plano
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
+                        onClick={handleScheduleToCalendar}
+                        disabled={isScheduling}
+                      >
+                        {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
+                        Agendar
                       </Button>
                     </div>
                   </div>
