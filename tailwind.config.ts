@@ -88,6 +88,19 @@ export default {
         normal: "400",
         regular: "400",
         medium: "500",
+        semibold: "600",
+      },
+      fontSize: {
+        "page-title": ["1.125rem", { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "500" }],
+        "section": ["0.6875rem", { lineHeight: "1.2", letterSpacing: "0.12em", fontWeight: "600" }],
+        "card-title": ["0.75rem", { lineHeight: "1.4", letterSpacing: "-0.005em", fontWeight: "600" }],
+        "body": ["0.8125rem", { lineHeight: "1.5", letterSpacing: "0", fontWeight: "400" }],
+        "body-sm": ["0.6875rem", { lineHeight: "1.45", letterSpacing: "0", fontWeight: "400" }],
+        "caption": ["0.5625rem", { lineHeight: "1.3", letterSpacing: "0.08em", fontWeight: "500" }],
+        "micro": ["0.5rem", { lineHeight: "1.2", letterSpacing: "0.1em", fontWeight: "500" }],
+        "mono": ["0.625rem", { lineHeight: "1.4", letterSpacing: "0.02em", fontWeight: "400" }],
+        "kpi": ["1.5rem", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "300" }],
+        "kpi-sm": ["1rem", { lineHeight: "1.2", letterSpacing: "-0.015em", fontWeight: "300" }],
       },
       keyframes: {
         "accordion-down": {
