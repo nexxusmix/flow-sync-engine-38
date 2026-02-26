@@ -83,13 +83,18 @@ export default function MkDashboardPage() {
                     <span className="text-[9px] text-white/20 uppercase tracking-wider">{card.sublabel}</span>
                   )}
                 </div>
-                <div className="flex items-end gap-2 mt-auto">
-                  <span className={cn(
-                    "text-3xl font-light tracking-tight data-glow",
-                    card.danger ? "text-red-400" : "text-white"
-                  )}>
+                <div className="flex items-end gap-2 mt-auto overflow-hidden">
+                  <motion.span
+                    className={cn(
+                      "text-3xl font-light tracking-tight data-glow inline-block",
+                      card.danger ? "text-red-400" : "text-white"
+                    )}
+                    initial={{ clipPath: "inset(100% 0 0 0)", y: "100%" }}
+                    animate={{ clipPath: "inset(0% 0 0 0)", y: "0%" }}
+                    transition={{ delay: card.delay + 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  >
                     {card.value}
-                  </span>
+                  </motion.span>
                   {card.highlight && (
                     <span className="text-[10px] text-[hsl(195,100%,55%)] mb-1">{card.highlight}</span>
                   )}
@@ -123,7 +128,7 @@ export default function MkDashboardPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35 + i * 0.03 }}
                   onClick={() => navigate(action.href)}
-                  className="group holographic-card rounded-lg px-4 py-3.5 flex items-center gap-3 text-left hover:border-[rgba(0,156,202,0.25)] transition-all duration-300"
+                  className="group holographic-card rounded-lg px-4 py-3.5 flex items-center gap-3 text-left hover:border-primary/20 hover:scale-[1.02] transition-all duration-300"
                 >
                   <span className="material-symbols-outlined text-lg text-[hsl(195,100%,50%)] group-hover:text-[hsl(195,100%,65%)] transition-colors">
                     {action.icon}
@@ -148,7 +153,7 @@ export default function MkDashboardPage() {
                   </div>
                   <button
                     onClick={() => navigate("/m/conteudos")}
-                    className="text-[11px] text-[hsl(195,100%,55%)] uppercase tracking-[0.1em] hover:text-[hsl(195,100%,70%)] transition-colors"
+                    className="text-[11px] text-primary uppercase tracking-[0.1em] hover-underline-sweep transition-colors"
                   >
                     Ver Todos
                   </button>
@@ -190,7 +195,7 @@ export default function MkDashboardPage() {
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.45 + i * 0.05 }}
-                              className="border-b border-white/[0.04] last:border-0"
+                              className="border-b border-white/[0.04] last:border-0 hover:bg-muted/30 transition-colors"
                             >
                               <td className="py-3 text-sm text-white/30 font-mono">{dateStr}</td>
                               <td className="py-3">
