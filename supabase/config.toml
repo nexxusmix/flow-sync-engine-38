@@ -196,3 +196,6 @@ verify_jwt = false
 [functions.generate-content-ai]
 verify_jwt = false
 
+[functions.generate-content-suggestions]
+verify_jwt = false
+
