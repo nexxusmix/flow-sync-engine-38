@@ -272,55 +272,46 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
 
             <motion.div
-              className="relative z-10 w-full max-w-5xl max-h-[70vh] my-auto flex flex-col rounded-3xl border border-[rgba(0,115,153,0.25)] bg-black/90 backdrop-blur-[20px] shadow-[0_8px_32px_0_rgba(0,0,0,0.8)]"
-              style={{
-                backgroundImage: 'radial-gradient(rgba(0,115,153,0.05) 1px, transparent 1px)',
-                backgroundSize: '24px 24px',
-              }}
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+              className="relative z-10 w-full max-w-5xl max-h-[70vh] my-auto flex flex-col rounded-2xl border border-border/30 bg-card/95 backdrop-blur-xl shadow-2xl"
+              initial={{ scale: 0.95, y: 16, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 16, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 120, damping: 18 }}
             >
               <button
                 onClick={() => setIsOpen(false)}
-                className="absolute top-5 right-5 z-20 text-slate-500 hover:text-white transition-colors"
+                className="absolute top-4 right-4 z-20 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
 
               {/* HEADER */}
-              <div className="shrink-0 px-8 pt-8 pb-6">
-                <p
-                  className="text-[9px] uppercase tracking-[0.3em] text-[hsl(var(--primary))]/70 font-mono mb-3"
-                  style={{ textShadow: '1px 0 0 rgba(255,255,255,0.05), -1px 0 0 rgba(0,115,153,0.3)' }}
-                >
+              <div className="shrink-0 px-6 pt-6 pb-4">
+                <p className="text-[9px] uppercase tracking-[0.3em] text-primary/60 font-mono mb-2">
                   MODO FOCO · BLOCOS OTIMIZADOS COM IA
-                  <span className="ml-4 text-slate-600">//HUB · {dateStr}</span>
+                  <span className="ml-4 text-muted-foreground/30">//HUB · {dateStr}</span>
                 </p>
 
                 <div className="flex items-end justify-between gap-6">
-                  <h2
-                    className="text-3xl font-bold uppercase tracking-tight text-white"
-                    style={{ textShadow: '1px 0 0 rgba(255,255,255,0.05), -1px 0 0 rgba(0,115,153,0.3)' }}
-                  >
+                  <h2 className="text-2xl font-light uppercase tracking-tight text-foreground">
                     Plano de Execução
                   </h2>
 
                   {plan && !isLoading && !error && (
-                    <div className="flex items-center gap-0 bg-[rgba(0,115,153,0.07)] border border-[rgba(0,115,153,0.15)] rounded-xl px-5 py-2.5">
-                      <div className="text-center px-4">
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Blocos</p>
-                        <p className="text-lg font-semibold text-white">{plan.blocks.length}</p>
+                    <div className="flex items-center gap-0 border border-border/20 rounded-xl px-4 py-2">
+                      <div className="text-center px-3">
+                        <p className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground/50 font-mono">Blocos</p>
+                        <p className="text-base font-light text-foreground">{plan.blocks.length}</p>
                       </div>
-                      <div className="w-px h-8 bg-[rgba(0,115,153,0.2)]" />
-                      <div className="text-center px-4">
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Progresso</p>
-                        <p className="text-lg font-semibold text-white">{completedCount}/{totalTasks}</p>
+                      <div className="w-px h-6 bg-border/20" />
+                      <div className="text-center px-3">
+                        <p className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground/50 font-mono">Progresso</p>
+                        <p className="text-base font-light text-foreground">{completedCount}/{totalTasks}</p>
                       </div>
-                      <div className="w-px h-8 bg-[rgba(0,115,153,0.2)]" />
-                      <div className="text-center px-4">
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Tempo</p>
-                        <p className="text-lg font-semibold text-white">{formatEstimatedTime(plan.total_estimated_minutes)}</p>
+                      <div className="w-px h-6 bg-border/20" />
+                      <div className="text-center px-3">
+                        <p className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground/50 font-mono">Tempo</p>
+                        <p className="text-base font-light text-foreground">{formatEstimatedTime(plan.total_estimated_minutes)}</p>
                       </div>
                     </div>
                   )}
@@ -328,34 +319,34 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
               </div>
 
               {/* CONTENT */}
-              <div className="flex-1 overflow-y-auto min-h-0 px-8">
+              <div className="flex-1 overflow-y-auto min-h-0 px-6">
                 {showSelection ? (
                   <TaskSelectionStep tasks={pendingTasks} onConfirm={generatePlan} />
                 ) : isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--primary))]" />
-                    <p className="text-sm text-slate-400 animate-pulse">Gerando plano de execução com IA...</p>
-                    <p className="text-[10px] text-slate-600">Analisando {pendingTasks.length} tarefas · Neurociência + Produtividade</p>
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary/50" />
+                    <p className="text-sm text-muted-foreground animate-pulse">Gerando plano de execução com IA...</p>
+                    <p className="text-[10px] text-muted-foreground/40">Analisando {pendingTasks.length} tarefas</p>
                   </div>
                 ) : error ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-                    <p className="text-sm text-red-400 font-medium">Não foi possível gerar o plano</p>
-                    <p className="text-xs text-slate-500 max-w-xs">{error}</p>
-                    <Button variant="outline" size="sm" onClick={openSelection} className="gap-1.5 mt-2 border-[rgba(0,115,153,0.25)] bg-transparent text-white hover:bg-[rgba(0,115,153,0.1)]">
+                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                    <p className="text-sm text-destructive font-medium">Não foi possível gerar o plano</p>
+                    <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
+                    <Button variant="outline" size="sm" onClick={openSelection} className="gap-1.5 mt-2">
                       <Play className="w-3.5 h-3.5" /> Tentar novamente
                     </Button>
                   </div>
                 ) : plan ? (
                   <div>
                     {/* Progress bar */}
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Progresso Geral</span>
-                        <span className="text-[10px] text-slate-400 font-mono">{totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0}%</span>
+                        <span className="text-[8px] uppercase tracking-[0.25em] text-muted-foreground/50 font-mono">Progresso Geral</span>
+                        <span className="text-[9px] text-muted-foreground/40 font-mono">{totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0}%</span>
                       </div>
-                      <div className="w-full h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                      <div className="w-full h-1 bg-border/15 rounded-full overflow-hidden">
                         <motion.div
-                          className="h-full bg-emerald-500 rounded-full"
+                          className="h-full bg-primary rounded-full"
                           initial={{ width: 0 }}
                           animate={{ width: `${totalTasks > 0 ? (completedCount / totalTasks) * 100 : 0}%` }}
                           transition={{ duration: 0.5 }}
@@ -364,11 +355,11 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                     </div>
 
                     {/* Table Header */}
-                    <div className="grid grid-cols-[1fr_140px_140px_100px] gap-2 px-4 pb-3 border-b border-white/[0.04]">
-                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Execução Estratégica</span>
-                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Método</span>
-                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Duração</span>
-                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono text-right">Status</span>
+                    <div className="grid grid-cols-[1fr_140px_140px_100px] gap-2 px-3 pb-2 border-b border-border/10">
+                      <span className="text-[8px] uppercase tracking-[0.25em] text-muted-foreground/40 font-mono">Execução Estratégica</span>
+                      <span className="text-[8px] uppercase tracking-[0.25em] text-muted-foreground/40 font-mono">Método</span>
+                      <span className="text-[8px] uppercase tracking-[0.25em] text-muted-foreground/40 font-mono">Duração</span>
+                      <span className="text-[8px] uppercase tracking-[0.25em] text-muted-foreground/40 font-mono text-right">Status</span>
                     </div>
 
                     {plan.blocks.map((block, bIdx) => {
@@ -383,24 +374,24 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                         <div key={block.id}>
                           <div
                             className={cn(
-                              "grid grid-cols-[1fr_140px_140px_100px] gap-2 items-center px-4 py-3.5 border-b border-white/[0.03] cursor-pointer transition-all duration-300",
-                              bIdx === activeBlockIdx ? "bg-[rgba(0,115,153,0.08)]" : "hover:bg-[rgba(0,115,153,0.04)]"
+                              "grid grid-cols-[1fr_140px_140px_100px] gap-2 items-center px-3 py-3 border-b border-border/5 cursor-pointer transition-all duration-300",
+                              bIdx === activeBlockIdx ? "bg-primary/5" : "hover:bg-accent/10"
                             )}
                             onClick={() => setExpandedBlock(isExpanded ? null : bIdx)}
                           >
-                            <div className="flex items-start gap-3 min-w-0">
-                              <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", getIndicatorStyle(block.type))} />
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", getIndicatorStyle(block.type))} />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="text-[13px] font-medium text-white/90 truncate">{block.title}</p>
-                                  <span className="text-[10px] text-slate-500 font-mono">{blockDoneCount}/{tasks.length}</span>
-                                  <ChevronDown className={cn("w-3.5 h-3.5 text-slate-600 transition-transform shrink-0", isExpanded && "rotate-180")} />
+                                  <p className="text-[12px] font-medium text-foreground/80 truncate">{block.title}</p>
+                                  <span className="text-[9px] text-muted-foreground/40 font-mono">{blockDoneCount}/{tasks.length}</span>
+                                  <ChevronDown className={cn("w-3 h-3 text-muted-foreground/30 transition-transform shrink-0", isExpanded && "rotate-180")} />
                                 </div>
                               </div>
                             </div>
-                            <span className="text-[11px] font-mono text-slate-400 tracking-wider">{methodLabel}</span>
-                            <span className="text-[11px] font-mono text-slate-400">{block.technique} {block.duration_minutes}min</span>
-                            <span className={cn("text-[11px] font-mono text-right", status.className)}>{status.label}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground/50 tracking-wider">{methodLabel}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground/50">{block.technique} {block.duration_minutes}min</span>
+                            <span className={cn("text-[10px] font-mono text-right", status.className)}>{status.label}</span>
                           </div>
 
                           <AnimatePresence>
@@ -409,29 +400,29 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden bg-[rgba(0,115,153,0.04)] border-b border-white/[0.03]"
+                                transition={{ type: 'spring', stiffness: 120, damping: 14 }}
+                                className="overflow-hidden bg-accent/5 border-b border-border/5"
                               >
-                                <div className="px-4 py-3 pl-12 space-y-1.5">
+                                <div className="px-3 py-2 pl-10 space-y-1">
                                   {tasks.map((task, tIdx) => {
                                     const isDone = completedTasks.has(task.id);
                                     return (
                                       <div
                                         key={task.id}
                                         className={cn(
-                                          "flex items-center gap-3 py-2 px-3 rounded-lg text-xs transition-all",
-                                          isDone ? "opacity-50 line-through" : "hover:bg-[rgba(0,115,153,0.06)]"
+                                          "flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-xs transition-all",
+                                          isDone ? "opacity-35 line-through" : "hover:bg-accent/10"
                                         )}
                                       >
                                         <button
                                           onClick={(e) => { e.stopPropagation(); if (!isDone) completeTask(task.id); }}
                                           className={cn(
-                                            "w-4 h-4 rounded-full border-2 shrink-0 transition-all",
-                                            isDone ? "bg-emerald-500 border-emerald-500" : "border-slate-600 hover:border-[hsl(var(--primary))]"
+                                            "w-3.5 h-3.5 rounded-full border-2 shrink-0 transition-all",
+                                            isDone ? "bg-primary border-primary" : "border-border/40 hover:border-primary/50"
                                           )}
                                         />
-                                        <span className="flex-1 text-[12px] text-white/80 font-medium">{task.title}</span>
-                                        <span className="text-[10px] text-slate-500 font-mono">{task.estimated_minutes}min</span>
+                                        <span className="flex-1 text-[11px] text-foreground/70 font-medium">{task.title}</span>
+                                        <span className="text-[9px] text-muted-foreground/40 font-mono">{task.estimated_minutes}min</span>
                                         {bIdx === activeBlockIdx && tIdx === activeTaskIdx && !isDone && (
                                           <TaskTimer compact onTimeUpdate={() => {}} />
                                         )}
@@ -451,14 +442,14 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
 
               {/* FOOTER */}
               {plan && !isLoading && !error && (
-                <div className="shrink-0 px-8 py-5 border-t border-white/[0.04]">
+                <div className="shrink-0 px-6 py-4 border-t border-border/10">
                   {(plan.tips?.length ?? 0) > 0 && (
-                    <div className="mb-4">
-                      <p className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono mb-2.5">Dicas de Produtividade</p>
+                    <div className="mb-3">
+                      <p className="text-[8px] uppercase tracking-[0.25em] text-muted-foreground/40 font-mono mb-2">Dicas de Produtividade</p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         {plan.tips.map((tip, i) => (
-                          <p key={i} className="text-[11px] text-slate-400 leading-relaxed">
-                            <span className="text-[hsl(var(--primary))] mr-1.5 font-mono">&gt;</span>
+                          <p key={i} className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                            <span className="text-primary/50 mr-1 font-mono">&gt;</span>
                             {tip}
                           </p>
                         ))}
@@ -467,46 +458,36 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                   )}
 
                   <div className="flex items-center justify-between">
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-slate-600 font-mono">
-                      powered by <span className="text-slate-500">SQUAD///FILM</span>
+                    <p className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground/30 font-mono">
+                      powered by <span className="text-muted-foreground/40">SQUAD///HUB</span>
                     </p>
                     <div className="flex items-center gap-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
-                            disabled={isExportingPdf}
-                          >
-                            {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                          <Button variant="outline" size="sm" className="gap-1.5 text-[9px] border-border/20" disabled={isExportingPdf}>
+                            {isExportingPdf ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
                             Exportar PDF
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="z-[60]">
-                          <DropdownMenuItem onClick={() => handleExportPdf('landscape')}>A4 Horizontal (Paisagem)</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleExportPdf('portrait')}>A4 Vertical (Retrato)</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExportPdf('landscape')}>A4 Horizontal</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExportPdf('portrait')}>A4 Vertical</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
+                        className="gap-1.5 text-[9px] border-border/20"
                         onClick={handleSavePlan}
                         disabled={isSaving}
                       >
-                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         Salvar Plano
                       </Button>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 text-[10px] border-[rgba(0,115,153,0.2)] bg-transparent text-slate-400 hover:bg-[rgba(0,115,153,0.1)] hover:text-white"
-                            disabled={isScheduling}
-                          >
-                            {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
+                          <Button variant="outline" size="sm" className="gap-1.5 text-[9px] border-border/20" disabled={isScheduling}>
+                            {isScheduling ? <Loader2 className="w-3 h-3 animate-spin" /> : <CalendarPlus className="w-3 h-3" />}
                             Agendar
                           </Button>
                         </PopoverTrigger>
@@ -529,14 +510,9 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                                 className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground"
                               />
                             </div>
-                            <Button
-                              size="sm"
-                              className="w-full gap-1.5 text-xs"
-                              onClick={handleScheduleToCalendar}
-                              disabled={isScheduling}
-                            >
-                              {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
-                              Confirmar Agendamento
+                            <Button size="sm" className="w-full gap-1.5 text-xs hover-invert" onClick={handleScheduleToCalendar} disabled={isScheduling}>
+                              {isScheduling ? <Loader2 className="w-3 h-3 animate-spin" /> : <CalendarPlus className="w-3 h-3" />}
+                              Confirmar
                             </Button>
                           </div>
                         </PopoverContent>
