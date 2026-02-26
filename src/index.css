@@ -141,10 +141,11 @@
     height: 100dvh;
   }
 
-  /* Mobile: disable 3D transforms and heavy effects for performance */
+  /* Mobile: disable heavy effects, improve touch targets */
   @media (max-width: 767px) {
     html {
       perspective: none;
+      -webkit-tap-highlight-color: transparent;
     }
     
     .glass-card:hover,
@@ -153,8 +154,14 @@
     .hover-lift:hover,
     .hover-tilt:hover,
     .kpi-card:hover,
-    .kanban-stage:hover {
+    .kanban-stage:hover,
+    .hover-project-card:hover {
       transform: none !important;
+    }
+
+    /* Hide VIEW cursor overlay on mobile */
+    .hover-project-card::before {
+      display: none;
     }
     
     .blob {
@@ -168,6 +175,32 @@
     
     .card-elevated, .card-flat {
       @apply p-4 rounded-xl;
+    }
+
+    /* Touch-friendly min sizes */
+    button, a, [role="button"] {
+      min-height: 36px;
+    }
+
+    /* Tables scroll horizontally */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive table {
+      min-width: 600px;
+    }
+
+    /* Compact section headers */
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+    }
+
+    /* Glass projection cards */
+    .glass-projection, .holographic-card, .glass-card {
+      @apply rounded-lg;
     }
   }
 

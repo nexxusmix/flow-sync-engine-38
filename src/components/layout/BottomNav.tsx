@@ -25,8 +25,8 @@ export function BottomNav() {
   const { pathname } = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-white/[0.06] bg-[#030303]/95 backdrop-blur-xl safe-area-bottom">
-      <div className="flex items-center justify-around h-16 px-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl safe-area-bottom">
+      <div className="flex items-center justify-around h-[60px] px-1">
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           return (
@@ -34,24 +34,28 @@ export function BottomNav() {
               key={item.href}
               to={item.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 flex-1 py-1.5 rounded-lg transition-colors relative",
-                active ? "text-primary" : "text-muted-foreground/60"
+                "flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[44px] min-w-[44px] py-1.5 rounded-xl transition-all duration-200 relative active:scale-95",
+                active ? "text-primary" : "text-muted-foreground/50"
               )}
             >
               {active && (
                 <motion.div
                   layoutId="bottomnav-indicator"
-                  className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary"
+                  className="absolute -top-px left-1/2 -translate-x-1/2 w-10 h-[2px] rounded-full bg-primary"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <span className={cn(
-                "material-symbols-outlined text-[22px]",
-                active && "text-primary"
-              )}>
+              <motion.span
+                className="material-symbols-outlined text-[22px]"
+                animate={active ? { scale: 1.1 } : { scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
                 {item.icon}
-              </span>
-              <span className="text-[10px] font-light tracking-wider uppercase">
+              </motion.span>
+              <span className={cn(
+                "text-[9px] font-light tracking-wider uppercase transition-colors",
+                active ? "text-primary" : "text-muted-foreground/40"
+              )}>
                 {item.name}
               </span>
             </Link>
