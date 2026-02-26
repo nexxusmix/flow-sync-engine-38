@@ -70,6 +70,11 @@ serve(async (req) => {
         technique: b.technique || '',
         duration: `${b.duration_minutes || 0}min`,
         progress: i === 0 ? 'Active' : i < 3 ? 'Queued' : 'Scheduled',
+        tasks: (b.tasks || []).map((t: any) => ({
+          title: t.title,
+          estimated_minutes: t.estimated_minutes || 0,
+          cognitive_type: t.cognitive_type || '',
+        })),
       })),
       tips: (tips || []).slice(0, 3),
     });
@@ -79,6 +84,10 @@ Return ONLY a complete HTML document. No markdown code blocks.
 
 Use this EXACT CSS in <style>:
 ${SQUAD_CSS}
+.subtasks { margin: 4px 0 0 24px; }
+.subtask { font-size: 10px; color: #8C8C8C; padding: 3px 0; display: flex; align-items: center; gap: 6px; }
+.subtask .dot { width: 4px; height: 4px; border-radius: 50%; background: #009CCA; flex-shrink: 0; }
+.subtask .time { color: #4A4A4A; font-size: 9px; margin-left: auto; }
 
 Add in <head>:
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -87,12 +96,16 @@ STRUCTURE:
 1. div.header with div.logo "SQ" + span.header-right "SQUAD FILM | 2026"
 2. div.hero: subtitle "Modo Foco - Blocos Otimizados com IA", title "Plano de<br><span class='accent'>Execucao.</span>", accent-bar, desc with blocks/tasks/time summary
 3. div.kpi-row: Blocos, Tarefas, Tempo Estimado (accent), Status "ATIVO" (success)
-4. div.section "Execucao Estrategica" with table (Bloco, Metodo, Duracao, Progresso). 
+4. div.section "Execucao Estrategica": For EACH block render:
+   - A row with block title (bold), method badge, duration, progress
+   - BELOW each block row, render ALL its subtasks as a div.subtasks containing div.subtask items with: dot, task title, and estimated time on the right
+   - Use a simple list layout, NOT a nested table
    - type=break: method "PAUSA" badge-warning, type=deep_work: "DEEP WORK" badge-accent, else "SHALLOW WORK" badge-muted
    - First block Active (bold white), rest muted
-   - Bold block titles
 5. If tips exist: div.tips with section-title "Dicas de Produtividade" and tip items
-6. div.footer "SQUAD FILM | 2026"`;
+6. div.footer "SQUAD FILM | 2026"
+
+IMPORTANT: Every block MUST show its subtasks. This is critical.`;
 
     const aiResult = await chatCompletion({
       model: "google/gemini-2.5-flash",
