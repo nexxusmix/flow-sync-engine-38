@@ -1232,12 +1232,28 @@
   }
 
   /* ========================================
-     NEON & LANDING PAGE EFFECTS
+     GLOBAL HOVER SYSTEM
      ======================================== */
+
+  /* Links — subtle opacity fade */
+  a:not([class*="btn"]):not(button):not([role="button"]) {
+    transition: opacity 0.3s ease;
+  }
+  a:not([class*="btn"]):not(button):not([role="button"]):hover {
+    opacity: 0.6;
+  }
+
+  /* Cards — subtle zoom on hover */
+  .hover-card-zoom {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hover-card-zoom:hover {
+    transform: scale(1.015);
+  }
 
   /* ========================================
      SONANCE PRIMITIVES
-     ======================================== */
+     ========================================*/
 
   /* Text Mask Reveal — clip container + slide child */
   .text-mask-reveal {

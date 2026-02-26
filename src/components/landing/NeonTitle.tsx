@@ -57,7 +57,7 @@ export function NeonTitle({ text, highlightWord, className = '' }: NeonTitleProp
             variants={wordVariants}
             className={`inline-block mr-[0.3em] ${
               isHighlighted 
-                ? 'text-primary font-normal neon-text' 
+                ? 'text-primary font-normal' 
                 : ''
             }`}
             style={{
