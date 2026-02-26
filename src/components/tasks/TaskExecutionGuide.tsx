@@ -91,7 +91,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
     const currentBlock = plan.blocks[activeBlockIdx];
     if (!currentBlock) return;
 
-    const allDone = currentBlock.tasks.every(t => completedTasks.has(t.id));
+    const allDone = (currentBlock.tasks || []).every(t => completedTasks.has(t.id));
     if (allDone && activeBlockIdx < plan.blocks.length - 1) {
       // Move to next block
       setActiveBlockIdx(prev => prev + 1);
@@ -155,7 +155,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
     if (plan) {
       const currentBlock = plan.blocks[activeBlockIdx];
       if (currentBlock) {
-        const nextUnfinished = currentBlock.tasks.findIndex(
+        const nextUnfinished = (currentBlock.tasks || []).findIndex(
           (t, idx) => idx > activeTaskIdx && !completedTasks.has(t.id) && t.id !== taskId
         );
         if (nextUnfinished >= 0) {
@@ -224,7 +224,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
         const start = new Date(cursor);
         const end = new Date(start.getTime() + block.duration_minutes * 60 * 1000);
         cursor = end;
-        const desc = block.tasks.map(t => `• ${t.title} (${t.estimated_minutes}min)`).join('\n');
+        const desc = (block.tasks || []).map(t => `• ${t.title} (${t.estimated_minutes}min)`).join('\n');
         return {
           title: `${block.type === 'break' ? '☕ ' : '🎯 '}${block.title}`,
           start_at: start.toISOString(),
@@ -372,11 +372,12 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                     </div>
 
                     {plan.blocks.map((block, bIdx) => {
-                      const blockCompleted = block.tasks.every(t => completedTasks.has(t.id));
+                      const tasks = block.tasks || [];
+                      const blockCompleted = tasks.every(t => completedTasks.has(t.id));
                       const status = getBlockStatus(bIdx, activeBlockIdx, blockCompleted);
                       const isExpanded = expandedBlock === bIdx;
                       const methodLabel = block.type === 'break' ? 'BREAK' : block.type === 'deep_work' ? 'DEEP WORK' : 'SHALLOW WORK';
-                      const blockDoneCount = block.tasks.filter(t => completedTasks.has(t.id)).length;
+                      const blockDoneCount = tasks.filter(t => completedTasks.has(t.id)).length;
 
                       return (
                         <div key={block.id}>
@@ -392,7 +393,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="text-[13px] font-medium text-white/90 truncate">{block.title}</p>
-                                  <span className="text-[10px] text-slate-500 font-mono">{blockDoneCount}/{block.tasks.length}</span>
+                                  <span className="text-[10px] text-slate-500 font-mono">{blockDoneCount}/{tasks.length}</span>
                                   <ChevronDown className={cn("w-3.5 h-3.5 text-slate-600 transition-transform shrink-0", isExpanded && "rotate-180")} />
                                 </div>
                               </div>
@@ -412,7 +413,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                                 className="overflow-hidden bg-[rgba(0,115,153,0.04)] border-b border-white/[0.03]"
                               >
                                 <div className="px-4 py-3 pl-12 space-y-1.5">
-                                  {block.tasks.map((task, tIdx) => {
+                                  {tasks.map((task, tIdx) => {
                                     const isDone = completedTasks.has(task.id);
                                     return (
                                       <div
