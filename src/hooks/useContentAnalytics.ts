@@ -6,8 +6,13 @@ const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
 export interface ContentKPIs {
   totalItems: number;
   publishedCount: number;
+  publishedThisMonth: number;
   draftCount: number;
   scheduledCount: number;
+  reviewCount: number;
+  approvedCount: number;
+  overdueCount: number;
+  approvalRate: number;
   totalReach: number;
   totalViews: number;
   totalLikes: number;
@@ -35,7 +40,7 @@ export function useContentAnalytics() {
       // Fetch content items
       const { data: items, error: itemsErr } = await supabase
         .from('content_items')
-        .select('id, title, channel, status, published_at, scheduled_at, created_at')
+        .select('id, title, channel, status, published_at, scheduled_at, created_at, due_at')
         .eq('workspace_id', DEFAULT_WORKSPACE)
         .order('created_at', { ascending: false });
 
@@ -76,6 +81,26 @@ export function useContentAnalytics() {
       const publishedCount = allItems.filter(i => i.status === 'published' || i.status === 'publicado').length;
       const draftCount = allItems.filter(i => i.status === 'draft' || i.status === 'rascunho' || i.status === 'idea').length;
       const scheduledCount = allItems.filter(i => i.status === 'scheduled' || i.status === 'agendado').length;
+      const reviewCount = allItems.filter(i => i.status === 'review').length;
+      const approvedCount = allItems.filter(i => i.status === 'approved').length;
+
+      // Published this month
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const publishedThisMonth = allItems.filter(i =>
+        (i.status === 'published' || i.status === 'publicado') &&
+        i.published_at && i.published_at >= monthStart
+      ).length;
+
+      // Overdue: has due date in the past, not published/archived
+      const overdueCount = allItems.filter(i =>
+        i.due_at && new Date(i.due_at) < now &&
+        !['published', 'publicado', 'archived'].includes(i.status || '')
+      ).length;
+
+      // Approval rate: approved+published / (approved+published+review) 
+      const totalReviewed = approvedCount + publishedCount + reviewCount;
+      const approvalRate = totalReviewed > 0 ? ((approvedCount + publishedCount) / totalReviewed) * 100 : 0;
 
       let totalReach = 0, totalViews = 0, totalLikes = 0, totalComments = 0, totalShares = 0;
       for (const m of metricsMap.values()) {
@@ -118,8 +143,13 @@ export function useContentAnalytics() {
       return {
         totalItems: allItems.length,
         publishedCount,
+        publishedThisMonth,
         draftCount,
         scheduledCount,
+        reviewCount,
+        approvedCount,
+        overdueCount,
+        approvalRate,
         totalReach,
         totalViews,
         totalLikes,

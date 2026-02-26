@@ -6,7 +6,7 @@ import { MkAppShell } from "@/components/marketing-hub/MkAppShell";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useContentAnalytics } from "@/hooks/useContentAnalytics";
-import { Loader2, BarChart3, Eye, Heart, MessageCircle, Share2, TrendingUp, Calendar, FileText, Send } from "lucide-react";
+import { Loader2, BarChart3, Eye, Heart, MessageCircle, Share2, TrendingUp, Calendar, FileText, Send, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -67,28 +67,56 @@ export default function MkDashboardPage() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <HoloMetricCard
+              label="Conteúdos"
+              value={String(kpis?.totalItems || 0)}
+              icon={FileText}
+              delay={0.1}
+            />
+            <HoloMetricCard
+              label="Publicados_Mês"
+              value={String(kpis?.publishedThisMonth || 0)}
+              icon={Send}
+              delay={0.15}
+            />
+            <HoloMetricCard
+              label="Taxa_Aprovação"
+              value={`${(kpis?.approvalRate || 0).toFixed(0)}%`}
+              icon={CheckCircle}
+              delay={0.2}
+            />
+            <HoloMetricCard
+              label="Atrasados"
+              value={String(kpis?.overdueCount || 0)}
+              icon={AlertTriangle}
+              delay={0.25}
+            />
+          </div>
+
+          {/* Secondary KPI row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <HoloMetricCard
               label="Alcance_Total"
               value={formatNumber(kpis?.totalReach || 0)}
               icon={BarChart3}
-              delay={0.1}
+              delay={0.3}
             />
             <HoloMetricCard
               label="Visualizações"
               value={formatNumber(kpis?.totalViews || 0)}
               icon={Eye}
-              delay={0.15}
+              delay={0.35}
             />
             <HoloMetricCard
               label="Engajamento"
               value={`${(kpis?.engagementRate || 0).toFixed(1)}%`}
               icon={TrendingUp}
-              delay={0.2}
+              delay={0.4}
             />
             <HoloMetricCard
-              label="Conteúdos"
-              value={String(kpis?.totalItems || 0)}
-              icon={FileText}
-              delay={0.25}
+              label="Em_Review"
+              value={String(kpis?.reviewCount || 0)}
+              icon={Clock}
+              delay={0.45}
             />
           </div>
 
@@ -121,8 +149,11 @@ export default function MkDashboardPage() {
                 <div className="space-y-2.5">
                   {[
                     { label: 'Publicados', value: kpis?.publishedCount || 0, color: 'bg-emerald-500' },
+                    { label: 'Aprovados', value: kpis?.approvedCount || 0, color: 'bg-green-400' },
                     { label: 'Agendados', value: kpis?.scheduledCount || 0, color: 'bg-[hsl(195,100%,50%)]' },
-                    { label: 'Rascunhos', value: kpis?.draftCount || 0, color: 'bg-amber-500' },
+                    { label: 'Em Review', value: kpis?.reviewCount || 0, color: 'bg-amber-500' },
+                    { label: 'Rascunhos', value: kpis?.draftCount || 0, color: 'bg-white/20' },
+                    { label: 'Atrasados', value: kpis?.overdueCount || 0, color: 'bg-red-500' },
                   ].map((s) => (
                     <div key={s.label} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
