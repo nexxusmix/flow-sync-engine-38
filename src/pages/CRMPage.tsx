@@ -2,6 +2,7 @@ import { useState, useRef, MouseEvent } from "react";
 import { formatCurrencyBRL } from "@/utils/format";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KanbanColumn } from "@/components/crm/KanbanColumn";
+import { DealDrawer } from "@/components/crm/DealDrawer";
 import { useCRM, CRM_STAGES, Deal } from "@/hooks/useCRM";
 import { useAuth } from "@/hooks/useAuth";
 import { Filter, ChevronDown, Plus, Sparkles, Users, Loader2, Search, X as XIcon, Flame, Snowflake, ThermometerSun } from "lucide-react";
@@ -26,6 +27,7 @@ export default function CRMPage() {
   const [tempFilter, setTempFilter] = useState<string | null>(null);
   const [minValue, setMinValue] = useState('');
   const [maxValue, setMaxValue] = useState('');
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   
   // New deal form state
   const [newDealTitle, setNewDealTitle] = useState('');
@@ -280,6 +282,7 @@ export default function CRMPage() {
                   deals={finalDeals.filter(d => d.stage === stage.key)}
                   onDeleteDeal={(id) => deleteDeal(id)}
                   onMoveDeal={(dealId, toStage) => moveDealToStage({ dealId, stage: toStage })}
+                  onOpenDeal={(id) => setSelectedDealId(id)}
                 />
               ))}
             </div>
@@ -391,6 +394,13 @@ export default function CRMPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Deal Drawer */}
+      <DealDrawer
+        deal={selectedDealId ? deals.find(d => d.id === selectedDealId) || null : null}
+        open={!!selectedDealId}
+        onClose={() => setSelectedDealId(null)}
+      />
     </DashboardLayout>
   );
 }

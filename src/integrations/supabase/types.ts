@@ -2683,7 +2683,11 @@ export type Database = {
           contact_id: string | null
           created_at: string | null
           created_by: string | null
+          follow_up_due_at: string | null
           id: string
+          last_activity_at: string | null
+          lead_score: number | null
+          lead_score_reasons: Json | null
           lost_reason: string | null
           next_action: string | null
           next_action_at: string | null
@@ -2691,6 +2695,7 @@ export type Database = {
           score: number | null
           source: string | null
           stage_key: string | null
+          stale_days: number | null
           temperature: string | null
           title: string
           updated_at: string | null
@@ -2701,7 +2706,11 @@ export type Database = {
           contact_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          follow_up_due_at?: string | null
           id?: string
+          last_activity_at?: string | null
+          lead_score?: number | null
+          lead_score_reasons?: Json | null
           lost_reason?: string | null
           next_action?: string | null
           next_action_at?: string | null
@@ -2709,6 +2718,7 @@ export type Database = {
           score?: number | null
           source?: string | null
           stage_key?: string | null
+          stale_days?: number | null
           temperature?: string | null
           title: string
           updated_at?: string | null
@@ -2719,7 +2729,11 @@ export type Database = {
           contact_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          follow_up_due_at?: string | null
           id?: string
+          last_activity_at?: string | null
+          lead_score?: number | null
+          lead_score_reasons?: Json | null
           lost_reason?: string | null
           next_action?: string | null
           next_action_at?: string | null
@@ -2727,6 +2741,7 @@ export type Database = {
           score?: number | null
           source?: string | null
           stage_key?: string | null
+          stale_days?: number | null
           temperature?: string | null
           title?: string
           updated_at?: string | null
@@ -2844,6 +2859,50 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      deal_activities: {
+        Row: {
+          created_at: string
+          deal_id: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          title: string
+          type: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          title: string
+          type?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          title?: string
+          type?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deliverable_comments: {
         Row: {
