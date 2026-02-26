@@ -49,7 +49,7 @@ function HoloStatCard({
       initial={{ opacity: 0, filter: "blur(16px)", scale: 1.05 }}
       animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
       transition={{ duration: 0.8, delay, ease: [0.23, 1, 0.32, 1] }}
-      whileHover={{ scale: 1.02, transition: { duration: 0.3 } }}
+      whileHover={{ scale: 1.015, transition: { duration: 0.3 } }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
@@ -63,7 +63,16 @@ function HoloStatCard({
       </div>
       
       <div className="holo-kpi-label mb-2">{label}</div>
-      <div className="holo-kpi-value data-glow">{value}</div>
+      <div className="overflow-hidden">
+        <motion.div
+          className="holo-kpi-value data-glow"
+          initial={{ clipPath: "inset(100% 0 0 0)", y: "100%" }}
+          animate={{ clipPath: "inset(0% 0 0 0)", y: "0%" }}
+          transition={{ delay: delay + 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {value}
+        </motion.div>
+      </div>
       {subtitle && (
         <div className="text-[11px] text-white/30 mt-2 font-mono tracking-wider uppercase">
           {subtitle}
@@ -351,7 +360,7 @@ export default function FinancePage() {
             <div>
               <div className="holo-section-label mb-1">◈ Latest_Projected_Transactions</div>
             </div>
-            <button onClick={() => navigate('/financeiro/caixa')} className="holo-link">
+            <button onClick={() => navigate('/financeiro/caixa')} className="holo-link hover-underline-sweep">
               Full_Log_View
             </button>
           </div>
@@ -408,7 +417,7 @@ export default function FinancePage() {
               <div className="holo-section-label mb-1">Project_Financial_Status</div>
               <span className="text-[11px] text-white/25 font-mono">{projectFinancials.length} Active_Nodes</span>
             </div>
-            <button onClick={() => navigate('/financeiro/projetos')} className="holo-link">
+            <button onClick={() => navigate('/financeiro/projetos')} className="holo-link hover-underline-sweep">
               View_All
             </button>
           </div>
@@ -421,7 +430,7 @@ export default function FinancePage() {
                 : 0;
               
               return (
-                <div key={project.project_id} className="p-4 rounded-lg border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08] transition-all duration-500">
+                <div key={project.project_id} className="p-4 rounded-lg border border-white/[0.04] bg-white/[0.01] hover:bg-muted/30 hover:border-primary/15 hover:scale-[1.005] transition-all duration-300">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <div className={`w-2 h-2 rounded-full ${statusConfig.color}`} />

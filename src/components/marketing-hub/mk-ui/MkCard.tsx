@@ -14,10 +14,10 @@ export function MkCard({ children, className, hover = false, onClick, variant = 
     <div
       onClick={onClick}
       className={cn(
-        "rounded-lg p-5 transition-all duration-200",
+        "rounded-lg p-5 transition-all duration-300",
         variant === "holographic" && "holographic-card",
         variant === "glass" && "glass-projection",
-        hover && "hover:border-[rgba(0,156,202,0.25)] cursor-pointer",
+        hover && "hover:border-primary/20 hover:scale-[1.015] cursor-pointer",
         onClick && "cursor-pointer",
         className
       )}
