@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { Portal } from "@/components/ui/Portal";
 
 interface DuplicateGroup {
   group: string[];
@@ -70,6 +71,7 @@ export function TaskDuplicateDetection() {
         <span className="hidden lg:inline">Duplicatas</span>
       </Button>
 
+      <Portal>
       <AnimatePresence>
         {showPanel && duplicates.length > 0 && (
           <motion.div
@@ -130,6 +132,7 @@ export function TaskDuplicateDetection() {
           </motion.div>
         )}
       </AnimatePresence>
+      </Portal>
     </>
   );
 }

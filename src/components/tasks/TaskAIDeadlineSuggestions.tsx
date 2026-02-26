@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { Portal } from "@/components/ui/Portal";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -80,6 +81,7 @@ export function TaskAIDeadlineSuggestions() {
         <span className="hidden lg:inline">Sugerir prazos</span>
       </Button>
 
+      <Portal>
       <AnimatePresence>
         {showPanel && suggestions.length > 0 && (
           <motion.div
@@ -137,6 +139,7 @@ export function TaskAIDeadlineSuggestions() {
           </motion.div>
         )}
       </AnimatePresence>
+      </Portal>
     </>
   );
 }

@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Portal } from '@/components/ui/Portal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Task } from '@/hooks/useTasksUnified';
@@ -86,6 +87,7 @@ export function TaskAnalysisPanel({ tasks }: TaskAnalysisPanelProps) {
         <span className="hidden sm:inline">Análise IA</span>
       </Button>
 
+      <Portal>
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -349,6 +351,7 @@ export function TaskAnalysisPanel({ tasks }: TaskAnalysisPanelProps) {
           </motion.div>
         )}
       </AnimatePresence>
+      </Portal>
     </>
   );
 }
