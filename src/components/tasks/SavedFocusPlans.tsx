@@ -179,14 +179,14 @@ function PomodoroTimer({ className, durationMinutes, blockLabel, isFlowtime }: {
           <span className="font-mono text-2xl font-light tracking-tight text-foreground">
             {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
           </span>
-          <span className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mt-0.5">
+          <span className="text-micro uppercase tracking-[0.15em] text-muted-foreground mt-0.5">
             {mode === 'work' ? (blockLabel || 'Foco') : 'Pausa'}
           </span>
         </div>
       </div>
 
       {/* Session count */}
-      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-mono text-muted-foreground">
         <Flame className="w-3 h-3 text-primary/50" />
         <span>{sessions} sessão{sessions !== 1 ? 'ões' : ''}</span>
       </div>
@@ -243,7 +243,7 @@ function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
       <div className="text-center py-6">
         <Target className="w-4 h-4 text-muted-foreground/30 mx-auto mb-2" />
         <p className="text-xs text-muted-foreground">Nenhuma tarefa para hoje</p>
-        <p className="text-[10px] text-muted-foreground/40 mt-0.5">Mova tarefas para "Hoje"</p>
+        <p className="text-mono text-muted-foreground/40 mt-0.5">Mova tarefas para "Hoje"</p>
       </div>
     );
   }
@@ -253,9 +253,9 @@ function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
       <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-1.5">
           <Zap className="w-3 h-3 text-primary/60" />
-          <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-medium">Hoje</span>
+          <span className="text-caption uppercase tracking-[0.12em] text-muted-foreground font-medium">Hoje</span>
         </div>
-        <span className="text-[10px] text-muted-foreground/40 font-mono">{completedCount}/{total}</span>
+        <span className="text-mono text-muted-foreground/40 font-mono">{completedCount}/{total}</span>
       </div>
       <div className="relative h-1 rounded-full bg-border/20 overflow-hidden">
         <motion.div
@@ -286,7 +286,7 @@ function TodayTasksPanel({ onAllComplete }: { onAllComplete: () => void }) {
                   <Square className="w-3 h-3 text-muted-foreground/25 group-hover:text-primary/50 transition-colors" />
                 )}
               </div>
-              <span className={cn("text-[11px] flex-1 leading-tight", t.status === 'done' && "line-through text-muted-foreground")}>
+              <span className={cn("text-body-sm flex-1 leading-tight", t.status === 'done' && "line-through text-muted-foreground")}>
                 {t.title}
               </span>
             </motion.div>
@@ -313,7 +313,7 @@ function FocusToolsPanel({ focusMethod, setFocusMethod, ambientSound, setAmbient
     <div className="space-y-3 p-3 h-full flex flex-col">
       {/* Focus Method Selector */}
       <div className="space-y-1.5">
-        <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground font-medium flex items-center gap-1.5">
+        <span className="text-caption uppercase tracking-[0.12em] text-muted-foreground font-medium flex items-center gap-1.5">
           <Brain className="w-2.5 h-2.5 text-primary/50" /> Método
         </span>
         <div className="grid grid-cols-2 gap-1">
@@ -333,9 +333,9 @@ function FocusToolsPanel({ focusMethod, setFocusMethod, ambientSound, setAmbient
               >
                 <div className="flex items-center gap-1">
                   <Icon className={cn("w-2.5 h-2.5", isActive ? "text-primary" : "text-muted-foreground/40")} />
-                  <span className="text-[9px] font-semibold">{m.label}</span>
+                  <span className="text-caption font-semibold">{m.label}</span>
                 </div>
-                <span className="text-[7px] text-muted-foreground/40 leading-tight">{m.desc}</span>
+                <span className="text-micro text-muted-foreground/40 leading-tight">{m.desc}</span>
               </button>
             );
           })}
@@ -344,7 +344,7 @@ function FocusToolsPanel({ focusMethod, setFocusMethod, ambientSound, setAmbient
 
       {/* Ambient Sound */}
       <div className="space-y-1.5">
-        <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground font-medium flex items-center gap-1.5">
+        <span className="text-caption uppercase tracking-[0.12em] text-muted-foreground font-medium flex items-center gap-1.5">
           <Music className="w-2.5 h-2.5 text-primary/50" /> Ambiente
         </span>
         <div className="flex gap-1">
@@ -363,7 +363,7 @@ function FocusToolsPanel({ focusMethod, setFocusMethod, ambientSound, setAmbient
                 )}
               >
                 <Icon className={cn("w-3 h-3", isActive ? "text-primary" : "text-muted-foreground/40")} />
-                <span className="text-[8px] text-muted-foreground">{s.label}</span>
+                <span className="text-micro text-muted-foreground">{s.label}</span>
               </button>
             );
           })}
@@ -374,15 +374,15 @@ function FocusToolsPanel({ focusMethod, setFocusMethod, ambientSound, setAmbient
       <div className="flex items-center gap-2 p-2 rounded-lg border border-border/15 bg-muted/5">
         <span className="text-sm">🔥</span>
         <div className="flex-1">
-          <span className="text-[11px] font-semibold text-foreground">{streak} dias</span>
-          <p className="text-[8px] text-muted-foreground/50">Streak consecutivo</p>
+          <span className="text-body-sm font-semibold text-foreground">{streak} dias</span>
+          <p className="text-micro text-muted-foreground/50">Streak consecutivo</p>
         </div>
         <Award className="w-3.5 h-3.5 text-muted-foreground/20" />
       </div>
 
       {/* Mini Stats */}
       <div className="mt-auto space-y-1.5">
-        <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground font-medium flex items-center gap-1.5">
+        <span className="text-caption uppercase tracking-[0.12em] text-muted-foreground font-medium flex items-center gap-1.5">
           <TrendingUp className="w-2.5 h-2.5 text-primary/50" /> Hoje
         </span>
         <div className="grid grid-cols-3 gap-1">
@@ -393,7 +393,7 @@ function FocusToolsPanel({ focusMethod, setFocusMethod, ambientSound, setAmbient
           ].map(s => (
             <div key={s.label} className="flex flex-col items-center p-1.5 rounded-lg border border-border/15">
               <span className={cn("text-xs font-semibold font-mono", s.color)}>{s.value}</span>
-              <span className="text-[7px] text-muted-foreground/40">{s.label}</span>
+              <span className="text-micro text-muted-foreground/40">{s.label}</span>
             </div>
           ))}
         </div>
@@ -740,17 +740,17 @@ export function SavedFocusPlans() {
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : plan.id)}>
               <div className="flex items-center gap-1.5">
-                <h3 className="text-[11px] font-semibold text-foreground truncate">{plan.title}</h3>
+                <h3 className="text-body-sm font-semibold text-foreground truncate">{plan.title}</h3>
                 {allDone && <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />}
               </div>
-              <p className="text-[9px] text-muted-foreground/40 mt-0.5">{dateStr}</p>
+              <p className="text-caption text-muted-foreground/40 mt-0.5">{dateStr}</p>
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
               {plan.status === 'active' && !allDone && (
                 <Button
                   variant={isExecuting ? "default" : "outline"}
                   size="sm"
-                  className={cn("h-5 text-[8px] gap-0.5 rounded-md px-1.5", isExecuting && "bg-primary")}
+                  className={cn("h-5 text-micro gap-0.5 rounded-md px-1.5", isExecuting && "bg-primary")}
                   onClick={() => setActiveExecutionPlanId(isExecuting ? null : plan.id)}
                 >
                   <Play className="w-2 h-2" />
@@ -777,7 +777,7 @@ export function SavedFocusPlans() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-[9px] text-muted-foreground/50">
+          <div className="flex items-center gap-3 text-caption text-muted-foreground/50">
             <span className="flex items-center gap-1"><Brain className="w-2 h-2" />{blocks.length} blocos</span>
             <span className="flex items-center gap-1"><CheckCircle2 className="w-2 h-2" />{completedCount}/{totalTasks}</span>
             <span className="flex items-center gap-1"><Clock className="w-2 h-2" />{timeStr}</span>
@@ -807,7 +807,7 @@ export function SavedFocusPlans() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-6 text-[9px] gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
+                      className="h-6 text-caption gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
                       onClick={() => setAddingTasksToPlanId(plan.id)}
                     >
                       <Plus className="w-2.5 h-2.5" />
@@ -816,7 +816,7 @@ export function SavedFocusPlans() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-6 text-[9px] gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
+                      className="h-6 text-caption gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
                       disabled={regeneratingPlanId === plan.id}
                       onClick={() => handleRegenerate(plan.id, false)}
                     >
@@ -827,7 +827,7 @@ export function SavedFocusPlans() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-6 text-[9px] gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
+                        className="h-6 text-caption gap-1 rounded-lg border-border/30 hover:border-primary/30 hover:bg-primary/5"
                         disabled={regeneratingPlanId === plan.id}
                         onClick={() => handleRegenerate(plan.id, true)}
                       >
@@ -846,16 +846,16 @@ export function SavedFocusPlans() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1">
                           <BlockIcon className={cn("w-2.5 h-2.5", cfg.color)} />
-                          <span className={cn("text-[9px] font-semibold", cfg.color)}>{block.title}</span>
+                          <span className={cn("text-caption font-semibold", cfg.color)}>{block.title}</span>
                         </div>
-                        <span className="text-[8px] text-muted-foreground/40 font-mono">{block.duration_minutes}min</span>
+                        <span className="text-micro text-muted-foreground/40 font-mono">{block.duration_minutes}min</span>
                       </div>
                       {block.tasks?.map((task: any) => {
                         const isDone = plan.completed_tasks.includes(task.id);
                         return (
                           <div
                             key={task.id}
-                            className={cn("flex items-center gap-1 text-[9px] cursor-pointer py-0.5 px-1 rounded transition-all", isDone ? "opacity-30" : "hover:bg-background/30")}
+                            className={cn("flex items-center gap-1 text-caption cursor-pointer py-0.5 px-1 rounded transition-all", isDone ? "opacity-30" : "hover:bg-background/30")}
                             onClick={() => plan.status === 'active' && handleToggleTaskInPlan(plan.id, task.id)}
                           >
                             {isDone ? <CheckSquare className="w-2.5 h-2.5 text-primary shrink-0" /> : <Square className="w-2.5 h-2.5 text-muted-foreground/20 shrink-0" />}
@@ -883,9 +883,9 @@ export function SavedFocusPlans() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-primary/60" />
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.12em]">Modo Foco</h3>
+          <h3 className="text-section text-foreground">Modo Foco</h3>
         </div>
-        <Button variant="ghost" size="sm" className="gap-1 text-[9px] hover:bg-accent/30 rounded-lg h-6 px-2" onClick={toggleFullscreen}>
+        <Button variant="ghost" size="sm" className="gap-1 text-caption hover:bg-accent/30 rounded-lg h-6 px-2" onClick={toggleFullscreen}>
           {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
           {isFullscreen ? 'Sair' : 'Expandir'}
         </Button>
@@ -928,8 +928,8 @@ export function SavedFocusPlans() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Target className="w-3 h-3 text-primary/40" />
-            <h3 className="text-[9px] font-semibold text-foreground uppercase tracking-[0.12em]">Planos Ativos</h3>
-            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/8 text-primary font-mono">{activePlans.length}</span>
+            <h3 className="text-caption text-foreground uppercase tracking-[0.12em] font-semibold">Planos Ativos</h3>
+            <span className="text-micro px-1.5 py-0.5 rounded-full bg-primary/8 text-primary font-mono">{activePlans.length}</span>
           </div>
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
             {activePlans.map((p, i) => renderPlanCard(p, i))}
@@ -941,13 +941,13 @@ export function SavedFocusPlans() {
         <motion.div className="flex flex-col items-center justify-center py-10 gap-2 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <Brain className="w-5 h-5 text-muted-foreground/20" />
           <p className="text-xs text-muted-foreground">Nenhum plano de foco salvo</p>
-          <p className="text-[10px] text-muted-foreground/40 max-w-xs">Use o <strong>Modo Foco</strong> para gerar um plano.</p>
+          <p className="text-mono text-muted-foreground/40 max-w-xs">Use o <strong>Modo Foco</strong> para gerar um plano.</p>
         </motion.div>
       )}
 
       {archivedPlans.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-[9px] font-medium text-muted-foreground/50 uppercase tracking-[0.12em]">Arquivados</h3>
+          <h3 className="text-caption font-medium text-muted-foreground/50 uppercase tracking-[0.12em]">Arquivados</h3>
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 opacity-35 hover:opacity-50 transition-opacity duration-500">
             {archivedPlans.map((p, i) => renderPlanCard(p, i))}
           </div>
