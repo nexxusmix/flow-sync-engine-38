@@ -6434,6 +6434,41 @@ export type Database = {
           },
         ]
       }
+      subtasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          position: number
+          task_id: string
+          title: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          position?: number
+          task_id: string
+          title: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          position?: number
+          task_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_flags: {
         Row: {
           description: string | null
@@ -6458,6 +6493,42 @@ export type Database = {
           updated_at?: string
           value?: Json
           workspace_id?: string
+        }
+        Relationships: []
+      }
+      task_automation_rules: {
+        Row: {
+          action_json: Json
+          condition_json: Json
+          created_at: string
+          enabled: boolean
+          id: string
+          name: string
+          trigger_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_json?: Json
+          condition_json?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          action_json?: Json
+          condition_json?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
