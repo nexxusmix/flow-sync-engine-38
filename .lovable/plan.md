@@ -1,28 +1,27 @@
 
 
-## Agendar Blocos do Modo Foco no Calendário
+## Plano: Melhorar UX da Seleção de Tarefas no Modo Foco
 
-### O que será feito
-Adicionar um botão "Agendar" no footer do Modo Foco que cria eventos na tabela `calendar_events` para cada bloco do plano de execução, com horários sequenciais a partir de agora (ou horário escolhido).
+### Contexto
+O `TaskSelectionStep` já existe com funcionalidade básica (selecionar/deselecionar, agrupamento por categoria). Vamos enriquecer a experiência com mais informações visuais e filtros rápidos.
 
-### Implementação
+### Melhorias no `TaskSelectionStep.tsx`
 
-**Arquivo: `src/components/tasks/TaskExecutionGuide.tsx`**
+1. **Filtros rápidos por status** — Botões para selecionar apenas tarefas "Hoje", "Semana" ou "Urgentes" com um clique
+2. **Indicadores visuais de prioridade** — Dot colorido (vermelho=urgente, laranja=alta, azul=normal, cinza=baixa) ao lado de cada tarefa
+3. **Data de vencimento visível** — Mostrar due_date quando existir, com destaque em vermelho se atrasada
+4. **Busca/filtro por texto** — Campo de busca para encontrar tarefas rapidamente em listas longas
+5. **Contagem por categoria** — Mostrar "2/5 selecionadas" no header de cada categoria
+6. **Animação suave** — Transição ao marcar/desmarcar para feedback visual mais claro
+7. **Botão "Inverter Seleção"** — Atalho para inverter todas as seleções rapidamente
 
-1. Adicionar botão "Agendar no Calendário" (ícone `CalendarPlus`) ao lado dos botões "Exportar PDF" e "Salvar Plano" no footer
-2. Ao clicar, inserir cada bloco do plano como um `calendar_event` com:
-   - `title`: nome do bloco (ex: "Deep Work: Revisão de Projetos")
-   - `start_at` / `end_at`: calculados sequencialmente a partir de `new Date()`, usando `duration_minutes` de cada bloco
-   - `event_type`: `'task'`
-   - `description`: lista das tarefas do bloco
-   - `color`: cor baseada no tipo do bloco (deep_work = azul, shallow_work = cinza, break = amarelo)
-3. Usar `supabase.from('calendar_events').insert(events)` diretamente (sem edge function)
-4. Invalidar query `['calendar-events']` após inserção para atualizar a agenda em tempo real
-5. Toast de sucesso com link/indicação para ir ao calendário
+### Arquivo modificado
+- `src/components/tasks/TaskSelectionStep.tsx` — Refatorar com filtros, busca, indicadores de prioridade/due_date e contadores por categoria
 
-### Fluxo do usuário
-Modo Foco → Gera plano → Clica "Agendar" → Blocos aparecem no calendário como eventos sequenciais começando agora
-
-### Arquivos modificados
-- `src/components/tasks/TaskExecutionGuide.tsx` — adicionar botão e lógica de criação dos eventos
+### Detalhes técnicos
+- Adicionar estado `searchQuery` e `statusFilter` para filtros
+- Usar `useMemo` para filtrar tarefas por texto e status antes do agrupamento
+- Indicador de prioridade via map `{ urgent: 'bg-red-500', high: 'bg-orange-400', normal: 'bg-blue-400', low: 'bg-slate-500' }`
+- Comparar `due_date` com `new Date()` para highlight de atrasadas
+- Manter compatibilidade total com a interface `TaskSelectionStepProps` existente
 
