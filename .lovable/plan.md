@@ -1,95 +1,56 @@
 
 
-# Refinamento Ultra-Premium — Plataforma Inteira
+## Plano: Gestão Dinâmica de Planos no Modo Foco
 
-Escopo imenso. Dividido em **6 fases incrementais**, cada uma entregável independentemente.
-
----
-
-## Fase 1 — Fundação: Smooth Scroll + CSS Primitivos Globais
-
-**Arquivos:** `src/index.css`, `tailwind.config.ts`, novo `src/hooks/useSmoothScroll.ts`
-
-1. Criar hook `useSmoothScroll` com inertial smoothing usando `requestAnimationFrame` + lerp (interpolação linear) para todos os containers scrolláveis (`h-screen overflow-y-auto`)
-2. Adicionar CSS primitivos globais em `index.css`:
-   - `.text-mask-reveal` — clip-path + translateY animation para títulos
-   - `.image-ease-in` — opacity 0→1 + scale 1.1→1.0 com stagger
-   - `.hover-invert` — inversão preto↔branco para botões
-   - `.hover-underline-sweep` — sublinhado animado da esquerda para a direita
-   - `.marquee` — rolagem horizontal contínua via CSS keyframes
-   - `.accordion-spring` — transição spring não-linear para expand/collapse
-3. Atualizar `tailwind.config.ts` com keyframes `marquee`, `textReveal`, `imageReveal`
-4. Scrollbar ultra-thin (3px) com fade automático
+O objetivo é permitir que um plano salvo seja **editável ao vivo** — acrescentar tarefas, marcar feitas, e regenerar o plano atualizado.
 
 ---
 
-## Fase 2 — Landing Page Sonance
+### Mudanças
 
-**Arquivos:** Todos em `src/components/landing/`, `src/pages/LandingPage.tsx`
+**1. Novo componente `FocusPlanActions` (barra de ações no card expandido)**
 
-1. **LandingHero**: Text masking nos títulos (linhas deslizam Y:100%→0%), remover neon badges, tipografia mais editorial
-2. **LandingNav**: Hover com opacidade 60% nos links, logo sem glow excessivo
-3. **LandingProblem/Solution**: Entrada com text-mask-reveal, image-ease-in nos cards
-4. **LandingPricing**: Cards com hover-invert nos botões, bordas mais finas
-5. **LandingFooter**: Marquee horizontal contínuo no copyright/featured
-6. Aplicar `useSmoothScroll` no container principal do LandingPage
-7. Remover `ParticlesBackground`, `AnimatedGradientOrbs`, `CyberpunkGrid` — substituir por ambient glow sutil único
+Dentro de `SavedFocusPlans.tsx`, adicionar no card expandido (`isExpanded`) uma barra de ações com 3 botões:
 
----
+- **"+ Adicionar Tarefas"** → abre um mini-modal com `TaskSelectionStep` filtrado (exclui tarefas já no plano). Ao confirmar, as novas tarefas são inseridas no `plan_data` e salvas no banco.
+- **"Regenerar Plano"** → chama `generate-execution-blocks` com as tarefas atuais do plano (excluindo as já concluídas + incluindo as novas). Substitui `plan_data` no banco, mantém `completed_tasks`.
+- **"Regenerar sem Concluídas"** → mesmo que acima mas remove as tarefas já marcadas como done do input da IA, gerando um plano limpo só com pendentes.
 
-## Fase 3 — ScrollMotion System Upgrade
+**2. Editar `SavedFocusPlans.tsx`**
 
-**Arquivos:** `src/components/squad-ui/ScrollMotion.tsx`, `src/components/layout/ScrollRevealSection.tsx`
+- Importar `TaskSelectionStep` e `supabase.functions.invoke`
+- Adicionar estados: `addingTasksToPlanId`, `regeneratingPlanId`
+- Função `handleAddTasks(planId, newTaskIds)`:
+  - Busca tarefas completas do hook `useTasksUnified`
+  - Mescla no `plan_data` como um novo bloco temporário "Novas Tarefas"
+  - Salva no banco via `supabase.from('saved_focus_plans').update()`
+- Função `handleRegenerate(planId, excludeCompleted)`:
+  - Coleta todas as tarefas do plano (dos blocos)
+  - Se `excludeCompleted`, filtra as que estão em `completed_tasks`
+  - Chama `generate-execution-blocks` com a lista atualizada
+  - Atualiza `plan_data` no banco, preserva `completed_tasks` (ou limpa se excludeCompleted)
+- No `renderPlanCard`, dentro do bloco expandido, renderizar a barra de ações antes dos blocos
+- Modal inline (Dialog) para seleção de tarefas ao adicionar
 
-1. Adicionar variante `textMask` ao `ScrollMotion` — clip-path reveal
-2. Adicionar variante `imageReveal` — scale 1.1→1 + opacity com stagger
-3. Criar `ScrollMotionAccordion` — expand com spring physics (stiffness/damping custom)
-4. Criar `StickyLabel` component — labels de seção que fixam no topo e são empurradas pela próxima
+**3. Editar `TaskSelectionStep.tsx`**
 
----
+- Adicionar prop opcional `excludeIds?: string[]` para ocultar tarefas já presentes no plano
+- Filtrar `tasks` no início removendo os IDs excluídos
 
-## Fase 4 — Hover System Global
-
-**Arquivos:** `src/index.css`, componentes de card (`GlassCard`, `MkCard`)
-
-1. **Links de texto**: Estado normal sólido, hover com opacity 0.6 + underline sweep
-2. **Cards de projeto**: Hover com zoom lento (scale 1.03), cursor customizado "VIEW" via pseudo-element
-3. **Botões**: `.btn-action` e `.btn-primary` com inversão de cores no hover (sem glow neon)
-4. **GlassCard/MkCard**: Reduzir intensidade do 3D hover, mais sutil (translateZ máx 5px)
-5. Remover efeitos excessivos: `neon-text`, `neon-button`, `neon-badge`, `data-glow-strong`
+**4. Nenhuma mudança no edge function** — já aceita qualquer array de tarefas
 
 ---
 
-## Fase 5 — Área Logada (Dashboard + Páginas Internas)
+### Fluxo do Usuário
 
-**Arquivos:** `src/pages/Dashboard.tsx`, sidebar, componentes internos
+```text
+Plano Salvo (expandido)
+  ├── [+ Adicionar Tarefas] → modal seleção → tarefas adicionadas ao plano
+  ├── [↻ Regenerar] → IA recria plano com todas as tarefas (novas + antigas pendentes)
+  └── [↻ Só Pendentes] → IA recria plano ignorando as já concluídas
+```
 
-1. Aplicar smooth scroll em todos os containers scrolláveis das páginas internas
-2. Cards KPI com entrada text-mask nos valores numéricos
-3. Sidebar links com hover opacity + underline sweep
-4. Tabelas com row hover mais sutil (bg-white/3 em vez de /5)
-5. Modais/dialogs com entrada mais suave (scale 0.98→1 + blur)
-
----
-
-## Fase 6 — Marketing Hub + Finance
-
-**Arquivos:** `src/pages/marketing-hub/*`, `src/pages/finance/*`
-
-1. Aplicar os mesmos primitivos de hover, scroll e reveal nas páginas do Marketing Hub
-2. Pipeline kanban com drag mais suave
-3. Cards holográficos com hover reduzido (mais editorial, menos sci-fi)
-4. Finance KPIs com text-mask reveal nos valores
-
----
-
-## Detalhes Técnicos
-
-- **Smooth scroll**: Implementado via `requestAnimationFrame` com lerp factor ~0.08 para sensação de inércia/peso
-- **Text masking**: `overflow: hidden` no container + `translateY(100%)→translateY(0)` no texto interno, duração 0.6s com easing `cubic-bezier(0.16, 1, 0.3, 1)`
-- **Sticky labels**: `position: sticky; top: 0` com z-index escalonado para efeito de "empurrar"
-- **Marquee**: CSS puro com `@keyframes marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }` e conteúdo duplicado
-- **Spring accordion**: Framer Motion `type: "spring"` com `stiffness: 120, damping: 14` no height transition
-
-**Recomendação**: Começar pela **Fase 1** (fundação CSS) + **Fase 2** (Landing Page) juntas, pois a Landing é a vitrine e os primitivos são necessários para tudo.
+### Arquivos Editados
+- `src/components/tasks/SavedFocusPlans.tsx` — lógica principal + UI dos botões
+- `src/components/tasks/TaskSelectionStep.tsx` — prop `excludeIds`
 
