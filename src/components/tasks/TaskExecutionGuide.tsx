@@ -8,6 +8,7 @@ import { TaskTimer, formatTime } from './TaskTimer';
 import { exportFocusPDF } from '@/services/pdfExportService';
 import type { Task } from '@/hooks/useTasksUnified';
 import { cn } from '@/lib/utils';
+import { TaskSelectionStep } from './TaskSelectionStep';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +59,7 @@ function getIndicatorStyle(type: ExecutionBlock['type']): string {
 
 export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showSelection, setShowSelection] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [plan, setPlan] = useState<ExecutionPlan | null>(null);
   const [activeBlockIdx, setActiveBlockIdx] = useState(0);
@@ -86,14 +88,22 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
     }
   }, [completedTasks, plan, activeBlockIdx]);
 
-  const generatePlan = async () => {
+  const openSelection = () => {
     setIsOpen(true);
+    setShowSelection(true);
+    setPlan(null);
+    setError(null);
+  };
+
+  const generatePlan = async (selectedIds: Set<string>) => {
+    setShowSelection(false);
     setIsLoading(true);
     setError(null);
+    const tasksToSend = pendingTasks.filter(t => selectedIds.has(t.id));
     try {
       const { data, error: fnError } = await supabase.functions.invoke('generate-execution-blocks', {
         body: {
-          tasks: pendingTasks.map(t => ({
+          tasks: tasksToSend.map(t => ({
             id: t.id,
             title: t.title,
             description: t.description,
@@ -185,7 +195,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={generatePlan} className="gap-1.5" disabled={pendingTasks.length === 0}>
+      <Button variant="outline" size="sm" onClick={openSelection} className="gap-1.5" disabled={pendingTasks.length === 0}>
         <Brain className="w-4 h-4" />
         <span className="hidden sm:inline">Modo Foco</span>
       </Button>
@@ -258,7 +268,9 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
 
               {/* CONTENT */}
               <div className="flex-1 overflow-y-auto min-h-0 px-8">
-                {isLoading ? (
+                {showSelection ? (
+                  <TaskSelectionStep tasks={pendingTasks} onConfirm={generatePlan} />
+                ) : isLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--primary))]" />
                     <p className="text-sm text-slate-400 animate-pulse">Gerando plano de execução com IA...</p>
@@ -268,7 +280,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                   <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
                     <p className="text-sm text-red-400 font-medium">Não foi possível gerar o plano</p>
                     <p className="text-xs text-slate-500 max-w-xs">{error}</p>
-                    <Button variant="outline" size="sm" onClick={generatePlan} className="gap-1.5 mt-2 border-[rgba(0,115,153,0.25)] bg-transparent text-white hover:bg-[rgba(0,115,153,0.1)]">
+                    <Button variant="outline" size="sm" onClick={openSelection} className="gap-1.5 mt-2 border-[rgba(0,115,153,0.25)] bg-transparent text-white hover:bg-[rgba(0,115,153,0.1)]">
                       <Play className="w-3.5 h-3.5" /> Tentar novamente
                     </Button>
                   </div>
