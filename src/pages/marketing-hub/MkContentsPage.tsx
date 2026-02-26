@@ -4,16 +4,16 @@ import { MkCard, MkStatusBadge, MkEmptyState } from "@/components/marketing-hub/
 import { useMarketingStore } from "@/stores/marketingStore";
 import { ContentItem, CONTENT_ITEM_STAGES, ContentItemStatus, CONTENT_CHANNELS } from "@/types/marketing";
 import { motion } from "framer-motion";
-import { Plus, Search, List, LayoutGrid, MoreVertical, Trash2 } from "lucide-react";
+import { Plus, Search, List, LayoutGrid, MoreVertical, Trash2, Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 const stageVariant: Record<string, "blue" | "amber" | "emerald" | "purple" | "red" | "slate" | "cyan"> = {
   briefing: "slate",
@@ -98,7 +98,7 @@ export default function MkContentsPage() {
                   <span className="text-[11px] text-white/20">{items.length}</span>
                 </div>
                 <div className="space-y-2">
-                  {items.map(item => <ContentCard key={item.id} item={item} onStatusChange={updateContentStatus} onDelete={deleteContentItem} />)}
+                  {items.map(item => <ContentCard key={item.id} item={item} onStatusChange={updateContentStatus} onDelete={deleteContentItem} onRefresh={fetchContentItems} />)}
                 </div>
               </div>
             );
@@ -108,7 +108,7 @@ export default function MkContentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ delay: i * 0.03 }}>
-              <ContentCard item={item} onStatusChange={updateContentStatus} onDelete={deleteContentItem} />
+              <ContentCard item={item} onStatusChange={updateContentStatus} onDelete={deleteContentItem} onRefresh={fetchContentItems} />
             </motion.div>
           ))}
         </div>
@@ -149,10 +149,113 @@ export default function MkContentsPage() {
   );
 }
 
-function ContentCard({ item, onStatusChange, onDelete }: { item: ContentItem; onStatusChange: (id: string, status: ContentItemStatus) => void; onDelete: (id: string) => void }) {
+// --- AI Result Dialog ---
+interface AIGeneratedContent {
+  script: string;
+  caption_short: string;
+  caption_long: string;
+  hashtags: string;
+  cta: string;
+}
+
+function AIResultDialog({ open, onOpenChange, data }: { open: boolean; onOpenChange: (v: boolean) => void; data: AIGeneratedContent | null }) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    toast.success("Copiado!");
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  if (!data) return null;
+
+  const sections = [
+    { key: "script", label: "Roteiro", value: data.script },
+    { key: "caption_short", label: "Legenda Curta", value: data.caption_short },
+    { key: "caption_long", label: "Legenda Longa", value: data.caption_long },
+    { key: "hashtags", label: "Hashtags", value: data.hashtags },
+    { key: "cta", label: "CTA", value: data.cta },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-[#111114] border-white/[0.08] text-white max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold text-white/90 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[hsl(210,100%,55%)]" />
+            Conteúdo Gerado por IA
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          {sections.map(({ key, label, value }) => (
+            <div key={key} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-white/30 uppercase tracking-[0.12em]">{label}</span>
+                <button
+                  onClick={() => copyToClipboard(value, key)}
+                  className="flex items-center gap-1 text-[10px] text-[hsl(210,100%,55%)] hover:text-[hsl(210,100%,70%)] transition-colors"
+                >
+                  {copiedField === key ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copiedField === key ? "Copiado" : "Copiar"}
+                </button>
+              </div>
+              <p className="text-sm text-white/70 whitespace-pre-wrap leading-relaxed">{value}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-white/20 text-center mt-2">
+          Conteúdo salvo automaticamente no item do pipeline
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// --- Content Card ---
+function ContentCard({ item, onStatusChange, onDelete, onRefresh }: {
+  item: ContentItem;
+  onStatusChange: (id: string, status: ContentItemStatus) => void;
+  onDelete: (id: string) => void;
+  onRefresh: () => void;
+}) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [aiResult, setAiResult] = useState<AIGeneratedContent | null>(null);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
   const channel = CONTENT_CHANNELS.find(c => c.type === item.channel);
+
+  const handleGenerateAI = async () => {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-content-ai", {
+        body: {
+          contentItemId: item.id,
+          title: item.title,
+          hook: item.hook,
+          channel: item.channel,
+          format: item.format,
+          pillar: item.pillar,
+          notes: item.notes,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setAiResult(data.generated);
+      setAiDialogOpen(true);
+      toast.success("Conteúdo gerado e salvo com sucesso!");
+      onRefresh();
+    } catch (err: any) {
+      console.error("AI generation error:", err);
+      toast.error(err.message || "Erro ao gerar conteúdo com IA");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <>
       <MkCard hover className="flex flex-col gap-2">
@@ -167,6 +270,10 @@ function ContentCard({ item, onStatusChange, onDelete }: { item: ContentItem; on
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleGenerateAI} disabled={generating}>
+                  {generating ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
+                  {generating ? "Gerando..." : "Gerar com IA"}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
                   onClick={() => setDeleteOpen(true)}
@@ -179,6 +286,11 @@ function ContentCard({ item, onStatusChange, onDelete }: { item: ContentItem; on
           </div>
         </div>
         <h4 className="text-sm font-medium text-white/80 line-clamp-2">{item.title}</h4>
+        {item.script && (
+          <p className="text-[10px] text-[hsl(210,100%,55%)]/60 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" /> Script gerado
+          </p>
+        )}
         <div className="flex items-center gap-3 text-[11px] text-white/25 mt-auto pt-2 border-t border-white/[0.04]">
           {item.due_at && <span>{format(new Date(item.due_at), "dd MMM", { locale: ptBR })}</span>}
           {item.owner_initials && (
@@ -188,6 +300,8 @@ function ContentCard({ item, onStatusChange, onDelete }: { item: ContentItem; on
           )}
         </div>
       </MkCard>
+
+      <AIResultDialog open={aiDialogOpen} onOpenChange={setAiDialogOpen} data={aiResult} />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
