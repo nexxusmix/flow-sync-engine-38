@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Brain, Loader2, Play, X, Clock, FileDown, Save, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,7 +35,6 @@ interface TaskExecutionGuideProps {
   onComplete?: (taskId: string) => void;
 }
 
-// --- Helper: format estimated time ---
 function formatEstimatedTime(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -43,16 +42,14 @@ function formatEstimatedTime(minutes: number): string {
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
 
-// --- Helper: get block status label ---
 function getBlockStatus(bIdx: number, activeBlockIdx: number, blockCompleted: boolean): { label: string; className: string } {
-  if (blockCompleted && bIdx <= activeBlockIdx) return { label: 'Done', className: 'text-emerald-400' };
+  if (blockCompleted) return { label: 'Done', className: 'text-emerald-400' };
   if (bIdx === activeBlockIdx) return { label: 'Active', className: 'text-white font-medium' };
+  if (bIdx < activeBlockIdx) return { label: 'Done', className: 'text-emerald-400' };
   if (bIdx === activeBlockIdx + 1) return { label: 'Queued', className: 'text-slate-400' };
-  if (bIdx === activeBlockIdx + 2) return { label: 'Pending', className: 'text-slate-500' };
   return { label: 'Scheduled', className: 'text-slate-600' };
 }
 
-// --- Helper: status indicator dot color ---
 function getIndicatorStyle(type: ExecutionBlock['type']): string {
   if (type === 'deep_work') return 'bg-[hsl(var(--primary))] shadow-[0_0_6px_rgba(0,115,153,0.5)]';
   if (type === 'shallow_work') return 'bg-slate-600';
@@ -72,6 +69,22 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
 
   const pendingTasks = tasks.filter(t => t.status !== 'done');
+
+  // Auto-advance blocks when all tasks in current block are done
+  useEffect(() => {
+    if (!plan) return;
+    const currentBlock = plan.blocks[activeBlockIdx];
+    if (!currentBlock) return;
+
+    const allDone = currentBlock.tasks.every(t => completedTasks.has(t.id));
+    if (allDone && activeBlockIdx < plan.blocks.length - 1) {
+      // Move to next block
+      setActiveBlockIdx(prev => prev + 1);
+      setActiveTaskIdx(0);
+      setExpandedBlock(activeBlockIdx + 1);
+      toast.info(`✅ Bloco "${currentBlock.title}" concluído! Avançando...`);
+    }
+  }, [completedTasks, plan, activeBlockIdx]);
 
   const generatePlan = async () => {
     setIsOpen(true);
@@ -97,7 +110,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
       setActiveBlockIdx(0);
       setActiveTaskIdx(0);
       setCompletedTasks(new Set());
-      setExpandedBlock(null);
+      setExpandedBlock(0); // Auto-expand first block
     } catch (err: any) {
       const msg = err.message || 'Erro ao gerar plano';
       setError(msg);
@@ -108,10 +121,28 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   };
 
   const completeTask = useCallback((taskId: string) => {
-    setCompletedTasks(prev => new Set([...prev, taskId]));
+    setCompletedTasks(prev => {
+      const next = new Set([...prev, taskId]);
+      return next;
+    });
+
+    // Advance activeTaskIdx within the current block
+    if (plan) {
+      const currentBlock = plan.blocks[activeBlockIdx];
+      if (currentBlock) {
+        const nextUnfinished = currentBlock.tasks.findIndex(
+          (t, idx) => idx > activeTaskIdx && !completedTasks.has(t.id) && t.id !== taskId
+        );
+        if (nextUnfinished >= 0) {
+          setActiveTaskIdx(nextUnfinished);
+        }
+      }
+    }
+
+    // Persist to real task
     onComplete?.(taskId);
     toast.success('Tarefa concluída!');
-  }, [onComplete]);
+  }, [onComplete, plan, activeBlockIdx, activeTaskIdx, completedTasks]);
 
   const handleSavePlan = async () => {
     if (!plan) return;
@@ -148,6 +179,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
   };
 
   const totalTasks = plan?.blocks?.reduce((sum, b) => sum + (b.tasks?.length || 0), 0) || 0;
+  const completedCount = completedTasks.size;
   const now = new Date();
   const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
 
@@ -166,10 +198,8 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
 
-            {/* Modal Container */}
             <motion.div
               className="relative z-10 w-full max-w-5xl max-h-[70vh] my-auto flex flex-col rounded-3xl border border-[rgba(0,115,153,0.25)] bg-black/90 backdrop-blur-[20px] shadow-[0_8px_32px_0_rgba(0,0,0,0.8)]"
               style={{
@@ -180,7 +210,6 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
             >
-              {/* Close button */}
               <button
                 onClick={() => setIsOpen(false)}
                 className="absolute top-5 right-5 z-20 text-slate-500 hover:text-white transition-colors"
@@ -188,7 +217,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                 <X className="w-5 h-5" />
               </button>
 
-              {/* ─── HEADER ─── */}
+              {/* HEADER */}
               <div className="shrink-0 px-8 pt-8 pb-6">
                 <p
                   className="text-[9px] uppercase tracking-[0.3em] text-[hsl(var(--primary))]/70 font-mono mb-3"
@@ -214,12 +243,12 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                       </div>
                       <div className="w-px h-8 bg-[rgba(0,115,153,0.2)]" />
                       <div className="text-center px-4">
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Tarefas</p>
-                        <p className="text-lg font-semibold text-white">{totalTasks}</p>
+                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Progresso</p>
+                        <p className="text-lg font-semibold text-white">{completedCount}/{totalTasks}</p>
                       </div>
                       <div className="w-px h-8 bg-[rgba(0,115,153,0.2)]" />
                       <div className="text-center px-4">
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Tempo Estimado</p>
+                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-mono">Tempo</p>
                         <p className="text-lg font-semibold text-white">{formatEstimatedTime(plan.total_estimated_minutes)}</p>
                       </div>
                     </div>
@@ -227,7 +256,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                 </div>
               </div>
 
-              {/* ─── CONTENT ─── */}
+              {/* CONTENT */}
               <div className="flex-1 overflow-y-auto min-h-0 px-8">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -245,56 +274,61 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                   </div>
                 ) : plan ? (
                   <div>
+                    {/* Progress bar */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Progresso Geral</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-emerald-500 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${totalTasks > 0 ? (completedCount / totalTasks) * 100 : 0}%` }}
+                          transition={{ duration: 0.5 }}
+                        />
+                      </div>
+                    </div>
+
                     {/* Table Header */}
                     <div className="grid grid-cols-[1fr_140px_140px_100px] gap-2 px-4 pb-3 border-b border-white/[0.04]">
                       <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Execução Estratégica</span>
                       <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Método</span>
                       <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono">Duração</span>
-                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono text-right">Progresso</span>
+                      <span className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono text-right">Status</span>
                     </div>
 
-                    {/* Block Rows */}
                     {plan.blocks.map((block, bIdx) => {
                       const blockCompleted = block.tasks.every(t => completedTasks.has(t.id));
                       const status = getBlockStatus(bIdx, activeBlockIdx, blockCompleted);
                       const isExpanded = expandedBlock === bIdx;
                       const methodLabel = block.type === 'break' ? 'BREAK' : block.type === 'deep_work' ? 'DEEP WORK' : 'SHALLOW WORK';
-                      const taskNames = block.tasks.map(t => t.title).join(' / ');
+                      const blockDoneCount = block.tasks.filter(t => completedTasks.has(t.id)).length;
 
                       return (
                         <div key={block.id}>
-                          {/* Row */}
                           <div
-                            className="grid grid-cols-[1fr_140px_140px_100px] gap-2 items-center px-4 py-3.5 border-b border-white/[0.03] cursor-pointer transition-all duration-300 hover:bg-[rgba(0,115,153,0.08)]"
+                            className={cn(
+                              "grid grid-cols-[1fr_140px_140px_100px] gap-2 items-center px-4 py-3.5 border-b border-white/[0.03] cursor-pointer transition-all duration-300",
+                              bIdx === activeBlockIdx ? "bg-[rgba(0,115,153,0.08)]" : "hover:bg-[rgba(0,115,153,0.04)]"
+                            )}
                             onClick={() => setExpandedBlock(isExpanded ? null : bIdx)}
                           >
-                            {/* Col 1: Title + subtitle */}
                             <div className="flex items-start gap-3 min-w-0">
                               <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", getIndicatorStyle(block.type))} />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="text-[13px] font-medium text-white/90 truncate">{block.title}</p>
+                                  <span className="text-[10px] text-slate-500 font-mono">{blockDoneCount}/{block.tasks.length}</span>
                                   <ChevronDown className={cn("w-3.5 h-3.5 text-slate-600 transition-transform shrink-0", isExpanded && "rotate-180")} />
                                 </div>
-                                <p className="text-[9px] uppercase tracking-widest text-slate-500 truncate mt-0.5">{taskNames}</p>
                               </div>
                             </div>
-
-                            {/* Col 2: Method */}
                             <span className="text-[11px] font-mono text-slate-400 tracking-wider">{methodLabel}</span>
-
-                            {/* Col 3: Duration */}
-                            <span className="text-[11px] font-mono text-slate-400">
-                              {block.technique} {block.duration_minutes}min
-                            </span>
-
-                            {/* Col 4: Progress */}
-                            <span className={cn("text-[11px] font-mono text-right", status.className)}>
-                              {status.label}
-                            </span>
+                            <span className="text-[11px] font-mono text-slate-400">{block.technique} {block.duration_minutes}min</span>
+                            <span className={cn("text-[11px] font-mono text-right", status.className)}>{status.label}</span>
                           </div>
 
-                          {/* Expanded Tasks */}
                           <AnimatePresence>
                             {isExpanded && (
                               <motion.div
@@ -341,10 +375,9 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                 ) : null}
               </div>
 
-              {/* ─── FOOTER ─── */}
+              {/* FOOTER */}
               {plan && !isLoading && !error && (
                 <div className="shrink-0 px-8 py-5 border-t border-white/[0.04]">
-                  {/* Tips */}
                   {(plan.tips?.length ?? 0) > 0 && (
                     <div className="mb-4">
                       <p className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-mono mb-2.5">Dicas de Produtividade</p>
@@ -359,7 +392,6 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
                     </div>
                   )}
 
-                  {/* Actions row */}
                   <div className="flex items-center justify-between">
                     <p className="text-[9px] uppercase tracking-[0.2em] text-slate-600 font-mono">
                       powered by <span className="text-slate-500">SQUAD///FILM</span>
