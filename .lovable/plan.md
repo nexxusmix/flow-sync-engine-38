@@ -1,94 +1,47 @@
 
 
-## Agenda Integrada — Plano de Implementação
+## Plano: Google Calendar via Login Google Direto
 
-### Escopo
-Criar uma agenda completa e unificada que merges todos os calendários existentes (projetos, marketing, tarefas, CRM) + permite criação manual de eventos + sync bidirecional com Google Calendar + lembretes automáticos via WhatsApp, email e notificações in-app.
+### Situação Atual
+- O login com Google já funciona via Lovable Cloud (`lovable.auth.signInWithOAuth("google")`)
+- O login gerenciado pelo Lovable Cloud concede apenas escopos básicos (perfil/email) — **não inclui acesso ao Google Calendar**
+- Para acessar a API do Google Calendar, é necessário solicitar o escopo `calendar` separadamente
 
-### Arquitetura
+### Abordagem Proposta
 
-```text
-┌─────────────────────────────────────────────────────┐
-│                  AGENDA UNIFICADA                    │
-│  (views: dia / semana / mês + filtros por fonte)     │
-├──────────┬──────────┬──────────┬────────────────────┤
-│ Projetos │Marketing │ Tarefas  │ Eventos manuais    │
-│(existing)│(existing)│(existing)│ (calendar_events)  │
-└──────┬───┴──────────┴──────────┴────────┬───────────┘
-       │                                  │
-       ▼                                  ▼
-  Google Calendar Sync              Lembretes Auto
-  (Edge Function OAuth)         ┌─────┬──────┬──────┐
-  - push events to GCal        │InApp│WhatsApp│Email│
-  - pull GCal events            │(DB) │(n8n)  │(EF) │
-  └─────────────────────        └─────┴──────┴──────┘
-```
+Como o OAuth gerenciado do Lovable Cloud não permite adicionar escopos customizados (como Calendar), a solução é:
 
-### 1. Tabela: event_reminders
+1. **Login normal** continua via Lovable Cloud (já funciona)
+2. **Autorização do Calendar** — um passo adicional transparente:
+   - Botão "Autorizar Google Calendar" na página de Integrações
+   - Usa `login_hint` com o email do usuário logado para pré-selecionar a mesma conta Google
+   - O usuário apenas confirma a permissão de Calendar (1 clique)
+   - Tokens são salvos na tabela `calendar_connections`
 
-Nova tabela para configurar lembretes por evento:
-- `id`, `event_id` (FK calendar_events), `remind_at` (timestamp), `channel` (in_app | whatsapp | email), `status` (pending | sent | failed), `sent_at`, `workspace_id`
-- RLS: membros do workspace
+### O que muda vs. implementação atual
 
-### 2. Coluna extra em calendar_events
+Quase nada na edge function — a lógica já está correta. O que falta:
 
-- `google_event_id` (text, nullable) — para sync bidirecional
-- `source` (text, default 'manual') — 'manual' | 'project' | 'marketing' | 'task' | 'google'
-- `reminder_minutes` (int[], default '{30}') — minutos antes do evento para lembrar
+1. **Secrets**: Adicionar `GOOGLE_CALENDAR_CLIENT_ID` e `GOOGLE_CALENDAR_CLIENT_SECRET` (credenciais do Google Cloud Console)
+2. **Callback handler**: Adicionar tratamento do `code` na URL de retorno na IntegrationsPage (receber o código OAuth e trocar por tokens)
+3. **Login hint**: Passar o email do usuário logado no fluxo OAuth para ele não precisar escolher a conta novamente
 
-### 3. Edge Function: google-calendar-sync
+### Pré-requisito obrigatório
 
-- OAuth2 flow com Google Calendar API
-- Armazena `google_refresh_token` e `google_access_token` na tabela `integration_settings`
-- Push: quando um evento é criado/atualizado no Squad Hub, cria/atualiza no Google Calendar
-- Pull: busca eventos do Google Calendar e insere no Squad Hub com `source = 'google'`
-- Chamada via cron (a cada 15min) ou manual
+Você precisa criar credenciais no [Google Cloud Console](https://console.cloud.google.com):
 
-### 4. Edge Function: send-event-reminders
+1. Criar projeto (ou usar existente)
+2. Ativar **Google Calendar API**
+3. Criar **OAuth Client ID** (tipo: Web Application)
+4. Adicionar redirect URI: `https://id-preview--9d65864c-7b5e-4189-b4ef-db2f4852f433.lovable.app/configuracoes/integracoes`
+5. Copiar **Client ID** e **Client Secret**
 
-- Cron job (a cada 5min) que busca lembretes pendentes com `remind_at <= now()`
-- Para cada lembrete:
-  - `in_app`: insere na tabela `notifications`
-  - `whatsapp`: chama webhook n8n (já existente `N8N_WHATSAPP_WEBHOOK_URL`)
-  - `email`: usa Lovable AI para gerar email de lembrete e envia via edge function
-- Marca como `sent` após envio
+Após criar, eu solicito os secrets e implemento o callback handler + login_hint na edge function e na UI.
 
-### 5. Nova página: /agenda
+### Arquivos a modificar
+- `supabase/functions/google-calendar-sync/index.ts` — adicionar `login_hint` no OAuth URL
+- `src/pages/settings/IntegrationsPage.tsx` — adicionar handler de callback (captura `code` da URL e troca por tokens)
 
-- Views: Dia, Semana, Mês (toggle)
-- Fontes unificadas: merge `useCalendarEvents` + `useCalendar` + eventos Google
-- Filtros: por tipo (projeto, tarefa, marketing, reunião, google), por projeto
-- Criação rápida de evento com formulário: título, data/hora, tipo, lembrete (minutos antes + canal)
-- Detalhes do evento em sidebar/modal com opções de editar, excluir, configurar lembretes
-- Badge de sync Google Calendar no header
-
-### 6. UI de Configuração Google Calendar
-
-- Na página de Integrações, transformar card "Em breve" em funcional
-- Botão "Conectar Google Calendar" → inicia OAuth flow
-- Status de sync + botão "Sincronizar agora"
-
-### Arquivos a Criar
-- `src/pages/AgendaPage.tsx` — página principal da agenda unificada
-- `src/components/agenda/AgendaWeekView.tsx` — view semanal
-- `src/components/agenda/AgendaDayView.tsx` — view diária
-- `src/components/agenda/AgendaMonthView.tsx` — view mensal (reutiliza lógica existente)
-- `src/components/agenda/EventFormDialog.tsx` — formulário de criação/edição com lembretes
-- `src/components/agenda/ReminderConfig.tsx` — configuração de lembretes por canal
-- `supabase/functions/google-calendar-sync/index.ts` — sync bidirecional
-- `supabase/functions/send-event-reminders/index.ts` — disparo de lembretes
-
-### Arquivos a Modificar
-- `src/App.tsx` — rota /agenda
-- `src/hooks/useCalendar.tsx` — adicionar suporte a source/google_event_id
-- `src/pages/settings/IntegrationsPage.tsx` — ativar card Google Calendar
-- `supabase/config.toml` — registrar novas edge functions
-
-### Migrações DB
-1. ALTER calendar_events ADD `google_event_id`, `source`, `reminder_minutes`
-2. CREATE TABLE `event_reminders`
-3. Cron job para `send-event-reminders` (a cada 5min)
-
-### Pré-requisitos
-- O Google Calendar OAuth requer credenciais Google Cloud (Client ID + Secret). Será necessário configurar os secrets `GOOGLE_CALENDAR_CLIENT_ID` e `GOOGLE_CALENDAR_CLIENT_SECRET`.
+### Resumo
+O fluxo do usuário será: Login com Google (automático) → vai em Integrações → clica "Autorizar Calendar" → confirma permissão (mesma conta, 1 clique) → sync ativo.
 
