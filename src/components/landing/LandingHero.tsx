@@ -9,7 +9,6 @@ interface LandingHeroProps {
   scrollContainerRef?: RefObject<HTMLDivElement>;
 }
 
-/* Text mask reveal: each line slides up from behind a clip mask */
 const maskContainer = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.12, delayChildren: 0.3 } },
@@ -26,7 +25,6 @@ const maskChild = {
 
 export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
   const navigate = useNavigate();
-
   const words = ["Construa.", "Gerencie.", "Execute.", "Venda."];
 
   return (
@@ -36,17 +34,17 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
           {/* Text */}
           <div className="space-y-8">
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20"
-              initial={{ opacity: 0, x: -30 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15"
+              initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <span className="text-sm text-primary font-medium">Duas plataformas. Um ecossistema.</span>
+              <span className="text-xs text-primary font-medium uppercase tracking-wider">Duas plataformas · Um ecossistema</span>
             </motion.div>
 
             {/* Text mask headline */}
             <motion.h1
-              className="text-4xl md:text-6xl lg:text-7xl font-light text-foreground tracking-tight leading-[1.1]"
+              className="text-4xl md:text-6xl lg:text-7xl font-light text-foreground tracking-tight leading-[1.08]"
               variants={maskContainer}
               initial="hidden"
               animate="visible"
@@ -64,7 +62,7 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
                 ))}
               </span>
               <motion.span
-                className="text-2xl md:text-3xl text-muted-foreground font-light block mt-4 overflow-hidden"
+                className="text-xl md:text-2xl text-muted-foreground font-light block mt-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1, duration: 0.6 }}
@@ -76,85 +74,82 @@ export function LandingHero({ scrollContainerRef }: LandingHeroProps) {
             {/* Sub */}
             <motion.div
               className="space-y-3"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.2 }}
+              transition={{ duration: 0.5, delay: 1.2 }}
             >
-              <p className="text-base text-muted-foreground max-w-lg leading-relaxed">
+              <p className="text-sm text-muted-foreground max-w-lg leading-relaxed">
                 O primeiro ecossistema brasileiro que une:
               </p>
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
-                  <Clapperboard className="w-5 h-5 text-primary shrink-0" />
+                  <Clapperboard className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-sm text-foreground/80">Produtora Cinematográfica</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Palette className="w-5 h-5 text-primary shrink-0" />
+                  <Palette className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-sm text-foreground/80">Marketing & Design</span>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground/60 pt-2">
-                Separadas. Integradas. Poderosas.
-              </p>
             </motion.div>
 
-            {/* CTA — hover-invert style */}
+            {/* CTA */}
             <motion.div
               className="flex flex-wrap gap-4"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.4 }}
+              transition={{ duration: 0.5, delay: 1.4 }}
             >
               <Button
                 size="lg"
                 onClick={() => navigate('/login')}
-                className="gap-2 bg-primary hover:bg-primary/90 text-lg px-8 h-14 hover-invert"
+                className="gap-2 bg-primary hover:bg-primary/90 px-8 h-12 hover-invert"
               >
                 Começar Agora
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 border-border/50 hover:border-primary/30 hover:bg-primary/5 h-14 px-8"
+                className="gap-2 border-border/50 hover:border-primary/20 hover:bg-primary/5 h-12 px-8"
               >
-                <Play className="w-4 h-4" />
+                <Play className="w-3.5 h-3.5" />
                 Ver Planos
               </Button>
             </motion.div>
 
             {/* Stats */}
             <motion.div
-              className="flex gap-8 pt-8 border-t border-border/30"
+              className="flex gap-10 pt-8 border-t border-border/20"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 1.6 }}
+              transition={{ duration: 0.5, delay: 1.6 }}
             >
               <div>
-                <p className="text-3xl font-light text-foreground">+<AnimatedCounter value={500} /></p>
-                <p className="text-sm text-muted-foreground">Projetos gerenciados</p>
+                <p className="text-3xl font-light text-foreground tracking-tight">+<AnimatedCounter value={500} /></p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Projetos</p>
               </div>
               <div>
-                <p className="text-3xl font-light text-foreground"><AnimatedCounter value={98} suffix="%" /></p>
-                <p className="text-sm text-muted-foreground">Satisfação</p>
+                <p className="text-3xl font-light text-foreground tracking-tight"><AnimatedCounter value={98} suffix="%" /></p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Satisfação</p>
               </div>
             </motion.div>
           </div>
 
-          {/* Hero visual — simplified, no floating animation */}
+          {/* Hero visual */}
           <motion.div
             className="relative"
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="aspect-video rounded-2xl overflow-hidden border border-border/30 shadow-2xl bg-black relative image-ease-in">
+            <div className="aspect-video rounded-2xl overflow-hidden border border-border/20 shadow-2xl bg-black relative">
               <video
                 src="/videos/hero-demo.mp4"
                 autoPlay loop muted playsInline
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent pointer-events-none" />
             </div>
           </motion.div>
         </div>
