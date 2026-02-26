@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { Portal } from "@/components/ui/Portal";
 import { TaskTimer } from "./TaskTimer";
 
 export type TaskPriority = 'normal' | 'alta' | 'urgente';
@@ -263,6 +264,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
   if (!task) return null;
 
   return (
+    <Portal>
     <AnimatePresence>
       {open && (
         <motion.div
@@ -542,5 +544,6 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
         </motion.div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }

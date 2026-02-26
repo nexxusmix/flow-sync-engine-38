@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Brain, Loader2, Play, X, Clock, FileDown, Save, ChevronDown, CalendarPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Portal } from '@/components/ui/Portal';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -259,6 +260,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
         <span className="hidden sm:inline">Modo Foco</span>
       </Button>
 
+      <Portal>
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -546,6 +548,7 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
           </motion.div>
         )}
       </AnimatePresence>
+      </Portal>
     </>
   );
 }
