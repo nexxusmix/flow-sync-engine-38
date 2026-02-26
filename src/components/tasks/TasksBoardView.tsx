@@ -2,11 +2,21 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { useChecklistCounts } from "@/hooks/useTaskChecklist";
 import { useCommentCounts } from "@/hooks/useTaskComments";
+import { useAllDependencies } from "@/hooks/useTaskDependencies";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { TaskAssigneeAvatar } from "@/components/tasks/TaskAssigneeSelect";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   CheckSquare, Square, MoreHorizontal, Trash2, Edit,
   Calendar, Search, Sparkles, X, Loader2, GripVertical,
-  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock, ListChecks, MessageCircle, Repeat
+  AlertTriangle, Flame, ArrowUp, Minus, ArrowDown, Clock, ListChecks, MessageCircle, Repeat, Link2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,6 +36,7 @@ interface TasksBoardViewProps {
   onToggleComplete?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
   onMoveTask?: (taskId: string, newStatus: Task['status']) => void;
+  onReorder?: (taskId: string, newPosition: number) => void;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
 }
@@ -54,7 +65,7 @@ type StatusFilter = Task['status'] | 'all';
 type CategoryFilter = Task['category'] | 'all';
 type GroupBy = 'none' | 'status' | 'category' | 'priority' | 'due';
 
-export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask, onMoveTask }: TasksBoardViewProps) {
+export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTask, onMoveTask, onReorder }: TasksBoardViewProps) {
   const isMobile = useIsMobile();
   const toggleComplete = onToggleComplete || (() => {});
   const deleteTask = onDeleteTask || (() => {});
@@ -63,11 +74,30 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
   const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
   const { data: checklistCounts = {} } = useChecklistCounts(taskIds);
   const { data: commentCounts = {} } = useCommentCounts(taskIds);
+  const { data: allDeps = [] } = useAllDependencies();
+
+  // Build dependency map: taskId -> count of unresolved deps
+  const depBlockedMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    allDeps.forEach(d => {
+      const depTask = tasks.find(t => t.id === d.depends_on_task_id);
+      if (depTask && depTask.status !== 'done') {
+        map[d.task_id] = (map[d.task_id] || 0) + 1;
+      }
+    });
+    return map;
+  }, [allDeps, tasks]);
+
+  // DnD sensors
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dropTargetStatus, setDropTargetStatus] = useState<Task['status'] | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const listRef = useRef<HTMLDivElement>(null);
+
+
+
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
@@ -183,6 +213,15 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
 
     return list;
   }, [tasks, statusFilter, categoryFilter, globalSearch, aiFilteredIds, sortBy, selectedTags]);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !onReorder) return;
+    const oldIndex = filteredTasks.findIndex(t => t.id === active.id);
+    const newIndex = filteredTasks.findIndex(t => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    onReorder(active.id as string, newIndex);
+  }, [filteredTasks, onReorder]);
 
   // ── Grouping ───────────────────────────────────────────
   const groupedTasks = useMemo(() => {
@@ -469,6 +508,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
       </div>
 
       {/* ── Task List ───────────────────────────────────── */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div ref={listRef} className="space-y-4">
         {groupedTasks.map((group) => (
           <div key={group.label || '__all'}>
@@ -481,6 +521,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
               </div>
             )}
 
+            <SortableContext items={group.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-1.5">
               <AnimatePresence mode="popLayout">
                 {group.tasks.length === 0 ? (
@@ -617,11 +658,22 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                               )}
 
                               {/* Recurrence indicator */}
-                              {(task as any).recurrence_rule && (
+                              {task.recurrence_rule && (
                                 <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-blue-400/60">
                                   <Repeat className="w-3 h-3" />
                                 </span>
                               )}
+
+                              {/* Dependency indicator */}
+                              {depBlockedMap[task.id] && depBlockedMap[task.id] > 0 && (
+                                <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-amber-400/60">
+                                  <Link2 className="w-3 h-3" />
+                                  {depBlockedMap[task.id]}
+                                </span>
+                              )}
+
+                              {/* Assignee avatar */}
+                              {task.assignee_id && <TaskAssigneeAvatar userId={task.assignee_id} />}
 
                               {task.due_date && (
                                 <span className={cn(
@@ -665,9 +717,11 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                 )}
               </AnimatePresence>
             </div>
+            </SortableContext>
           </div>
         ))}
       </div>
+      </DndContext>
 
       {/* Keyboard shortcut hint */}
       {!isMobile && (
