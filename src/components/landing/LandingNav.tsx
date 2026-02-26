@@ -15,27 +15,20 @@ export function LandingNav() {
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="flex items-center justify-between px-6 md:px-12 py-4 max-w-7xl mx-auto">
-        <motion.div
-          className="flex items-center gap-3"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <img
-            src={squadLogo}
-            alt="SQUAD Hub"
-            className="h-3 max-h-3 object-contain"
-          />
-        </motion.div>
+        <img
+          src={squadLogo}
+          alt="SQUAD Hub"
+          className="h-3 max-h-3 object-contain"
+        />
 
         <div className="flex items-center gap-3">
           <Button
             onClick={() => navigate('/login')}
             variant="outline"
-            className="gap-2 border-border/50 hover:border-foreground/30 hover-invert"
+            className="gap-2 border-border/50 hover:border-foreground/30 hover-invert text-xs uppercase tracking-wider"
           >
             Entrar
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>

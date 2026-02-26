@@ -17,10 +17,10 @@ export default function LandingPage() {
   useSmoothScroll(scrollContainerRef);
 
   return (
-    <div ref={scrollContainerRef} className="h-screen overflow-y-auto bg-background relative overflow-x-hidden">
-      {/* Ambient glow — single subtle orb replacing particles/grid/orbs */}
+    <div ref={scrollContainerRef} className="landing-scroll bg-background relative">
+      {/* Single subtle ambient glow */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-primary/5 blur-[200px]" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-primary/4 blur-[200px]" />
       </div>
       <div className="grain" />
 
@@ -28,8 +28,8 @@ export default function LandingPage() {
       <LandingHero scrollContainerRef={scrollContainerRef} />
       <LandingProblem />
       <LandingSolution />
-      <LandingPricing />
       <LandingDifferentials />
+      <LandingPricing />
       <LandingPriceJustification />
       <LandingAudience />
       <LandingProof />

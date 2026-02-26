@@ -12,29 +12,31 @@ export function LandingProof() {
       <div className="max-w-4xl mx-auto">
         <motion.div
           className="text-center mb-16"
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl md:text-4xl font-light text-foreground tracking-tight">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-medium">Comparativo</span>
+          <h2 className="text-3xl md:text-4xl font-light text-foreground mt-4 tracking-tight">
             Prova de <span className="text-primary">visão</span>
           </h2>
         </motion.div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {comparisons.map((c, i) => (
             <motion.div
               key={i}
-              className="grid md:grid-cols-2 gap-4"
-              initial={{ opacity: 0, y: 20 }}
+              className="grid md:grid-cols-2 gap-3"
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.08 }}
             >
-              <div className="px-6 py-5 rounded-xl bg-destructive/5 border border-destructive/10 text-sm text-muted-foreground/60 italic">
+              <div className="px-5 py-4 rounded-xl bg-destructive/4 border border-destructive/8 text-sm text-muted-foreground/50 italic">
                 {c.them}
               </div>
-              <div className="px-6 py-5 rounded-xl bg-primary/5 border border-primary/10 text-sm text-foreground/80 font-medium">
+              <div className="px-5 py-4 rounded-xl bg-primary/4 border border-primary/8 text-sm text-foreground/80 font-medium">
                 {c.us}
               </div>
             </motion.div>

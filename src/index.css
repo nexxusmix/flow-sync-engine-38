@@ -1250,6 +1250,14 @@
     animation: textMaskSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
+  /* Staggered text mask delays */
+  .text-mask-reveal:nth-child(1) > * { animation-delay: 0s; }
+  .text-mask-reveal:nth-child(2) > * { animation-delay: 0.08s; }
+  .text-mask-reveal:nth-child(3) > * { animation-delay: 0.16s; }
+  .text-mask-reveal:nth-child(4) > * { animation-delay: 0.24s; }
+  .text-mask-reveal:nth-child(5) > * { animation-delay: 0.32s; }
+  .text-mask-reveal:nth-child(6) > * { animation-delay: 0.40s; }
+
   @keyframes textMaskSlide {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -1325,11 +1333,26 @@
 
   /* (removed floating-video and video-aura — replaced by simpler approach) */
 
-  /* Glassmorphism Nav */
+  /* Glassmorphism Nav — adapts to theme */
   .glass-nav {
-    background: rgba(0, 0, 0, 0.5);
+    background: hsl(var(--background) / 0.7);
     backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  .dark .glass-nav {
+    background: rgba(0, 0, 0, 0.5);
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Landing scroll container — smooth scroll */
+  .landing-scroll {
+    scroll-behavior: smooth;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100vh;
+    height: 100dvh;
   }
 
   /* Landing Section Fade */
