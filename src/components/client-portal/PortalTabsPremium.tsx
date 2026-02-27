@@ -83,7 +83,7 @@ function PortalTabsPremiumComponent({
                     {badge && badge.count > 0 && (
                       <span
                         className={cn(
-                          "absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1",
+                          "absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-mono font-bold px-1",
                           getBadgeStyles(badge.variant)
                         )}
                       >

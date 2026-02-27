@@ -113,7 +113,7 @@ export function DeliverablesListSection({
                 <Badge 
                   variant="outline" 
                   className={cn(
-                    "text-[8px] uppercase tracking-widest font-bold shrink-0",
+                    "text-micro uppercase tracking-widest font-bold shrink-0",
                     status.className
                   )}
                 >

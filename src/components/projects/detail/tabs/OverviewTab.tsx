@@ -93,7 +93,7 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
           {/* Project Stages */}
           <div className="bg-card border border-border p-8">
-            <span className="text-primary text-[10px] uppercase tracking-[0.4em] font-bold mb-6 block">
+            <span className="text-primary text-mono uppercase tracking-[0.4em] font-bold mb-6 block">
               04 — ETAPAS DO PROJETO
             </span>
             
@@ -113,11 +113,11 @@ export function OverviewTab({ project }: OverviewTabProps) {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <StatusIcon className={`w-4 h-4 ${statusColor}`} />
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide truncate">
+                      <span className="text-mono font-bold text-muted-foreground uppercase tracking-wide truncate">
                         {stage.title}
                       </span>
                     </div>
-                    <span className="text-[9px] text-muted-foreground">
+                    <span className="text-caption text-muted-foreground">
                       {stage.status === 'completed' ? 'Concluída' :
                        stage.status === 'in_progress' ? 'Em andamento' :
                        stage.status === 'blocked' ? 'Bloqueada' :

@@ -279,7 +279,7 @@ export function AddUpdateModal({ open, onOpenChange, project, onUpdateAdded }: A
                 disabled={isProcessing}
               >
                 <Upload className="w-5 h-5 text-muted-foreground" />
-                <span className="text-[9px] text-muted-foreground">Adicionar</span>
+                <span className="text-caption text-muted-foreground">Adicionar</span>
               </button>
             </div>
             
