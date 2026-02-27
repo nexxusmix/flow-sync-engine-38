@@ -428,7 +428,7 @@ export function PortalTab({ project }: PortalTabProps) {
                    <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                    <span className="text-sm truncate">{d.title || d.file_name || 'Material'}</span>
                    {d.material_category && d.material_category !== 'deliverable' && (
-                     <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">
+                     <Badge variant="outline" className="text-mono capitalize flex-shrink-0">
                        {d.material_category}
                      </Badge>
                    )}

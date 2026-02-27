@@ -116,17 +116,17 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
           {/* Quick stats */}
           <div className="flex items-center gap-4 mt-3">
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Valor</p>
+              <p className="text-mono text-muted-foreground uppercase tracking-wider">Valor</p>
               <p className="text-sm font-semibold text-foreground">
                 R$ {deal.value.toLocaleString("pt-BR")}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Estágio</p>
+              <p className="text-mono text-muted-foreground uppercase tracking-wider">Estágio</p>
               <p className="text-sm font-semibold text-foreground capitalize">{deal.stage}</p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Temperatura</p>
+              <p className="text-mono text-muted-foreground uppercase tracking-wider">Temperatura</p>
               <p className="text-sm font-semibold text-foreground capitalize">{deal.temperature || "—"}</p>
             </div>
           </div>
@@ -201,9 +201,9 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground">{activity.title}</p>
                           {activity.description && (
-                            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{activity.description}</p>
+                            <p className="text-body-sm text-muted-foreground mt-0.5 line-clamp-2">{activity.description}</p>
                           )}
-                          <p className="text-[10px] text-muted-foreground/60 mt-1">
+                          <p className="text-mono text-muted-foreground/60 mt-1">
                             {activity.profile?.full_name || "Sistema"} ·{" "}
                             {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: ptBR })}
                           </p>
@@ -219,29 +219,29 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
           <TabsContent value="details" className="flex-1 p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Contato</label>
+                <label className="text-mono text-muted-foreground uppercase tracking-wider">Contato</label>
                 <p className="text-sm text-foreground">{deal.contactName}</p>
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Empresa</label>
+                <label className="text-mono text-muted-foreground uppercase tracking-wider">Empresa</label>
                 <p className="text-sm text-foreground">{deal.company || "—"}</p>
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Fonte</label>
+                <label className="text-mono text-muted-foreground uppercase tracking-wider">Fonte</label>
                 <p className="text-sm text-foreground capitalize">{deal.source || "—"}</p>
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Próxima Ação</label>
+                <label className="text-mono text-muted-foreground uppercase tracking-wider">Próxima Ação</label>
                 <p className="text-sm text-foreground">{deal.nextAction || "Nenhuma"}</p>
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Criado em</label>
+                <label className="text-mono text-muted-foreground uppercase tracking-wider">Criado em</label>
                 <p className="text-sm text-foreground">
                   {new Date(deal.createdAt).toLocaleDateString("pt-BR")}
                 </p>
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Projeto Vinculado</label>
+                <label className="text-mono text-muted-foreground uppercase tracking-wider">Projeto Vinculado</label>
                 <p className="text-sm text-foreground">{deal.linkedProjectId || "Nenhum"}</p>
               </div>
             </div>
@@ -280,7 +280,7 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-2xl font-bold text-foreground">{deal.score || 0}</span>
-                  <span className="text-[9px] text-muted-foreground uppercase">Score</span>
+                  <span className="text-caption text-muted-foreground uppercase">Score</span>
                 </div>
               </div>
 

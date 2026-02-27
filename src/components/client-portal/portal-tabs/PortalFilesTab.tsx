@@ -93,7 +93,7 @@ function PortalFilesTabComponent({ files }: PortalFilesTabProps) {
           <div className="flex items-center gap-2 mb-4">
             <FolderOpen className="w-5 h-5 text-cyan-400" />
             <h3 className="font-medium text-white">{folder}</h3>
-            <Badge variant="secondary" className="text-[10px] bg-[#1a1a1a] text-gray-400">
+            <Badge variant="secondary" className="text-mono bg-[#1a1a1a] text-gray-400">
               {folderFiles.length} arquivo{folderFiles.length !== 1 ? 's' : ''}
             </Badge>
           </div>
@@ -116,7 +116,7 @@ function PortalFilesTabComponent({ files }: PortalFilesTabProps) {
                     <p className="text-sm font-medium text-white truncate">
                       {file.name}
                     </p>
-                    <p className="text-[10px] text-gray-500">
+                    <p className="text-mono text-gray-500">
                       {format(new Date(file.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>

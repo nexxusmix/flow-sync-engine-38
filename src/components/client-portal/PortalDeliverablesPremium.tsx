@@ -119,7 +119,7 @@ function PortalDeliverablesPremiumComponent({
                   </span>
                 </div>
                 <span className={cn(
-                  "text-[9px] px-2 py-0.5 uppercase tracking-wider font-medium",
+                  "text-caption px-2 py-0.5 uppercase tracking-wider font-medium",
                   isApproved 
                     ? "bg-emerald-500/20 text-emerald-400" 
                     : deliverable.awaiting_approval 
@@ -140,7 +140,7 @@ function PortalDeliverablesPremiumComponent({
                 </p>
               )}
               
-              <div className="flex items-center gap-3 text-[10px] text-gray-500">
+              <div className="flex items-center gap-3 text-mono text-gray-500">
                 {deliverable.youtube_url ? (
                   <span className="flex items-center gap-1">
                     <Play className="w-3 h-3" />

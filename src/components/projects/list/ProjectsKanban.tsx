@@ -21,7 +21,7 @@ function HealthBar({ score }: { score: number }) {
           style={{ width: `${score}%` }}
         />
       </div>
-      <span className="text-[10px] font-medium text-muted-foreground">{score}%</span>
+      <span className="text-mono font-medium text-muted-foreground">{score}%</span>
     </div>
   );
 }
@@ -66,7 +66,7 @@ function KanbanCard({
         <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[10px] text-primary font-medium uppercase">{project.client_name}</span>
+            <span className="text-mono text-primary font-medium uppercase">{project.client_name}</span>
           </div>
           <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
             {project.name}
@@ -77,7 +77,7 @@ function KanbanCard({
       {/* Value & Status */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-foreground">{formatCurrency(project.contract_value || 0)}</span>
-        <span className={`text-[9px] px-2 py-0.5 rounded border font-medium ${statusConfig.color}`}>
+        <span className={`text-caption px-2 py-0.5 rounded border font-medium ${statusConfig.color}`}>
           {statusConfig.label}
         </span>
       </div>
@@ -91,10 +91,10 @@ function KanbanCard({
       <div className="flex items-center justify-between pt-3 border-t border-border/50">
         <div className="flex items-center -space-x-1.5">
           <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border-2 border-card">
-            <span className="text-[9px] font-medium text-primary">{project.owner_name?.charAt(0) || 'S'}</span>
+            <span className="text-caption font-medium text-primary">{project.owner_name?.charAt(0) || 'S'}</span>
           </div>
         </div>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-mono text-muted-foreground">
           {project.due_date ? new Date(project.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '-'}
         </span>
       </div>
@@ -156,7 +156,7 @@ function KanbanColumn({
             {projects.length}
           </span>
         </div>
-        <p className="text-[10px] text-muted-foreground font-light">
+        <p className="text-mono text-muted-foreground font-light">
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(totalValue)}
         </p>
       </div>
