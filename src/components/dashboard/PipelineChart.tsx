@@ -66,7 +66,7 @@ export function PipelineChart() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-medium text-foreground">Pipeline por Estágio</h3>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total: {formatCurrencyBRL(total)}</p>
+          <p className="text-mono text-muted-foreground uppercase tracking-wider">Total: {formatCurrencyBRL(total)}</p>
         </div>
       </div>
       {chartData.length === 0 ? (
@@ -90,8 +90,8 @@ export function PipelineChart() {
             {chartData.map((d, i) => (
               <div key={d.name} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                <span className="text-[10px] text-muted-foreground flex-1 truncate">{d.name}</span>
-                <span className="text-[10px] font-medium text-foreground">{d.count}</span>
+                <span className="text-mono text-muted-foreground flex-1 truncate">{d.name}</span>
+                <span className="text-mono font-medium text-foreground">{d.count}</span>
               </div>
             ))}
           </div>

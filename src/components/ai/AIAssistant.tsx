@@ -156,7 +156,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                 )}
               >
                 <p className="truncate font-medium text-foreground">{conv.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
+                <p className="text-mono text-muted-foreground mt-0.5">
                   {new Date(conv.updated_at).toLocaleDateString('pt-BR')}
                 </p>
               </button>
@@ -167,7 +167,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
           </div>
           {memories.length > 0 && (
             <div className="p-2 border-t border-border">
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wider text-center">
+              <p className="text-caption text-muted-foreground uppercase tracking-wider text-center">
                 🧠 {memories.length} memória{memories.length > 1 ? 's' : ''}
               </p>
             </div>
@@ -194,13 +194,13 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
             </div>
             <div>
               <span className="font-black text-xs uppercase tracking-widest text-foreground">Polo AI</span>
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Agente Autônomo</p>
+              <p className="text-caption text-muted-foreground uppercase tracking-wider">Agente Autônomo</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[9px] font-semibold text-green-500 uppercase">Online</span>
+              <span className="text-caption font-semibold text-green-500 uppercase">Online</span>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center transition-colors">
               <span className="material-symbols-outlined text-muted-foreground hover:text-foreground">close</span>
@@ -240,7 +240,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                     {msg.files && msg.files.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {msg.files.map((f, idx) => (
-                          <span key={idx} className="inline-flex items-center gap-1 text-[10px] bg-background/20 px-2 py-0.5 rounded">
+                          <span key={idx} className="inline-flex items-center gap-1 text-mono bg-background/20 px-2 py-0.5 rounded">
                             <span className="material-symbols-outlined text-xs">attach_file</span>
                             {f.name}
                           </span>
@@ -257,7 +257,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
                   <span className="material-symbols-outlined text-primary text-lg animate-spin">sync</span>
                   <div>
                     <p className="font-semibold text-primary text-xs">Polo AI executando plano...</p>
-                    <p className="text-[10px] text-muted-foreground">Execução automática em andamento</p>
+                    <p className="text-mono text-muted-foreground">Execução automática em andamento</p>
                   </div>
                 </div>
               )}

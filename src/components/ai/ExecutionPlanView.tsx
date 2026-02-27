@@ -102,11 +102,11 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
               <span className="text-sm font-medium">
                 {plan.summary || `${totalSteps} ${totalSteps === 1 ? 'ação' : 'ações'}`}
               </span>
-              <span className={cn('text-[10px] font-semibold uppercase px-2 py-0.5 rounded border', riskColors[plan.risk_level])}>
+              <span className={cn('text-mono font-semibold uppercase px-2 py-0.5 rounded border', riskColors[plan.risk_level])}>
                 {plan.risk_level === 'low' ? '⚡' : plan.risk_level === 'medium' ? '⚠️' : '🔴'}
               </span>
               {isExecuting && (
-                <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                <span className="text-mono font-mono text-muted-foreground tabular-nums">
                   {(elapsedMs / 1000).toFixed(1)}s
                 </span>
               )}
@@ -121,7 +121,7 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
             {(isExecuting || hasResults) && (
               <div className="space-y-1">
                 <Progress value={progressPct} className="h-1.5" />
-                <p className="text-[10px] text-muted-foreground text-right">
+                <p className="text-mono text-muted-foreground text-right">
                   {completedCount}/{totalSteps} concluídas
                 </p>
               </div>
@@ -199,7 +199,7 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                       {step.data?.title && <span className="text-muted-foreground truncate max-w-[120px]" title={String(step.data.title)}>"{String(step.data.title)}"</span>}
                       {step.query && <span className="text-muted-foreground truncate max-w-[100px]">"{step.query}"</span>}
                       {hasError && (
-                        <span className="text-destructive ml-auto text-[10px] font-semibold flex items-center gap-1">
+                        <span className="text-destructive ml-auto text-mono font-semibold flex items-center gap-1">
                           <Info className="w-3 h-3" />{friendlyError(result.error_message!)}
                         </span>
                       )}
@@ -211,7 +211,7 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="ml-6 mr-2 mb-1 p-2 rounded bg-destructive/5 border border-destructive/10 text-[10px] text-destructive/80 font-mono break-all overflow-hidden"
+                          className="ml-6 mr-2 mb-1 p-2 rounded bg-destructive/5 border border-destructive/10 text-mono text-destructive/80 font-mono break-all overflow-hidden"
                         >
                           {result.error_message}
                         </motion.div>

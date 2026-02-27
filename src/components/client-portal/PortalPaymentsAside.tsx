@@ -84,7 +84,7 @@ function PortalPaymentsAsideComponent({ projectId, hasPaymentBlock }: PortalPaym
               <div className="flex items-start justify-between mb-2">
                 <div>
                   {overdue && (
-                    <span className="text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold bg-red-500/20 text-red-400 inline-block mb-2">
+                    <span className="text-mono px-2 py-0.5 uppercase tracking-wider font-bold bg-red-500/20 text-red-400 inline-block mb-2">
                       Atrasado
                     </span>
                   )}

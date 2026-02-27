@@ -143,13 +143,13 @@ export function AiPromptField({
           <button
             type="button"
             onClick={() => setVoiceMode(m => m === 'replace' ? 'append' : 'replace')}
-            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            className="text-mono text-muted-foreground hover:text-foreground transition-colors"
             title={voiceMode === 'replace' ? 'Voz: substituir texto' : 'Voz: anexar ao texto'}
           >
             🎙️ {voiceMode === 'replace' ? 'Substituir' : 'Anexar'}
           </button>
           {showCounter && (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-mono text-muted-foreground">
               {value.length}{maxLength ? `/${maxLength}` : ''}
             </span>
           )}

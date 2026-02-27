@@ -142,7 +142,7 @@ function PortalMetricsGridComponent({ project }: PortalMetricsGridProps) {
                 {/* Content */}
                 <div className="relative z-10">
                   <motion.p 
-                    className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3"
+                    className="text-mono uppercase tracking-[0.2em] text-muted-foreground font-medium mb-3"
                     initial={{ opacity: 0, x: -10 }}
                     animate={isInView ? { opacity: 1, x: 0 } : {}}
                     transition={{ delay: 0.3 + index * 0.1, duration: 0.4 }}
