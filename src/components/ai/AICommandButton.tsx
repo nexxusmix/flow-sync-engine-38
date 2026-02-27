@@ -32,7 +32,7 @@ export function AICommandButton() {
           <span className="material-symbols-outlined text-xl">
             auto_awesome
           </span>
-          <span className="hidden md:inline font-normal uppercase text-[10px] tracking-wider">IA</span>
+          <span className="hidden md:inline font-normal uppercase text-mono tracking-wider">IA</span>
         </motion.div>
       </motion.button>
 

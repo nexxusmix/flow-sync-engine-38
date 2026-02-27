@@ -64,7 +64,7 @@ export function RevenueChart() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-medium text-foreground">Receita Mensal</h3>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Últimos 6 meses</p>
+          <p className="text-mono text-muted-foreground uppercase tracking-wider">Últimos 6 meses</p>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>

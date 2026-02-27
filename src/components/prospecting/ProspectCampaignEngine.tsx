@@ -53,7 +53,7 @@ export function ProspectCampaignEngine({ prospectId, prospectName, niche, city }
           </div>
           <div>
             <h3 className="text-sm font-medium text-foreground">Motor de Campanhas IA</h3>
-            <p className="text-[10px] text-muted-foreground">Estratégia, cadência e abordagens</p>
+            <p className="text-mono text-muted-foreground">Estratégia, cadência e abordagens</p>
           </div>
         </div>
         <Button
@@ -77,14 +77,14 @@ export function ProspectCampaignEngine({ prospectId, prospectName, niche, city }
             {/* Objective + Risk */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Objetivo</p>
+                <p className="text-mono text-muted-foreground uppercase tracking-wider">Objetivo</p>
                 <p className="text-sm text-foreground mt-0.5">{plan.objective}</p>
               </div>
               <div className="flex items-center gap-2">
                 {(() => {
                   const risk = RISK_CONFIG[plan.spam_risk];
                   return (
-                    <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-medium ${risk.color}`}>
+                    <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-caption font-medium ${risk.color}`}>
                       <risk.icon className="w-3 h-3" />
                       Risco: {risk.label}
                     </span>
@@ -96,24 +96,24 @@ export function ProspectCampaignEngine({ prospectId, prospectName, niche, city }
             {/* Best Channel/Time */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Melhor Canal</p>
+                <p className="text-caption text-muted-foreground uppercase tracking-wider">Melhor Canal</p>
                 <p className="text-sm text-foreground mt-1">
                   {CHANNEL_ICONS[plan.best_channel] || '📱'} {plan.best_channel}
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Melhor Horário</p>
+                <p className="text-caption text-muted-foreground uppercase tracking-wider">Melhor Horário</p>
                 <p className="text-sm text-foreground mt-1">🕐 {plan.best_time}</p>
               </div>
             </div>
 
             {/* Cadence Steps */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Cadência</p>
+              <p className="text-mono text-muted-foreground uppercase tracking-wider mb-2">Cadência</p>
               <div className="space-y-1">
                 {plan.cadence_steps.map((step, i) => (
                   <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.02]">
-                    <span className="text-[10px] text-muted-foreground w-10 shrink-0">D+{step.day_offset}</span>
+                    <span className="text-mono text-muted-foreground w-10 shrink-0">D+{step.day_offset}</span>
                     <span className="text-sm">{CHANNEL_ICONS[step.channel] || '📱'}</span>
                     <span className="text-xs text-foreground flex-1">{step.action}</span>
                   </div>
@@ -123,7 +123,7 @@ export function ProspectCampaignEngine({ prospectId, prospectName, niche, city }
 
             {/* Approaches A/B/C */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Abordagens</p>
+              <p className="text-mono text-muted-foreground uppercase tracking-wider mb-2">Abordagens</p>
               <div className="space-y-2">
                 {plan.approaches.map((approach, i) => (
                   <div key={i} className="border border-white/[0.05] rounded-xl overflow-hidden">
@@ -132,7 +132,7 @@ export function ProspectCampaignEngine({ prospectId, prospectName, niche, city }
                       className="w-full flex items-center justify-between p-3 hover:bg-white/[0.02]"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">
+                        <span className="w-6 h-6 rounded-md bg-primary/10 text-primary text-mono font-bold flex items-center justify-center">
                           {String.fromCharCode(65 + i)}
                         </span>
                         <span className="text-xs font-medium text-foreground">{approach.label}</span>
@@ -145,7 +145,7 @@ export function ProspectCampaignEngine({ prospectId, prospectName, niche, city }
                         animate={{ height: 'auto' }}
                         className="px-3 pb-3"
                       >
-                        <p className="text-[10px] text-muted-foreground mb-2">{approach.angle}</p>
+                        <p className="text-mono text-muted-foreground mb-2">{approach.angle}</p>
                         <div className="bg-[#005c4b] rounded-xl rounded-tr-sm p-3">
                           <p className="text-xs text-white whitespace-pre-wrap">{approach.first_message}</p>
                         </div>
@@ -157,7 +157,7 @@ export function ProspectCampaignEngine({ prospectId, prospectName, niche, city }
             </div>
 
             {plan.notes && (
-              <p className="text-[10px] text-muted-foreground italic">{plan.notes}</p>
+              <p className="text-mono text-muted-foreground italic">{plan.notes}</p>
             )}
           </motion.div>
         )}

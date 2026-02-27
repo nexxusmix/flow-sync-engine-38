@@ -245,7 +245,7 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
                 {healthDistribution.map(d => (
                   <div key={d.name} className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.fill }} />
-                    <span className="text-[10px] text-muted-foreground">{d.name.split(' ')[0]}</span>
+                    <span className="text-mono text-muted-foreground">{d.name.split(' ')[0]}</span>
                   </div>
                 ))}
               </div>

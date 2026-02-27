@@ -263,14 +263,14 @@ export function DeliverablesTab({ project }: DeliverablesTabProps) {
 
                 {/* Meta */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", statusInfo.color)}>
+                  <Badge variant="secondary" className={cn("text-mono px-1.5 py-0", statusInfo.color)}>
                     {statusInfo.label}
                   </Badge>
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  <Badge variant="outline" className="text-mono px-1.5 py-0">
                     V{d.version_number}
                   </Badge>
                   {d.due_date && (
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-mono text-muted-foreground">
                       {format(new Date(d.due_date), "dd MMM", { locale: ptBR })}
                     </span>
                   )}

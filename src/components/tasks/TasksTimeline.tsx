@@ -139,7 +139,7 @@ export function TasksTimeline({ tasks, onEditTask }: TasksTimelineProps) {
                             {task.tags.slice(0, 3).map(tag => (
                               <span 
                                 key={tag}
-                                className="px-2 py-0.5 text-[10px] rounded-full bg-muted text-muted-foreground"
+                                className="px-2 py-0.5 text-mono rounded-full bg-muted text-muted-foreground"
                               >
                                 {tag}
                               </span>

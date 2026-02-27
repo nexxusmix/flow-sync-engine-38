@@ -34,7 +34,7 @@ export function StatusBadge({ label, variant = "verified", dot = false, classNam
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-3 py-0.5 rounded text-[10px] font-normal tracking-[0.1em] uppercase border",
+        "inline-flex items-center gap-1.5 px-3 py-0.5 rounded text-mono font-normal tracking-[0.1em] uppercase border",
         variantStyles[variant],
         className
       )}

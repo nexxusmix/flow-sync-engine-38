@@ -92,10 +92,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
             <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
               <Target className="w-4 h-4 text-emerald-500" />
             </div>
-            <span className="text-[9px] font-bold text-emerald-500 uppercase">Progresso</span>
+            <span className="text-caption font-bold text-emerald-500 uppercase">Progresso</span>
           </div>
           <p className="text-lg font-bold text-foreground">{stageProgress}%</p>
-          <p className="text-[10px] text-muted-foreground">{completedStages}/{totalStages} etapas</p>
+          <p className="text-mono text-muted-foreground">{completedStages}/{totalStages} etapas</p>
         </div>
 
         <div className="glass-card rounded-xl p-4">
@@ -103,12 +103,12 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Activity className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-[9px] font-bold text-primary uppercase">Saúde</span>
+            <span className="text-caption font-bold text-primary uppercase">Saúde</span>
           </div>
           <p className={cn("text-lg font-bold", getHealthColor(project.health_score || 0))}>
             {project.health_score || 0}%
           </p>
-          <p className="text-[10px] text-muted-foreground">Health Score</p>
+          <p className="text-mono text-muted-foreground">Health Score</p>
         </div>
 
         <div className="glass-card rounded-xl p-4">
@@ -116,10 +116,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
               <Zap className="w-4 h-4 text-amber-500" />
             </div>
-            <span className="text-[9px] font-bold text-amber-500 uppercase">Etapa</span>
+            <span className="text-caption font-bold text-amber-500 uppercase">Etapa</span>
           </div>
           <p className="text-lg font-bold text-foreground truncate">{currentStageName}</p>
-          <p className="text-[10px] text-muted-foreground">Etapa Atual</p>
+          <p className="text-mono text-muted-foreground">Etapa Atual</p>
         </div>
 
         <div className="glass-card rounded-xl p-4">
@@ -127,10 +127,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
             <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
               <DollarSign className="w-4 h-4 text-violet-500" />
             </div>
-            <span className="text-[9px] font-bold text-violet-500 uppercase">Valor</span>
+            <span className="text-caption font-bold text-violet-500 uppercase">Valor</span>
           </div>
           <p className="text-lg font-bold text-foreground">{formatCurrency(project.contract_value || 0)}</p>
-          <p className="text-[10px] text-muted-foreground">Valor do Contrato</p>
+          <p className="text-mono text-muted-foreground">Valor do Contrato</p>
         </div>
       </div>
 

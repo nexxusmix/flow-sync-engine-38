@@ -17,7 +17,7 @@ export function LandingProof() {
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5 }}
         >
-          <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-medium">Comparativo</span>
+          <span className="text-mono uppercase tracking-[0.2em] text-primary font-medium">Comparativo</span>
           <h2 className="text-3xl md:text-4xl font-light text-foreground mt-4 tracking-tight">
             Prova de <span className="text-primary">visão</span>
           </h2>

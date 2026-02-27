@@ -51,7 +51,7 @@ export function TodayActions() {
               : <>Hoje eu ganho o dia <span className="squad-logo-text font-light text-muted-foreground">fazendo isso</span></>
             }
           </h2>
-          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-widest mt-1">
+          <p className="text-mono text-muted-foreground font-light uppercase tracking-widest mt-1">
             {totalActions === 0 ? 'Nenhuma ação pendente' : `${totalDone}/${totalActions} concluídas`}
           </p>
         </div>
@@ -79,7 +79,7 @@ export function TodayActions() {
             <div key={section.key}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="material-symbols-outlined text-primary text-sm">{section.icon}</span>
-                <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-light">{section.label}</span>
+                <span className="text-caption uppercase tracking-widest text-muted-foreground font-light">{section.label}</span>
               </div>
               <div className="space-y-2 min-h-[60px]">
                 {section.data.length > 0 ? (
@@ -93,8 +93,8 @@ export function TodayActions() {
                         {action.done ? "check_circle" : "radio_button_unchecked"}
                       </span>
                       <p className={cn("flex-1 text-sm text-foreground font-light", action.done && "line-through")}>{action.task}</p>
-                      <span className="text-[10px] text-muted-foreground">{action.entityName}</span>
-                      <span className="text-[10px] text-muted-foreground w-12 text-right font-normal">{action.deadline}</span>
+                      <span className="text-mono text-muted-foreground">{action.entityName}</span>
+                      <span className="text-mono text-muted-foreground w-12 text-right font-normal">{action.deadline}</span>
                     </div>
                   ))
                 ) : (

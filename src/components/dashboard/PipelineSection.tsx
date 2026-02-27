@@ -89,7 +89,7 @@ export function PipelineSection() {
             >
               {stage.count}
             </motion.p>
-            <p className="text-[10px] text-primary font-normal">{formatCurrencyBRL(stage.value)}</p>
+            <p className="text-mono text-primary font-normal">{formatCurrencyBRL(stage.value)}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -104,7 +104,7 @@ export function PipelineSection() {
         >
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <span className="text-[10px] font-black text-amber-500 uppercase tracking-wider">
+            <span className="text-mono font-black text-amber-500 uppercase tracking-wider">
               {stuckDeals.length} deal{stuckDeals.length > 1 ? 's' : ''} parado{stuckDeals.length > 1 ? 's' : ''}
             </span>
           </div>
@@ -113,9 +113,9 @@ export function PipelineSection() {
               <div key={deal.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-amber-500/5 border border-amber-500/10">
                 <div>
                   <p className="text-xs font-medium text-foreground">{deal.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{deal.company || deal.contactName}</p>
+                  <p className="text-mono text-muted-foreground">{deal.company || deal.contactName}</p>
                 </div>
-                <p className="text-[10px] font-medium text-amber-500">
+                <p className="text-mono font-medium text-amber-500">
                   {differenceInDays(new Date(), parseISO(deal.updatedAt))}d parado
                 </p>
               </div>

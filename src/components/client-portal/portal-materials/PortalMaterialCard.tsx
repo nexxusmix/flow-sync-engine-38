@@ -130,13 +130,13 @@ function PortalMaterialCardComponent({
         {/* Status Badge */}
         <div className="absolute top-2 left-2 flex gap-1">
           {isApproved && (
-            <Badge className="bg-emerald-500/90 text-white text-[10px]">
+            <Badge className="bg-emerald-500/90 text-white text-mono">
               <CheckCircle2 className="w-3 h-3 mr-1" />
               Aprovado
             </Badge>
           )}
           {material.awaiting_approval && !isApproved && (
-            <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 text-[10px]">
+            <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 text-mono">
               <Clock className="w-3 h-3 mr-1" />
               Aguardando
             </Badge>
@@ -165,7 +165,7 @@ function PortalMaterialCardComponent({
           <h3 className="font-medium text-white text-sm leading-tight flex-1">
             {material.title}
           </h3>
-          <span className="text-[10px] text-gray-600 whitespace-nowrap">
+          <span className="text-mono text-gray-600 whitespace-nowrap">
             {format(new Date(material.updated_at || material.created_at), "dd/MM/yy", { locale: ptBR })}
           </span>
         </div>
@@ -179,7 +179,7 @@ function PortalMaterialCardComponent({
                 <span
                   key={tagId}
                   className={cn(
-                    "px-2 py-0.5 rounded text-[10px] font-medium text-white",
+                    "px-2 py-0.5 rounded text-mono font-medium text-white",
                     tag.color
                   )}
                 >
@@ -193,7 +193,7 @@ function PortalMaterialCardComponent({
         {/* Changelog Items */}
         {changelogItems.length > 0 && (
           <div className="space-y-1 pt-1 border-t border-[#1a1a1a]">
-            <p className="text-[10px] text-gray-500 uppercase tracking-wide">O que mudou:</p>
+            <p className="text-mono text-gray-500 uppercase tracking-wide">O que mudou:</p>
             <ul className="space-y-0.5">
               {changelogItems.slice(0, 3).map((item, idx) => (
                 <li key={idx} className="text-xs text-gray-400 flex items-start gap-1.5">
@@ -202,7 +202,7 @@ function PortalMaterialCardComponent({
                 </li>
               ))}
               {changelogItems.length > 3 && (
-                <li className="text-[10px] text-gray-600">
+                <li className="text-mono text-gray-600">
                   +{changelogItems.length - 3} alterações
                 </li>
               )}
@@ -246,7 +246,7 @@ function PortalMaterialCardComponent({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-[10px] text-gray-500 hover:text-gray-300"
+              className="h-6 px-2 text-mono text-gray-500 hover:text-gray-300"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowVersions(!showVersions);
@@ -276,12 +276,12 @@ function PortalMaterialCardComponent({
                 className="w-full flex items-center justify-between p-2 rounded bg-[#111] hover:bg-[#1a1a1a] transition-colors text-left"
               >
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px] font-mono">
+                  <Badge variant="outline" className="text-mono font-mono">
                     V{String(version.version_number).padStart(2, '0')}
                   </Badge>
                   <span className="text-xs text-gray-400">{version.title || 'Versão anterior'}</span>
                 </div>
-                <span className="text-[10px] text-gray-600">
+                <span className="text-mono text-gray-600">
                   {format(new Date(version.created_at), "dd/MM", { locale: ptBR })}
                 </span>
               </button>
