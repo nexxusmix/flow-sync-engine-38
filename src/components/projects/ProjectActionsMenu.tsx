@@ -8,6 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -20,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink, RefreshCw, Wand2, Sparkles } from "lucide-react";
+import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink, RefreshCw, Wand2, Sparkles, Bot, Settings2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,7 +48,6 @@ export function ProjectActionsMenu({
   variant = 'dots',
   showOpenOption = true,
 }: ProjectActionsMenuProps) {
-  // Support both full project object and individual props
   const projectId = project?.id ?? propProjectId ?? '';
   const projectName = project?.name ?? propProjectName ?? '';
   const projectStatus = project?.status ?? propProjectStatus ?? 'active';
@@ -89,10 +92,8 @@ export function ProjectActionsMenu({
 
   const handleSyncFinance = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Validate contract_value regardless of how the component was instantiated
     if (!contractValue || contractValue <= 0) {
-      toast.warning('Defina o valor do contrato no projeto antes de sincronizar o financeiro.', {
-        description: 'O valor do contrato deve ser maior que zero para gerar as parcelas financeiras.',
+      toast.warning('Defina o valor do contrato antes de sincronizar.', {
         action: {
           label: 'Editar projeto',
           onClick: () => {
@@ -198,7 +199,8 @@ export function ProjectActionsMenu({
             <MoreVertical className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-52">
+          {/* Primary actions — always visible */}
           {showOpenOption && (
             <DropdownMenuItem onClick={handleOpenProject}>
               <ExternalLink className="w-4 h-4 mr-2" />
@@ -209,49 +211,66 @@ export function ProjectActionsMenu({
             <Pencil className="w-4 h-4 mr-2" />
             Editar
           </DropdownMenuItem>
+
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={handleSyncFinance}
-            disabled={isSyncingFinance}
-            className="text-emerald-600 focus:text-emerald-600"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncingFinance ? 'animate-spin' : ''}`} />
-            {isSyncingFinance ? 'Sincronizando...' : 'Sincronizar Financeiro'}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={handleAutoUpdate}
-            disabled={isAutoUpdating}
-            className="text-primary focus:text-primary"
-          >
-            <Wand2 className={`w-4 h-4 mr-2 ${isAutoUpdating ? 'animate-spin' : ''}`} />
-            {isAutoUpdating ? 'Atualizando...' : 'Auto Update IA'}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={handleGenerateClient}
-            disabled={isGeneratingClient}
-            className="text-primary focus:text-primary"
-          >
-            <Sparkles className={`w-4 h-4 mr-2 ${isGeneratingClient ? 'animate-pulse' : ''}`} />
-            {isGeneratingClient ? 'Gerando...' : 'Gerar Cliente + Pipeline'}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {!isCompleted && !isArchived && (
-            <DropdownMenuItem onClick={handleComplete} className="text-emerald-500 focus:text-emerald-500">
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Finalizar projeto
-            </DropdownMenuItem>
-          )}
-          {!isArchived && (
-            <DropdownMenuItem onClick={handleArchive} className="text-amber-500 focus:text-amber-500">
-              <Archive className="w-4 h-4 mr-2" />
-              Arquivar
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:text-red-500">
-            <Trash2 className="w-4 h-4 mr-2" />
-            Excluir
-          </DropdownMenuItem>
+
+          {/* AI actions — grouped in sub-menu */}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Bot className="w-4 h-4 mr-2 text-primary" />
+              <span className="text-primary">Ações IA</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-52">
+              <DropdownMenuItem
+                onClick={handleAutoUpdate}
+                disabled={isAutoUpdating}
+              >
+                <Wand2 className={`w-4 h-4 mr-2 ${isAutoUpdating ? 'animate-spin' : ''}`} />
+                {isAutoUpdating ? 'Atualizando...' : 'Auto Update'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleGenerateClient}
+                disabled={isGeneratingClient}
+              >
+                <Sparkles className={`w-4 h-4 mr-2 ${isGeneratingClient ? 'animate-pulse' : ''}`} />
+                {isGeneratingClient ? 'Gerando...' : 'Gerar Cliente + Pipeline'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleSyncFinance}
+                disabled={isSyncingFinance}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isSyncingFinance ? 'animate-spin' : ''}`} />
+                {isSyncingFinance ? 'Sincronizando...' : 'Sincronizar Financeiro'}
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+
+          {/* Lifecycle actions — grouped in sub-menu */}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Settings2 className="w-4 h-4 mr-2" />
+              Ciclo de Vida
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-48">
+              {!isCompleted && !isArchived && (
+                <DropdownMenuItem onClick={handleComplete} className="text-emerald-500 focus:text-emerald-500">
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Finalizar
+                </DropdownMenuItem>
+              )}
+              {!isArchived && (
+                <DropdownMenuItem onClick={handleArchive} className="text-amber-500 focus:text-amber-500">
+                  <Archive className="w-4 h-4 mr-2" />
+                  Arquivar
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -262,7 +281,6 @@ export function ProjectActionsMenu({
             <AlertDialogTitle>Finalizar projeto?</AlertDialogTitle>
             <AlertDialogDescription>
               O projeto <strong>{projectName}</strong> será marcado como concluído.
-              Esta ação pode ser revertida editando o projeto.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -280,8 +298,7 @@ export function ProjectActionsMenu({
           <AlertDialogHeader>
             <AlertDialogTitle>Arquivar projeto?</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto <strong>{projectName}</strong> será arquivado e não aparecerá 
-              na lista principal. Você poderá restaurá-lo posteriormente.
+              O projeto <strong>{projectName}</strong> será arquivado e não aparecerá na lista principal.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -299,8 +316,7 @@ export function ProjectActionsMenu({
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir projeto?</AlertDialogTitle>
             <AlertDialogDescription>
-              O projeto <strong>{projectName}</strong> será permanentemente excluído. 
-              Esta ação não pode ser desfeita e todos os dados associados serão perdidos.
+              O projeto <strong>{projectName}</strong> será permanentemente excluído.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
