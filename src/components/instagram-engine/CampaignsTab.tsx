@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,10 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useInstagramCampaigns } from '@/hooks/useInstagramEngine';
+import { useInstagramCampaigns, useInstagramPosts } from '@/hooks/useInstagramEngine';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -22,6 +22,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 
 export function CampaignsTab() {
   const { data: campaigns, isLoading } = useInstagramCampaigns();
+  const { data: posts } = useInstagramPosts();
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
@@ -50,6 +51,17 @@ export function CampaignsTab() {
       setSaving(false);
     }
   };
+
+  // Count posts per campaign
+  const postCountMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    (posts || []).forEach(p => {
+      if (p.campaign_id) {
+        map[p.campaign_id] = (map[p.campaign_id] || 0) + 1;
+      }
+    });
+    return map;
+  }, [posts]);
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
@@ -85,6 +97,10 @@ export function CampaignsTab() {
                 </div>
                 {c.objective && <p className="text-xs text-muted-foreground mb-3">{c.objective}</p>}
                 <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    {postCountMap[c.id] || 0} posts vinculados
+                  </span>
                   {c.target_audience && (
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />{c.target_audience}</span>
                   )}
