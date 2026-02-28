@@ -354,7 +354,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".txt,.md,.json,.csv,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.webp"
+              accept=".txt,.md,.json,.csv,.pdf,.doc,.docx,.xls,.xlsx,.pptx,.png,.jpg,.jpeg,.gif,.webp,.zip,.rar,.7z"
               onChange={handleFileSelect}
               className="hidden"
             />

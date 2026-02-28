@@ -262,7 +262,22 @@ export function ContentAssetsTab({ contentItemId }: ContentAssetsTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card rounded-xl p-6">
+      <div
+        className="glass-card rounded-xl p-6"
+        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-primary'); }}
+        onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-primary'); }}
+        onDrop={async (e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove('ring-2', 'ring-primary');
+          const files = e.dataTransfer.files;
+          if (files && files.length > 0 && fileInputRef.current) {
+            const dt = new DataTransfer();
+            Array.from(files).forEach(f => dt.items.add(f));
+            fileInputRef.current.files = dt.files;
+            fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }}
+      >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-medium text-foreground">Assets Vinculados</h3>
           <div className="flex gap-2">
@@ -270,7 +285,7 @@ export function ContentAssetsTab({ contentItemId }: ContentAssetsTabProps) {
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+              accept="*/*"
               className="hidden"
               onChange={handleUpload}
             />

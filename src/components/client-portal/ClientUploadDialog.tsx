@@ -402,7 +402,7 @@ function ClientUploadDialogComponent({
                 <p className="text-sm text-gray-500">Arraste arquivos aqui ou clique para selecionar</p>
                 <p className="text-[10px] text-gray-600 mt-1">Imagens, vídeos, PDFs, documentos, ZIPs...</p>
               </div>
-              <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} accept="image/*,video/*,.pdf,.doc,.docx,.zip,.rar,.psd,.ai,.eps,.svg" />
+              <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} accept="*/*" />
 
               {/* Add link buttons */}
               <div className="flex gap-2">

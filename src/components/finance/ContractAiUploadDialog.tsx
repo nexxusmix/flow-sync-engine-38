@@ -39,7 +39,7 @@ const ACCEPTED_TYPES = [
   "image/webp",
 ];
 
-const ACCEPTED_EXTENSIONS = ".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp";
+const ACCEPTED_EXTENSIONS = ".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp,.zip";
 
 const MAX_SIZE_MB = 20;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;

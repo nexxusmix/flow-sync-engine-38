@@ -287,21 +287,30 @@ export function AiAddTasksDialog({ open, onOpenChange, defaultCategory = 'operac
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".txt,.md,.csv,.json,.pdf,.docx,.doc,.png,.jpg,.jpeg,.webp,.gif"
+                  accept=".txt,.md,.csv,.json,.pdf,.docx,.doc,.png,.jpg,.jpeg,.webp,.gif,.zip,.rar,.7z,.pptx,.xlsx"
                   onChange={handleFileAdd}
                   className="hidden"
                 />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 border-dashed border-border/40 hover:border-primary/30 hover:bg-primary/5 h-9"
+                <div
+                  className="w-full border-2 border-dashed border-border/40 rounded-xl p-3 text-center cursor-pointer transition-all hover:border-primary/30 hover:bg-primary/5"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={files.length >= 10 || isGenerating}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                    const dt = new DataTransfer();
+                    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+                    if (fileInputRef.current) {
+                      fileInputRef.current.files = dt.files;
+                      fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                  }}
                 >
-                  <Upload className="w-3.5 h-3.5" />
-                  Anexar Arquivos
-                </Button>
+                  <Upload className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">Arraste arquivos aqui ou clique para anexar</p>
+                </div>
 
                 {/* File list */}
                 {files.length > 0 && (

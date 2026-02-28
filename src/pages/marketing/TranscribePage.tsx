@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Mic, Upload, Loader2, Copy, Check, FileAudio, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface TranscriptionResult {
   id: string;
@@ -110,7 +111,20 @@ export default function TranscribePage() {
         </div>
 
         {/* Upload Area */}
-        <Card className="border-dashed border-2 border-border/60 hover:border-primary/30 transition-colors">
+        <Card
+          className={cn(
+            "border-dashed border-2 transition-colors",
+            "border-border/60 hover:border-primary/30"
+          )}
+          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+          onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+            const files = e.dataTransfer.files;
+            if (files) Array.from(files).forEach(f => handleTranscribe(f));
+          }}
+        >
           <CardContent className="flex flex-col items-center justify-center py-12">
             <input
               ref={fileInputRef}
@@ -128,7 +142,7 @@ export default function TranscribePage() {
               )}
             </div>
             <h3 className="font-medium text-foreground mb-1">
-              {isTranscribing ? "Transcrevendo..." : "Enviar mídia para transcrição"}
+              {isTranscribing ? "Transcrevendo..." : "Arraste ou selecione mídia para transcrição"}
             </h3>
             <p className="text-xs text-muted-foreground mb-4 text-center max-w-sm">
               MP3, MP4, WAV, M4A, WebM, OGG — máximo 20MB por arquivo

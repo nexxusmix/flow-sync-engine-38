@@ -275,6 +275,21 @@ export function AddUpdateModal({ open, onOpenChange, project, onUpdateAdded }: A
               
               <button
                 onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                  if (files.length > 0) {
+                    setImages(prev => [...prev, ...files]);
+                    files.forEach(file => {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setImagePreviewUrls(prev => [...prev, ev.target?.result as string]);
+                      reader.readAsDataURL(file);
+                    });
+                  }
+                }}
                 className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-colors"
                 disabled={isProcessing}
               >

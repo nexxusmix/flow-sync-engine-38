@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,7 +129,27 @@ export default function LibraryPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleUploadFiles(Array.from(files));
+    }
+  }, [selectedFolder]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
 
   useEffect(() => {
     fetchAssets();
@@ -150,13 +170,11 @@ export default function LibraryPage() {
     setIsLoading(false);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
+  const handleUploadFiles = async (fileList: File[]) => {
+    if (fileList.length === 0) return;
     setIsLoading(true);
     
-    for (const file of Array.from(files)) {
+    for (const file of fileList) {
       const filePath = `${selectedFolder}/${file.name}`;
       const { error } = await supabase.storage
         .from('marketing-assets')
@@ -170,8 +188,12 @@ export default function LibraryPage() {
     toast.success('Upload concluído');
     fetchAssets();
     setIsLoading(false);
-    
-    // Reset input
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await handleUploadFiles(Array.from(files));
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -211,7 +233,7 @@ export default function LibraryPage() {
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*,video/*,audio/*,.pdf"
+              accept="*/*"
               className="hidden"
               onChange={handleUpload}
             />
@@ -246,7 +268,15 @@ export default function LibraryPage() {
           </div>
 
           {/* Content Area */}
-          <div className="col-span-12 md:col-span-9 lg:col-span-10">
+          <div
+            className={cn(
+              "col-span-12 md:col-span-9 lg:col-span-10 transition-colors rounded-xl",
+              isDragging && "ring-2 ring-primary bg-primary/5"
+            )}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-muted-foreground">
