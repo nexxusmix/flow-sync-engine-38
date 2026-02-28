@@ -6,19 +6,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, getDay } from 'date-fns';
+import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, usePublishToInstagram, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
+import { useInstagramConnection } from '@/hooks/useInstagramAPI';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send } from 'lucide-react';
 
 export function CalendarTab() {
   const { data: posts, isLoading } = useInstagramPosts();
   const { data: campaigns } = useInstagramCampaigns();
+  const { data: connection } = useInstagramConnection();
   const createPost = useCreatePost();
   const updatePost = useUpdatePost();
+  const publishMutation = usePublishToInstagram();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showPublish, setShowPublish] = useState<string | null>(null);
+  const [publishData, setPublishData] = useState({ image_url: '', caption: '', media_type: 'IMAGE' as 'IMAGE' | 'CAROUSEL' | 'REELS', video_url: '', image_urls: '' });
   const [newPost, setNewPost] = useState({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '' });
 
   const monthStart = startOfMonth(currentMonth);
@@ -55,6 +60,48 @@ export function CalendarTab() {
     setNewPost({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '' });
   };
 
+  const handlePublish = async () => {
+    if (!showPublish) return;
+    const post = (posts || []).find(p => p.id === showPublish);
+    if (!post) return;
+
+    const payload: any = {
+      post_id: post.id,
+      caption: publishData.caption || post.caption_long || post.caption_short || post.caption_medium || '',
+      media_type: publishData.media_type,
+    };
+
+    if (publishData.media_type === 'IMAGE') {
+      if (!publishData.image_url.trim()) return;
+      payload.image_url = publishData.image_url;
+    } else if (publishData.media_type === 'REELS') {
+      if (!publishData.video_url.trim()) return;
+      payload.video_url = publishData.video_url;
+    } else if (publishData.media_type === 'CAROUSEL') {
+      const urls = publishData.image_urls.split('\n').map(u => u.trim()).filter(Boolean);
+      if (urls.length < 2) return;
+      payload.image_urls = urls;
+    }
+
+    await publishMutation.mutateAsync(payload);
+    setShowPublish(null);
+    setPublishData({ image_url: '', caption: '', media_type: 'IMAGE', video_url: '', image_urls: '' });
+  };
+
+  const openPublishDialog = (postId: string) => {
+    const post = (posts || []).find(p => p.id === postId);
+    if (!post) return;
+    const mediaType = post.format === 'reel' ? 'REELS' : post.format === 'carousel' ? 'CAROUSEL' : 'IMAGE';
+    setPublishData({
+      image_url: '',
+      caption: post.caption_long || post.caption_short || post.caption_medium || '',
+      media_type: mediaType as any,
+      video_url: '',
+      image_urls: '',
+    });
+    setShowPublish(postId);
+  };
+
   const campaignMap = useMemo(() => {
     const map: Record<string, string> = {};
     (campaigns || []).forEach(c => { map[c.id] = c.name; });
@@ -65,6 +112,8 @@ export function CalendarTab() {
     published: 'bg-emerald-500', scheduled: 'bg-cyan-500', ready: 'bg-primary',
     in_production: 'bg-amber-500', planned: 'bg-blue-500', idea: 'bg-muted-foreground/40',
   };
+
+  const isConnected = !!connection;
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
@@ -127,6 +176,7 @@ export function CalendarTab() {
             <div className="space-y-2">
               {selectedDayPosts.map(p => {
                 const status = POST_STATUSES.find(s => s.key === p.status);
+                const isPublishable = !!connection && ['ready', 'scheduled'].includes(p.status);
                 return (
                   <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                     <span className="material-symbols-outlined text-primary text-lg">
@@ -145,6 +195,22 @@ export function CalendarTab() {
                         )}
                       </div>
                     </div>
+                    {isPublishable && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-xs shrink-0 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
+                        onClick={() => openPublishDialog(p.id)}
+                      >
+                        <Send className="w-3 h-3" />
+                        Publicar
+                      </Button>
+                    )}
+                    {p.status === 'published' && (
+                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px] shrink-0">
+                        ✓ Publicado
+                      </Badge>
+                    )}
                   </div>
                 );
               })}
@@ -189,6 +255,100 @@ export function CalendarTab() {
             <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={createPost.isPending}>
               {createPost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Publish Dialog */}
+      <Dialog open={!!showPublish} onOpenChange={(open) => { if (!open) setShowPublish(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-4 h-4 text-emerald-500" />
+              Publicar no Instagram
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <p className="text-xs text-amber-400">
+                ⚠️ A publicação será feita imediatamente na conta @{connection?.ig_username || '...'} conectada.
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Tipo de Mídia</label>
+              <Select value={publishData.media_type} onValueChange={v => setPublishData(p => ({ ...p, media_type: v as any }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IMAGE">Foto (Imagem única)</SelectItem>
+                  <SelectItem value="CAROUSEL">Carrossel</SelectItem>
+                  <SelectItem value="REELS">Reels (Vídeo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {publishData.media_type === 'IMAGE' && (
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">URL da Imagem (pública)</label>
+                <Input
+                  placeholder="https://exemplo.com/imagem.jpg"
+                  value={publishData.image_url}
+                  onChange={e => setPublishData(p => ({ ...p, image_url: e.target.value }))}
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">A imagem deve estar hospedada em uma URL pública acessível.</p>
+              </div>
+            )}
+
+            {publishData.media_type === 'REELS' && (
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">URL do Vídeo (pública)</label>
+                <Input
+                  placeholder="https://exemplo.com/video.mp4"
+                  value={publishData.video_url}
+                  onChange={e => setPublishData(p => ({ ...p, video_url: e.target.value }))}
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Vídeo MP4 hospedado em URL pública. Máx. 15 min.</p>
+              </div>
+            )}
+
+            {publishData.media_type === 'CAROUSEL' && (
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">URLs das Imagens (uma por linha)</label>
+                <Textarea
+                  placeholder={"https://exemplo.com/slide1.jpg\nhttps://exemplo.com/slide2.jpg"}
+                  value={publishData.image_urls}
+                  onChange={e => setPublishData(p => ({ ...p, image_urls: e.target.value }))}
+                  rows={4}
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Mínimo 2, máximo 10 imagens.</p>
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Legenda</label>
+              <Textarea
+                placeholder="Escreva a legenda do post..."
+                value={publishData.caption}
+                onChange={e => setPublishData(p => ({ ...p, caption: e.target.value }))}
+                rows={4}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">{publishData.caption.length}/2200 caracteres</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowPublish(null)}>Cancelar</Button>
+            <Button
+              onClick={handlePublish}
+              disabled={publishMutation.isPending}
+              className="bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white hover:opacity-90 gap-2"
+            >
+              {publishMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Publicando...</>
+              ) : (
+                <><Send className="w-4 h-4" /> Publicar Agora</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

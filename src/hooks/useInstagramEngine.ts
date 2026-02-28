@@ -325,3 +325,30 @@ export function useInstagramAI() {
     onError: (e: any) => toast.error(e.message || 'Erro na IA'),
   });
 }
+
+// Publish to Instagram
+export function usePublishToInstagram() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      post_id: string;
+      image_url?: string;
+      image_urls?: string[];
+      video_url?: string;
+      caption?: string;
+      media_type?: 'IMAGE' | 'CAROUSEL' | 'REELS';
+    }) => {
+      const { data, error } = await supabase.functions.invoke('publish-to-instagram', {
+        body: payload,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['instagram-posts'] });
+      toast.success('Publicado no Instagram com sucesso! 🎉');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao publicar'),
+  });
+}
