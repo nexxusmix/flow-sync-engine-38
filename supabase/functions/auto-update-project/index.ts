@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
-    // Validate user via getClaims
+    // Validate user
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -36,7 +36,6 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub;
 
-    // Service client for reads/writes
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const { project_id } = await req.json();
@@ -49,10 +48,10 @@ Deno.serve(async (req) => {
 
     const actions: { action: string; status: "ok" | "skipped" | "error"; detail?: string }[] = [];
 
-    // --- Read project state in parallel ---
+    // --- Read project state in parallel (tasks now filtered by project_id) ---
     const [projectRes, tasksRes, contractRes, eventsRes] = await Promise.all([
       adminClient.from("projects").select("*").eq("id", project_id).single(),
-      adminClient.from("tasks").select("id").eq("user_id", userId).limit(1),
+      adminClient.from("tasks").select("id").eq("project_id", project_id).limit(1),
       adminClient.from("contracts").select("id, status, total_value").eq("project_id", project_id).limit(1),
       adminClient
         .from("calendar_events")
@@ -77,14 +76,11 @@ Deno.serve(async (req) => {
     );
     const contractValue = Number(project.contract_value) ?? 0;
 
-    // --- Action 1: Sync finances using service role directly (bypass user auth) ---
+    // --- Action 1: Sync finances ---
     if (contractValue > 0) {
       try {
-        // Call sync-project-finances logic directly instead of via HTTP
-        // to avoid the user-token validation issue when called internally
         const forceRegenerate = !hasContract;
 
-        // Check/create contract
         const { data: existingContracts } = await adminClient
           .from("contracts")
           .select("*")
@@ -96,7 +92,6 @@ Deno.serve(async (req) => {
         let contractCreated = false;
 
         if (!contract) {
-          // Generate payment terms with AI
           let paymentTerms = "50% na assinatura + 50% na entrega";
           try {
             const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -116,7 +111,7 @@ Deno.serve(async (req) => {
               const generated = aiData.choices?.[0]?.message?.content?.trim();
               if (generated) paymentTerms = generated;
             }
-          } catch { /* fallback to default */ }
+          } catch { /* fallback */ }
 
           const { data: newContract, error: createErr } = await adminClient
             .from("contracts")
@@ -142,7 +137,6 @@ Deno.serve(async (req) => {
         }
 
         if (contract) {
-          // Check and create revenues
           const { data: existingRevenues } = await adminClient
             .from("revenues")
             .select("id")
@@ -161,7 +155,6 @@ Deno.serve(async (req) => {
               await adminClient.from("revenues").delete().eq("contract_id", contract.id);
             }
 
-            // Parse payment terms and create milestones
             const startDate = project.start_date || new Date().toISOString().split("T")[0];
             const terms = contract.payment_terms?.toLowerCase().trim() || "";
             const milestones: { description: string; amount: number; due_date: string }[] = [];
@@ -190,7 +183,7 @@ Deno.serve(async (req) => {
               due_date: m.due_date,
               status: "pending",
               installment_group_id: contract!.id,
-              notes: "Gerado automaticamente via Auto Update IA",
+              notes: "Gerado automaticamente via Atualizar Projeto",
               created_by: userId,
             }));
 
@@ -213,7 +206,7 @@ Deno.serve(async (req) => {
       actions.push({ action: "Sincronizar financeiro", status: "skipped", detail: "Valor do contrato não definido" });
     }
 
-    // --- Action 2: Generate tasks via AI if no tasks exist ---
+    // --- Action 2: Generate tasks via AI if no tasks for this project ---
     if (!hasTasks) {
       try {
         const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -273,6 +266,7 @@ Deno.serve(async (req) => {
           if (generatedTasks.length > 0) {
             const taskRows = generatedTasks.map((t: any) => ({
               user_id: userId,
+              project_id,
               title: t.title,
               description: t.description || null,
               category: t.category || "projeto",
@@ -328,9 +322,80 @@ Deno.serve(async (req) => {
         actions.push({ action: "Agendar entrega no calendário", status: "error", detail: e.message });
       }
     } else if (!project.due_date) {
-      actions.push({ action: "Agendar entrega", status: "skipped", detail: "Data de entrega não definida" });
+      // --- Action 3b: Suggest due_date via AI if not set ---
+      try {
+        const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-lite",
+            messages: [{
+              role: "user",
+              content: `Projeto audiovisual: "${project.name}", tipo: ${project.template || "projeto criativo"}, início: ${project.start_date || "hoje"}, valor: R$ ${contractValue}. Sugira uma data de entrega razoável em formato YYYY-MM-DD. Responda SOMENTE com a data, nada mais.`,
+            }],
+            max_tokens: 20,
+          }),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const suggestedDate = aiData.choices?.[0]?.message?.content?.trim();
+          if (suggestedDate && /^\d{4}-\d{2}-\d{2}$/.test(suggestedDate)) {
+            const { error: updateErr } = await adminClient
+              .from("projects")
+              .update({ due_date: suggestedDate })
+              .eq("id", project_id);
+            if (!updateErr) {
+              actions.push({ action: "Data de entrega sugerida pela IA", status: "ok", detail: suggestedDate });
+
+              // Also create the delivery event
+              const dueDate = new Date(suggestedDate);
+              const endDate = new Date(dueDate);
+              endDate.setHours(dueDate.getHours() + 2);
+              await adminClient.from("calendar_events").insert({
+                project_id,
+                workspace_id: project.workspace_id,
+                owner_user_id: userId,
+                title: `Entrega: ${project.name}`,
+                description: `Data sugerida pela IA para ${project.client_name || "cliente"}`,
+                start_at: dueDate.toISOString(),
+                end_at: endDate.toISOString(),
+                event_type: "delivery",
+                provider: "local",
+                color: "#10b981",
+              });
+            } else {
+              actions.push({ action: "Sugerir data de entrega", status: "error", detail: updateErr.message });
+            }
+          } else {
+            actions.push({ action: "Sugerir data de entrega", status: "skipped", detail: "IA não retornou data válida" });
+          }
+        } else {
+          actions.push({ action: "Sugerir data de entrega", status: "skipped", detail: "Erro na chamada IA" });
+        }
+      } catch (e: any) {
+        actions.push({ action: "Sugerir data de entrega", status: "error", detail: e.message });
+      }
     } else {
       actions.push({ action: "Agendar entrega", status: "skipped", detail: "Evento de entrega já existe" });
+    }
+
+    // --- Action 4: Refresh health_score ---
+    try {
+      const { data: healthData } = await adminClient.rpc("calculate_project_health_score", {
+        p_project_id: project_id,
+      });
+      const newScore = typeof healthData === "number" ? healthData : null;
+      if (newScore !== null && newScore !== project.health_score) {
+        await adminClient
+          .from("projects")
+          .update({ health_score: newScore })
+          .eq("id", project_id);
+        actions.push({ action: "Saúde do projeto atualizada", status: "ok", detail: `${project.health_score ?? '?'}% → ${newScore}%` });
+      } else {
+        actions.push({ action: "Saúde do projeto", status: "skipped", detail: `Score atual: ${newScore ?? project.health_score ?? 0}%` });
+      }
+    } catch (e: any) {
+      actions.push({ action: "Atualizar saúde do projeto", status: "error", detail: e.message });
     }
 
     const successCount = actions.filter((a) => a.status === "ok").length;
