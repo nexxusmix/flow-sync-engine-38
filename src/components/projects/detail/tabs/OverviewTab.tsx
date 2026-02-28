@@ -11,6 +11,10 @@ import {
   ReportAsidePanel,
 } from "@/components/projects/reporting";
 import { Video, Clock, CheckCircle2, Circle, Lock } from "lucide-react";
+import { useProjectIntelligence } from "@/hooks/useProjectIntelligence";
+import { ProjectDeadlineAlert } from "@/components/projects/detail/ProjectDeadlineAlert";
+import { ProjectIntelligenceBlock } from "@/components/projects/detail/ProjectIntelligenceBlock";
+import { ProjectAIAnalysis } from "@/components/projects/detail/ProjectAIAnalysis";
 
 interface OverviewTabProps {
   project: ProjectWithStages;
@@ -18,6 +22,7 @@ interface OverviewTabProps {
 
 export function OverviewTab({ project }: OverviewTabProps) {
   const { updateProject } = useProjects();
+  const { intelligence, tasks, revenues } = useProjectIntelligence(project);
 
   // Calculate progress
   const completedStages = project.stages?.filter(s => s.status === 'completed').length || 0;
@@ -34,13 +39,11 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
   // Parse deliverables from description (temporary - until we have proper deliverables table)
   const parseDeliverables = () => {
-    // Default deliverables based on template
     const defaultDeliverables = [
       { id: '1', title: 'Vídeo Lançamento (Até 02m30s)', description: 'Qualidade Cinema 4K • Wide & Vertical', status: 'not_started' as const },
       { id: '2', title: 'Institucional', description: 'Até 03m00s • Formato Narrativo', status: 'not_started' as const },
       { id: '3', title: 'Vídeo Manifesto', description: 'Até 01m30s • Storytelling Emocional', status: 'not_started' as const },
     ];
-
     return defaultDeliverables;
   };
 
@@ -48,6 +51,17 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
+
+      {/* Predictive Intelligence Layer */}
+      {intelligence && (
+        <>
+          <ProjectDeadlineAlert intelligence={intelligence} dueDate={project.due_date || null} />
+          <ProjectIntelligenceBlock intelligence={intelligence} />
+        </>
+      )}
+
+      {/* AI Analysis */}
+      <ProjectAIAnalysis project={project} tasks={tasks} revenues={revenues} />
 
       {/* Latest Alignments Block */}
       <LatestAlignmentsBlock projectId={project.id} />
@@ -138,7 +152,6 @@ export function OverviewTab({ project }: OverviewTabProps) {
             logoUrl={(project as any).logo_url}
             isManager={true}
             onEditProject={() => {
-              // Trigger edit modal from store
               import("@/stores/projectsStore").then(m => m.useProjectsStore.getState().setEditProjectModalOpen(true));
             }}
           />
