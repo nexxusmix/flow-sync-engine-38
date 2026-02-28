@@ -95,6 +95,49 @@ export function useTaskAutomationRules() {
     updateRule.mutate({ id, updates: { enabled } });
   };
 
+  const generateAutomationsAI = async (prompt?: string) => {
+    let body: any = {};
+
+    if (!prompt) {
+      // Analyze existing tasks
+      const { data: tasks } = await supabase
+        .from('tasks')
+        .select('title, status, priority, tags, created_at, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(50);
+      body = { tasks: tasks || [] };
+    } else {
+      body = { prompt };
+    }
+
+    const { data, error } = await supabase.functions.invoke('generate-task-automations', { body });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    const rules = data?.rules || [];
+    let created = 0;
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('Not authenticated');
+
+    for (const rule of rules) {
+      const { error: insertError } = await supabase
+        .from('task_automation_rules')
+        .insert([{
+          name: rule.name,
+          trigger_type: rule.trigger_type,
+          condition_json: rule.condition_json,
+          action_json: rule.action_json,
+          enabled: true,
+          user_id: userData.user.id,
+        }] as any);
+      if (!insertError) created++;
+    }
+
+    qc.invalidateQueries({ queryKey });
+    toast.success(`${created} automação(ões) criada(s) com IA!`);
+    return created;
+  };
+
   return {
     rules,
     isLoading,
@@ -102,5 +145,6 @@ export function useTaskAutomationRules() {
     updateRule: (id: string, updates: Partial<TaskAutomationRule>) => updateRule.mutate({ id, updates }),
     deleteRule: (id: string) => deleteRule.mutate(id),
     toggleRule,
+    generateAutomationsAI,
   };
 }
