@@ -23,48 +23,69 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'tasks array required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const prompt = `Analise estas tarefas e retorne um JSON com a seguinte estrutura EXATA (sem markdown, sem explicações):
-{
-  "total": número,
-  "by_status": {"backlog": N, "week": N, "today": N, "done": N},
-  "by_category": {"pessoal": N, "operacao": N, "projeto": N},
-  "overdue": {"count": N, "tasks": ["título1", "título2"]},
-  "dormant": {"count": N, "tasks": ["título de tarefas sem atualização há +7 dias"]},
-  "duplicates": {"count": N, "groups": [["tarefa similar 1", "tarefa similar 2"]]},
-  "insights": ["insight 1", "insight 2"],
-  "recommendations": ["recomendação 1", "recomendação 2"]
-}
+    // Pre-compute stats locally so AI only needs to add insights
+    const now = new Date();
+    const nowStr = now.toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-Data atual: ${new Date().toISOString().split('T')[0]}
+    const byStatus: Record<string, number> = { backlog: 0, week: 0, today: 0, done: 0 };
+    const byCat: Record<string, number> = { pessoal: 0, operacao: 0, projeto: 0 };
+    const overdueTasks: string[] = [];
+    const dormantTasks: string[] = [];
 
-Tarefas:
-${JSON.stringify(tasks, null, 2)}`;
+    for (const t of tasks) {
+      byStatus[t.status] = (byStatus[t.status] || 0) + 1;
+      byCat[t.category] = (byCat[t.category] || 0) + 1;
+      if (t.due_date && t.due_date < nowStr && t.status !== 'done') {
+        overdueTasks.push(t.title);
+      }
+      if (t.updated_at && t.updated_at < sevenDaysAgo && t.status !== 'done') {
+        dormantTasks.push(t.title);
+      }
+    }
+
+    // Only send compact task list to AI for insights/duplicates
+    const taskSummary = tasks
+      .filter((t: any) => t.status !== 'done')
+      .slice(0, 60)
+      .map((t: any) => `"${t.title}" [${t.status}/${t.category}]`)
+      .join('\n');
+
+    const prompt = `Analise estas tarefas e retorne APENAS um JSON (sem markdown):
+{"duplicates":{"count":N,"groups":[["título1","título2"]]},"insights":["max 3 insights curtos"],"recommendations":["max 3 recomendações curtas"]}
+
+REGRAS: insights e recommendations máximo 3 itens cada, frases curtas (max 15 palavras). duplicates só títulos muito similares.
+
+Tarefas:\n${taskSummary}`;
 
     const aiResp = await chatCompletion({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-2.5-flash-lite',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.2,
-      max_tokens: 4096,
+      temperature: 0.1,
+      max_tokens: 1500,
     });
     let content = aiResp.choices?.[0]?.message?.content?.trim() || '';
     if (content.startsWith('```json')) content = content.replace(/^```json\s*/, '').replace(/```\s*$/, '');
     else if (content.startsWith('```')) content = content.replace(/^```\s*/, '').replace(/```\s*$/, '');
 
-    let result;
+    let aiResult: any = {};
     try {
-      result = JSON.parse(content);
+      aiResult = JSON.parse(content);
     } catch {
-      content = content
-        .replace(/,\s*([}\]])/g, '$1')
-        .replace(/\/\/[^\n]*/g, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '');
-      try {
-        result = JSON.parse(content);
-      } catch (e2) {
-        console.error('JSON parse failed after sanitization:', e2, 'Content:', content.substring(0, 500));
-        return new Response(JSON.stringify({ error: 'A IA retornou formato inválido. Tente novamente.' }), { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
+      content = content.replace(/,\s*([}\]])/g, '$1').replace(/\/\/[^\n]*/g, '');
+      try { aiResult = JSON.parse(content); } catch { aiResult = {}; }
     }
+
+    const result = {
+      total: tasks.length,
+      by_status: byStatus,
+      by_category: byCat,
+      overdue: { count: overdueTasks.length, tasks: overdueTasks.slice(0, 5) },
+      dormant: { count: dormantTasks.length, tasks: dormantTasks.slice(0, 5) },
+      duplicates: aiResult.duplicates || { count: 0, groups: [] },
+      insights: aiResult.insights || ["Análise processada com dados locais."],
+      recommendations: aiResult.recommendations || ["Mantenha suas tarefas atualizadas."],
+    };
     return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('Error:', error);
