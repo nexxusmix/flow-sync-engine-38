@@ -22,19 +22,18 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
-    // Validate user
+    // Validate user via getUser (secure server-side validation)
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Token inválido" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = claimsData.claims.sub;
+    const userId = user.id;
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -42,6 +41,17 @@ Deno.serve(async (req) => {
     if (!project_id) {
       return new Response(JSON.stringify({ error: "project_id é obrigatório" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify user is workspace member
+    const { data: isMember } = await adminClient.rpc("is_workspace_member", {
+      _user_id: userId,
+    });
+    if (!isMember) {
+      return new Response(JSON.stringify({ error: "Acesso negado" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
