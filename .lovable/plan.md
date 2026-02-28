@@ -1,38 +1,31 @@
 
 
-## Plano: Prévia de Tarefas Geradas por IA com Edição e Regeneração
+## Plano: Refinar e Corrigir Fluxo de Prévia IA
 
-### Problema Atual
-Ao clicar "Gerar Tarefas", a IA processa e cria as tarefas diretamente no banco — sem prévia. O usuário não tem chance de revisar, editar, remover ou regenerar antes de confirmar.
+### Bugs encontrados
 
-### Solução
+1. **Regenerar não atualiza a prévia** — `TaskAIPreviewPanel` usa `useState(initialTasks)` que só roda na montagem. Quando `onRegenerate` gera novos resultados e `previewTasks` muda no pai, o componente ignora as novas props. Resultado: clicar "Regenerar" não faz nada visível.
 
-Adicionar um fluxo de 2 etapas: **Gerar → Prévia → Confirmar/Editar/Regenerar**.
+2. **Ordem do drag-and-drop perdida ao confirmar** — As tarefas confirmadas não recebem `position` baseada na ordem do drag. A ordem que o usuário definiu arrastando é ignorada no banco.
 
-### Mudanças
+3. **Sem feedback de loading ao confirmar** — Clicar "Confirmar" não mostra loading; se demorar, o usuário pode clicar de novo.
 
-**1. Criar componente `TaskAIPreviewPanel.tsx`**
-- Recebe array de tarefas geradas pela IA (ainda não salvas)
-- Exibe cada tarefa como card editável: título (inline edit), descrição, categoria (select), status (select), tags
-- Checkbox por tarefa para selecionar/desmarcar quais criar
-- Botões: "✓ Confirmar Selecionadas", "↻ Regenerar", "← Voltar"
-- Botão de remover individual (X)
+4. **Prévia não mostra estado vazio** — Se o usuário remover todas as tarefas manualmente, fica uma lista vazia sem feedback.
 
-**2. Adicionar campo "Prompt de orientação" no Sheet de IA (`TasksPage.tsx`)**
-- Campo `guidancePrompt` (textarea pequena, opcional) acima dos selects de categoria/coluna
-- Placeholder: "Ex: Priorize tarefas urgentes, ignore itens já feitos..."
-- Enviado ao edge function como parâmetro extra
+### Correções
 
-**3. Modificar fluxo em `TasksPage.tsx`**
-- `handleGenerateFromAI` deixa de chamar `createTasksFromAI` diretamente
-- Em vez disso, salva resultado em estado `previewTasks` e mostra o painel de prévia
-- Novo handler `handleConfirmAITasks` cria apenas as tarefas selecionadas
-- Botão "Regenerar" chama `handleGenerateFromAI` novamente (mantendo texto/arquivos)
+**`TaskAIPreviewPanel.tsx`:**
+- Adicionar `useEffect` que sincroniza `initialTasks` → `previewTasks` quando as props mudam (regeneração)
+- Adicionar prop `isConfirming` e estado de loading no botão Confirmar
+- Mapear `position` na ordem do array ao confirmar (index como position)
+- Mostrar mensagem quando lista fica vazia após remoções
+- Adicionar `key` baseado no array length para reset automático
 
-**4. Edge function `generate-tasks-from-text` já aceita `guidancePrompt`**
-- Já está implementado no prompt do sistema — só precisa passar do frontend
+**`TasksPage.tsx`:**
+- Passar `isConfirming` state ao `TaskAIPreviewPanel`
+- Adicionar estado `isConfirmingAI` com loading no `handleConfirmAITasks`
 
-### Arquivos impactados
-- `src/components/tasks/TaskAIPreviewPanel.tsx` — novo componente
-- `src/pages/TasksPage.tsx` — adicionar estado de prévia, campo guidance, fluxo 2 etapas
+### Arquivos
+- `src/components/tasks/TaskAIPreviewPanel.tsx`
+- `src/pages/TasksPage.tsx`
 
