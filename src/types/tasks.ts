@@ -33,4 +33,5 @@ export interface GeneratedTask {
   tags: string[];
   due_date?: string | null;
   status: Task['status'];
+  position?: number;
 }
