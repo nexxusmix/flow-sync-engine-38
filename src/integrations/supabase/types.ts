@@ -2872,6 +2872,51 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_summary_actions: {
+        Row: {
+          action_key: string
+          action_text: string
+          action_type: string
+          created_at: string | null
+          decision: string
+          id: string
+          metadata: Json | null
+          notes: string | null
+          standby_until: string | null
+          updated_at: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          action_key: string
+          action_text: string
+          action_type: string
+          created_at?: string | null
+          decision: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          standby_until?: string | null
+          updated_at?: string | null
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          action_key?: string
+          action_text?: string
+          action_type?: string
+          created_at?: string | null
+          decision?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          standby_until?: string | null
+          updated_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       deadlines: {
         Row: {
           assignee_id: string | null

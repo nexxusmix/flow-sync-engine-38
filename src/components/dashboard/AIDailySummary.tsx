@@ -1,20 +1,26 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailySummaryMetrics } from '@/hooks/useDailySummaryMetrics';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
-  Sparkles, RefreshCw, AlertTriangle, TrendingUp, Users, Calendar,
+  Sparkles, RefreshCw, AlertTriangle, TrendingUp, Users, Calendar as CalendarIcon,
   DollarSign, CheckCircle, Clock, Mail, FileText, Target, CircleDot,
-  MessageSquare, Copy, ExternalLink, Phone
+  MessageSquare, Copy, ExternalLink, Phone, Pause, X, Check
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'trending-up': TrendingUp,
   'users': Users,
-  'calendar': Calendar,
+  'calendar': CalendarIcon,
   'dollar-sign': DollarSign,
   'alert-triangle': AlertTriangle,
   'check-circle': CheckCircle,
@@ -60,6 +66,23 @@ interface SummaryData {
   highlights: SummaryHighlight[];
   action_items: string[];
   client_actions?: ClientAction[];
+}
+
+interface SummaryAction {
+  id: string;
+  action_key: string;
+  decision: string;
+  standby_until: string | null;
+}
+
+// Simple hash for deduplication
+function hashKey(type: string, text: string): string {
+  const str = `${type}:${text.toLowerCase().trim().slice(0, 80)}`;
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return `sa_${Math.abs(h).toString(36)}`;
 }
 
 function buildMetricsText(m: ReturnType<typeof useDailySummaryMetrics>): string {
@@ -123,10 +146,146 @@ function getWhatsAppLink(phone: string | undefined, message: string): string {
   return isMobile ? `whatsapp://send?phone=${clean}&text=${text}` : `https://wa.me/${clean}?text=${text}`;
 }
 
+// ── Action Buttons Component ──
+function ActionButtons({ actionKey, actionType, actionText, metadata, onDecided }: {
+  actionKey: string;
+  actionType: 'action_item' | 'client_action';
+  actionText: string;
+  metadata?: Record<string, unknown>;
+  onDecided: () => void;
+}) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [standbyDate, setStandbyDate] = useState<Date>();
+  const [standbyOpen, setStandbyOpen] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: async ({ decision, standbyUntil }: { decision: string; standbyUntil?: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      const { error } = await supabase.from('daily_summary_actions').insert({
+        user_id: user.id,
+        action_type: actionType,
+        action_text: actionText,
+        action_key: actionKey,
+        decision,
+        standby_until: standbyUntil || null,
+        metadata: metadata || {},
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['daily-summary-actions'] });
+      const labels: Record<string, string> = { done: '✅ Marcado como feito', dismissed: '❌ Ação recusada', standby: '⏸️ Adiado' };
+      toast.success(labels[vars.decision] || 'Salvo');
+      onDecided();
+    },
+    onError: () => toast.error('Erro ao salvar decisão'),
+  });
+
+  const handleStandbyConfirm = () => {
+    if (!standbyDate) return;
+    mutation.mutate({ decision: 'standby', standbyUntil: standbyDate.toISOString() });
+    setStandbyOpen(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 px-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+        onClick={() => mutation.mutate({ decision: 'done' })}
+        disabled={mutation.isPending}
+        title="Marcar como feito"
+      >
+        <Check className="w-3 h-3" />
+      </Button>
+
+      <Popover open={standbyOpen} onOpenChange={setStandbyOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+            disabled={mutation.isPending}
+            title="Adiar (Stand By)"
+          >
+            <Pause className="w-3 h-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-3" align="start">
+          <p className="text-xs text-muted-foreground mb-2">Relembrar em:</p>
+          <Calendar
+            mode="single"
+            selected={standbyDate}
+            onSelect={setStandbyDate}
+            disabled={(d) => d < new Date()}
+            className={cn("p-2 pointer-events-auto")}
+            locale={ptBR}
+          />
+          {standbyDate && (
+            <Button size="sm" className="w-full mt-2 text-xs" onClick={handleStandbyConfirm}>
+              Adiar até {format(standbyDate, "dd/MM/yyyy")}
+            </Button>
+          )}
+        </PopoverContent>
+      </Popover>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 px-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        onClick={() => mutation.mutate({ decision: 'dismissed' })}
+        disabled={mutation.isPending}
+        title="Recusar"
+      >
+        <X className="w-3 h-3" />
+      </Button>
+    </div>
+  );
+}
+
 export function AIDailySummary() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [decidedKeys, setDecidedKeys] = useState<Set<string>>(new Set());
   const metrics = useDailySummaryMetrics();
+
+  // Fetch existing decisions
+  const { data: existingActions } = useQuery({
+    queryKey: ['daily-summary-actions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('daily_summary_actions')
+        .select('id, action_key, decision, standby_until')
+        .eq('user_id', user.id) as any;
+      if (error) throw error;
+      return (data || []) as SummaryAction[];
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Build set of hidden action keys
+  const hiddenKeys = useMemo(() => {
+    const keys = new Set<string>();
+    if (!existingActions) return keys;
+    const now = new Date();
+    for (const a of existingActions) {
+      if (a.decision === 'done' || a.decision === 'dismissed') {
+        keys.add(a.action_key);
+      } else if (a.decision === 'standby' && a.standby_until) {
+        if (new Date(a.standby_until) > now) keys.add(a.action_key);
+      }
+    }
+    return keys;
+  }, [existingActions]);
+
+  const markDecided = useCallback((key: string) => {
+    setDecidedKeys(prev => new Set(prev).add(key));
+  }, []);
 
   const { data: rawSummary, isLoading, isFetching, error } = useQuery({
     queryKey: ['ai-daily-summary', user?.id, refreshKey],
@@ -138,9 +297,19 @@ export function AIDailySummary() {
 
       const metricsText = buildMetricsText(metrics);
 
+      // Include past decisions for AI context
+      let pastActionsText = '';
+      if (existingActions && existingActions.length > 0) {
+        const doneItems = existingActions.filter(a => a.decision === 'done').length;
+        const dismissedItems = existingActions.filter(a => a.decision === 'dismissed').length;
+        if (doneItems > 0 || dismissedItems > 0) {
+          pastActionsText = `\n\nHISTÓRICO DE DECISÕES DO USUÁRIO (NÃO repita estas ações):\n- ${doneItems} ações já concluídas\n- ${dismissedItems} ações recusadas pelo usuário`;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('polo-ai-chat', {
         body: {
-          message: `${metricsText}\n\nGere o resumo executivo do dia baseado nesses dados.`,
+          message: `${metricsText}${pastActionsText}\n\nGere o resumo executivo do dia baseado nesses dados.`,
           context: { type: 'daily_summary' },
         },
       });
@@ -176,6 +345,26 @@ export function AIDailySummary() {
       return null;
     }
   }, [rawSummary]);
+
+  // Filter visible items
+  const visibleActionItems = useMemo(() => {
+    if (!summary?.action_items) return [];
+    return summary.action_items.filter(item => {
+      const key = hashKey('action_item', item);
+      return !hiddenKeys.has(key) && !decidedKeys.has(key);
+    });
+  }, [summary, hiddenKeys, decidedKeys]);
+
+  const visibleClientActions = useMemo(() => {
+    if (!summary?.client_actions) return [];
+    return summary.client_actions.filter(action => {
+      const key = hashKey('client_action', `${action.client_name}:${action.reason}`);
+      return !hiddenKeys.has(key) && !decidedKeys.has(key);
+    });
+  }, [summary, hiddenKeys, decidedKeys]);
+
+  const totalActions = (summary?.action_items?.length || 0) + (summary?.client_actions?.length || 0);
+  const completedActions = totalActions - visibleActionItems.length - visibleClientActions.length;
 
   const isCreditsError = error?.message === 'CREDITS_EXHAUSTED' ||
     (error?.message && (error.message.includes('402') || error.message.includes('payment')));
@@ -239,7 +428,7 @@ export function AIDailySummary() {
             {summary.greeting}
           </motion.p>
 
-          {/* Highlight Cards — up to 9 (3x3) */}
+          {/* Highlight Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
             {summary.highlights.slice(0, 9).map((h, i) => {
               const colors = statusColors[h.status] || statusColors.neutral;
@@ -263,26 +452,54 @@ export function AIDailySummary() {
             })}
           </div>
 
-          {/* Action Items */}
-          {summary.action_items?.length > 0 && (
+          {/* Action Items with buttons */}
+          {(visibleActionItems.length > 0 || completedActions > 0) && (
             <motion.div
               className="space-y-1.5"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
             >
-              <p className="text-mono text-muted-foreground font-medium uppercase tracking-wide">Ações recomendadas</p>
-              {summary.action_items.map((item, i) => (
-                <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <CheckCircle className="w-3 h-3 text-primary flex-shrink-0 mt-0.5" />
-                  <span>{item}</span>
-                </div>
-              ))}
+              <div className="flex items-center justify-between">
+                <p className="text-mono text-muted-foreground font-medium uppercase tracking-wide">Ações recomendadas</p>
+                {totalActions > 0 && (
+                  <span className="text-caption text-muted-foreground">
+                    {completedActions} de {totalActions} concluídas
+                  </span>
+                )}
+              </div>
+              <AnimatePresence>
+                {visibleActionItems.map((item, i) => {
+                  const key = hashKey('action_item', item);
+                  return (
+                    <motion.div
+                      key={key}
+                      className="flex items-center justify-between gap-2 text-xs text-muted-foreground group"
+                      initial={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <CheckCircle className="w-3 h-3 text-primary flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <ActionButtons
+                          actionKey={key}
+                          actionType="action_item"
+                          actionText={item}
+                          onDecided={() => markDecided(key)}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </motion.div>
           )}
 
-          {/* Client Actions — Mensagens para Enviar */}
-          {summary.client_actions && summary.client_actions.length > 0 && (
+          {/* Client Actions with buttons */}
+          {visibleClientActions.length > 0 && (
             <motion.div
               className="space-y-3"
               initial={{ opacity: 0 }}
@@ -294,55 +511,67 @@ export function AIDailySummary() {
                 <p className="text-mono text-muted-foreground font-medium uppercase tracking-wide">Clientes para Contatar</p>
               </div>
 
-              {summary.client_actions.map((action, i) => {
-                const urgency = urgencyColors[action.urgency] || urgencyColors.medium;
-                return (
-                  <motion.div
-                    key={i}
-                    className="rounded-xl border border-border/50 bg-card/50 p-3 space-y-2"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.75 + i * 0.08 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-foreground">{action.client_name}</span>
-                        <span className={`text-caption px-1.5 py-0.5 rounded-full font-medium uppercase ${urgency.bg} ${urgency.text}`}>
-                          {action.urgency === 'high' ? 'Alta' : action.urgency === 'medium' ? 'Média' : 'Baixa'}
-                        </span>
+              <AnimatePresence>
+                {visibleClientActions.map((action, i) => {
+                  const key = hashKey('client_action', `${action.client_name}:${action.reason}`);
+                  const urgency = urgencyColors[action.urgency] || urgencyColors.medium;
+                  return (
+                    <motion.div
+                      key={key}
+                      className="rounded-xl border border-border/50 bg-card/50 p-3 space-y-2"
+                      initial={{ opacity: 1 }}
+                      exit={{ opacity: 0, height: 0, marginBottom: 0, padding: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-foreground">{action.client_name}</span>
+                          <span className={`text-caption px-1.5 py-0.5 rounded-full font-medium uppercase ${urgency.bg} ${urgency.text}`}>
+                            {action.urgency === 'high' ? 'Alta' : action.urgency === 'medium' ? 'Média' : 'Baixa'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-caption text-muted-foreground capitalize mr-1">{action.channel}</span>
+                          <ActionButtons
+                            actionKey={key}
+                            actionType="client_action"
+                            actionText={`${action.client_name}:${action.reason}`}
+                            metadata={{ client_name: action.client_name, urgency: action.urgency }}
+                            onDecided={() => markDecided(key)}
+                          />
+                        </div>
                       </div>
-                      <span className="text-caption text-muted-foreground capitalize">{action.channel}</span>
-                    </div>
 
-                    <p className="text-mono text-muted-foreground">{action.reason}</p>
+                      <p className="text-mono text-muted-foreground">{action.reason}</p>
 
-                    <div className="bg-muted/30 rounded-lg p-2">
-                      <p className="text-body-sm text-foreground/80 leading-relaxed">{action.suggested_message}</p>
-                    </div>
+                      <div className="bg-muted/30 rounded-lg p-2">
+                        <p className="text-body-sm text-foreground/80 leading-relaxed">{action.suggested_message}</p>
+                      </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => copyMessage(action.suggested_message)}
-                        className="flex items-center gap-1 text-mono text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <Copy className="w-3 h-3" />
-                        Copiar
-                      </button>
-                      {action.channel === 'whatsapp' && (
-                        <a
-                          href={getWhatsAppLink(undefined, action.suggested_message)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-mono text-emerald-400 hover:text-emerald-300 transition-colors"
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => copyMessage(action.suggested_message)}
+                          className="flex items-center gap-1 text-mono text-muted-foreground hover:text-primary transition-colors"
                         >
-                          <ExternalLink className="w-3 h-3" />
-                          WhatsApp
-                        </a>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
+                          <Copy className="w-3 h-3" />
+                          Copiar
+                        </button>
+                        {action.channel === 'whatsapp' && (
+                          <a
+                            href={getWhatsAppLink(undefined, action.suggested_message)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-mono text-emerald-400 hover:text-emerald-300 transition-colors"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </motion.div>
           )}
         </div>
