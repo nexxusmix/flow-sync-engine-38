@@ -38,7 +38,7 @@ const stagger = {
 };
 
 export default function ExecutiveDashboardPage() {
-  const { data, isLoading } = useExecutiveDashboard();
+  const { data, isLoading, isError, refetch, dataUpdatedAt } = useExecutiveDashboard();
   const { onlineUsers } = useWorkspacePresence();
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -150,6 +150,18 @@ export default function ExecutiveDashboardPage() {
     setTimeout(() => { printWindow.print(); }, 500);
   }, [data]);
 
+  if (isError) {
+    return (
+      <DashboardLayout title="Dashboard Executivo">
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+          <AlertTriangle className="w-10 h-10 text-destructive" />
+          <p className="text-sm text-muted-foreground">Erro ao carregar dados do dashboard.</p>
+          <Button onClick={() => refetch()} variant="outline" size="sm">Tentar novamente</Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (isLoading || !data) {
     return (
       <DashboardLayout title="Dashboard Executivo">
@@ -179,6 +191,11 @@ export default function ExecutiveDashboardPage() {
             </h1>
             <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest">
               {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              {dataUpdatedAt > 0 && (
+                <span className="ml-3 normal-case tracking-normal opacity-60">
+                  Atualizado às {new Date(dataUpdatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
             </p>
           </div>
           <Button onClick={handleExportPDF} variant="outline" size="sm" className="gap-2">
@@ -224,6 +241,9 @@ export default function ExecutiveDashboardPage() {
             <KPICard label="Despesas do Mês" value={formatCurrencyBRL(data.expenseCurrentMonth)} delta={-data.expenseDelta} prevValue={formatCurrencyBRL(data.expensePrevMonth)} />
             <KPICard label="Saldo Atual" value={formatCurrencyBRL(data.balanceCurrent)} />
             <KPICard label="A Receber" value={formatCurrencyBRL(data.pendingRevenue)} accent />
+            {data.overdueRevenue > 0 && (
+              <KPICard label="Vencido" value={formatCurrencyBRL(data.overdueRevenue)} danger icon={AlertTriangle} />
+            )}
           </div>
         </motion.div>
 
@@ -387,7 +407,7 @@ export default function ExecutiveDashboardPage() {
                           className="w-7 h-5 rounded-sm"
                           style={{
                             backgroundColor: intensity > 0
-                              ? `hsla(var(--primary), ${0.15 + intensity * 0.7})`
+                              ? `hsl(var(--primary) / ${0.15 + intensity * 0.7})`
                               : 'hsl(var(--muted))',
                           }}
                           title={`${label} ${hour}h — ${cell?.count || 0}`}

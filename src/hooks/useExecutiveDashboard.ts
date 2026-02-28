@@ -17,6 +17,7 @@ export interface ExecutiveMetrics {
   expenseDelta: number;
   balanceCurrent: number;
   pendingRevenue: number;
+  overdueRevenue: number;
   // Projects
   projectsActive: number;
   projectsCompleted: number;
@@ -85,13 +86,13 @@ export function useExecutiveDashboard() {
         projectsRes, dealsRes, revenuesRes, expensesRes,
         tasksRes, contentRes, stagesRes
       ] = await Promise.all([
-        supabase.from('projects').select('*').neq('status', 'archived'),
-        supabase.from('crm_deals').select('*'),
-        supabase.from('revenues').select('*'),
-        supabase.from('expenses').select('*'),
-        supabase.from('tasks').select('*'),
-        supabase.from('content_items').select('id, status, published_at'),
-        supabase.from('project_stages').select('*'),
+        supabase.from('projects').select('*').neq('status', 'archived').limit(5000),
+        supabase.from('crm_deals').select('*').limit(5000),
+        supabase.from('revenues').select('*').limit(5000),
+        supabase.from('expenses').select('*').limit(5000),
+        supabase.from('tasks').select('*').limit(5000),
+        supabase.from('content_items').select('id, status, published_at').limit(5000),
+        supabase.from('project_stages').select('*').limit(5000),
       ]);
 
       const projects = projectsRes.data || [];
@@ -136,7 +137,8 @@ export function useExecutiveDashboard() {
 
       const totalReceived = processedRevenues.filter(r => r.status === 'received').reduce((s, r) => s + (Number(r.amount) || 0), 0);
       const totalPaid = processedExpenses.filter(e => e.status === 'paid').reduce((s, e) => s + (Number(e.amount) || 0), 0);
-      const pendingRevenue = processedRevenues.filter(r => r.status === 'pending' || r.status === 'overdue').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      const pendingRevenue = processedRevenues.filter(r => r.status === 'pending').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      const overdueRevenue = processedRevenues.filter(r => r.status === 'overdue').reduce((s, r) => s + (Number(r.amount) || 0), 0);
 
       // ── Projects ──
       const active = projects.filter(p => p.status === 'active');
@@ -244,10 +246,13 @@ export function useExecutiveDashboard() {
         }
       }
 
-      // Productivity Score (0-100)
+      // Productivity Score (0-100) — proportional weighting when historical data is missing
       const taskScore = Math.min(40, (tasksCompletedThisMonth / Math.max(tasks.filter((t: any) => t.status !== 'done').length, 1)) * 40);
       const healthScore = (avgHealth / 100) * 30;
-      const revenueScore = revenueDelta > 0 ? Math.min(30, revenueDelta) : Math.max(0, 30 + revenueDelta);
+      const hasRevenueHistory = revenuePrevMonth > 0;
+      const revenueScore = hasRevenueHistory
+        ? (revenueDelta > 0 ? Math.min(30, revenueDelta) : Math.max(0, 30 + revenueDelta))
+        : (revenueCurrentMonth > 0 ? 30 : 15); // No history: give full points if earning, half if not
       const productivityScore = Math.round(taskScore + healthScore + revenueScore);
 
       // Content
@@ -258,6 +263,7 @@ export function useExecutiveDashboard() {
         expenseCurrentMonth, expensePrevMonth, expenseDelta,
         balanceCurrent: totalReceived - totalPaid,
         pendingRevenue,
+        overdueRevenue,
         projectsActive: active.length, projectsCompleted: completed.length,
         projectsAtRisk: atRisk.length, projectsBlocked: blocked.length,
         avgHealthScore: Math.round(avgHealth),
@@ -275,5 +281,6 @@ export function useExecutiveDashboard() {
     },
     enabled: !!user,
     staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 }
