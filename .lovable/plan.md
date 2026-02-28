@@ -1,31 +1,46 @@
 
+Objetivo
+- Elevar o fluxo IA de “gerar → prévia → confirmar” para nível produção (robusto, rápido, sem perda de dados, com UX clara).
 
-## Plano: Refinar e Corrigir Fluxo de Prévia IA
+Plano de implementação (curto e direto)
 
-### Bugs encontrados
+1) Robustez de geração e estados (`src/pages/TasksPage.tsx`)
+- Bloquear “Gerar Tarefas” também quando houver upload em processamento.
+- Tratar erros de limite/cota/timeout com mensagens específicas e ação de retry.
+- Limpar estados de loading com segurança em todos os caminhos (incluindo exceções).
+- Evitar ações concorrentes: impedir regenerar/confirmar simultaneamente.
 
-1. **Regenerar não atualiza a prévia** — `TaskAIPreviewPanel` usa `useState(initialTasks)` que só roda na montagem. Quando `onRegenerate` gera novos resultados e `previewTasks` muda no pai, o componente ignora as novas props. Resultado: clicar "Regenerar" não faz nada visível.
+2) Prévia mais segura e inteligente (`src/components/tasks/TaskAIPreviewPanel.tsx`)
+- Validar antes de confirmar: impedir títulos vazios e destacar cards inválidos.
+- Confirmar perda de alterações ao clicar “Voltar” ou “Regenerar” após edição/reordenação.
+- Melhorar seleção em lote: comportamento consistente em lista vazia e contador de selecionadas.
+- Adicionar ações rápidas por lote (categoria/status para selecionadas).
+- Manter drag-and-drop com UX melhor (handle claro, feedback visual mais forte, fallback de teclado estável).
 
-2. **Ordem do drag-and-drop perdida ao confirmar** — As tarefas confirmadas não recebem `position` baseada na ordem do drag. A ordem que o usuário definiu arrastando é ignorada no banco.
+3) Persistência fiel da ordem e metadados (`src/hooks/useTasksUnified.tsx`)
+- Ajustar `createTasksFromAI` para respeitar `position` vindo da prévia (quando existir), sem recalcular cegamente.
+- Garantir defaults consistentes no insert (ex.: `priority` padrão) para evitar variação entre criação manual e IA.
 
-3. **Sem feedback de loading ao confirmar** — Clicar "Confirmar" não mostra loading; se demorar, o usuário pode clicar de novo.
+4) Sanitização e qualidade da saída IA (`supabase/functions/generate-tasks-from-text/index.ts`)
+- Normalizar saída: `trim` de título/descrição/tags, remover duplicadas, descartar itens vazios.
+- Definir limite máximo de tarefas por geração (proteção contra respostas excessivas).
+- Validar datas inválidas e normalizar status/categoria com fallback seguro.
+- Retornar warnings estruturados (ex.: itens descartados) para feedback transparente na UI.
 
-4. **Prévia não mostra estado vazio** — Se o usuário remover todas as tarefas manualmente, fica uma lista vazia sem feedback.
+5) Refino visual da prévia (alinhado ao estilo do print enviado)
+- Cards mais “executivos”: hierarquia visual forte (título, prazo, categoria, tags, ações).
+- Barra superior com resumo (“geradas / selecionadas / atrasadas com data”).
+- Rodapé sticky com ações primárias sempre visíveis em listas longas.
 
-### Correções
-
-**`TaskAIPreviewPanel.tsx`:**
-- Adicionar `useEffect` que sincroniza `initialTasks` → `previewTasks` quando as props mudam (regeneração)
-- Adicionar prop `isConfirming` e estado de loading no botão Confirmar
-- Mapear `position` na ordem do array ao confirmar (index como position)
-- Mostrar mensagem quando lista fica vazia após remoções
-- Adicionar `key` baseado no array length para reset automático
-
-**`TasksPage.tsx`:**
-- Passar `isConfirming` state ao `TaskAIPreviewPanel`
-- Adicionar estado `isConfirmingAI` com loading no `handleConfirmAITasks`
-
-### Arquivos
-- `src/components/tasks/TaskAIPreviewPanel.tsx`
+Detalhes técnicos (arquivos alvo)
 - `src/pages/TasksPage.tsx`
+- `src/components/tasks/TaskAIPreviewPanel.tsx`
+- `src/hooks/useTasksUnified.tsx`
+- `supabase/functions/generate-tasks-from-text/index.ts`
 
+Checklist de validação E2E (obrigatório)
+- Gerar com texto simples, com arquivos, e com orientação.
+- Editar campos, desmarcar algumas, arrastar/reordenar, regenerar com confirmação de perda.
+- Confirmar criação e validar ordem final no quadro.
+- Testar estados de erro (limite, timeout, resposta vazia) e garantir UX sem travar.
+- Testar fluxo completo em desktop e mobile.
