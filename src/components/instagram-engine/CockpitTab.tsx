@@ -58,7 +58,7 @@ export function CockpitTab() {
 
   return (
     <div className="space-y-6">
-      {/* Meta Graph API Connection & Real Metrics */}
+      {/* Instagram Connection */}
       <InstagramMetaConnect />
 
       {/* Profile Stats */}
