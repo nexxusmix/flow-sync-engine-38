@@ -12,8 +12,8 @@ export function useScrapeInstagramProfile() {
       const { data, error } = await supabase.functions.invoke('scrape-instagram-profile', {
         body: { username },
       });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Erro ao buscar perfil');
+      if (error) throw new Error('Falha ao conectar com a função de coleta. Tente novamente.');
+      if (!data?.success) throw new Error(data?.error || 'Coleta automática indisponível para este perfil');
       return data.data;
     },
     onSuccess: async (profileData) => {
