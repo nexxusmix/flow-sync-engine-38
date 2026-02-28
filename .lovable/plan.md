@@ -1,71 +1,52 @@
 
 
-## Plano: Adicionar Tarefas COM IA — Preview, Edição e Upload de Arquivos
+## Plano: Refinamento Global — Settings, AI Tasks, Console Warnings, Edge Cases
 
-### Escopo
+### O que encontrei ao analisar:
 
-Substituir o fluxo atual "Adicionar Tarefas" (que apenas seleciona tarefas existentes) por um fluxo com IA que:
-- Permite digitar texto livre e/ou enviar múltiplos arquivos (PDF, DOCX, TXT, imagens)
-- Processa tudo via IA para gerar tarefas estruturadas
-- Mostra prévia editável do resultado antes de confirmar
-- Permite regenerar, editar inline cada tarefa, ou ajustar com campo de prompt
+1. **Console warning**: `SettingsDashboard` não usa `forwardRef`, causando warning de ref no React Router
+2. **Edge function `generate-tasks-from-text`**: usa tool calling via JSON parsing bruto (frágil) — deveria usar tool calling nativo para garantir JSON válido
+3. **`AiAddTasksDialog`**: falta feedback visual de erros de rate-limit (429/402), não trata erros granulares da IA
+4. **Settings Dashboard**: tipografia usa `text-3xl` hardcoded (não migrado), e `text-xs` em vez de tokens semânticos
+5. **Sub-páginas de Settings**: padrão inconsistente — algumas usam `max-w-3xl`, outras não; headers com tamanhos diferentes
+6. **`handleAddAiTasks` em `SavedFocusPlans`**: não trata erro do `supabase.from('saved_focus_plans').update()` — silencia falha
+7. **Progress bar na geração**: finge progresso com valores fixos (30/90/100) — deveria ser mais realista
 
-### Arquitetura
+### Implementação
 
-```text
-┌─────────────────────────────────────────────┐
-│  Dialog "Adicionar Tarefas com IA"          │
-│                                             │
-│  Step 1: INPUT                              │
-│  ┌─────────────────────────────────────┐    │
-│  │ Textarea (prompt / texto livre)     │    │
-│  │ [📎 Upload Arquivos] (multi)        │    │
-│  │ Lista de arquivos anexados          │    │
-│  │ [🧠 Gerar Tarefas]                 │    │
-│  └─────────────────────────────────────┘    │
-│                                             │
-│  Step 2: PREVIEW                            │
-│  ┌─────────────────────────────────────┐    │
-│  │ Tarefa 1: [título editável] [🗑️]   │    │
-│  │   desc: [editável]                  │    │
-│  │   tags: [...] categoria: [select]   │    │
-│  │ Tarefa 2: ...                       │    │
-│  │ ...                                 │    │
-│  │ ─────────────────────────────────── │    │
-│  │ Campo prompt: "Refine isso..."      │    │
-│  │ [♻️ Regenerar] [✅ Confirmar]       │    │
-│  └─────────────────────────────────────┘    │
-└─────────────────────────────────────────────┘
-```
+1. **Fix `SettingsDashboard` forwardRef warning**
+   - Envolver export com `React.forwardRef` ou remover ref passando-o como componente correto no router
 
-### Tarefas de Implementação
+2. **Migrar tipografia restante em Settings**
+   - `text-3xl` → `text-page-title`, `text-2xl` → `text-section-title`, `text-xs` → `text-caption` nas sub-páginas
+   - Aplicar em: `SettingsDashboard`, `WorkspaceSettingsPage`, `AuditSettingsPage`, `DangerZoneSettingsPage`, `ProspectingSettingsPage`, `TeamSettingsPage`
 
-1. **Criar componente `AiAddTasksDialog.tsx`** em `src/components/tasks/`
-   - Step 1 (input): Textarea para texto/prompt + input de upload múltiplo de arquivos + lista de arquivos anexados com opção de remover
-   - Step 2 (preview): Lista editável de tarefas geradas pela IA — cada tarefa com título, descrição, tags e categoria editáveis inline; botão remover por tarefa
-   - Campo de prompt para orientar regeneração
-   - Botões: "Regenerar" (chama IA de novo com prompt atualizado), "Confirmar" (salva tarefas)
-   - Upload de arquivos: extrai texto de cada arquivo (usando `generate-tasks-from-text` com `extractedTexts`)
+3. **Melhorar edge function `generate-tasks-from-text`**
+   - Usar tool calling nativo (`tools` + `tool_choice`) em vez de pedir JSON bruto no prompt — elimina parsing frágil e markdown wrapping
+   - Tratar erros 429/402 e repassar status code ao cliente
 
-2. **Atualizar edge function `generate-tasks-from-text`**
-   - Aceitar campo `guidancePrompt` opcional para orientar a geração
-   - Aceitar campo `imageBase64` para imagens (enviar como multimodal ao Gemini)
-   - Usar modelo com visão (`gemini-2.5-flash`) quando houver imagens
+4. **Melhorar `AiAddTasksDialog`**
+   - Tratar erros 429/402 com mensagens amigáveis
+   - Progresso mais realista com intervalos progressivos
+   - Adicionar empty state quando IA retorna 0 tarefas com sugestão de tentar de novo
+   - Desabilitar botão de arquivo durante processamento
 
-3. **Integrar no `SavedFocusPlans.tsx`**
-   - Substituir o dialog atual de "Adicionar Tarefas" pelo novo `AiAddTasksDialog`
-   - No confirm, inserir as tarefas na tabela `tasks` e depois adicioná-las como bloco ao plano
-   - Manter compatibilidade com o botão existente
+5. **Melhorar `handleAddAiTasks` em `SavedFocusPlans`**
+   - Adicionar try/catch no update do plano
+   - Refresh da lista de tasks após inserção
 
-4. **Processamento de arquivos no frontend**
-   - Extrair texto de PDFs/DOCX/TXT via FileReader
-   - Para imagens, converter para base64 e enviar junto
-   - Mostrar progresso de upload/processamento
+6. **Padronizar headers das sub-páginas de Settings**
+   - Unificar padrão visual: ícone + título + descrição + botão salvar
 
-### Detalhes Técnicos
+### Arquivos Impactados
 
-- **Edge function**: `generate-tasks-from-text` já aceita `rawText` e `extractedTexts`, só precisa adicionar `guidancePrompt` e suporte a imagens multimodais
-- **Modelo IA**: `google/gemini-2.5-flash` (já usado no projeto para multimodal)
-- **Limites**: 10 arquivos, 20MB cada (alinhado com limites existentes)
-- **Tarefas criadas**: inseridas em `tasks` com `workspace_id` padrão e depois vinculadas ao plano como novo bloco
+- `src/pages/settings/SettingsDashboard.tsx`
+- `src/pages/settings/WorkspaceSettingsPage.tsx`
+- `src/pages/settings/AuditSettingsPage.tsx`
+- `src/pages/settings/DangerZoneSettingsPage.tsx`
+- `src/pages/settings/ProspectingSettingsPage.tsx`
+- `src/pages/settings/TeamSettingsPage.tsx`
+- `supabase/functions/generate-tasks-from-text/index.ts`
+- `src/components/tasks/AiAddTasksDialog.tsx`
+- `src/components/tasks/SavedFocusPlans.tsx`
 
