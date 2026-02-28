@@ -7511,6 +7511,7 @@ export type Database = {
       tasks: {
         Row: {
           ai_refined: boolean
+          archived_at: string | null
           assignee_id: string | null
           attachments: Json | null
           category: string
@@ -7536,6 +7537,7 @@ export type Database = {
         }
         Insert: {
           ai_refined?: boolean
+          archived_at?: string | null
           assignee_id?: string | null
           attachments?: Json | null
           category?: string
@@ -7561,6 +7563,7 @@ export type Database = {
         }
         Update: {
           ai_refined?: boolean
+          archived_at?: string | null
           assignee_id?: string | null
           attachments?: Json | null
           category?: string
