@@ -205,3 +205,6 @@ verify_jwt = false
 [functions.suggest-task-priorities]
 verify_jwt = false
 
+[functions.generate-task-templates]
+verify_jwt = false
+
