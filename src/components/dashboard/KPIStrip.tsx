@@ -10,6 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Tilt3DCard } from "@/components/ui/tilt-3d-card";
 
 interface KPICardData {
   label: string;
@@ -103,12 +104,9 @@ export function KPIStrip() {
       animate="visible"
     >
       {cards.map((card, idx) => (
-        <motion.div
-          key={card.label}
-          variants={maskChild}
-        >
+        <Tilt3DCard key={card.label} variants={maskChild} intensity={4}>
           <Link to={card.href} className="block h-full">
-            <div className="glass-card rounded-xl p-4 flex flex-col gap-3 h-full hover:border-primary/15 hover:bg-muted/30 transition-all group cursor-pointer hover-card-zoom">
+            <div className="glass-card rounded-xl p-4 flex flex-col gap-3 h-full hover:border-primary/15 hover:bg-muted/30 transition-all group cursor-pointer">
               {/* Icon + label row */}
               <div className="flex items-center gap-2">
                 <div
@@ -143,7 +141,7 @@ export function KPIStrip() {
               </div>
             </div>
           </Link>
-        </motion.div>
+        </Tilt3DCard>
       ))}
     </motion.div>
   );

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
+import { Tilt3DCard } from '@/components/ui/tilt-3d-card';
 import {
   ListTodo, Clock, AlertTriangle, CheckCircle2, CalendarDays, Timer,
   User, Briefcase, FolderKanban, TrendingUp
@@ -269,8 +270,8 @@ function KPICard({ icon: Icon, label, value, color, variants }: {
   const [bg, text] = cls.split(' ');
 
   return (
-    <motion.div variants={variants}>
-      <Card className="glass-card p-4 hover:scale-[1.02] transition-transform">
+    <Tilt3DCard variants={variants} intensity={4}>
+      <Card className="glass-card p-4 h-full">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg}`}>
             <Icon className={`w-5 h-5 ${text}`} />
@@ -288,7 +289,7 @@ function KPICard({ icon: Icon, label, value, color, variants }: {
           </div>
         </div>
       </Card>
-    </motion.div>
+    </Tilt3DCard>
   );
 }
 
