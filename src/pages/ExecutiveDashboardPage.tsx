@@ -17,6 +17,13 @@ import {
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid,
   LineChart, Line, Legend,
 } from 'recharts';
+import { EmergencyBanner } from '@/components/dashboard/EmergencyBanner';
+import { AIRiskRadar } from '@/components/dashboard/AIRiskRadar';
+import { ExecutiveActionBlock } from '@/components/dashboard/ExecutiveActionBlock';
+import { RevenueForecaster } from '@/components/dashboard/RevenueForecaster';
+import { CashRunwayIndicator } from '@/components/dashboard/CashRunwayIndicator';
+import { CapacityForecast } from '@/components/dashboard/CapacityForecast';
+import { ProjectHealthRanking } from '@/components/dashboard/ProjectHealthRanking';
 
 const tooltipStyle = {
   backgroundColor: 'hsl(var(--card))',
@@ -204,7 +211,57 @@ export default function ExecutiveDashboardPage() {
           </Button>
         </motion.div>
 
-        {/* Productivity Score Ring */}
+        {/* === PREDICTIVE LAYER (NEW) === */}
+        
+        {/* Emergency Banner */}
+        <EmergencyBanner
+          productivityScore={data.productivityScore}
+          velocityPerDay={data.velocityPerDay}
+          backlogClearDate={data.backlogClearDate}
+          tasksPending={data.tasksPending}
+        />
+
+        {/* AI Risk Radar + Actions */}
+        <motion.div variants={fadeUp}>
+          <AIRiskRadar
+            metrics={data}
+            projects={data.rawProjects || []}
+            tasks={data.rawTasks || []}
+            deals={data.rawDeals || []}
+            revenues={data.rawRevenues || []}
+          />
+        </motion.div>
+
+        {/* Revenue Forecast + Cash Runway */}
+        <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-4" variants={stagger}>
+          <motion.div variants={fadeUp} className="lg:col-span-2">
+            <RevenueForecaster
+              forecast30={data.revenueForecast30}
+              forecast60={data.revenueForecast60}
+              forecast90={data.revenueForecast90}
+            />
+          </motion.div>
+          <motion.div variants={fadeUp}>
+            <CashRunwayIndicator
+              runwayMonths={data.cashRunwayMonths}
+              burnRateMonthly={data.burnRateMonthly}
+              balanceCurrent={data.balanceCurrent}
+              pendingRevenue={data.pendingRevenue}
+            />
+          </motion.div>
+        </motion.div>
+
+        {/* Capacity Forecast + Project Health */}
+        <motion.div className="grid grid-cols-1 lg:grid-cols-2 gap-4" variants={stagger}>
+          <motion.div variants={fadeUp}>
+            <CapacityForecast weeklyLoad={data.capacityLoadWeekly} />
+          </motion.div>
+          <motion.div variants={fadeUp}>
+            <ProjectHealthRanking projects={data.projectRiskScores} />
+          </motion.div>
+        </motion.div>
+
+
         <motion.div variants={fadeUp}>
           <Card className="glass-card p-6 flex flex-col md:flex-row items-center gap-8">
             <div className="relative w-32 h-32 flex-shrink-0">

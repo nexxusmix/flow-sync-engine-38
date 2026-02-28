@@ -50,6 +50,30 @@ export interface ExecutiveMetrics {
   tasksByCategory: { name: string; value: number; fill: string }[];
   dealsByStage: { stage: string; count: number; value: number }[];
   heatmap: { day: number; hour: number; count: number }[];
+  // Predictive metrics
+  backlogClearDate: string | null;
+  cashRunwayMonths: number;
+  burnRateMonthly: number;
+  revenueForecast30: number;
+  revenueForecast60: number;
+  revenueForecast90: number;
+  pipelineRunwayDays: number;
+  capacityLoadWeekly: { week: string; loadPct: number }[];
+  projectRiskScores: Array<{
+    id: string;
+    name: string;
+    client_name: string;
+    health_score: number;
+    riskPct: number;
+    tasksPending: number;
+    daysToDeadline: number | null;
+    status: string;
+  }>;
+  // Raw data for AI
+  rawProjects: any[];
+  rawTasks: any[];
+  rawDeals: any[];
+  rawRevenues: any[];
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -258,6 +282,77 @@ export function useExecutiveDashboard() {
       // Content
       const contentPublished = content.filter((c: any) => c.status === 'published').length;
 
+      // ── PREDICTIVE METRICS ──
+      const tasksPendingCount = tasks.filter((t: any) => t.status !== 'done').length;
+
+      // Backlog clear date
+      const backlogClearDate = velocityPerDay > 0
+        ? format(addDays(today, Math.ceil(tasksPendingCount / velocityPerDay)), 'dd/MM/yyyy')
+        : null;
+
+      // Burn rate: avg of last 3 months expenses
+      const burnRates: number[] = [];
+      for (let i = 1; i <= 3; i++) {
+        const bm = subMonths(now, i);
+        const bms = format(startOfMonth(bm), 'yyyy-MM-dd');
+        const bme = format(endOfMonth(bm), 'yyyy-MM-dd');
+        const monthExp = processedExpenses
+          .filter(e => e.status === 'paid' && e.paid_date && e.paid_date >= bms && e.paid_date <= bme)
+          .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        burnRates.push(monthExp);
+      }
+      const burnRateMonthly = burnRates.length > 0 ? burnRates.reduce((a, b) => a + b, 0) / burnRates.length : 0;
+
+      // Cash runway
+      const cashRunwayMonths = burnRateMonthly > 0
+        ? ((totalReceived - totalPaid) + pendingRevenue) / burnRateMonthly
+        : Infinity;
+
+      // Revenue forecast by deal stage probability
+      const stageProbability: Record<string, number> = {
+        lead: 0.05, qualificacao: 0.15, diagnostico: 0.30, proposta: 0.50,
+        negociacao: 0.70, fechado: 1.0, onboarding: 0.90, pos_venda: 0.95,
+      };
+      const revenueForecast30 = activeDeals
+        .filter((d: any) => d.stage_key !== 'lost')
+        .reduce((s: number, d: any) => s + (d.value || 0) * (stageProbability[d.stage_key] || 0.1) * 0.4, 0);
+      const revenueForecast60 = activeDeals
+        .filter((d: any) => d.stage_key !== 'lost')
+        .reduce((s: number, d: any) => s + (d.value || 0) * (stageProbability[d.stage_key] || 0.1) * 0.7, 0);
+      const revenueForecast90 = activeDeals
+        .filter((d: any) => d.stage_key !== 'lost')
+        .reduce((s: number, d: any) => s + (d.value || 0) * (stageProbability[d.stage_key] || 0.1), 0);
+
+      // Pipeline runway days
+      const pipelineRunwayDays = velocityPerDay > 0 ? Math.round(tasksPendingCount / velocityPerDay) : 0;
+
+      // Capacity load weekly (4 weeks ahead estimate)
+      const avgTasksCreatedPerWeek = tasks.length > 0 ? tasks.length / Math.max(differenceInDays(now, parseISO(tasks[tasks.length - 1]?.created_at || now.toISOString())) / 7, 1) : 0;
+      const capacityPerWeek = velocityPerDay * 7;
+      const capacityLoadWeekly = Array.from({ length: 4 }, (_, i) => ({
+        week: `Sem ${i + 1}`,
+        loadPct: capacityPerWeek > 0 ? Math.round((avgTasksCreatedPerWeek / capacityPerWeek) * 100) : 0,
+      }));
+
+      // Project risk scores
+      const projectRiskScores = active.map(p => {
+        const ps = stagesMap[p.id] || [];
+        const overdueStages = ps.filter((s: any) => s.planned_end && s.status !== 'done' && parseISO(s.planned_end) < now).length;
+        const totalStages = ps.length || 1;
+        const projectTasks = tasks.filter((t: any) => t.project_id === p.id);
+        const projectPending = projectTasks.filter((t: any) => t.status !== 'done').length;
+        const daysToDeadline = p.due_date ? differenceInDays(parseISO(p.due_date), now) : null;
+        const overdueFactor = overdueStages / totalStages;
+        const deadlineFactor = daysToDeadline !== null ? Math.max(0, 1 - daysToDeadline / 30) : 0;
+        const riskPct = Math.min(100, Math.round((overdueFactor * 50 + deadlineFactor * 30 + (p.has_payment_block ? 20 : 0))));
+        return {
+          id: p.id, name: p.name, client_name: p.client_name,
+          health_score: p.health_score || 0, riskPct,
+          tasksPending: projectPending,
+          daysToDeadline, status: p.status,
+        };
+      });
+
       return {
         revenueCurrentMonth, revenuePrevMonth, revenueDelta,
         expenseCurrentMonth, expensePrevMonth, expenseDelta,
@@ -270,13 +365,19 @@ export function useExecutiveDashboard() {
         dealsActive: activeDeals.length, pipelineValue, forecast,
         wonDeals: wonDeals.length, wonValue, conversionRate,
         tasksTotal: tasks.length,
-        tasksPending: tasks.filter((t: any) => t.status !== 'done').length,
+        tasksPending: tasksPendingCount,
         tasksCompletedThisMonth, tasksCompletedPrevMonth, tasksDelta,
         avgCompletionDays, velocityPerDay,
         contentTotal: content.length, contentPublished,
         productivityScore: Math.max(0, Math.min(100, productivityScore)),
         burndownData, completionTrend, revenueByMonth, tasksByCategory,
         dealsByStage: dealsByStageData, heatmap,
+        // Predictive
+        backlogClearDate, cashRunwayMonths, burnRateMonthly,
+        revenueForecast30, revenueForecast60, revenueForecast90,
+        pipelineRunwayDays, capacityLoadWeekly, projectRiskScores,
+        // Raw data for AI
+        rawProjects: projects, rawTasks: tasks, rawDeals: deals, rawRevenues: revenues,
       };
     },
     enabled: !!user,
