@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { useInstagramConnection, useConnectInstagramManual, useDisconnectInstagram } from '@/hooks/useInstagramAPI';
-import { Loader2, Link2, Unlink, Instagram } from 'lucide-react';
+import { useInstagramConnection, useConnectInstagramManual, useDisconnectInstagram, useScrapeInstagramProfile } from '@/hooks/useInstagramAPI';
+import { Loader2, Link2, Unlink, Instagram, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -13,6 +13,7 @@ export function InstagramMetaConnect() {
   const { data: connection, isLoading: loadingConn } = useInstagramConnection();
   const connectMutation = useConnectInstagramManual();
   const disconnectMutation = useDisconnectInstagram();
+  const scrapeMutation = useScrapeInstagramProfile();
   const [username, setUsername] = useState('');
 
   if (loadingConn) {
@@ -38,7 +39,7 @@ export function InstagramMetaConnect() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Conectar Instagram</h3>
-            <p className="text-xs text-muted-foreground">Insira seu @ para vincular o perfil e acompanhar métricas</p>
+            <p className="text-xs text-muted-foreground">Insira seu @ para vincular e buscar métricas automaticamente</p>
           </div>
         </div>
 
@@ -62,7 +63,7 @@ export function InstagramMetaConnect() {
         </div>
 
         <p className="text-[10px] text-muted-foreground">
-          📊 As métricas serão inseridas manualmente via snapshots. Nenhuma API externa necessária.
+          🔍 Métricas públicas serão coletadas automaticamente via scraping. Sem API externa necessária.
         </p>
       </Card>
     );
@@ -85,17 +86,45 @@ export function InstagramMetaConnect() {
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => disconnectMutation.mutate(connection.id)}
-          disabled={disconnectMutation.isPending}
-          className="text-xs text-muted-foreground hover:text-destructive"
-        >
-          {disconnectMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlink className="w-3 h-3 mr-1" />}
-          Desconectar
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => scrapeMutation.mutate(connection.ig_username)}
+            disabled={scrapeMutation.isPending}
+            className="text-xs"
+          >
+            {scrapeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Search className="w-3 h-3 mr-1" />}
+            Buscar dados
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => disconnectMutation.mutate(connection.id)}
+            disabled={disconnectMutation.isPending}
+            className="text-xs text-muted-foreground hover:text-destructive"
+          >
+            {disconnectMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlink className="w-3 h-3 mr-1" />}
+            Desconectar
+          </Button>
+        </div>
       </div>
+      {scrapeMutation.data && (
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <div className="bg-muted/30 rounded-lg p-2">
+            <p className="text-lg font-bold text-foreground">{scrapeMutation.data.followers?.toLocaleString('pt-BR') || '—'}</p>
+            <p className="text-[10px] text-muted-foreground">Seguidores</p>
+          </div>
+          <div className="bg-muted/30 rounded-lg p-2">
+            <p className="text-lg font-bold text-foreground">{scrapeMutation.data.following?.toLocaleString('pt-BR') || '—'}</p>
+            <p className="text-[10px] text-muted-foreground">Seguindo</p>
+          </div>
+          <div className="bg-muted/30 rounded-lg p-2">
+            <p className="text-lg font-bold text-foreground">{scrapeMutation.data.posts_count?.toLocaleString('pt-BR') || '—'}</p>
+            <p className="text-[10px] text-muted-foreground">Posts</p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

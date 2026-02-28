@@ -4,6 +4,40 @@ import { toast } from 'sonner';
 
 const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
 
+// Scrape public Instagram profile data via Firecrawl
+export function useScrapeInstagramProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (username: string) => {
+      const { data, error } = await supabase.functions.invoke('scrape-instagram-profile', {
+        body: { username },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Erro ao buscar perfil');
+      return data.data;
+    },
+    onSuccess: async (profileData) => {
+      // Auto-save snapshot with scraped data
+      const { error } = await supabase
+        .from('instagram_profile_snapshots')
+        .insert({
+          followers: profileData.followers || 0,
+          following: profileData.following || 0,
+          posts_count: profileData.posts_count || 0,
+          avg_engagement: 0,
+          avg_reach: 0,
+          snapshot_date: new Date().toISOString().split('T')[0],
+        } as any);
+
+      if (!error) {
+        qc.invalidateQueries({ queryKey: ['instagram-profile-snapshots'] });
+      }
+      toast.success(`Dados de @${profileData.username} coletados! 📊`);
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao buscar dados do perfil'),
+  });
+}
+
 export function useInstagramConnection() {
   return useQuery({
     queryKey: ['instagram-connection'],
