@@ -29,14 +29,14 @@ import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
   Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain, BarChart3, Zap,
-  Settings2, ChevronRight,
+  Settings2, ChevronRight, SlidersHorizontal, ChevronDown,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Tabs removed — view mode uses dropdown now
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -51,6 +51,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface TaskFormData {
   title: string;
@@ -327,111 +328,74 @@ export default function TasksPage() {
     }
   };
 
+  const VIEW_MODES: { key: ViewMode; label: string; icon: typeof List }[] = [
+    { key: 'board', label: 'Quadro', icon: List },
+    { key: 'kanban', label: 'Kanban', icon: Columns3 },
+    { key: 'timeline', label: 'Timeline', icon: CalendarIcon },
+    { key: 'calendar', label: 'Calendário', icon: CalendarIcon },
+    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { key: 'focus', label: 'Foco', icon: Brain },
+    { key: 'gantt', label: 'Gantt', icon: BarChart3 },
+  ];
+
+  const [showToolbar, setShowToolbar] = useState(false);
+  const activeView = VIEW_MODES.find(v => v.key === viewMode) || VIEW_MODES[0];
+  const hasToolbarActive = showAnalysis || showExecutionGuide || showPrioritySuggestions || showDeadlineSuggestions || showDuplicates || isTemplateOpen || isAutomationOpen;
+
   return (
     <DashboardLayout title="Tarefas">
       <div className="space-y-4 md:space-y-6 max-w-[1600px] 2xl:max-w-[1800px] mx-auto w-full min-w-0 overflow-x-hidden">
-        {/* Header */}
-        <div className="flex flex-col gap-3 md:gap-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-xl md:text-2xl font-medium text-foreground tracking-tight">Minhas Tarefas</h1>
-              <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                {tasks.filter(t => t.status !== 'done').length} pendentes • {tasks.filter(t => t.status === 'done').length} concluídas
-              </p>
-            </div>
-            <div className="flex items-center gap-2 md:hidden">
-              <Button size="sm" variant="outline" onClick={() => setIsAISheetOpen(true)}>
-                <Sparkles className="w-4 h-4" />
-              </Button>
-              <Button size="sm" onClick={() => setIsNewTaskOpen(true)}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 md:gap-3 min-w-0">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-              <TabsList>
-                <TabsTrigger value="board" className="gap-1.5">
-                  <List className="w-4 h-4" />
-                  <span className="hidden sm:inline">Quadro</span>
-                </TabsTrigger>
-                <TabsTrigger value="kanban" className="gap-1.5">
-                  <Columns3 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Kanban</span>
-                </TabsTrigger>
-                <TabsTrigger value="timeline" className="gap-1.5">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Timeline</span>
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-1.5">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Calendário</span>
-                </TabsTrigger>
-                <TabsTrigger value="dashboard" className="gap-1.5">
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </TabsTrigger>
-                <TabsTrigger value="focus" className="gap-1.5">
-                  <Brain className="w-4 h-4" />
-                  <span className="hidden sm:inline">Foco</span>
-                </TabsTrigger>
-                <TabsTrigger value="gantt" className="gap-1.5">
-                  <BarChart3 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Gantt</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <div className="hidden md:flex items-center gap-2 ml-auto">
-              {/* Ferramentas dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <Settings2 className="w-4 h-4" />
-                    Ferramentas
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={() => setShowAnalysis(true)}>
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Análise IA
+        {/* Header — Primary row */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* View Selector — compact dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 h-10 px-3 rounded-xl shrink-0">
+                  <activeView.icon className="w-4 h-4" />
+                  <span className="hidden sm:inline text-sm">{activeView.label}</span>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44">
+                {VIEW_MODES.map(v => (
+                  <DropdownMenuItem
+                    key={v.key}
+                    onClick={() => setViewMode(v.key)}
+                    className={cn("gap-2", viewMode === v.key && "bg-accent font-medium")}
+                  >
+                    <v.icon className="w-4 h-4" />
+                    {v.label}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowExecutionGuide(true)}>
-                    <Brain className="w-4 h-4 mr-2" />
-                    Modo Foco
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowPrioritySuggestions(true)}>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Sugerir Prioridades
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowDeadlineSuggestions(true)}>
-                    <CalendarIcon className="w-4 h-4 mr-2" />
-                    Sugerir Prazos
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowDuplicates(true)}>
-                    <CheckSquare className="w-4 h-4 mr-2" />
-                    Duplicatas
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsTemplateOpen(true)}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Templates
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsAutomationOpen(true)}>
-                    <Zap className="w-4 h-4 mr-2" />
-                    Automações
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportTasks()} disabled={isExporting}>
-                    {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                    Exportar PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* CTA único hero */}
+            {/* Stats pill */}
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {tasks.filter(t => t.status !== 'done').length} pendentes · {tasks.filter(t => t.status === 'done').length} concluídas
+            </span>
+
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Toolbar toggle */}
+              <Button
+                variant={showToolbar ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setShowToolbar(!showToolbar)}
+                className="h-10 w-10 rounded-xl relative shrink-0"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                {hasToolbarActive && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+                )}
+              </Button>
+
+              {/* Unified CTA */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Nova Tarefa
+                  <Button className="h-10 px-5 rounded-xl gap-2 shadow-lg shadow-primary/20 shrink-0">
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Nova Tarefa</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -441,15 +405,53 @@ export default function TasksPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsAISheetOpen(true)}>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Criar com IA ✨
+                    Criar com IA
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
+
+          {/* Collapsible Toolbar — Ferramentas */}
+          {showToolbar && (
+            <div className="glass-card rounded-2xl p-3 animate-fade-in">
+              <div className="flex flex-wrap gap-2 items-center">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setShowAnalysis(true)}>
+                  <BarChart3 className="w-3.5 h-3.5" /> Análise IA
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setShowExecutionGuide(true)}>
+                  <Brain className="w-3.5 h-3.5" /> Modo Foco
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setShowPrioritySuggestions(true)}>
+                  <Sparkles className="w-3.5 h-3.5" /> Prioridades
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setShowDeadlineSuggestions(true)}>
+                  <CalendarIcon className="w-3.5 h-3.5" /> Prazos
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setShowDuplicates(true)}>
+                  <CheckSquare className="w-3.5 h-3.5" /> Duplicatas
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setIsTemplateOpen(true)}>
+                  <FileText className="w-3.5 h-3.5" /> Templates
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setIsAutomationOpen(true)}>
+                  <Zap className="w-3.5 h-3.5" /> Automações
+                </Button>
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-8 gap-1.5 text-xs rounded-lg"
+                  onClick={() => exportTasks()}
+                  disabled={isExporting}
+                >
+                  {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                  Exportar PDF
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* AI Daily Summary */}
+        {/* AI Daily Summary — always collapsible */}
         {viewMode !== 'dashboard' && viewMode !== 'focus' && (
           <TaskAIDailySummary />
         )}
