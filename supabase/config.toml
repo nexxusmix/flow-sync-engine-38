@@ -208,3 +208,6 @@ verify_jwt = false
 [functions.generate-task-templates]
 verify_jwt = false
 
+[functions.generate-task-automations]
+verify_jwt = false
+
