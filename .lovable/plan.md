@@ -1,52 +1,89 @@
 
 
-## Plano: Refinamento Global — Settings, AI Tasks, Console Warnings, Edge Cases
+## Plano: Upload Universal — Múltiplos Arquivos, Qualquer Tipo, Drag & Drop
 
-### O que encontrei ao analisar:
+### Inventário de uploads encontrados (14 locais)
 
-1. **Console warning**: `SettingsDashboard` não usa `forwardRef`, causando warning de ref no React Router
-2. **Edge function `generate-tasks-from-text`**: usa tool calling via JSON parsing bruto (frágil) — deveria usar tool calling nativo para garantir JSON válido
-3. **`AiAddTasksDialog`**: falta feedback visual de erros de rate-limit (429/402), não trata erros granulares da IA
-4. **Settings Dashboard**: tipografia usa `text-3xl` hardcoded (não migrado), e `text-xs` em vez de tokens semânticos
-5. **Sub-páginas de Settings**: padrão inconsistente — algumas usam `max-w-3xl`, outras não; headers com tamanhos diferentes
-6. **`handleAddAiTasks` em `SavedFocusPlans`**: não trata erro do `supabase.from('saved_focus_plans').update()` — silencia falha
-7. **Progress bar na geração**: finge progresso com valores fixos (30/90/100) — deveria ser mais realista
+| # | Arquivo | Múltiplo | Drag&Drop | Accept restritivo |
+|---|---------|----------|-----------|-------------------|
+| 1 | `ClientUploadDialog.tsx` | ✅ | ✅ | Parcial (falta .7z, .tar) |
+| 2 | `UploadMaterialDialog.tsx` | ✅ | ✅ | Sem restrict (ok) |
+| 3 | `AddMaterialDialog.tsx` | ❌ single | ❌ | Restritivo |
+| 4 | `FilesTab.tsx` | ✅ | ✅ folders | Sem restrict (ok) |
+| 5 | `GalleryTab.tsx` | ✅ | ❌ | `image/*,.pdf,.doc,.docx` |
+| 6 | `DeliverablesTab.tsx` | ✅ | ❌ | Sem restrict (ok) |
+| 7 | `ContentAssetsTab.tsx` | ✅ | ❌ | `image/*,video/*,audio/*,.pdf,.doc,.docx` |
+| 8 | `LibraryPage.tsx` | ✅ | ❌ | `image/*,video/*,audio/*,.pdf` |
+| 9 | `MkAssetsPage.tsx` | ✅ | ✅ | Sem restrict (ok) |
+| 10 | `TaskEditDrawer.tsx` | ✅ | ❌ | Sem restrict (ok) |
+| 11 | `TaskDetailModal.tsx` | ✅ | ❌ | Sem restrict (ok) |
+| 12 | `ContractAiUploadDialog.tsx` | ❌ single | ✅ | `.pdf,.docx,.doc,.jpg...` |
+| 13 | `ContractAiUpdateDialog.tsx` | ❌ single | ✅ | `.pdf,.docx,.doc,.jpg...` |
+| 14 | `TranscribePage.tsx` | ✅ | ❌ | `audio/*,video/*` |
+| 15 | `AddUpdateModal.tsx` | ✅ | ❌ | `image/*` |
+| 16 | `AiAddTasksDialog.tsx` | ✅ | ❌ | Restritivo |
+| 17 | `AIAssistant.tsx` | ✅ | ❌ | Restritivo |
 
-### Implementação
+### Mudanças por arquivo
 
-1. **Fix `SettingsDashboard` forwardRef warning**
-   - Envolver export com `React.forwardRef` ou remover ref passando-o como componente correto no router
+**1. Criar componente reutilizável `DropZone.tsx`** (novo)
+- Componente genérico de drag & drop + click-to-select
+- Props: `multiple`, `accept`, `onFiles`, `disabled`, `children`
+- Visual: borda tracejada, highlight ao arrastar, texto "Arraste arquivos aqui"
+- Usado como base para padronizar todos os uploads
 
-2. **Migrar tipografia restante em Settings**
-   - `text-3xl` → `text-page-title`, `text-2xl` → `text-section-title`, `text-xs` → `text-caption` nas sub-páginas
-   - Aplicar em: `SettingsDashboard`, `WorkspaceSettingsPage`, `AuditSettingsPage`, `DangerZoneSettingsPage`, `ProspectingSettingsPage`, `TeamSettingsPage`
+**2. `AddMaterialDialog.tsx`** — Maior refactor
+- Trocar de single file para múltiplos arquivos (array)
+- Remover restrict de `accept` → aceitar tudo (`*/*`)
+- Adicionar drag & drop zone
+- Upload em loop (já existe padrão no projeto)
 
-3. **Melhorar edge function `generate-tasks-from-text`**
-   - Usar tool calling nativo (`tools` + `tool_choice`) em vez de pedir JSON bruto no prompt — elimina parsing frágil e markdown wrapping
-   - Tratar erros 429/402 e repassar status code ao cliente
+**3. `GalleryTab.tsx`**
+- Remover `accept="image/*,.pdf,.doc,.docx"` → aceitar tudo
+- Adicionar drag & drop na área de upload (onDragOver/onDrop)
 
-4. **Melhorar `AiAddTasksDialog`**
-   - Tratar erros 429/402 com mensagens amigáveis
-   - Progresso mais realista com intervalos progressivos
-   - Adicionar empty state quando IA retorna 0 tarefas com sugestão de tentar de novo
-   - Desabilitar botão de arquivo durante processamento
+**4. `ContentAssetsTab.tsx`**
+- Remover `accept` restritivo → aceitar tudo
+- Adicionar drag & drop zone
 
-5. **Melhorar `handleAddAiTasks` em `SavedFocusPlans`**
-   - Adicionar try/catch no update do plano
-   - Refresh da lista de tasks após inserção
+**5. `LibraryPage.tsx`**
+- Remover `accept="image/*,video/*,audio/*,.pdf"` → aceitar tudo
+- Adicionar drag & drop (já existe no MkAssetsPage, replicar padrão)
 
-6. **Padronizar headers das sub-páginas de Settings**
-   - Unificar padrão visual: ícone + título + descrição + botão salvar
+**6. `TranscribePage.tsx`**
+- Manter accept `audio/*,video/*` (faz sentido para transcrição)
+- Adicionar drag & drop zone
 
-### Arquivos Impactados
+**7. `TaskEditDrawer.tsx`** + **`TaskDetailModal.tsx`**
+- Adicionar drag & drop na área de attachments
+- Manter `multiple` (já tem)
 
-- `src/pages/settings/SettingsDashboard.tsx`
-- `src/pages/settings/WorkspaceSettingsPage.tsx`
-- `src/pages/settings/AuditSettingsPage.tsx`
-- `src/pages/settings/DangerZoneSettingsPage.tsx`
-- `src/pages/settings/ProspectingSettingsPage.tsx`
-- `src/pages/settings/TeamSettingsPage.tsx`
-- `supabase/functions/generate-tasks-from-text/index.ts`
-- `src/components/tasks/AiAddTasksDialog.tsx`
-- `src/components/tasks/SavedFocusPlans.tsx`
+**8. `AddUpdateModal.tsx`**
+- Manter accept `image/*` (é específico para prints)
+- Adicionar drag & drop
+
+**9. `AiAddTasksDialog.tsx`**
+- Expandir accept para incluir `.zip,.rar,.7z`
+- Adicionar drag & drop zone
+
+**10. `AIAssistant.tsx`**
+- Expandir accept para incluir `.zip,.rar,.7z,.pptx,.xlsx`
+- Adicionar drag & drop na área de input
+
+**11. `ClientUploadDialog.tsx`**
+- Expandir accept: adicionar `.7z,.tar.gz,.mp3,.mp4,.mov,.avi`
+- Já tem drag & drop ✅
+
+**12. `DeliverablesTab.tsx`**
+- Adicionar drag & drop na área de upload
+
+**13. Contratos (`ContractAiUploadDialog.tsx` + `ContractAiUpdateDialog.tsx`)**
+- Manter single file (faz sentido — 1 contrato por vez)
+- Já tem drag & drop ✅
+- Expandir accept: adicionar `.zip` para contratos compactados
+
+### Resumo de impacto
+- **1 novo componente**: `src/components/ui/DropZone.tsx`
+- **~14 arquivos editados** para: expandir `accept`, adicionar drag & drop, garantir `multiple`
+- Sem mudanças em edge functions ou banco de dados
 
