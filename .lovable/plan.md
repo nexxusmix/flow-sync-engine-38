@@ -1,46 +1,34 @@
 
-Objetivo
-- Elevar o fluxo IA de “gerar → prévia → confirmar” para nível produção (robusto, rápido, sem perda de dados, com UX clara).
 
-Plano de implementação (curto e direto)
+## Analysis
 
-1) Robustez de geração e estados (`src/pages/TasksPage.tsx`)
-- Bloquear “Gerar Tarefas” também quando houver upload em processamento.
-- Tratar erros de limite/cota/timeout com mensagens específicas e ação de retry.
-- Limpar estados de loading com segurança em todos os caminhos (incluindo exceções).
-- Evitar ações concorrentes: impedir regenerar/confirmar simultaneamente.
+The `TaskAIPreviewPanel` and related files are production-ready. After reviewing all 4 key files, I found only minor polish items remaining:
 
-2) Prévia mais segura e inteligente (`src/components/tasks/TaskAIPreviewPanel.tsx`)
-- Validar antes de confirmar: impedir títulos vazios e destacar cards inválidos.
-- Confirmar perda de alterações ao clicar “Voltar” ou “Regenerar” após edição/reordenação.
-- Melhorar seleção em lote: comportamento consistente em lista vazia e contador de selecionadas.
-- Adicionar ações rápidas por lote (categoria/status para selecionadas).
-- Manter drag-and-drop com UX melhor (handle claro, feedback visual mais forte, fallback de teclado estável).
+### Issues Found
 
-3) Persistência fiel da ordem e metadados (`src/hooks/useTasksUnified.tsx`)
-- Ajustar `createTasksFromAI` para respeitar `position` vindo da prévia (quando existir), sem recalcular cegamente.
-- Garantir defaults consistentes no insert (ex.: `priority` padrão) para evitar variação entre criação manual e IA.
+1. **No scroll-to-error on validation** — When a task with empty title is below the scroll fold, the user sees no visual feedback. Should auto-scroll to the first error.
 
-4) Sanitização e qualidade da saída IA (`supabase/functions/generate-tasks-from-text/index.ts`)
-- Normalizar saída: `trim` de título/descrição/tags, remover duplicadas, descartar itens vazios.
-- Definir limite máximo de tarefas por geração (proteção contra respostas excessivas).
-- Validar datas inválidas e normalizar status/categoria com fallback seguro.
-- Retornar warnings estruturados (ex.: itens descartados) para feedback transparente na UI.
+2. **No keyboard shortcuts** — Missing `Enter` to confirm and `Escape` to go back from preview.
 
-5) Refino visual da prévia (alinhado ao estilo do print enviado)
-- Cards mais “executivos”: hierarquia visual forte (título, prazo, categoria, tags, ações).
-- Barra superior com resumo (“geradas / selecionadas / atrasadas com data”).
-- Rodapé sticky com ações primárias sempre visíveis em listas longas.
+3. **Category chip click doesn't filter/toggle** — The summary chips are display-only. Clicking a category chip could toggle selection of all tasks in that category.
 
-Detalhes técnicos (arquivos alvo)
-- `src/pages/TasksPage.tsx`
+4. **Regenerate doesn't preserve guidance prompt** — When clicking "Regenerar", the guidance prompt and default category/column from step 1 are used, but the user can't see or adjust them from the preview step.
+
+5. **Toast on success doesn't show task count by category** — After confirming, only shows "X tarefas criadas" without breakdown.
+
+### Proposed Changes
+
+**`TaskAIPreviewPanel.tsx`:**
+- Add `useRef` to scroll container and auto-scroll to first validation error
+- Add keyboard listener: `Enter` → confirm, `Escape` → back (with edit-loss check)
+- Make category summary chips clickable to toggle-select tasks of that category
+- Add subtle animation on task removal (opacity fade)
+
+**`TasksPage.tsx`:**
+- Improve success toast to show category breakdown: "5 tarefas criadas (3 Operação, 2 Pessoal)"
+- Add `Escape` handler to close AI sheet when in input step
+
+### Files
 - `src/components/tasks/TaskAIPreviewPanel.tsx`
-- `src/hooks/useTasksUnified.tsx`
-- `supabase/functions/generate-tasks-from-text/index.ts`
+- `src/pages/TasksPage.tsx`
 
-Checklist de validação E2E (obrigatório)
-- Gerar com texto simples, com arquivos, e com orientação.
-- Editar campos, desmarcar algumas, arrastar/reordenar, regenerar com confirmação de perda.
-- Confirmar criação e validar ordem final no quadro.
-- Testar estados de erro (limite, timeout, resposta vazia) e garantir UX sem travar.
-- Testar fluxo completo em desktop e mobile.
