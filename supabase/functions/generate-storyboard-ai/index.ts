@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { chatCompletion } from "../_shared/ai-client.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,74 +7,6 @@ const corsHeaders = {
 };
 
 const PRODUCTION_TYPES = ["motion", "motion_3d", "vfx", "video_real", "fotografia_still", "mixed_media"];
-
-const SONY_FX3_PREFIX = `Cinematic frame shot on Sony FX3 camera with Sony GM 28-70mm f/2.8 lens. Shallow depth of field, natural film-like bokeh, rich color science, S-Cinetone color profile. Professional cinematography, 16:9 widescreen frame. Ultra high resolution.`;
-
-async function generateSceneImage(aiPrompt: string, sceneIndex: number): Promise<string | null> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) return null;
-
-  const fullPrompt = `${SONY_FX3_PREFIX} ${aiPrompt}. No text in image, no watermarks.`;
-
-  try {
-    console.log(`[storyboard] Generating image for scene ${sceneIndex + 1}...`);
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-pro-image-preview",
-        messages: [{ role: "user", content: fullPrompt }],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error(`[storyboard] Image gen failed for scene ${sceneIndex + 1}: ${response.status} ${errText.substring(0, 200)}`);
-      return null;
-    }
-
-    const data = await response.json();
-    const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!imageData) {
-      console.warn(`[storyboard] No image returned for scene ${sceneIndex + 1}`);
-      return null;
-    }
-
-    // Upload to Supabase storage
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return imageData;
-
-    try {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-      const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-      const fileName = `storyboard/${Date.now()}-scene-${sceneIndex + 1}.png`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('marketing-assets')
-        .upload(fileName, binaryData, { contentType: 'image/png', upsert: false });
-
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('marketing-assets').getPublicUrl(fileName);
-        console.log(`[storyboard] ✓ Image uploaded for scene ${sceneIndex + 1}`);
-        return urlData.publicUrl;
-      }
-      console.error(`[storyboard] Upload error scene ${sceneIndex + 1}:`, uploadError);
-      return imageData; // fallback to base64
-    } catch (storageErr) {
-      console.error(`[storyboard] Storage error:`, storageErr);
-      return imageData;
-    }
-  } catch (err) {
-    console.error(`[storyboard] Image generation error scene ${sceneIndex + 1}:`, err);
-    return null;
-  }
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -207,8 +138,10 @@ Retorne um JSON com a estrutura:
   ]
 }`;
 
+    console.log("[storyboard] Generating storyboard text via AI...");
+
     const aiResult = await chatCompletion({
-      model: "google/gemini-3-flash-preview",
+      model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -218,35 +151,32 @@ Retorne um JSON com a estrutura:
 
     let parsed;
     try {
+      // Try direct parse first
       const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       parsed = JSON.parse(jsonStr);
     } catch {
-      console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({ error: "Erro ao processar resposta da IA", raw: content }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Generate images in parallel for all scenes
-    const scenes = parsed.scenes || [];
-    console.log(`[storyboard] Generating images for ${scenes.length} scenes in parallel...`);
-    
-    const imagePromises = scenes.map((scene: any, index: number) =>
-      generateSceneImage(scene.ai_prompt || scene.description, index)
-    );
-    
-    const imageResults = await Promise.allSettled(imagePromises);
-    
-    // Attach image_url to each scene
-    for (let i = 0; i < scenes.length; i++) {
-      const result = imageResults[i];
-      if (result && result.status === 'fulfilled' && result.value) {
-        scenes[i].image_url = result.value;
+      // Regex fallback to extract JSON object
+      console.warn("[storyboard] Direct JSON parse failed, trying regex fallback...");
+      const match = content.match(/\{[\s\S]*"scenes"\s*:\s*\[[\s\S]*\]\s*\}/);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+        } catch {
+          console.error("[storyboard] Regex fallback also failed:", content.substring(0, 500));
+          return new Response(JSON.stringify({ error: "Erro ao processar resposta da IA. Tente novamente." }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        console.error("[storyboard] No JSON found in response:", content.substring(0, 500));
+        return new Response(JSON.stringify({ error: "Erro ao processar resposta da IA. Tente novamente." }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
 
-    const successCount = imageResults.filter(r => r.status === 'fulfilled' && r.value).length;
-    console.log(`[storyboard] ✓ Generated ${successCount}/${scenes.length} images`);
+    const scenes = parsed.scenes || [];
+    console.log(`[storyboard] ✓ Generated ${scenes.length} scenes (text only, no images)`);
 
     return new Response(JSON.stringify({ scenes }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
