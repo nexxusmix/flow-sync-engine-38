@@ -18,16 +18,108 @@ Deno.serve(async (req) => {
     }
 
     const cleanUsername = username.replace(/^@/, '').trim();
-    console.log('Fetching Instagram profile:', cleanUsername);
+    console.log('Fetching Instagram profile via Firecrawl:', cleanUsername);
 
-    // Try multiple public endpoints to get profile data
-    const profileData = await fetchInstagramProfile(cleanUsername);
+    const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Firecrawl não configurado' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    if (!profileData) {
+    const profileUrl = `https://www.instagram.com/${cleanUsername}/`;
+
+    // Use Firecrawl to scrape – it renders JS and bypasses basic blocks
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: profileUrl,
+        formats: ['markdown'],
+        onlyMainContent: false,
+        waitFor: 3000,
+      }),
+    });
+
+    const result = await response.json();
+    console.log('Firecrawl status:', response.status);
+
+    if (!response.ok || !result.success) {
+      console.error('Firecrawl error:', JSON.stringify(result).substring(0, 500));
+      return new Response(
+        JSON.stringify({ success: false, error: 'Não foi possível acessar o perfil via Firecrawl' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const markdown = result.data?.markdown || result.markdown || '';
+    const metadata = result.data?.metadata || result.metadata || {};
+    
+    console.log('Markdown length:', markdown.length);
+    console.log('Metadata title:', metadata.title);
+    console.log('Markdown preview:', markdown.substring(0, 500));
+
+    // Parse from metadata (og:description usually has "X Followers, Y Following, Z Posts")
+    const desc = metadata.description || metadata.ogDescription || '';
+    console.log('Meta description:', desc);
+
+    let followers = 0, following = 0, posts_count = 0;
+    let full_name: string | null = null;
+    let bio: string | null = null;
+    let profile_pic: string | null = metadata.ogImage || null;
+
+    // Pattern 1: "123 Followers, 456 Following, 78 Posts"
+    const descMatch = desc.match(/([\d,.KMkm]+)\s*Followers?,\s*([\d,.KMkm]+)\s*Following,\s*([\d,.KMkm]+)\s*Posts?/i);
+    if (descMatch) {
+      followers = parseMetricNumber(descMatch[1]);
+      following = parseMetricNumber(descMatch[2]);
+      posts_count = parseMetricNumber(descMatch[3]);
+      console.log('Parsed from meta description:', { followers, following, posts_count });
+    }
+
+    // Pattern 2: Try from markdown content - Instagram shows "X posts", "Y followers", "Z following"
+    if (followers === 0) {
+      // Try patterns like "1,234 posts" "5.6M followers" "890 following"
+      const postsMatch = markdown.match(/([\d,.KMkm]+)\s*posts?\b/i);
+      const followersMatch = markdown.match(/([\d,.KMkm]+)\s*followers?\b/i);
+      const followingMatch = markdown.match(/([\d,.KMkm]+)\s*following\b/i);
+
+      if (followersMatch) followers = parseMetricNumber(followersMatch[1]);
+      if (followingMatch) following = parseMetricNumber(followingMatch[1]);
+      if (postsMatch) posts_count = parseMetricNumber(postsMatch[1]);
+      console.log('Parsed from markdown:', { followers, following, posts_count });
+    }
+
+    // Pattern 3: Try "Seguidores" (Portuguese Instagram)
+    if (followers === 0) {
+      const seguidoresMatch = markdown.match(/([\d,.KMkm]+)\s*(?:seguidores|seguidor)/i);
+      const seguindoMatch = markdown.match(/([\d,.KMkm]+)\s*seguindo/i);
+      const pubMatch = markdown.match(/([\d,.KMkm]+)\s*(?:publicações|publicacao|publica)/i);
+
+      if (seguidoresMatch) followers = parseMetricNumber(seguidoresMatch[1]);
+      if (seguindoMatch) following = parseMetricNumber(seguindoMatch[1]);
+      if (pubMatch) posts_count = parseMetricNumber(pubMatch[1]);
+      console.log('Parsed from PT markdown:', { followers, following, posts_count });
+    }
+
+    // Extract name from title: "Name (@username) • Instagram"
+    const titleMatch = (metadata.title || '').match(/^(.+?)\s*[\(•@]/);
+    if (titleMatch) full_name = titleMatch[1].trim();
+
+    // Extract bio from description after the metrics
+    const bioMatch = desc.match(/Posts?\s*[-–—]\s*(.+)/i);
+    if (bioMatch) bio = bioMatch[1].trim().replace(/"/g, '');
+
+    if (followers === 0 && following === 0 && posts_count === 0) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Não foi possível acessar os dados do perfil. Verifique se o perfil é público e o username está correto.' 
+          error: 'Não foi possível extrair métricas do perfil. Verifique se é público e o username está correto.',
+          debug: { markdownPreview: markdown.substring(0, 300), desc }
         }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -38,7 +130,15 @@ Deno.serve(async (req) => {
         success: true,
         data: {
           username: cleanUsername,
-          ...profileData,
+          followers,
+          following,
+          posts_count,
+          full_name,
+          bio,
+          profile_pic,
+          is_verified: false,
+          is_private: false,
+          external_url: null,
           scraped_at: new Date().toISOString(),
         },
       }),
@@ -52,129 +152,6 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function fetchInstagramProfile(username: string) {
-  // Method 1: Instagram public JSON endpoint
-  try {
-    const res = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'X-IG-App-ID': '936619743392459',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      const user = json?.data?.user;
-      if (user) {
-        console.log('Method 1 success: web_profile_info');
-        return {
-          followers: user.edge_followed_by?.count || 0,
-          following: user.edge_follow?.count || 0,
-          posts_count: user.edge_owner_to_timeline_media?.count || 0,
-          full_name: user.full_name || null,
-          bio: user.biography || null,
-          profile_pic: user.profile_pic_url_hd || user.profile_pic_url || null,
-          is_verified: user.is_verified || false,
-          is_private: user.is_private || false,
-          external_url: user.external_url || null,
-        };
-      }
-    } else {
-      const text = await res.text();
-      console.log('Method 1 failed:', res.status, text.substring(0, 200));
-    }
-  } catch (e) {
-    console.log('Method 1 error:', e.message);
-  }
-
-  // Method 2: Instagram /?__a=1&__d=dis endpoint
-  try {
-    const res = await fetch(`https://www.instagram.com/${username}/?__a=1&__d=dis`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-      },
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      const user = json?.graphql?.user || json?.user;
-      if (user) {
-        console.log('Method 2 success: __a=1');
-        return {
-          followers: user.edge_followed_by?.count || user.follower_count || 0,
-          following: user.edge_follow?.count || user.following_count || 0,
-          posts_count: user.edge_owner_to_timeline_media?.count || user.media_count || 0,
-          full_name: user.full_name || null,
-          bio: user.biography || null,
-          profile_pic: user.profile_pic_url_hd || user.profile_pic_url || null,
-          is_verified: user.is_verified || false,
-          is_private: user.is_private || false,
-          external_url: user.external_url || null,
-        };
-      }
-    } else {
-      const text = await res.text();
-      console.log('Method 2 failed:', res.status, text.substring(0, 200));
-    }
-  } catch (e) {
-    console.log('Method 2 error:', e.message);
-  }
-
-  // Method 3: Parse from HTML meta tags
-  try {
-    const res = await fetch(`https://www.instagram.com/${username}/`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-        'Accept': 'text/html',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-
-    if (res.ok) {
-      const html = await res.text();
-      
-      // Parse from meta description: "X Followers, Y Following, Z Posts"
-      const descMatch = html.match(/content="([\d,.KMkm]+)\s*Followers?,\s*([\d,.KMkm]+)\s*Following,\s*([\d,.KMkm]+)\s*Posts?/i);
-      
-      if (descMatch) {
-        console.log('Method 3 success: HTML meta');
-        return {
-          followers: parseMetricNumber(descMatch[1]),
-          following: parseMetricNumber(descMatch[2]),
-          posts_count: parseMetricNumber(descMatch[3]),
-          full_name: extractMeta(html, 'og:title')?.split('(')[0]?.split('•')[0]?.trim() || null,
-          bio: extractMeta(html, 'description') || null,
-          profile_pic: extractMeta(html, 'og:image') || null,
-          is_verified: false,
-          is_private: false,
-          external_url: null,
-        };
-      } else {
-        console.log('Method 3: no meta match found');
-      }
-    } else {
-      const text = await res.text();
-      console.log('Method 3 failed:', res.status, text.substring(0, 200));
-    }
-  } catch (e) {
-    console.log('Method 3 error:', e.message);
-  }
-
-  return null;
-}
-
-function extractMeta(html: string, property: string): string | null {
-  const regex = new RegExp(`<meta[^>]*(?:property|name)=["'](?:og:)?${property}["'][^>]*content=["']([^"']*)["']`, 'i');
-  const match = html.match(regex);
-  if (match) return match[1];
-  
-  // Try reverse order (content before property)
-  const regex2 = new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*(?:property|name)=["'](?:og:)?${property}["']`, 'i');
-  const match2 = html.match(regex2);
-  return match2 ? match2[1] : null;
-}
 
 function parseMetricNumber(str: string): number {
   if (!str) return 0;
