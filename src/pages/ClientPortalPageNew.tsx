@@ -22,6 +22,8 @@ import { PortalClientUploads } from "@/components/client-portal/PortalClientUplo
 import { PortalRevisionsTab } from "@/components/client-portal/portal-tabs/PortalRevisionsTab";
 import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/PortalScheduleTab";
 import { PortalFilesTab } from "@/components/client-portal/portal-tabs/PortalFilesTab";
+import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
+import { PortalActivityTab } from "@/components/client-portal/portal-tabs/PortalActivityTab";
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
 import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
 import { toast } from "sonner";
@@ -136,6 +138,8 @@ export default function ClientPortalPage() {
   const approvals = data?.approvals || [];
   const changeRequests = data?.changeRequests || [];
   const versions = data?.versions || [];
+  const tasks = data?.tasks || [];
+  const timelineEvents = data?.timelineEvents || [];
 
   // Filter client uploads
   const clientUploads = deliverables.filter(d => d.uploaded_by_client);
@@ -144,9 +148,13 @@ export default function ClientPortalPage() {
   const pendingRevisionsCount = changeRequests.filter(cr => cr.status === 'open').length +
     comments.filter(c => c.status === 'revision_requested' || c.status === 'open').length;
 
+  const pendingTasksCount = tasks.filter(t => t.status === 'in_progress').length;
+
   // Tab badges configuration
   const tabBadges = {
     revisions: pendingRevisionsCount > 0 ? { count: pendingRevisionsCount, variant: 'warning' as const } : undefined,
+    tasks: pendingTasksCount > 0 ? { count: pendingTasksCount, variant: 'default' as const } : undefined,
+    activity: timelineEvents.length > 0 ? { count: timelineEvents.length, variant: 'success' as const } : undefined,
   };
 
   const handleExportPdf = async () => {
@@ -511,6 +519,36 @@ export default function ClientPortalPage() {
               </AnimatePresence>
             </TabsContent>
 
+            {/* Tasks Tab */}
+            <TabsContent value="tasks" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="tasks"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalTasksTab tasks={tasks} />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
+            {/* Activity Tab */}
+            <TabsContent value="activity" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="activity"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalActivityTab events={timelineEvents} />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
             {/* Revisions Tab */}
             <TabsContent value="revisions" className="mt-8">
               <AnimatePresence mode="wait">
@@ -527,7 +565,6 @@ export default function ClientPortalPage() {
                     deliverables={deliverables}
                     onNavigateToMaterial={(materialId) => {
                       setActiveTab('materials');
-                      // Could also set selected material here if needed
                     }}
                   />
                 </motion.div>

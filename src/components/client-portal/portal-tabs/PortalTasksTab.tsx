@@ -20,10 +20,11 @@ import { cn } from "@/lib/utils";
 interface Task {
   id: string;
   title: string;
-  status: 'todo' | 'in_progress' | 'done';
+  status: string;
   due_date?: string | null;
   assignee_name?: string | null;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  priority?: string | null;
+  category?: string | null;
 }
 
 interface PortalTasksTabProps {

@@ -167,7 +167,23 @@ serve(async (req) => {
       if (versionData) versions = versionData;
     }
 
-    // 13. Log visit
+    // 13. Fetch tasks for this project (visible to client)
+    const { data: tasks } = await supabase
+      .from("tasks")
+      .select("id, title, status, due_date, assignee_name, priority, category")
+      .eq("project_id", portal.project_id)
+      .in("status", ["todo", "in_progress", "done"])
+      .order("position", { ascending: true });
+
+    // 14. Fetch timeline events
+    const { data: timelineEvents } = await supabase
+      .from("portal_timeline_events")
+      .select("*")
+      .eq("portal_link_id", portal.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    // 15. Log visit
     await supabase.from("event_logs").insert({
       action: "portal_visited",
       entity_type: "portal_link",
@@ -188,6 +204,8 @@ serve(async (req) => {
         approvals,
         changeRequests: changeRequests || [],
         versions,
+        tasks: tasks || [],
+        timelineEvents: timelineEvents || [],
       }),
       { 
         status: 200, 

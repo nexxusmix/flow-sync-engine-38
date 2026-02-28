@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SendClientUpdateButton } from "@/components/projects/detail/SendClientUpdateButton";
 import { ProjectWithStages, useProjects } from "@/hooks/useProjects";
 import { PROJECT_STAGES } from "@/data/projectTemplates";
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
@@ -51,6 +52,16 @@ export function OverviewTab({ project }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Send Client Update */}
+      <div className="flex justify-end">
+        <SendClientUpdateButton
+          projectId={project.id}
+          projectName={project.name}
+          clientName={project.client_name || ''}
+          currentStage={currentStageName}
+          progress={stageProgress}
+        />
+      </div>
 
       {/* Predictive Intelligence Layer */}
       {intelligence && (

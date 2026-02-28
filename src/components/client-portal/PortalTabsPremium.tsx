@@ -25,6 +25,8 @@ interface PortalTabsPremiumProps {
 const tabs = [
   { id: "overview", label: "Visão Geral" },
   { id: "materials", label: "Materiais" },
+  { id: "tasks", label: "Tarefas" },
+  { id: "activity", label: "Atividades" },
   { id: "revisions", label: "Revisões" },
   { id: "files", label: "Arquivos" },
   { id: "schedule", label: "Cronograma" },
