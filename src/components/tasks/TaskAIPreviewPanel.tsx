@@ -17,6 +17,7 @@ import {
   Check, X, RefreshCw, ArrowLeft, Loader2, Sparkles, Pencil, GripVertical,
   PackageOpen, AlertTriangle,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -316,7 +317,18 @@ export function TaskAIPreviewPanel({
         position: index,
       }));
     if (selected.length === 0) return;
+
+    // Build category breakdown for toast
+    const breakdown = TASK_CATEGORIES
+      .map(cat => ({ label: cat.label, count: selected.filter(t => t.category === cat.key).length }))
+      .filter(c => c.count > 0)
+      .map(c => `${c.count} ${c.label}`)
+      .join(' · ');
+
     onConfirm(selected);
+    toast.success(`${selected.length} tarefas criadas`, {
+      description: breakdown,
+    });
   }, [previewTasks, isConfirming, isRegenerating, onConfirm]);
 
   // Keyboard shortcuts: Enter = confirm, Escape = back
