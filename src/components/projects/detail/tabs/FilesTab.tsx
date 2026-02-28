@@ -271,6 +271,36 @@ export function FilesTab({ project }: FilesTabProps) {
     })));
   }, [existingSlugs]);
 
+  const handleGlobalDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length === 0) return;
+
+    const items: FileWithAI[] = droppedFiles.map(f => ({
+      file: f, suggestedFolder: 'outros', suggestedName: 'Outros',
+      confidence: 0, isNewCategory: false, selectedFolder: 'outros',
+      isClassifying: true, mode: 'ai' as const, newCategoryInput: '',
+    }));
+    setFilesWithAI(items);
+    setUploadModalOpen(true);
+
+    const results = await Promise.all(
+      droppedFiles.map(f => classifyFile(f.name, f.type.split('/')[0] || '', f.type, existingSlugs))
+    );
+
+    setFilesWithAI(prev => prev.map((item, i) => ({
+      ...item,
+      suggestedFolder: results[i].suggestedFolder,
+      suggestedName: results[i].suggestedName,
+      confidence: results[i].confidence,
+      isNewCategory: results[i].isNewCategory,
+      newCategoryName: results[i].newCategoryName,
+      selectedFolder: results[i].suggestedFolder,
+      isClassifying: false,
+    })));
+  }, [existingSlugs]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -282,7 +312,22 @@ export function FilesTab({ project }: FilesTabProps) {
   const totalFiles = files.length;
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 relative"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleGlobalDrop}
+    >
+      {/* Global drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-10 bg-primary/5 border-2 border-dashed border-primary rounded-xl flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-2 text-primary">
+            <Upload className="w-10 h-10" />
+            <p className="text-sm font-medium">Solte os arquivos aqui</p>
+            <p className="text-xs text-muted-foreground">A IA classificará automaticamente</p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
