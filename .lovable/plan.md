@@ -1,60 +1,68 @@
 
 
-## Plano: Ações Interativas no Resumo do Dia (Stand By / Recusar / Aprovar)
+## Plano: Cirurgia de Hierarquia — Tela de Tarefas
 
-### O que será feito
+### Diagnóstico aceito
+A toolbar tem 11 botões primários competindo entre si. Vamos aplicar progressive disclosure e hierarquia clara.
 
-Adicionar botões de ação em cada item do "Resumo do Dia — Visão 360°" (ações recomendadas e clientes para contatar) com 3 opções:
-- **✅ Feito** — marca como concluído, salva na memória do Polo AI para não repetir
-- **⏸️ Stand By** — adia para relembrar depois (snooze com data)
-- **❌ Recusar** — descarta a ação, salva na memória para não sugerir novamente
+### Mudanças na `TasksPage.tsx`
 
-### Banco de Dados
-
-Criar tabela `daily_summary_actions` para persistir decisões:
-
-```sql
-CREATE TABLE public.daily_summary_actions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  workspace_id TEXT NOT NULL,
-  user_id UUID NOT NULL REFERENCES auth.users(id),
-  action_type TEXT NOT NULL, -- 'action_item' | 'client_action'
-  action_text TEXT NOT NULL, -- texto original da ação/cliente
-  action_key TEXT NOT NULL, -- hash/chave única para deduplicar
-  decision TEXT NOT NULL, -- 'done' | 'standby' | 'dismissed'
-  standby_until TIMESTAMPTZ, -- data para relembrar (se standby)
-  notes TEXT, -- observação opcional
-  metadata JSONB DEFAULT '{}', -- dados extras (client_name, urgency, etc)
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-ALTER TABLE public.daily_summary_actions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users manage own summary actions"
-  ON public.daily_summary_actions FOR ALL
-  USING (auth.uid() = user_id);
-
-CREATE INDEX idx_daily_summary_actions_user ON public.daily_summary_actions(user_id, decision);
-CREATE INDEX idx_daily_summary_actions_key ON public.daily_summary_actions(action_key, user_id);
+**Linha 1 — Navegação de visão** (manter como está)
+```
+Quadro | Kanban | Timeline | Calendário | Dashboard | Foco | Gantt
 ```
 
-### Implementação no Frontend (`AIDailySummary.tsx`)
+**Linha 2 — CTA único hero**
+- Unir "Nova Tarefa" + "Criar com IA" em **um único botão azul**: `+ Nova Tarefa`
+- Ao clicar, abre dropdown com 2 opções: "Criar manualmente" e "Criar com IA ✨"
+- Esse é o **único botão azul** da tela
 
-1. **Buscar decisões existentes** via `useQuery` na tabela `daily_summary_actions` para filtrar itens já decididos
-2. **Cada ação recomendada** ganha 3 botões inline:
-   - ✅ Feito → insere com `decision: 'done'`
-   - ⏸️ Stand By → popover com seletor de data, insere com `decision: 'standby'` + `standby_until`
-   - ❌ Recusar → insere com `decision: 'dismissed'`
-3. **Cada client_action** ganha os mesmos 3 botões ao lado dos botões Copiar/WhatsApp
-4. **Filtragem**: itens já marcados como `done` ou `dismissed` não aparecem; itens `standby` com data futura ficam ocultos, com data passada voltam a aparecer
-5. **Animação**: ao decidir, o item faz fade-out suave
-6. **Contadores**: mostrar "3 de 5 ações concluídas" no header da seção
-7. **Memória Polo AI**: ao gerar próximo resumo, incluir no prompt as ações recusadas/feitas para evitar repetição
+**Linha 3 — Busca + Filtros + Menu Ferramentas**
+- Busca (já existe no `TasksBoardView`)
+- Botão discreto `⚙ Ferramentas` (outline, canto direito) com dropdown:
+  - Análise IA
+  - Modo Foco  
+  - Sugerir Prioridades
+  - Sugerir Prazos
+  - Duplicatas
+  - Templates
+  - Automações
+  - Exportar PDF
+
+**Barra contextual (já existe: `TaskBulkActions`)**
+- Mover "Selecionar Tudo" para dentro da bulk bar ou como primeiro botão antes da lista (não no topo)
+- Adicionar "Selecionar Tudo" como botão discreto na barra de contagem de tarefas (ex: "96 tarefas | Selecionar")
+- A bulk bar flutuante já aparece ao selecionar — manter como está
+
+**Resumo do Dia → widget colapsável**
+- Reduzir altura/padding do `TaskAIDailySummary`
+- Começar colapsado por padrão (mostrar apenas "Resumo do dia ✨" como uma linha clicável)
+- Expandir ao clicar
+- Cards de métricas (pendentes/atrasadas/vence hoje/concluídas) — reduzir 30% a altura, estilo chip compacto
 
 ### Arquivos impactados
+- `src/pages/TasksPage.tsx` — remover 9 botões do topo, criar dropdown "Ferramentas", unificar CTA
+- `src/components/tasks/TaskAIDailySummary.tsx` — tornar colapsável, reduzir visual
 
-- **Nova tabela**: `daily_summary_actions` (migration)
-- **`src/components/dashboard/AIDailySummary.tsx`**: adicionar botões, queries, filtros, contadores
-- **`supabase/functions/polo-ai-chat/index.ts`**: no bloco `daily_summary`, injetar ações passadas no prompt para contexto
+### Resultado visual esperado
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ Minhas Tarefas                                              │
+│ 76 pendentes • 20 concluídas                                │
+│                                                             │
+│ [Quadro|Kanban|Timeline|Calendário|Dashboard|Foco|Gantt]    │
+│                                                             │
+│                              [⚙ Ferramentas]  [+ Nova Tarefa] │
+│                                                             │
+│ ✨ Resumo do dia ▸ (colapsado, 1 linha)                     │
+│                                                             │
+│ [Busca/Filtros — dentro do BoardView como já existe]        │
+│                                                             │
+│ 96 tarefas  Selecionar | Agrupar: Nenhum  Ordenar: Recentes│
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ □ Snowboard  #suíça #viagem            BACKLOG  PESSOAL│ │
+│ │ □ Mountain bike  #suíça #viagem        BACKLOG  PESSOAL│ │
+│ └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
 
