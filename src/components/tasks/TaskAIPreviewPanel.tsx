@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { GeneratedTask } from "@/types/tasks";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,20 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Check, X, RefreshCw, ArrowLeft, Loader2, Sparkles, Pencil,
+  Check, X, RefreshCw, ArrowLeft, Loader2, Sparkles, Pencil, GripVertical,
 } from "lucide-react";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface PreviewTask extends GeneratedTask {
   selected: boolean;
+  _id: string;
 }
 
 interface TaskAIPreviewPanelProps {
@@ -25,6 +34,136 @@ interface TaskAIPreviewPanelProps {
   onBack: () => void;
 }
 
+function SortableTaskCard({
+  task,
+  index,
+  isEditing,
+  onToggleSelect,
+  onEdit,
+  onCloseEdit,
+  onUpdate,
+  onRemove,
+  getCategoryLabel,
+  getColumnLabel,
+}: {
+  task: PreviewTask;
+  index: number;
+  isEditing: boolean;
+  onToggleSelect: () => void;
+  onEdit: () => void;
+  onCloseEdit: () => void;
+  onUpdate: (updates: Partial<GeneratedTask>) => void;
+  onRemove: () => void;
+  getCategoryLabel: (key: string) => string;
+  getColumnLabel: (key: string) => string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task._id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.8 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-lg border p-3 transition-colors ${
+        task.selected ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30 opacity-60'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <div className="flex items-start gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="mt-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          tabIndex={-1}
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </button>
+        <Checkbox
+          checked={task.selected}
+          onCheckedChange={onToggleSelect}
+          className="mt-0.5"
+        />
+        <div className="flex-1 min-w-0 space-y-2">
+          {isEditing ? (
+            <div className="space-y-2">
+              <Input
+                value={task.title}
+                onChange={(e) => onUpdate({ title: e.target.value })}
+                className="text-sm h-8"
+                autoFocus
+              />
+              <Textarea
+                value={task.description || ''}
+                onChange={(e) => onUpdate({ description: e.target.value })}
+                placeholder="Descrição..."
+                rows={2}
+                className="text-xs"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={task.category} onValueChange={(v) => onUpdate({ category: v as Task['category'] })}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TASK_CATEGORIES.map(c => <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={task.status} onValueChange={(v) => onUpdate({ status: v as Task['status'] })}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TASK_COLUMNS.map(c => <SelectItem key={c.key} value={c.key}>{c.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Input
+                value={task.tags?.join(', ') || ''}
+                onChange={(e) => onUpdate({ tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                placeholder="Tags (vírgula)"
+                className="text-xs h-7"
+              />
+              <Button variant="outline" size="sm" className="h-6 text-xs" onClick={onCloseEdit}>
+                Fechar edição
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
+              </div>
+              {task.description && (
+                <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="secondary" className="text-[10px] h-5">{getCategoryLabel(task.category)}</Badge>
+                <Badge variant="outline" className="text-[10px] h-5">{getColumnLabel(task.status)}</Badge>
+                {task.due_date && <Badge variant="outline" className="text-[10px] h-5">📅 {task.due_date}</Badge>}
+                {task.tags?.map((tag, i) => (
+                  <Badge key={i} variant="outline" className="text-[10px] h-5 text-muted-foreground">{tag}</Badge>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="flex gap-0.5 shrink-0">
+          {!isEditing && (
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onEdit}>
+              <Pencil className="w-3 h-3" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={onRemove}>
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TaskAIPreviewPanel({
   tasks: initialTasks,
   isRegenerating,
@@ -32,15 +171,21 @@ export function TaskAIPreviewPanel({
   onRegenerate,
   onBack,
 }: TaskAIPreviewPanelProps) {
+  const prefix = useId();
   const [previewTasks, setPreviewTasks] = useState<PreviewTask[]>(
-    initialTasks.map(t => ({ ...t, selected: true }))
+    initialTasks.map((t, i) => ({ ...t, selected: true, _id: `${prefix}-${i}` }))
   );
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
 
   const selectedCount = previewTasks.filter(t => t.selected).length;
 
-  const toggleSelect = (index: number) => {
-    setPreviewTasks(prev => prev.map((t, i) => i === index ? { ...t, selected: !t.selected } : t));
+  const toggleSelect = (id: string) => {
+    setPreviewTasks(prev => prev.map(t => t._id === id ? { ...t, selected: !t.selected } : t));
   };
 
   const toggleAll = () => {
@@ -48,16 +193,29 @@ export function TaskAIPreviewPanel({
     setPreviewTasks(prev => prev.map(t => ({ ...t, selected: !allSelected })));
   };
 
-  const removeTask = (index: number) => {
-    setPreviewTasks(prev => prev.filter((_, i) => i !== index));
+  const removeTask = (id: string) => {
+    setPreviewTasks(prev => prev.filter(t => t._id !== id));
+    if (editingId === id) setEditingId(null);
   };
 
-  const updateTask = (index: number, updates: Partial<GeneratedTask>) => {
-    setPreviewTasks(prev => prev.map((t, i) => i === index ? { ...t, ...updates } : t));
+  const updateTask = (id: string, updates: Partial<GeneratedTask>) => {
+    setPreviewTasks(prev => prev.map(t => t._id === id ? { ...t, ...updates } : t));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setPreviewTasks(prev => {
+      const oldIndex = prev.findIndex(t => t._id === active.id);
+      const newIndex = prev.findIndex(t => t._id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
   };
 
   const handleConfirm = () => {
-    const selected = previewTasks.filter(t => t.selected).map(({ selected, ...rest }) => rest);
+    const selected = previewTasks
+      .filter(t => t.selected)
+      .map(({ selected, _id, ...rest }) => rest);
     if (selected.length === 0) return;
     onConfirm(selected);
   };
@@ -80,96 +238,28 @@ export function TaskAIPreviewPanel({
         </Button>
       </div>
 
-      {/* Task cards */}
-      <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-        {previewTasks.map((task, index) => (
-          <div
-            key={index}
-            className={`rounded-lg border p-3 transition-colors ${
-              task.selected ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30 opacity-60'
-            }`}
-          >
-            <div className="flex items-start gap-2">
-              <Checkbox
-                checked={task.selected}
-                onCheckedChange={() => toggleSelect(index)}
-                className="mt-0.5"
+      {/* Sortable task cards */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={previewTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            {previewTasks.map((task, index) => (
+              <SortableTaskCard
+                key={task._id}
+                task={task}
+                index={index}
+                isEditing={editingId === task._id}
+                onToggleSelect={() => toggleSelect(task._id)}
+                onEdit={() => setEditingId(task._id)}
+                onCloseEdit={() => setEditingId(null)}
+                onUpdate={(updates) => updateTask(task._id, updates)}
+                onRemove={() => removeTask(task._id)}
+                getCategoryLabel={getCategoryLabel}
+                getColumnLabel={getColumnLabel}
               />
-              <div className="flex-1 min-w-0 space-y-2">
-                {editingIndex === index ? (
-                  /* Editing mode */
-                  <div className="space-y-2">
-                    <Input
-                      value={task.title}
-                      onChange={(e) => updateTask(index, { title: e.target.value })}
-                      className="text-sm h-8"
-                      autoFocus
-                    />
-                    <Textarea
-                      value={task.description || ''}
-                      onChange={(e) => updateTask(index, { description: e.target.value })}
-                      placeholder="Descrição..."
-                      rows={2}
-                      className="text-xs"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Select value={task.category} onValueChange={(v) => updateTask(index, { category: v as Task['category'] })}>
-                        <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {TASK_CATEGORIES.map(c => <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Select value={task.status} onValueChange={(v) => updateTask(index, { status: v as Task['status'] })}>
-                        <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {TASK_COLUMNS.map(c => <SelectItem key={c.key} value={c.key}>{c.title}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Input
-                      value={task.tags?.join(', ') || ''}
-                      onChange={(e) => updateTask(index, { tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                      placeholder="Tags (vírgula)"
-                      className="text-xs h-7"
-                    />
-                    <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => setEditingIndex(null)}>
-                      Fechar edição
-                    </Button>
-                  </div>
-                ) : (
-                  /* View mode */
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
-                    </div>
-                    {task.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge variant="secondary" className="text-[10px] h-5">{getCategoryLabel(task.category)}</Badge>
-                      <Badge variant="outline" className="text-[10px] h-5">{getColumnLabel(task.status)}</Badge>
-                      {task.due_date && <Badge variant="outline" className="text-[10px] h-5">📅 {task.due_date}</Badge>}
-                      {task.tags?.map((tag, i) => (
-                        <Badge key={i} variant="outline" className="text-[10px] h-5 text-muted-foreground">{tag}</Badge>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="flex gap-0.5 shrink-0">
-                {editingIndex !== index && (
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingIndex(index)}>
-                    <Pencil className="w-3 h-3" />
-                  </Button>
-                )}
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeTask(index)}>
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Actions */}
       <div className="flex items-center gap-2 pt-2 border-t border-border">
