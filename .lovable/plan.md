@@ -1,68 +1,63 @@
 
 
-## Plano: Cirurgia de Hierarquia — Tela de Tarefas
+## Plano: Redesign Premium do RecentActivityFeed
 
-### Diagnóstico aceito
-A toolbar tem 11 botões primários competindo entre si. Vamos aplicar progressive disclosure e hierarquia clara.
+### O que muda
 
-### Mudanças na `TasksPage.tsx`
+Transformar a lista plana de "Recentes" em um feed visualmente rico, interativo e com profundidade 3D.
 
-**Linha 1 — Navegação de visão** (manter como está)
-```
-Quadro | Kanban | Timeline | Calendário | Dashboard | Foco | Gantt
-```
+### Mudanças no `RecentActivityFeed.tsx`
 
-**Linha 2 — CTA único hero**
-- Unir "Nova Tarefa" + "Criar com IA" em **um único botão azul**: `+ Nova Tarefa`
-- Ao clicar, abre dropdown com 2 opções: "Criar manualmente" e "Criar com IA ✨"
-- Esse é o **único botão azul** da tela
+**1. Cards individuais em vez de lista flat**
+- Cada item vira um mini-card com borda sutil, `backdrop-blur`, e efeito 3D ao hover (rotação perspectiva leve usando `Card3D` do PortalAnimations)
+- Ícone do módulo ganha um fundo com gradiente sutil e glow ao hover
+- Status badge vira chip colorido com fundo semi-transparente (não só texto)
 
-**Linha 3 — Busca + Filtros + Menu Ferramentas**
-- Busca (já existe no `TasksBoardView`)
-- Botão discreto `⚙ Ferramentas` (outline, canto direito) com dropdown:
-  - Análise IA
-  - Modo Foco  
-  - Sugerir Prioridades
-  - Sugerir Prazos
-  - Duplicatas
-  - Templates
-  - Automações
-  - Exportar PDF
+**2. Filtros premium**
+- Chips de filtro ganham efeito `Magnetic` (atração magnética ao mouse)
+- Chip ativo: borda animada com glow sutil + ícone animado
+- Transição suave entre filtros com `AnimatePresence` (itens saem com fade + scale, entram com stagger)
 
-**Barra contextual (já existe: `TaskBulkActions`)**
-- Mover "Selecionar Tudo" para dentro da bulk bar ou como primeiro botão antes da lista (não no topo)
-- Adicionar "Selecionar Tudo" como botão discreto na barra de contagem de tarefas (ex: "96 tarefas | Selecionar")
-- A bulk bar flutuante já aparece ao selecionar — manter como está
+**3. Efeitos 3D e interativos por card**
+- Hover: rotação 3D leve (±5°) + elevação com sombra + glare reflexivo
+- Cursor magnético no ícone do módulo
+- Status badge pulsa sutilmente se urgente/atrasado (`PulseRing`)
+- Shimmer effect no card ao hover
 
-**Resumo do Dia → widget colapsável**
-- Reduzir altura/padding do `TaskAIDailySummary`
-- Começar colapsado por padrão (mostrar apenas "Resumo do dia ✨" como uma linha clicável)
-- Expandir ao clicar
-- Cards de métricas (pendentes/atrasadas/vence hoje/concluídas) — reduzir 30% a altura, estilo chip compacto
+**4. Visual enriquecido**
+- Header com `TextReveal` animado
+- Contador animado de itens por módulo nos chips de filtro
+- Linha de tempo visual sutil à esquerda (vertical line conectando os cards)
+- Gradiente de fundo sutil no container principal
+- Stagger animation nos cards ao entrar na viewport
 
-### Arquivos impactados
-- `src/pages/TasksPage.tsx` — remover 9 botões do topo, criar dropdown "Ferramentas", unificar CTA
-- `src/components/tasks/TaskAIDailySummary.tsx` — tornar colapsável, reduzir visual
+**5. Detalhes premium**
+- Tempo relativo com ícone de relógio micro
+- Arrow de navegação com spring animation ao hover
+- Footer CTA com efeito `Shimmer`
+
+### Arquivo impactado
+- `src/components/dashboard/RecentActivityFeed.tsx` — rewrite visual completo mantendo mesma lógica de dados
 
 ### Resultado visual esperado
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ Minhas Tarefas                                              │
-│ 76 pendentes • 20 concluídas                                │
-│                                                             │
-│ [Quadro|Kanban|Timeline|Calendário|Dashboard|Foco|Gantt]    │
-│                                                             │
-│                              [⚙ Ferramentas]  [+ Nova Tarefa] │
-│                                                             │
-│ ✨ Resumo do dia ▸ (colapsado, 1 linha)                     │
-│                                                             │
-│ [Busca/Filtros — dentro do BoardView como já existe]        │
-│                                                             │
-│ 96 tarefas  Selecionar | Agrupar: Nenhum  Ordenar: Recentes│
-│ ┌─────────────────────────────────────────────────────────┐ │
-│ │ □ Snowboard  #suíça #viagem            BACKLOG  PESSOAL│ │
-│ │ □ Mountain bike  #suíça #viagem        BACKLOG  PESSOAL│ │
-│ └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  Recentes                                      ⏱    │
+│  ÚLTIMOS ITENS CRIADOS EM TODOS OS MÓDULOS           │
+│                                                      │
+│  ● TODOS  ✦ LEADS(5)  📁 PROJETOS(3)  ✓ TAREFAS(5) │
+│                                                      │
+│  ┌─ 3D Card ──────────────────────────────────────┐  │
+│  │  🟢  Gerar RAPs com base...        [BACKLOG]   │  │
+│  │      operacao                    há 5 horas →   │  │
+│  └────────────────────────────────────────────────┘  │
+│  │ (timeline line)                                   │
+│  ┌─ 3D Card ──────────────────────────────────────┐  │
+│  │  🟢  Fazer cartão Wilma           [BACKLOG]    │  │
+│  │      operacao                    há 5 horas →   │  │
+│  └────────────────────────────────────────────────┘  │
+│                                                      │
+│              Ver mais →  (shimmer)                    │
+└──────────────────────────────────────────────────────┘
 ```
 
