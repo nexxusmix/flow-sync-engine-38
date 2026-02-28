@@ -6,19 +6,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useInstagramPosts, useCreatePost, useUpdatePost, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
+import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone } from 'lucide-react';
 
 export function CalendarTab() {
   const { data: posts, isLoading } = useInstagramPosts();
+  const { data: campaigns } = useInstagramCampaigns();
   const createPost = useCreatePost();
   const updatePost = useUpdatePost();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [newPost, setNewPost] = useState({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned' });
+  const [newPost, setNewPost] = useState({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '' });
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -48,10 +49,17 @@ export function CalendarTab() {
       pillar: newPost.pillar,
       status: newPost.status,
       scheduled_at: selectedDay.toISOString(),
+      campaign_id: newPost.campaign_id && newPost.campaign_id !== 'none' ? newPost.campaign_id : null,
     } as any);
     setShowCreate(false);
-    setNewPost({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned' });
+    setNewPost({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '' });
   };
+
+  const campaignMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (campaigns || []).forEach(c => { map[c.id] = c.name; });
+    return map;
+  }, [campaigns]);
 
   const statusColorMap: Record<string, string> = {
     published: 'bg-emerald-500', scheduled: 'bg-cyan-500', ready: 'bg-primary',
@@ -126,9 +134,15 @@ export function CalendarTab() {
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground font-medium truncate">{p.title}</p>
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex flex-wrap gap-1.5 mt-1">
                         {status && <Badge className={`${status.color} text-[9px]`}>{status.label}</Badge>}
                         {p.pillar && <Badge variant="secondary" className="text-[9px]">{PILLARS.find(pl => pl.key === p.pillar)?.label}</Badge>}
+                        {p.campaign_id && campaignMap[p.campaign_id] && (
+                          <Badge className="bg-accent/15 text-accent-foreground border-accent/20 text-[9px] gap-0.5">
+                            <Megaphone className="w-2.5 h-2.5" />
+                            {campaignMap[p.campaign_id]}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -158,6 +172,17 @@ export function CalendarTab() {
             <Select value={newPost.status} onValueChange={v => setNewPost(p => ({ ...p, status: v }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{POST_STATUSES.map(s => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={newPost.campaign_id} onValueChange={v => setNewPost(p => ({ ...p, campaign_id: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Campanha (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem campanha</SelectItem>
+                {(campaigns || []).map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <DialogFooter>
