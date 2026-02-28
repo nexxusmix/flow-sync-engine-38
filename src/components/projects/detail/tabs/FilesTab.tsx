@@ -239,20 +239,37 @@ export function FilesTab({ project }: FilesTabProps) {
 
   const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
   const handleDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
-  const handleDrop = useCallback((e: React.DragEvent, folder: FileFolder) => {
+  const handleDrop = useCallback(async (e: React.DragEvent, _folder: FileFolder) => {
     e.preventDefault();
     setIsDragging(false);
     const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      const items: FileWithAI[] = droppedFiles.map(f => ({
-        file: f, suggestedFolder: folder, suggestedName: categoryMap[folder]?.name || folder,
-        confidence: 1, isNewCategory: false, selectedFolder: folder,
-        isClassifying: false, mode: 'existing' as const, newCategoryInput: '',
-      }));
-      setFilesWithAI(items);
-      setUploadModalOpen(true);
-    }
-  }, [categoryMap]);
+    if (droppedFiles.length === 0) return;
+
+    // Show modal immediately with classifying state
+    const items: FileWithAI[] = droppedFiles.map(f => ({
+      file: f, suggestedFolder: 'outros', suggestedName: 'Outros',
+      confidence: 0, isNewCategory: false, selectedFolder: 'outros',
+      isClassifying: true, mode: 'ai' as const, newCategoryInput: '',
+    }));
+    setFilesWithAI(items);
+    setUploadModalOpen(true);
+
+    // Classify all in parallel
+    const results = await Promise.all(
+      droppedFiles.map(f => classifyFile(f.name, f.type.split('/')[0] || '', f.type, existingSlugs))
+    );
+
+    setFilesWithAI(prev => prev.map((item, i) => ({
+      ...item,
+      suggestedFolder: results[i].suggestedFolder,
+      suggestedName: results[i].suggestedName,
+      confidence: results[i].confidence,
+      isNewCategory: results[i].isNewCategory,
+      newCategoryName: results[i].newCategoryName,
+      selectedFolder: results[i].suggestedFolder,
+      isClassifying: false,
+    })));
+  }, [existingSlugs]);
 
   if (isLoading) {
     return (
