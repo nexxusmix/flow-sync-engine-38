@@ -3648,6 +3648,53 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_insights: {
+        Row: {
+          collected_at: string
+          connection_id: string
+          created_at: string
+          id: string
+          media_id: string | null
+          media_type: string | null
+          metric_name: string
+          metric_value: number
+          period: string | null
+          workspace_id: string
+        }
+        Insert: {
+          collected_at?: string
+          connection_id: string
+          created_at?: string
+          id?: string
+          media_id?: string | null
+          media_type?: string | null
+          metric_name: string
+          metric_value?: number
+          period?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          collected_at?: string
+          connection_id?: string
+          created_at?: string
+          id?: string
+          media_id?: string | null
+          media_type?: string | null
+          metric_name?: string
+          metric_value?: number
+          period?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_insights_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instagram_post_metrics: {
         Row: {
           collected_at: string | null
