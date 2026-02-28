@@ -47,6 +47,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 type MaterialType = 'file' | 'youtube' | 'link';
+const UNIVERSAL_ACCEPT = "*/*";
 
 interface AddMaterialDialogProps {
   portalLinkId: string;
@@ -69,7 +70,7 @@ export function AddMaterialDialog({
   const [description, setDescription] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [category, setCategory] = useState('deliverable');
   const [customCategory, setCustomCategory] = useState('');
 
@@ -79,7 +80,7 @@ export function AddMaterialDialog({
     setDescription('');
     setYoutubeUrl('');
     setExternalUrl('');
-    setSelectedFile(null);
+    setSelectedFiles([]);
     setCategory('deliverable');
     setCustomCategory('');
     if (fileInputRef.current) {
@@ -89,25 +90,67 @@ export function AddMaterialDialog({
 
   const addMaterial = useMutation({
     mutationFn: async () => {
-      let fileUrl: string | null = null;
-      let fileType: string | null = null;
+      const results = [];
 
-      // If file upload, upload first
-      if (materialType === 'file' && selectedFile) {
-        const path = `portal/${portalLinkId}/${Date.now()}_${selectedFile.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('project-files')
-          .upload(path, selectedFile);
+      if (materialType === 'file' && selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const path = `portal/${portalLinkId}/${Date.now()}_${file.name}`;
+          const { error: uploadError } = await supabase.storage
+            .from('project-files')
+            .upload(path, file);
+          if (uploadError) throw uploadError;
 
-        if (uploadError) throw uploadError;
+          const { data } = supabase.storage
+            .from('project-files')
+            .getPublicUrl(path);
 
-        const { data } = supabase.storage
-          .from('project-files')
-          .getPublicUrl(path);
-        
-        fileUrl = data.publicUrl;
-        fileType = selectedFile.type;
+          const finalCategory = category === 'custom' ? customCategory.trim().toLowerCase() : category;
+          const fileTitle = selectedFiles.length === 1 && title.trim() ? title.trim() : file.name.replace(/\.[^/.]+$/, '');
+
+          const { data: inserted, error } = await supabase
+            .from('portal_deliverables')
+            .insert({
+              portal_link_id: portalLinkId,
+              title: fileTitle,
+              description: description.trim() || null,
+              file_url: data.publicUrl,
+              type: file.type,
+              visible_in_portal: true,
+              awaiting_approval: true,
+              status: 'pending',
+              current_version: 1,
+              material_category: finalCategory || 'deliverable',
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          results.push(inserted);
+        }
+      } else {
+        const finalCategory = category === 'custom' ? customCategory.trim().toLowerCase() : category;
+        const { data: inserted, error } = await supabase
+          .from('portal_deliverables')
+          .insert({
+            portal_link_id: portalLinkId,
+            title: title.trim(),
+            description: description.trim() || null,
+            file_url: null,
+            type: null,
+            youtube_url: materialType === 'youtube' ? youtubeUrl.trim() : null,
+            external_url: materialType === 'link' ? externalUrl.trim() : null,
+            visible_in_portal: true,
+            awaiting_approval: true,
+            status: 'pending',
+            current_version: 1,
+            material_category: finalCategory || 'deliverable',
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        results.push(inserted);
       }
+
+      return results;
 
       const finalCategory = category === 'custom' ? customCategory.trim().toLowerCase() : category;
 
@@ -118,8 +161,8 @@ export function AddMaterialDialog({
           portal_link_id: portalLinkId,
           title: title.trim(),
           description: description.trim() || null,
-          file_url: fileUrl,
-          type: fileType,
+          file_url: null,
+          type: null,
           youtube_url: materialType === 'youtube' ? youtubeUrl.trim() : null,
           external_url: materialType === 'link' ? externalUrl.trim() : null,
           visible_in_portal: true,
@@ -149,20 +192,34 @@ export function AddMaterialDialog({
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      if (!title) {
-        // Auto-fill title with filename without extension
-        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
+      if (!title && files.length === 1) {
+        const nameWithoutExt = files[0].name.replace(/\.[^/.]+$/, '');
         setTitle(nameWithoutExt);
       }
     }
   };
 
+  const handleFileDrop = (files: File[]) => {
+    setSelectedFiles(prev => [...prev, ...files]);
+    if (!title && files.length === 1) {
+      const nameWithoutExt = files[0].name.replace(/\.[^/.]+$/, '');
+      setTitle(nameWithoutExt);
+    }
+    setMaterialType('file');
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const isFormValid = () => {
-    if (!title.trim()) return false;
-    if (materialType === 'file' && !selectedFile) return false;
+    if (!title.trim() && materialType !== 'file') return false;
+    if (materialType === 'file' && selectedFiles.length === 0) return false;
+    if (materialType === 'file' && selectedFiles.length > 1) return true; // multi-file doesn't need title
+    if (materialType === 'file' && selectedFiles.length === 1 && !title.trim()) return false;
     if (materialType === 'youtube' && !youtubeUrl.trim()) return false;
     if (materialType === 'link' && !externalUrl.trim()) return false;
     return true;
@@ -261,47 +318,55 @@ export function AddMaterialDialog({
           {/* Conditional Fields based on type */}
           {materialType === 'file' && (
             <div className="space-y-2">
-              <Label>Arquivo *</Label>
+              <Label>Arquivo(s) *</Label>
               <input
                 ref={fileInputRef}
                 type="file"
+                multiple
                 onChange={handleFileSelect}
                 className="hidden"
-                accept="video/*,image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                accept={UNIVERSAL_ACCEPT}
               />
-              {selectedFile ? (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-                  <FileVideo className="w-8 h-8 text-primary" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+              <div
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                  handleFileDrop(Array.from(e.dataTransfer.files));
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer transition-all hover:border-primary/40 hover:bg-muted/30"
+              >
+                <Upload className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Arraste arquivos aqui ou clique para selecionar</p>
+                <p className="text-[10px] text-muted-foreground/60">Qualquer tipo de arquivo</p>
+              </div>
+              {selectedFiles.length > 0 && (
+                <div className="space-y-1.5">
+                  {selectedFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 border border-border">
+                      <FileVideo className="w-5 h-5 text-primary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(idx);
+                        }}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-20 border-dashed"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <div className="text-center">
-                    <Upload className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Clique para selecionar</p>
-                  </div>
-                </Button>
               )}
             </div>
           )}

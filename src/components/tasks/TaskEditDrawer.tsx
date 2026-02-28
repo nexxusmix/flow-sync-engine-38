@@ -453,9 +453,21 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
                 </Button>
               </div>
             ))}
-            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 cursor-pointer transition-colors">
+            <label
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 cursor-pointer transition-colors"
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                const dt = new DataTransfer();
+                Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+                const input = e.currentTarget.querySelector('input');
+                if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+              }}
+            >
               <Paperclip className="w-3 h-3" />
-              Upload de arquivo
+              Arraste ou clique para upload
               <input type="file" multiple className="hidden" onChange={handleFileUpload} />
             </label>
           </div>

@@ -756,7 +756,7 @@ export function GalleryTab({ project }: GalleryTabProps) {
             multiple
             className="hidden"
             onChange={handleFileSelect}
-            accept="image/*,.pdf,.doc,.docx"
+            accept="*/*"
           />
           {assets.length > 0 && !selectionMode && (
             <Button

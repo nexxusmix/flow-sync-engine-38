@@ -340,22 +340,31 @@ export function DeliverablesTab({ project }: DeliverablesTabProps) {
             ) : (
               <div>
                 <Label>Arquivos</Label>
-                <div className="border border-dashed border-border rounded-lg p-4 text-center">
+                <div
+                  className="border border-dashed border-border rounded-lg p-4 text-center cursor-pointer transition-all hover:border-primary/40 hover:bg-muted/30"
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                    setUploadingFiles(Array.from(e.dataTransfer.files));
+                  }}
+                  onClick={() => document.getElementById('deliverable-upload')?.click()}
+                >
                   <input
                     type="file"
                     multiple
                     onChange={e => setUploadingFiles(Array.from(e.target.files || []))}
                     className="hidden"
                     id="deliverable-upload"
+                    accept="*/*"
                   />
-                  <label htmlFor="deliverable-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                    <Upload className="w-8 h-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {uploadingFiles.length > 0
-                        ? `${uploadingFiles.length} arquivo(s) selecionado(s)`
-                        : "Clique para selecionar arquivos"}
-                    </span>
-                  </label>
+                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <span className="text-sm text-muted-foreground">
+                    {uploadingFiles.length > 0
+                      ? `${uploadingFiles.length} arquivo(s) selecionado(s)`
+                      : "Arraste arquivos aqui ou clique para selecionar"}
+                  </span>
                 </div>
               </div>
             )}
