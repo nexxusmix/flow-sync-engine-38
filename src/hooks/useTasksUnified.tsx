@@ -464,12 +464,63 @@ export function useTasksUnified() {
     onError: () => toast.error('Erro ao excluir tarefas'),
   });
 
+  // ── Archived tasks query ─────────────────────────────────
+  const { data: archivedTasks = [], isLoading: isLoadingArchived } = useQuery({
+    queryKey: ['tasks-archived'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .not('archived_at', 'is', null)
+        .order('archived_at', { ascending: false });
+      if (error) throw error;
+      return (data as (Task & { archived_at: string })[]) || [];
+    },
+    staleTime: 60_000,
+  });
+
+  // ── Restore archived task ──────────────────────────────
+  const restoreTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ archived_at: null } as any)
+        .eq('id', id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+      qc.invalidateQueries({ queryKey: ['tasks-archived'] });
+      toast.success('Tarefa restaurada!');
+    },
+    onError: () => toast.error('Erro ao restaurar tarefa'),
+  });
+
+  // ── Delete archived task permanently ───────────────────
+  const deleteArchivedMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: (id) => {
+      qc.setQueryData<(Task & { archived_at: string })[]>(['tasks-archived'], (old) =>
+        old ? old.filter(t => t.id !== id) : old
+      );
+      toast.success('Tarefa excluída permanentemente');
+    },
+    onError: () => toast.error('Erro ao excluir tarefa'),
+  });
+
   return {
     tasks,
     isLoading,
     byStatus,
     stats,
     timelineItems,
+    archivedTasks,
+    isLoadingArchived,
     // Mutations
     createTask: createMutation.mutateAsync,
     updateTask: (id: string, updates: Partial<Task>) => updateMutation.mutate({ id, updates }),
@@ -479,6 +530,8 @@ export function useTasksUnified() {
     createTasksFromAI: createTasksFromAIMutation.mutateAsync,
     bulkArchiveDone: bulkArchiveDoneMutation.mutateAsync,
     bulkDeleteDone: bulkDeleteDoneMutation.mutateAsync,
+    restoreTask: (id: string) => restoreTaskMutation.mutate(id),
+    deleteArchivedTask: (id: string) => deleteArchivedMutation.mutate(id),
     isCreating: createMutation.isPending,
     isGenerating: createTasksFromAIMutation.isPending,
     isArchiving: bulkArchiveDoneMutation.isPending,

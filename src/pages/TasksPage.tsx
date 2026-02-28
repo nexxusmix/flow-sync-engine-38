@@ -52,6 +52,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { DailyPlanDialog } from "@/components/tasks/DailyPlanDialog";
+import { ArchivedTasksSection } from "@/components/tasks/ArchivedTasksSection";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
 } from "@/components/ui/sheet";
@@ -90,6 +91,7 @@ export default function TasksPage() {
     createTask, updateTask, toggleComplete, deleteTask, moveTask,
     createTasksFromAI, timelineItems,
     bulkArchiveDone, bulkDeleteDone, isArchiving, isDeleting,
+    archivedTasks, isLoadingArchived, restoreTask, deleteArchivedTask,
   } = useTasksUnified();
 
   const { isExporting, exportTasks } = useExportPdf();
@@ -559,6 +561,14 @@ export default function TasksPage() {
             onToggleSelect={toggleSelect}
           />
         )}
+
+        {/* Archived Tasks */}
+        <ArchivedTasksSection
+          archivedTasks={archivedTasks}
+          isLoading={isLoadingArchived}
+          onRestore={restoreTask}
+          onDeletePermanently={deleteArchivedTask}
+        />
 
         {/* Bulk Actions Bar */}
         <TaskBulkActions
