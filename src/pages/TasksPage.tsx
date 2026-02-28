@@ -286,7 +286,10 @@ export default function TasksPage() {
     }
   };
 
+  const [isConfirmingAI, setIsConfirmingAI] = useState(false);
+
   const handleConfirmAITasks = async (tasks: GeneratedTask[]) => {
+    setIsConfirmingAI(true);
     try {
       const created = await createTasksFromAI(tasks as any);
       toast.success(`${created.length} tarefas criadas!`);
@@ -297,6 +300,8 @@ export default function TasksPage() {
       setAiGuidancePrompt('');
     } catch (err: any) {
       toast.error(err.message || 'Erro ao criar tarefas');
+    } finally {
+      setIsConfirmingAI(false);
     }
   };
 
@@ -606,6 +611,7 @@ export default function TasksPage() {
                 <TaskAIPreviewPanel
                   tasks={previewTasks}
                   isRegenerating={isGeneratingLocal}
+                  isConfirming={isConfirmingAI}
                   onConfirm={handleConfirmAITasks}
                   onRegenerate={handleGenerateFromAI}
                   onBack={() => setPreviewTasks(null)}
