@@ -150,7 +150,21 @@ export function AiAddTasksDialog({ open, onOpenChange, defaultCategory = 'operac
     }
 
     setIsGenerating(true);
-    setProcessingProgress(30);
+    setProcessingProgress(10);
+
+    // Realistic progressive progress
+    const progressSteps = [
+      { target: 25, delay: 400 },
+      { target: 40, delay: 1200 },
+      { target: 55, delay: 2500 },
+      { target: 70, delay: 4000 },
+      { target: 80, delay: 6000 },
+      { target: 88, delay: 9000 },
+    ];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (const step of progressSteps) {
+      timers.push(setTimeout(() => setProcessingProgress(step.target), step.delay));
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-tasks-from-text', {
@@ -164,14 +178,29 @@ export function AiAddTasksDialog({ open, onOpenChange, defaultCategory = 'operac
         },
       });
 
-      setProcessingProgress(90);
+      timers.forEach(clearTimeout);
+      setProcessingProgress(95);
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        // Check for rate limit or quota errors
+        const errMsg = typeof error === 'object' && error.message ? error.message : String(error);
+        if (errMsg.includes('429') || errMsg.toLowerCase().includes('rate')) {
+          toast.error('Limite de requisições atingido. Aguarde alguns segundos e tente novamente.');
+        } else if (errMsg.includes('402') || errMsg.toLowerCase().includes('quota')) {
+          toast.error('Cota de IA esgotada. Entre em contato com o administrador.');
+        } else {
+          throw error;
+        }
+        return;
+      }
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
 
       const tasks = (data?.tasks || []) as GeneratedTask[];
       if (tasks.length === 0) {
-        toast.error('Nenhuma tarefa foi gerada. Tente novamente com mais contexto.');
+        toast.warning('Nenhuma tarefa foi identificada. Tente descrever com mais detalhes ou enviar outro arquivo.');
         return;
       }
 
@@ -182,6 +211,7 @@ export function AiAddTasksDialog({ open, onOpenChange, defaultCategory = 'operac
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao gerar tarefas');
     } finally {
+      timers.forEach(clearTimeout);
       setIsGenerating(false);
       setTimeout(() => setProcessingProgress(0), 500);
     }
@@ -267,7 +297,7 @@ export function AiAddTasksDialog({ open, onOpenChange, defaultCategory = 'operac
                   size="sm"
                   className="w-full gap-2 border-dashed border-border/40 hover:border-primary/30 hover:bg-primary/5 h-9"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={files.length >= 10}
+                  disabled={files.length >= 10 || isGenerating}
                 >
                   <Upload className="w-3.5 h-3.5" />
                   Anexar Arquivos

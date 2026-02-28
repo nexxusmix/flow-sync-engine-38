@@ -91,8 +91,8 @@ export default function AuditSettingsPage() {
               Voltar
             </Button>
             <div>
-              <h1 className="text-2xl font-light text-foreground">Auditoria</h1>
-              <p className="text-sm text-muted-foreground">Histórico de ações no sistema</p>
+              <h1 className="text-section-title font-light text-foreground">Auditoria</h1>
+              <p className="text-caption text-muted-foreground">Histórico de ações no sistema</p>
             </div>
           </div>
           <Button variant="outline" size="sm" disabled>

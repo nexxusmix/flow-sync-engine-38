@@ -26,7 +26,6 @@ interface GeneratedTask {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -42,7 +41,6 @@ Deno.serve(async (req) => {
 
     const { rawText, extractedTexts, defaultCategory = 'operacao', defaultColumn = 'backlog', guidancePrompt, imageBase64 } = await req.json() as TaskInput;
 
-    // Combine rawText with any extracted texts from uploaded files
     const allTexts = [rawText, ...(extractedTexts || [])].filter(t => t && t.trim().length > 0);
     const combinedText = allTexts.join('\n\n---\n\n');
 
@@ -68,37 +66,53 @@ REGRAS:
 7. Status padrão é o informado pelo usuário
 ${guidancePrompt ? `\nINSTRUÇÃO ADICIONAL DO USUÁRIO:\n${guidancePrompt}` : ''}
 
-IMPORTANTE:
-- Retorne APENAS um array JSON válido
-- Não inclua markdown ou explicações
-- Cada tarefa deve ter pelo menos um título`;
+Retorne as tarefas usando a função extract_tasks.`;
 
     const userPrompt = `Transforme o seguinte texto em tarefas estruturadas.
 Categoria padrão: ${defaultCategory}
 Status/Coluna padrão: ${defaultColumn}
 
 TEXTO:
-${combinedText}
+${combinedText}`;
 
-Retorne um array JSON com as tarefas no formato:
-[
-  {
-    "title": "título da tarefa",
-    "description": "descrição opcional",
-    "category": "pessoal|operacao|projeto",
-    "tags": ["tag1", "tag2"],
-    "due_date": "YYYY-MM-DD ou null",
-    "status": "${defaultColumn}"
-  }
-]`;
+    // Define tool for structured extraction
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'extract_tasks',
+          description: 'Extrair tarefas estruturadas do texto fornecido',
+          parameters: {
+            type: 'object',
+            properties: {
+              tasks: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'Título da tarefa' },
+                    description: { type: 'string', description: 'Descrição opcional' },
+                    category: { type: 'string', enum: ['pessoal', 'operacao', 'projeto'] },
+                    tags: { type: 'array', items: { type: 'string' } },
+                    due_date: { type: 'string', description: 'Data YYYY-MM-DD ou null' },
+                    status: { type: 'string', enum: ['backlog', 'week', 'today', 'done'] },
+                  },
+                  required: ['title', 'category', 'tags', 'status'],
+                },
+              },
+            },
+            required: ['tasks'],
+          },
+        },
+      },
+    ];
 
-    // Build messages - support multimodal if images provided
+    // Build messages
     const messages: any[] = [
       { role: 'system', content: systemPrompt },
     ];
 
     if (imageBase64 && imageBase64.length > 0) {
-      // Multimodal: text + images
       const contentParts: any[] = [{ type: 'text', text: userPrompt }];
       for (const img of imageBase64) {
         contentParts.push({
@@ -111,32 +125,45 @@ Retorne um array JSON com as tarefas no formato:
       messages.push({ role: 'user', content: userPrompt });
     }
 
-    // Use unified AI client
     const aiResponse = await chatCompletion({
       model: 'google/gemini-2.5-flash',
       messages,
       temperature: 0.3,
       max_tokens: 4096,
+      tools,
+      tool_choice: { type: 'function', function: { name: 'extract_tasks' } },
     });
+
+    // Extract tasks from tool call response
+    let tasks: GeneratedTask[] = [];
+    const toolCalls = aiResponse.choices?.[0]?.message?.tool_calls;
     const content = aiResponse.choices?.[0]?.message?.content;
 
-    if (!content) {
+    if (toolCalls && toolCalls.length > 0) {
+      // Native tool calling worked
+      const args = JSON.parse(toolCalls[0].function.arguments);
+      tasks = args.tasks || [];
+      console.log('[generate-tasks] Extracted via tool calling');
+    } else if (content) {
+      // Fallback: parse from content (some providers may not support tool calling)
+      let jsonStr = content.trim();
+      if (jsonStr.startsWith('```json')) {
+        jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+      } else if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```\s*/, '').replace(/```\s*$/, '');
+      }
+      try {
+        const parsed = JSON.parse(jsonStr);
+        tasks = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+      } catch {
+        console.error('[generate-tasks] Failed to parse content as JSON:', jsonStr.substring(0, 200));
+        throw new Error('Resposta da IA em formato inválido');
+      }
+    } else {
       throw new Error('Empty response from AI');
     }
 
-    console.log('AI response:', content.substring(0, 200) + '...');
-
-    // Parse JSON from response (handle markdown code blocks)
-    let jsonStr = content.trim();
-    if (jsonStr.startsWith('```json')) {
-      jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-    } else if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.replace(/^```\s*/, '').replace(/```\s*$/, '');
-    }
-
-    const tasks: GeneratedTask[] = JSON.parse(jsonStr);
-
-    // Validate and sanitize tasks
+    // Validate and sanitize
     const validatedTasks = tasks.map((task, index) => ({
       title: task.title || `Tarefa ${index + 1}`,
       description: task.description || null,
@@ -155,9 +182,21 @@ Retorne um array JSON com as tarefas no formato:
 
   } catch (error) {
     console.error('Error generating tasks:', error);
+    
+    // Detect rate limit / payment errors
+    const msg = error.message || '';
+    const isRateLimit = msg.includes('429') || msg.toLowerCase().includes('rate');
+    const isPayment = msg.includes('402') || msg.toLowerCase().includes('quota');
+    const statusCode = isRateLimit ? 429 : isPayment ? 402 : 500;
+    const userMessage = isRateLimit
+      ? 'Limite de requisições atingido. Aguarde alguns segundos e tente novamente.'
+      : isPayment
+        ? 'Cota de IA esgotada. Entre em contato com o administrador.'
+        : (error.message || 'Erro ao gerar tarefas');
+
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to generate tasks' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: userMessage }),
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

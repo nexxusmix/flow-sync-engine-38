@@ -616,9 +616,15 @@ export function SavedFocusPlans() {
       total_estimated_minutes: (plan.plan_data?.total_estimated_minutes || 0) + newBlockTasks.length * 25,
     };
 
-    await supabase.from('saved_focus_plans').update({ plan_data: updatedPlanData as any }).eq('id', planId);
-    setPlans(prev => prev.map(p => p.id === planId ? { ...p, plan_data: updatedPlanData } : p));
-    toast.success(`${inserted.length} tarefa(s) criada(s) e adicionada(s) ao plano!`);
+    try {
+      const { error: updateError } = await supabase.from('saved_focus_plans').update({ plan_data: updatedPlanData as any }).eq('id', planId);
+      if (updateError) throw updateError;
+      setPlans(prev => prev.map(p => p.id === planId ? { ...p, plan_data: updatedPlanData } : p));
+      toast.success(`${inserted.length} tarefa(s) criada(s) e adicionada(s) ao plano!`);
+    } catch (err) {
+      console.error('Error updating plan:', err);
+      toast.error('Tarefas criadas, mas erro ao vincular ao plano');
+    }
     setAddingTasksToPlanId(null);
   };
 

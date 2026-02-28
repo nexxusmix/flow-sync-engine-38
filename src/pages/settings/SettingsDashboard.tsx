@@ -176,8 +176,8 @@ export default function SettingsDashboard() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-light text-foreground tracking-tight">Configurações</h1>
-          <p className="text-muted-foreground mt-2">
+         <h1 className="text-page-title font-light text-foreground tracking-tight">Configurações</h1>
+          <p className="text-body-sm text-muted-foreground mt-2">
             Painel de controle do sistema. Configure comportamentos, limites e regras.
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function SettingsDashboard() {
                     <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">
                       {section.title}
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    <p className="text-caption text-muted-foreground mt-1 line-clamp-2">
                       {section.description}
                     </p>
                   </div>

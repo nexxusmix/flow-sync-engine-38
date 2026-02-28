@@ -120,8 +120,8 @@ export default function ProspectingSettingsPage() {
               Voltar
             </Button>
             <div>
-              <h1 className="text-2xl font-light text-foreground">Prospecção</h1>
-              <p className="text-sm text-muted-foreground">Limites, canais e opt-out</p>
+              <h1 className="text-section-title font-light text-foreground">Prospecção</h1>
+              <p className="text-caption text-muted-foreground">Limites, canais e opt-out</p>
             </div>
           </div>
           <Button onClick={handleSave} disabled={saving}>

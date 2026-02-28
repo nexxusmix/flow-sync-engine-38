@@ -126,8 +126,8 @@ export default function WorkspaceSettingsPage() {
               Voltar
             </Button>
             <div>
-              <h1 className="text-2xl font-light text-foreground">Workspace</h1>
-              <p className="text-sm text-muted-foreground">Dados institucionais e operacionais</p>
+              <h1 className="text-section-title font-light text-foreground">Workspace</h1>
+              <p className="text-caption text-muted-foreground">Dados institucionais e operacionais</p>
             </div>
           </div>
           <Button onClick={handleSave} disabled={saving}>
