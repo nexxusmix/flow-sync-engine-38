@@ -1,26 +1,38 @@
 
 
-## Plano: Corrigir cliques no dropdown Ferramentas
+## Plano: Prévia de Tarefas Geradas por IA com Edição e Regeneração
 
-### Problema
-Cada componente (TaskAnalysisPanel, TaskExecutionGuide, etc.) renderiza seu próprio `<Button>` internamente. Ao colocá-los dentro de `<DropdownMenuItem asChild><div>`, o dropdown fecha antes do onClick do Button disparar. Resultado: nada acontece.
+### Problema Atual
+Ao clicar "Gerar Tarefas", a IA processa e cria as tarefas diretamente no banco — sem prévia. O usuário não tem chance de revisar, editar, remover ou regenerar antes de confirmar.
 
 ### Solução
-Substituir os componentes embutidos por `<DropdownMenuItem onClick={...}>` simples que controlam estado no pai (`TasksPage`). Os componentes são renderizados fora do dropdown e recebem uma prop `open`/`onOpenChange` para controle externo.
 
-### Mudanças em `TasksPage.tsx`
-1. Adicionar estados para cada ferramenta: `showAnalysis`, `showPrioritySuggestions`, `showDeadlineSuggestions`, `showDuplicates`, `showExecutionGuide`
-2. No dropdown Ferramentas, trocar os componentes por DropdownMenuItems simples com onClick que setam esses estados
-3. Renderizar os componentes fora do dropdown, passando prop de controle externo
+Adicionar um fluxo de 2 etapas: **Gerar → Prévia → Confirmar/Editar/Regenerar**.
 
-### Mudanças em cada componente (5 arquivos)
-Cada componente ganha props opcionais `externalOpen?: boolean` e `onExternalOpenChange?: (open: boolean) => void`. Quando `externalOpen` muda para `true`, dispara a ação automaticamente (runAnalysis, fetchSuggestions, etc.). O Button trigger original continua funcionando para uso standalone.
+### Mudanças
 
-**Arquivos:**
-- `src/pages/TasksPage.tsx` — dropdown com onClick simples + estados + renderização externa
-- `src/components/tasks/TaskAnalysisPanel.tsx` — add `externalOpen` prop
-- `src/components/tasks/TaskExecutionGuide.tsx` — add `externalOpen` prop
-- `src/components/tasks/TaskAIPrioritySuggestions.tsx` — add `externalOpen` prop
-- `src/components/tasks/TaskAIDeadlineSuggestions.tsx` — add `externalOpen` prop
-- `src/components/tasks/TaskDuplicateDetection.tsx` — add `externalOpen` prop
+**1. Criar componente `TaskAIPreviewPanel.tsx`**
+- Recebe array de tarefas geradas pela IA (ainda não salvas)
+- Exibe cada tarefa como card editável: título (inline edit), descrição, categoria (select), status (select), tags
+- Checkbox por tarefa para selecionar/desmarcar quais criar
+- Botões: "✓ Confirmar Selecionadas", "↻ Regenerar", "← Voltar"
+- Botão de remover individual (X)
+
+**2. Adicionar campo "Prompt de orientação" no Sheet de IA (`TasksPage.tsx`)**
+- Campo `guidancePrompt` (textarea pequena, opcional) acima dos selects de categoria/coluna
+- Placeholder: "Ex: Priorize tarefas urgentes, ignore itens já feitos..."
+- Enviado ao edge function como parâmetro extra
+
+**3. Modificar fluxo em `TasksPage.tsx`**
+- `handleGenerateFromAI` deixa de chamar `createTasksFromAI` diretamente
+- Em vez disso, salva resultado em estado `previewTasks` e mostra o painel de prévia
+- Novo handler `handleConfirmAITasks` cria apenas as tarefas selecionadas
+- Botão "Regenerar" chama `handleGenerateFromAI` novamente (mantendo texto/arquivos)
+
+**4. Edge function `generate-tasks-from-text` já aceita `guidancePrompt`**
+- Já está implementado no prompt do sistema — só precisa passar do frontend
+
+### Arquivos impactados
+- `src/components/tasks/TaskAIPreviewPanel.tsx` — novo componente
+- `src/pages/TasksPage.tsx` — adicionar estado de prévia, campo guidance, fluxo 2 etapas
 
