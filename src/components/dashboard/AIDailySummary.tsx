@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { DailySummaryHistory } from './DailySummaryHistory';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'trending-up': TrendingUp,
@@ -583,6 +584,9 @@ export function AIDailySummary() {
       ) : (
         <p className="text-xs text-muted-foreground">Sem dados para resumo.</p>
       )}
+
+      {/* Action History */}
+      <DailySummaryHistory />
     </motion.div>
   );
 }
