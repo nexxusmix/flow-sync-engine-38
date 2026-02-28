@@ -9,6 +9,7 @@ import { CreateWithAITab } from '@/components/instagram-engine/CreateWithAITab';
 import { CampaignsTab } from '@/components/instagram-engine/CampaignsTab';
 import { ProjectionsTab } from '@/components/instagram-engine/ProjectionsTab';
 import { ProfileHealthTab } from '@/components/instagram-engine/ProfileHealthTab';
+import { SnapshotsTab } from '@/components/instagram-engine/SnapshotsTab';
 
 const TABS = [
   { key: 'cockpit', label: 'Cockpit', icon: 'rocket_launch' },
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'scripts', label: 'Roteiros', icon: 'description' },
   { key: 'create', label: 'Criar com IA', icon: 'auto_awesome' },
   { key: 'campaigns', label: 'Campanhas', icon: 'campaign' },
+  { key: 'snapshots', label: 'Histórico', icon: 'timeline' },
   { key: 'projections', label: 'Projeções', icon: 'trending_up' },
   { key: 'health', label: 'Saúde', icon: 'monitoring' },
 ];
@@ -66,6 +68,7 @@ export default function InstagramEnginePage() {
           <TabsContent value="scripts" className="mt-6"><ScriptsTab /></TabsContent>
           <TabsContent value="create" className="mt-6"><CreateWithAITab /></TabsContent>
           <TabsContent value="campaigns" className="mt-6"><CampaignsTab /></TabsContent>
+          <TabsContent value="snapshots" className="mt-6"><SnapshotsTab /></TabsContent>
           <TabsContent value="projections" className="mt-6"><ProjectionsTab /></TabsContent>
           <TabsContent value="health" className="mt-6"><ProfileHealthTab /></TabsContent>
         </Tabs>
