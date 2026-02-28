@@ -92,18 +92,35 @@ Responda APENAS com JSON válido, sem markdown.`,
     });
 
     if (!response.ok) {
+      const fallbackClassification = {
+        suggestedFolder: "outros",
+        suggestedName: "Outros",
+        confidence: 0,
+        isNewCategory: false,
+      };
+
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-          status: 429,
+        return new Response(JSON.stringify({
+          ...fallbackClassification,
+          error: "Rate limit exceeded",
+          errorCode: "rate_limited",
+        }), {
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402,
+        return new Response(JSON.stringify({
+          ...fallbackClassification,
+          error: "Payment required",
+          errorCode: "payment_required",
+        }), {
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
       const text = await response.text();
       console.error("AI gateway error:", response.status, text);
       throw new Error("AI gateway error");

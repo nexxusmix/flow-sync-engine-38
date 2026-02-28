@@ -77,21 +77,60 @@ function slugify(text: string): string {
     .replace(/^-|-$/g, '');
 }
 
-async function classifyFile(fileName: string, fileType: string, mimeType: string, existingCategories: string[]): Promise<{
+type ClassificationError = 'payment_required' | 'rate_limited' | 'unknown';
+
+interface ClassificationResult {
   suggestedFolder: string;
   suggestedName: string;
   confidence: number;
   isNewCategory: boolean;
   newCategoryName?: string;
-}> {
+  aiError?: ClassificationError;
+}
+
+const FALLBACK_CLASSIFICATION: ClassificationResult = {
+  suggestedFolder: 'outros',
+  suggestedName: 'Outros',
+  confidence: 0,
+  isNewCategory: false,
+};
+
+function parseClassificationError(input: string): ClassificationError {
+  const normalized = input.toLowerCase();
+  if (normalized.includes('402') || normalized.includes('payment required')) return 'payment_required';
+  if (normalized.includes('429') || normalized.includes('rate limit')) return 'rate_limited';
+  return 'unknown';
+}
+
+async function classifyFile(fileName: string, fileType: string, mimeType: string, existingCategories: string[]): Promise<ClassificationResult> {
   try {
     const { data, error } = await supabase.functions.invoke('classify-file', {
       body: { fileName, fileType, mimeType, existingCategories },
     });
-    if (error) throw error;
-    return data;
+
+    if (error) {
+      const normalizedError = `${String((error as { message?: string })?.message ?? '')} ${String((error as { context?: unknown })?.context ?? '')}`;
+      return { ...FALLBACK_CLASSIFICATION, aiError: parseClassificationError(normalizedError) };
+    }
+
+    if (!data || typeof data !== 'object') {
+      return { ...FALLBACK_CLASSIFICATION, aiError: 'unknown' };
+    }
+
+    const parsed = data as Partial<ClassificationResult> & { error?: string };
+    if (parsed.error) {
+      return { ...FALLBACK_CLASSIFICATION, aiError: parseClassificationError(parsed.error) };
+    }
+
+    return {
+      suggestedFolder: parsed.suggestedFolder || FALLBACK_CLASSIFICATION.suggestedFolder,
+      suggestedName: parsed.suggestedName || FALLBACK_CLASSIFICATION.suggestedName,
+      confidence: typeof parsed.confidence === 'number' ? parsed.confidence : FALLBACK_CLASSIFICATION.confidence,
+      isNewCategory: Boolean(parsed.isNewCategory),
+      newCategoryName: parsed.newCategoryName,
+    };
   } catch {
-    return { suggestedFolder: 'outros', suggestedName: 'Outros', confidence: 0, isNewCategory: false };
+    return { ...FALLBACK_CLASSIFICATION, aiError: 'unknown' };
   }
 }
 
@@ -122,6 +161,17 @@ export function FilesTab({ project }: FilesTabProps) {
 
   const existingSlugs = categories.map(c => c.slug);
 
+  const notifyClassificationIssues = useCallback((results: ClassificationResult[]) => {
+    if (results.some(r => r.aiError === 'payment_required')) {
+      toast.error("Créditos de IA insuficientes para classificação automática. Sugestão aplicada: 'Outros'.");
+      return;
+    }
+
+    if (results.some(r => r.aiError === 'rate_limited')) {
+      toast.error("Limite de requisições de IA atingido. Tente novamente em alguns segundos.");
+    }
+  }, []);
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawFiles = Array.from(e.target.files || []);
     if (rawFiles.length === 0) return;
@@ -144,6 +194,7 @@ export function FilesTab({ project }: FilesTabProps) {
     const results = await Promise.all(
       rawFiles.map(f => classifyFile(f.name, f.type.split('/')[0] || '', f.type, existingSlugs))
     );
+    notifyClassificationIssues(results);
 
     setFilesWithAI(prev => prev.map((item, i) => ({
       ...item,
@@ -258,6 +309,7 @@ export function FilesTab({ project }: FilesTabProps) {
     const results = await Promise.all(
       droppedFiles.map(f => classifyFile(f.name, f.type.split('/')[0] || '', f.type, existingSlugs))
     );
+    notifyClassificationIssues(results);
 
     setFilesWithAI(prev => prev.map((item, i) => ({
       ...item,
@@ -269,7 +321,7 @@ export function FilesTab({ project }: FilesTabProps) {
       selectedFolder: results[i].suggestedFolder,
       isClassifying: false,
     })));
-  }, [existingSlugs]);
+  }, [existingSlugs, notifyClassificationIssues]);
 
   const handleGlobalDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
@@ -288,6 +340,7 @@ export function FilesTab({ project }: FilesTabProps) {
     const results = await Promise.all(
       droppedFiles.map(f => classifyFile(f.name, f.type.split('/')[0] || '', f.type, existingSlugs))
     );
+    notifyClassificationIssues(results);
 
     setFilesWithAI(prev => prev.map((item, i) => ({
       ...item,
@@ -299,7 +352,7 @@ export function FilesTab({ project }: FilesTabProps) {
       selectedFolder: results[i].suggestedFolder,
       isClassifying: false,
     })));
-  }, [existingSlugs]);
+  }, [existingSlugs, notifyClassificationIssues]);
 
   if (isLoading) {
     return (
