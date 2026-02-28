@@ -27,6 +27,7 @@ export interface InstagramPost {
   ai_generated: boolean;
   project_id: string | null;
   campaign_id: string | null;
+  post_url: string | null;
   position: number;
   created_at: string;
   updated_at: string;

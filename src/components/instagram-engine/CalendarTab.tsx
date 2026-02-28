@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, usePublishToInstagram, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
 import { useInstagramConnection } from '@/hooks/useInstagramAPI';
+import { InstagramEmbed } from './InstagramEmbed';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send, Filter, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send, Filter, X, Link2 } from 'lucide-react';
 
 type ActiveFilters = {
   statuses: string[];
@@ -35,7 +36,9 @@ export function CalendarTab() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ActiveFilters>(emptyFilters);
   const [publishData, setPublishData] = useState({ image_url: '', caption: '', media_type: 'IMAGE' as 'IMAGE' | 'CAROUSEL' | 'REELS', video_url: '', image_urls: '' });
-  const [newPost, setNewPost] = useState({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '' });
+  const [newPost, setNewPost] = useState({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '', post_url: '' });
+  const [editingPostUrl, setEditingPostUrl] = useState<string | null>(null);
+  const [tempPostUrl, setTempPostUrl] = useState('');
 
   const hasActiveFilters = filters.statuses.length > 0 || filters.formats.length > 0 || filters.pillars.length > 0 || filters.campaigns.length > 0;
   const activeFilterCount = filters.statuses.length + filters.formats.length + filters.pillars.length + filters.campaigns.length;
@@ -91,9 +94,10 @@ export function CalendarTab() {
       status: newPost.status,
       scheduled_at: selectedDay.toISOString(),
       campaign_id: newPost.campaign_id && newPost.campaign_id !== 'none' ? newPost.campaign_id : null,
+      post_url: newPost.post_url.trim() || null,
     } as any);
     setShowCreate(false);
-    setNewPost({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '' });
+    setNewPost({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '', post_url: '' });
   };
 
   const handlePublish = async () => {
@@ -334,39 +338,90 @@ export function CalendarTab() {
               {selectedDayPosts.map(p => {
                 const status = POST_STATUSES.find(s => s.key === p.status);
                 const isPublishable = !!connection && ['ready', 'scheduled'].includes(p.status);
+                const isEditingUrl = editingPostUrl === p.id;
                 return (
-                  <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                    <span className="material-symbols-outlined text-primary text-lg">
-                      {FORMATS.find(f => f.key === p.format)?.icon || 'image'}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground font-medium truncate">{p.title}</p>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {status && <Badge className={`${status.color} text-[9px]`}>{status.label}</Badge>}
-                        {p.pillar && <Badge variant="secondary" className="text-[9px]">{PILLARS.find(pl => pl.key === p.pillar)?.label}</Badge>}
-                        {p.campaign_id && campaignMap[p.campaign_id] && (
-                          <Badge className="bg-accent/15 text-accent-foreground border-accent/20 text-[9px] gap-0.5">
-                            <Megaphone className="w-2.5 h-2.5" />
-                            {campaignMap[p.campaign_id]}
+                  <div key={p.id} className="rounded-lg bg-muted/30 overflow-hidden">
+                    <div className="flex items-center gap-3 p-3">
+                      <span className="material-symbols-outlined text-primary text-lg">
+                        {FORMATS.find(f => f.key === p.format)?.icon || 'image'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground font-medium truncate">{p.title}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {status && <Badge className={`${status.color} text-[9px]`}>{status.label}</Badge>}
+                          {p.pillar && <Badge variant="secondary" className="text-[9px]">{PILLARS.find(pl => pl.key === p.pillar)?.label}</Badge>}
+                          {p.campaign_id && campaignMap[p.campaign_id] && (
+                            <Badge className="bg-accent/15 text-accent-foreground border-accent/20 text-[9px] gap-0.5">
+                              <Megaphone className="w-2.5 h-2.5" />
+                              {campaignMap[p.campaign_id]}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!p.post_url && !isEditingUrl && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-muted-foreground h-7 px-2"
+                            onClick={() => { setEditingPostUrl(p.id); setTempPostUrl(''); }}
+                          >
+                            <Link2 className="w-3 h-3 mr-1" /> URL
+                          </Button>
+                        )}
+                        {isPublishable && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-xs border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
+                            onClick={() => openPublishDialog(p.id)}
+                          >
+                            <Send className="w-3 h-3" />
+                            Publicar
+                          </Button>
+                        )}
+                        {p.status === 'published' && (
+                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px]">
+                            ✓ Publicado
                           </Badge>
                         )}
                       </div>
                     </div>
-                    {isPublishable && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1 text-xs shrink-0 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
-                        onClick={() => openPublishDialog(p.id)}
-                      >
-                        <Send className="w-3 h-3" />
-                        Publicar
-                      </Button>
+
+                    {/* URL editing inline */}
+                    {isEditingUrl && (
+                      <div className="px-3 pb-3 flex gap-2">
+                        <Input
+                          placeholder="https://www.instagram.com/p/..."
+                          value={tempPostUrl}
+                          onChange={e => setTempPostUrl(e.target.value)}
+                          className="text-xs flex-1"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="text-xs"
+                          disabled={!tempPostUrl.trim()}
+                          onClick={async () => {
+                            await updatePost.mutateAsync({ id: p.id, post_url: tempPostUrl.trim() } as any);
+                            setEditingPostUrl(null);
+                            setTempPostUrl('');
+                          }}
+                        >
+                          Salvar
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-xs" onClick={() => setEditingPostUrl(null)}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
                     )}
-                    {p.status === 'published' && (
-                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px] shrink-0">
-                        ✓ Publicado
-                      </Badge>
+
+                    {/* oEmbed preview */}
+                    {p.post_url && (
+                      <div className="px-3 pb-3">
+                        <InstagramEmbed postUrl={p.post_url} compact />
+                      </div>
                     )}
                   </div>
                 );
@@ -407,6 +462,12 @@ export function CalendarTab() {
                 ))}
               </SelectContent>
             </Select>
+            <Input
+              placeholder="URL do post no Instagram (opcional)"
+              value={newPost.post_url}
+              onChange={e => setNewPost(p => ({ ...p, post_url: e.target.value }))}
+              className="text-xs"
+            />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>

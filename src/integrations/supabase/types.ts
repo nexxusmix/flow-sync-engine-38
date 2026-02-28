@@ -3775,6 +3775,7 @@ export type Database = {
           pillar: string | null
           pinned_comment: string | null
           position: number | null
+          post_url: string | null
           project_id: string | null
           published_at: string | null
           scheduled_at: string | null
@@ -3805,6 +3806,7 @@ export type Database = {
           pillar?: string | null
           pinned_comment?: string | null
           position?: number | null
+          post_url?: string | null
           project_id?: string | null
           published_at?: string | null
           scheduled_at?: string | null
@@ -3835,6 +3837,7 @@ export type Database = {
           pillar?: string | null
           pinned_comment?: string | null
           position?: number | null
+          post_url?: string | null
           project_id?: string | null
           published_at?: string | null
           scheduled_at?: string | null

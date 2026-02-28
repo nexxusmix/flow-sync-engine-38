@@ -1,0 +1,1 @@
+ALTER TABLE public.instagram_posts ADD COLUMN IF NOT EXISTS post_url text;
