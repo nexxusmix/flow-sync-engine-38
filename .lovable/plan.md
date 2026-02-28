@@ -1,51 +1,28 @@
 
 
-## Plano: Inteligência Preditiva na Overview do Projeto
+## Análise: Login direto no Instagram
 
-O dashboard executivo (`/executivo`) já tem componentes preditivos (Risk Radar, Revenue Forecast, Capacity, etc.). Agora vamos trazer essa mesma inteligência para a **OverviewTab de cada projeto individual** — focada no contexto daquele projeto específico.
+### Limitação importante
 
-### O que será adicionado à OverviewTab
+O Instagram **não oferece** uma API de login direto (username + senha). Todo acesso oficial à API do Instagram passa obrigatoriamente pela autenticação Meta/Facebook OAuth. A antiga "Instagram Basic Display API" foi descontinuada em dezembro de 2024.
 
-1. **Edge Function `generate-project-insights`** — Análise IA focada em UM projeto
-   - Recebe: dados do projeto, tarefas do projeto, receitas do projeto, stages
-   - Retorna: `risk_assessment` (probabilidade de atraso, risco financeiro, saúde do cliente), `completion_forecast` (data prevista real), `action_items` (o que fazer agora), `bottlenecks`, `executive_summary`
-   - Usa `chatCompletion` do `_shared/ai-client.ts`
+As únicas opções oficiais são:
+1. **Meta Graph API** (o que já está implementado) — requer Meta App
+2. **Instagram oEmbed** — apenas para embed de posts públicos, sem métricas
 
-2. **Hook `useProjectIntelligence(projectId)`** — Métricas preditivas por projeto
-   - Busca tarefas e receitas do projeto
-   - Calcula client-side:
-     - **Velocity do projeto** (tarefas concluídas/dia últimos 30d)
-     - **Data prevista de conclusão** (tarefas pendentes / velocity)
-     - **Risco de atraso (%)** = (overdue stages / total × velocity × days remaining)
-     - **ROI do projeto** = contract_value / horas estimadas
-     - **Status financeiro** = pago vs total, receitas vencidas
-     - **Saúde do cliente** = tempo desde última reunião, revisões pendentes, feedback pendente
-     - **Alerta de prazo** = se data prevista > due_date
+Usar login direto com credenciais do Instagram (scraping) viola os Termos de Serviço e resulta em bloqueio de conta.
 
-3. **Novos componentes na OverviewTab** (inseridos no topo, antes do conteúdo atual):
+### Alternativas viáveis
 
-   **A. Banner de Alerta de Prazo** — Se a data prevista de conclusão ultrapassar o due_date:
-   - Banner vermelho/amarelo com: "Risco de atraso: conclusão prevista em X, prazo em Y"
-   - Mostra velocity atual vs necessária
+| Abordagem | Prós | Contras |
+|-----------|------|---------|
+| Manter Meta OAuth (atual) | Dados reais, oficial | Requer Meta App |
+| Conexão manual (sem API) | Simples, sem Meta App | Sem dados automáticos |
+| Scraping | Dados sem Meta App | Viola ToS, instável |
 
-   **B. Bloco de Inteligência do Projeto** (`ProjectIntelligenceBlock`):
-   - 4 cards: Risco de Atraso (%), Previsão de Conclusão (data), ROI (R$/h), Saúde do Cliente (score)
-   - Cores: verde/amarelo/vermelho baseado nos valores
+### Recomendação
 
-   **C. Botão "Análise IA do Projeto"** — Chama a edge function com dados do projeto:
-   - Gera sumário executivo, riscos, ações recomendadas e gargalos
-   - Renderiza usando ExecutiveActionBlock e cards de risco (reutilizando padrão do AIRiskRadar)
-   - Cache em localStorage por projeto
+Se não quer usar a Meta API, a melhor opção é **remover o fluxo OAuth** e trabalhar com **dados manuais**: o usuário insere username do Instagram e registra métricas manualmente (ou via snapshots periódicos). Isso já existe parcialmente no sistema com `instagram_profile_snapshots`.
 
-### Arquivos
-
-| Arquivo | Ação |
-|---------|------|
-| `supabase/functions/generate-project-insights/index.ts` | Criar |
-| `src/hooks/useProjectIntelligence.ts` | Criar |
-| `src/components/projects/detail/ProjectIntelligenceBlock.tsx` | Criar |
-| `src/components/projects/detail/ProjectDeadlineAlert.tsx` | Criar |
-| `src/components/projects/detail/ProjectAIAnalysis.tsx` | Criar |
-| `src/components/projects/detail/tabs/OverviewTab.tsx` | Adicionar novos blocos no topo |
-| `supabase/config.toml` | Registrar nova function |
+Posso simplificar removendo toda a integração Meta e deixando apenas o campo de username + entrada manual de métricas?
 
