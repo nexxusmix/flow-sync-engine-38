@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Wand2, Loader2, Check, X, ArrowUp, ArrowDown, Minus, Flame } from "lucide-react";
@@ -21,11 +21,23 @@ const PRIORITY_ICONS: Record<string, { icon: typeof Flame; className: string; la
   low: { icon: ArrowDown, className: "text-muted-foreground/50", label: "Baixa" },
 };
 
-export function TaskAIPrioritySuggestions() {
+interface TaskAIPrioritySuggestionsProps {
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+}
+
+export function TaskAIPrioritySuggestions({ externalOpen, onExternalOpenChange }: TaskAIPrioritySuggestionsProps = {}) {
   const qc = useQueryClient();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
+
+  useEffect(() => {
+    if (externalOpen) {
+      fetchSuggestions();
+      onExternalOpenChange?.(false);
+    }
+  }, [externalOpen]);
 
   const fetchSuggestions = async () => {
     setLoading(true);

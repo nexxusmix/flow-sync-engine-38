@@ -42,6 +42,8 @@ interface ExecutionPlan {
 interface TaskExecutionGuideProps {
   tasks: Task[];
   onComplete?: (taskId: string) => void;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
 function formatEstimatedTime(minutes: number): string {
@@ -65,8 +67,9 @@ function getIndicatorStyle(type: ExecutionBlock['type']): string {
   return 'bg-amber-500/50';
 }
 
-export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProps) {
+export function TaskExecutionGuide({ tasks, onComplete, externalOpen, onExternalOpenChange }: TaskExecutionGuideProps) {
   const [isOpen, setIsOpen] = useState(false);
+
   const [showSelection, setShowSelection] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [plan, setPlan] = useState<ExecutionPlan | null>(null);
@@ -107,6 +110,13 @@ export function TaskExecutionGuide({ tasks, onComplete }: TaskExecutionGuideProp
     setPlan(null);
     setError(null);
   };
+
+  useEffect(() => {
+    if (externalOpen) {
+      openSelection();
+      onExternalOpenChange?.(false);
+    }
+  }, [externalOpen]);
 
   const generatePlan = async (orderedIds: string[]) => {
     setShowSelection(false);

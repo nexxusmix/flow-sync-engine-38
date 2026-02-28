@@ -97,6 +97,11 @@ export default function TasksPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showExecutionGuide, setShowExecutionGuide] = useState(false);
+  const [showPrioritySuggestions, setShowPrioritySuggestions] = useState(false);
+  const [showDeadlineSuggestions, setShowDeadlineSuggestions] = useState(false);
+  const [showDuplicates, setShowDuplicates] = useState(false);
   const [aiText, setAiText] = useState(() => {
     try { return localStorage.getItem('tasks-ai-text') || ''; } catch { return ''; }
   });
@@ -345,28 +350,25 @@ export default function TasksPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem asChild>
-                    <div className="w-full"><TaskAnalysisPanel tasks={tasks} /></div>
+                  <DropdownMenuItem onClick={() => setShowAnalysis(true)}>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Análise IA
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <div className="w-full">
-                      <TaskExecutionGuide
-                        tasks={tasks}
-                        onComplete={(id) => {
-                          const t = tasks.find(t => t.id === id);
-                          if (t) updateTask(id, { status: 'done', completed_at: new Date().toISOString() } as any);
-                        }}
-                      />
-                    </div>
+                  <DropdownMenuItem onClick={() => setShowExecutionGuide(true)}>
+                    <Brain className="w-4 h-4 mr-2" />
+                    Modo Foco
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <div className="w-full"><TaskAIPrioritySuggestions /></div>
+                  <DropdownMenuItem onClick={() => setShowPrioritySuggestions(true)}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Sugerir Prioridades
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <div className="w-full"><TaskAIDeadlineSuggestions /></div>
+                  <DropdownMenuItem onClick={() => setShowDeadlineSuggestions(true)}>
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    Sugerir Prazos
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <div className="w-full"><TaskDuplicateDetection /></div>
+                  <DropdownMenuItem onClick={() => setShowDuplicates(true)}>
+                    <CheckSquare className="w-4 h-4 mr-2" />
+                    Duplicatas
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsTemplateOpen(true)}>
                     <FileText className="w-4 h-4 mr-2" />
@@ -694,6 +696,21 @@ export default function TasksPage() {
             </SheetFooter>
           </SheetContent>
         </Sheet>
+
+        {/* External tool components rendered outside dropdown */}
+        <TaskAnalysisPanel tasks={tasks} externalOpen={showAnalysis} onExternalOpenChange={setShowAnalysis} />
+        <TaskExecutionGuide
+          tasks={tasks}
+          externalOpen={showExecutionGuide}
+          onExternalOpenChange={setShowExecutionGuide}
+          onComplete={(id) => {
+            const t = tasks.find(t => t.id === id);
+            if (t) updateTask(id, { status: 'done', completed_at: new Date().toISOString() } as any);
+          }}
+        />
+        <TaskAIPrioritySuggestions externalOpen={showPrioritySuggestions} onExternalOpenChange={setShowPrioritySuggestions} />
+        <TaskAIDeadlineSuggestions externalOpen={showDeadlineSuggestions} onExternalOpenChange={setShowDeadlineSuggestions} />
+        <TaskDuplicateDetection externalOpen={showDuplicates} onExternalOpenChange={setShowDuplicates} />
       </div>
     </DashboardLayout>
   );

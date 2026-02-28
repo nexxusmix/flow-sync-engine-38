@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Loader2, Merge, Trash2, X } from "lucide-react";
@@ -16,11 +16,23 @@ interface DuplicateGroup {
   tasks: Array<{ id: string; title: string; category: string; status: string }>;
 }
 
-export function TaskDuplicateDetection() {
+interface TaskDuplicateDetectionProps {
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+}
+
+export function TaskDuplicateDetection({ externalOpen, onExternalOpenChange }: TaskDuplicateDetectionProps = {}) {
   const qc = useQueryClient();
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
+
+  useEffect(() => {
+    if (externalOpen) {
+      detect();
+      onExternalOpenChange?.(false);
+    }
+  }, [externalOpen]);
 
   const detect = async () => {
     setLoading(true);
