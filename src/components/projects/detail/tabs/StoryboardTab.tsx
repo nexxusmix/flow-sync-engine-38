@@ -22,7 +22,7 @@ import {
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface StoryboardTabProps {
@@ -530,6 +530,11 @@ function StoryboardCard({ storyboard, isSelected, onSelect, onDelete }: {
 }
 
 function StoryboardScenes({ storyboardId, colorGrading }: { storyboardId: string; colorGrading: string }) {
+  const queryClient = useQueryClient();
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [generatingSceneId, setGeneratingSceneId] = useState<string | null>(null);
+  const [generatedCount, setGeneratedCount] = useState(0);
+
   const { data: scenes, isLoading } = useQuery({
     queryKey: ["storyboard-scenes", storyboardId],
     queryFn: async () => {
@@ -543,22 +548,103 @@ function StoryboardScenes({ storyboardId, colorGrading }: { storyboardId: string
     },
   });
 
+  const handleGenerateAllImages = async () => {
+    if (!scenes?.length) return;
+    const scenesWithoutImage = scenes.filter((s) => !s.image_url);
+    if (scenesWithoutImage.length === 0) {
+      toast.info("Todas as cenas já possuem imagem.");
+      return;
+    }
+
+    setIsGeneratingAll(true);
+    setGeneratedCount(0);
+    const total = scenesWithoutImage.length;
+
+    for (let i = 0; i < scenesWithoutImage.length; i++) {
+      const scene = scenesWithoutImage[i];
+      setGeneratingSceneId(scene.id);
+      try {
+        const sonyPrefix = "Cinematic frame shot on Sony FX3 camera with Sony GM 28-70mm f/2.8 lens. Shallow depth of field, natural film-like bokeh, rich color science, S-Cinetone color profile. Professional cinematography, 16:9 widescreen frame.";
+        const { data, error } = await supabase.functions.invoke("generate-image", {
+          body: {
+            prompt: `${sonyPrefix} ${scene.ai_prompt || scene.description}`,
+            sceneId: scene.id,
+            purpose: "storyboard_frame",
+            aspectRatio: "16:9",
+          },
+        });
+        if (error) throw new Error(error.message);
+        if (data?.error) throw new Error(data.error);
+        if (data?.imageUrl) {
+          await supabase
+            .from("project_storyboard_scenes")
+            .update({ image_url: data.imageUrl } as any)
+            .eq("id", scene.id);
+        }
+        setGeneratedCount(i + 1);
+      } catch (err: any) {
+        console.error(`Error generating image for scene ${scene.scene_number}:`, err);
+        toast.error(`Erro na cena ${scene.scene_number}: ${err.message?.substring(0, 60)}`);
+        // If rate limited, wait 5s before continuing
+        if (err.message?.includes("429") || err.message?.includes("Rate limit")) {
+          await new Promise(r => setTimeout(r, 5000));
+        }
+      }
+    }
+
+    setIsGeneratingAll(false);
+    setGeneratingSceneId(null);
+    queryClient.invalidateQueries({ queryKey: ["storyboard-scenes", storyboardId] });
+    toast.success(`Imagens geradas para ${total} cenas!`);
+  };
+
   if (isLoading) return <Loader2 className="w-5 h-5 animate-spin mx-auto" />;
   if (!scenes?.length) return <p className="text-sm text-muted-foreground text-center py-4">Nenhuma cena encontrada</p>;
 
+  const scenesWithoutImage = scenes.filter((s) => !s.image_url).length;
+
   return (
     <div className="space-y-4">
+      {scenesWithoutImage > 0 && (
+        <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3 border border-border/50">
+          <div className="text-sm text-muted-foreground">
+            {isGeneratingAll
+              ? `Gerando imagens... ${generatedCount}/${scenesWithoutImage}`
+              : `${scenesWithoutImage} cena(s) sem imagem`}
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleGenerateAllImages}
+            disabled={isGeneratingAll}
+            className="gap-2"
+          >
+            {isGeneratingAll ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Gerando {generatedCount}/{scenesWithoutImage}...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Gerar Todas as Imagens
+              </>
+            )}
+          </Button>
+        </div>
+      )}
       {scenes.map((scene) => (
-        <SceneCard key={scene.id} scene={scene} />
+        <SceneCard key={scene.id} scene={scene} isGeneratingExternal={generatingSceneId === scene.id} />
       ))}
     </div>
   );
 }
 
-function SceneCard({ scene }: { scene: any }) {
+function SceneCard({ scene, isGeneratingExternal }: { scene: any; isGeneratingExternal?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const isGenerating = isGeneratingImage || !!isGeneratingExternal;
   const [imageUrl, setImageUrl] = useState<string | null>(scene.image_url || null);
 
   const copyPrompt = () => {
@@ -621,10 +707,10 @@ function SceneCard({ scene }: { scene: any }) {
               variant="secondary"
               size="sm"
               onClick={handleGenerateImage}
-              disabled={isGeneratingImage}
+              disabled={isGenerating}
               className="gap-2"
             >
-              {isGeneratingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               Regenerar
             </Button>
           </div>
@@ -633,7 +719,7 @@ function SceneCard({ scene }: { scene: any }) {
         <div className="bg-muted/40 border-b border-border/50">
           <AspectRatio ratio={16 / 9}>
             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-              {isGeneratingImage ? (
+              {isGenerating ? (
                 <>
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   <span className="text-xs text-muted-foreground">Gerando imagem...</span>
