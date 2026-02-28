@@ -2,45 +2,50 @@
 
 ## Diagnóstico
 
-A geração do Storyboard falha por **timeout da edge function**. A função `generate-storyboard-ai` tenta:
-1. Gerar o storyboard via IA (texto) — ~30s (com fallback para OpenAI quando Gemini dá 429)
-2. Gerar imagens para TODAS as cenas em paralelo via `gemini-3-pro-image-preview` — ~30s+
-3. Upload de cada imagem no storage
+O recurso "Templates" atualmente é 100% manual:
+- O usuário cria templates preenchendo formulário manualmente (título, descrição, categoria, prioridade, tags, subtarefas)
+- O template é aplicado apenas para preencher o formulário de nova tarefa
+- Não há nenhuma geração, automação ou processamento com IA
 
-Isso ultrapassa o limite de 60s das edge functions, causando timeout silencioso. O usuário vê "Processando..." para sempre.
+## Plano: Templates com IA Autônoma
 
-## Plano de Correção
+### 1. Criar Edge Function `generate-task-templates`
+Nova função que recebe um prompt/contexto do usuário e gera automaticamente templates completos:
+- Título, descrição, categoria, prioridade, tags e subtarefas
+- Usa `google/gemini-2.5-flash` via Lovable AI Gateway
+- Gera 3-5 templates de uma vez baseado no contexto fornecido
 
-### 1. Separar geração de texto e imagens na edge function
-- Remover a geração de imagens do fluxo principal da `generate-storyboard-ai`
-- A função retorna apenas o JSON de cenas (rápido, ~15-20s)
-- Usar modelo `google/gemini-2.5-flash` (mais rápido e sem quota issues)
+### 2. Adicionar "Gerar com IA" ao TaskTemplateManager
+- Botão "Gerar Templates com IA" no topo do dialog
+- Campo de texto para o usuário descrever o tipo de templates que precisa (ex: "templates para produção de vídeo", "templates para gestão de projeto de marketing")
+- A IA gera os templates e salva automaticamente no banco
+- Loading state durante geração
 
-### 2. Gerar imagens sob demanda
-- Manter o botão existente de gerar imagem individual por cena
-- As imagens são geradas após o storyboard já estar salvo no banco
+### 3. Adicionar "Aplicar e Criar Tarefa" automático
+- Quando um template é aplicado, ao invés de apenas preencher o formulário, criar a tarefa diretamente com um clique
+- Botão "Criar Tarefa" direto no card do template (além do botão de copiar para formulário)
 
-### 3. Melhorar UX do formulário
-- NÃO fechar o formulário imediatamente ao clicar em gerar
-- Mostrar estado de loading no botão até a mutation completar
-- Fechar o formulário apenas no `onSuccess` da mutation
-
-### 4. Robustez do parsing JSON
-- Adicionar regex fallback para extrair JSON da resposta da IA
-- Tratar respostas truncadas
+### 4. Adicionar "Gerar Templates a partir das Tarefas"
+- Botão que analisa as tarefas existentes do usuário e sugere templates baseados em padrões recorrentes
+- A IA identifica tarefas similares e cria templates automaticamente
 
 ### Detalhes Técnicos
 
-**Edge function `generate-storyboard-ai/index.ts`:**
-- Remover função `generateSceneImage` e todo o bloco de geração de imagens em paralelo (linhas 14-78, 230-249)
-- Trocar modelo de `google/gemini-3-flash-preview` para `google/gemini-2.5-flash`
-- Adicionar regex fallback para JSON parsing
-- Retornar apenas `{ scenes }` sem imagens
+**Edge Function `supabase/functions/generate-task-templates/index.ts`:**
+- Recebe `{ prompt, existingTemplates }` no body
+- Usa tool calling para extrair JSON estruturado com array de templates
+- Cada template: `{ title, description, category, priority, tags, checklist_items }`
+- Retorna array de templates gerados
 
-**`StoryboardTab.tsx` (linhas 258-270):**
-- Remover `onClose()` da linha 270
-- Mover o `onClose()` para o `onSuccess` callback da mutation no hook
+**`src/components/tasks/TaskTemplateManager.tsx`:**
+- Adicionar estado `aiPrompt` e `isGeneratingAI`
+- Seção no topo com input + botão "Gerar com IA"
+- Ao receber resultado, salvar cada template via `createTemplate.mutateAsync`
+- Botão "Analisar Tarefas" que envia tarefas existentes como contexto para gerar templates
 
-**`useProjectStoryboards.ts` (mutation `onSuccess`):**
-- Aceitar callback `onSuccess` opcional para fechar o formulário
+**`src/hooks/useTaskTemplates.tsx`:**
+- Adicionar mutation `generateTemplatesAI` que chama a edge function e salva os resultados
+
+**`supabase/config.toml`:**
+- Registrar `generate-task-templates` com `verify_jwt = false`
 
