@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, Loader2, Check, X, Clock } from "lucide-react";
@@ -23,11 +23,23 @@ const COMPLEXITY_LABEL: Record<string, { label: string; className: string }> = {
   complex: { label: "Complexa", className: "text-red-400" },
 };
 
-export function TaskAIDeadlineSuggestions() {
+interface TaskAIDeadlineSuggestionsProps {
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+}
+
+export function TaskAIDeadlineSuggestions({ externalOpen, onExternalOpenChange }: TaskAIDeadlineSuggestionsProps = {}) {
   const qc = useQueryClient();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
+
+  useEffect(() => {
+    if (externalOpen) {
+      fetchSuggestions();
+      onExternalOpenChange?.(false);
+    }
+  }, [externalOpen]);
 
   const fetchSuggestions = async () => {
     setLoading(true);

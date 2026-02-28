@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   BarChart3, Loader2, AlertTriangle, Clock, Copy, TrendingUp, X,
   Send, Trash2, Archive, ArrowUpDown, CalendarDays, Zap, Undo2,
@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 
 interface TaskAnalysisPanelProps {
   tasks: Task[];
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
 interface AnalysisResult {
@@ -37,8 +39,15 @@ const QUICK_ACTIONS = [
   { intent: 'create_week_plan', label: 'Plano Inteligente', icon: CalendarDays, destructive: false },
 ];
 
-export function TaskAnalysisPanel({ tasks }: TaskAnalysisPanelProps) {
+export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }: TaskAnalysisPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (externalOpen) {
+      runAnalysis();
+      onExternalOpenChange?.(false);
+    }
+  }, [externalOpen]);
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [command, setCommand] = useState('');
