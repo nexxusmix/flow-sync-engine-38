@@ -1,19 +1,8 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
-const META_APP_ID = "META_APP_ID_PLACEHOLDER"; // Replaced at runtime from edge fn
-
-// Scopes for Instagram Business
-const SCOPES = [
-  "instagram_basic",
-  "instagram_manage_insights",
-  "pages_show_list",
-  "pages_read_engagement",
-  "business_management",
-].join(",");
 
 export function useInstagramConnection() {
   return useQuery({
@@ -33,6 +22,61 @@ export function useInstagramConnection() {
   });
 }
 
+export function useConnectInstagramManual() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (username: string) => {
+      const { data, error } = await supabase
+        .from('instagram_connections')
+        .upsert({
+          workspace_id: DEFAULT_WORKSPACE,
+          ig_username: username,
+          ig_user_id: `manual_${username}`,
+          access_token: 'manual',
+          connected_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'workspace_id,ig_username',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['instagram-connection'] });
+      toast.success(`Conectado a @${data.ig_username}!`);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao conectar: ${error.message}`);
+    },
+  });
+}
+
+export function useDisconnectInstagram() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (connectionId: string) => {
+      const { error } = await supabase
+        .from('instagram_connections')
+        .delete()
+        .eq('id', connectionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['instagram-connection'] });
+      toast.success('Instagram desconectado.');
+    },
+    onError: (error) => {
+      toast.error(`Erro: ${error.message}`);
+    },
+  });
+}
+
 export function useInstagramInsights(connectionId?: string) {
   return useQuery({
     queryKey: ['instagram-insights', connectionId],
@@ -46,14 +90,12 @@ export function useInstagramInsights(connectionId?: string) {
 
       if (error) throw error;
 
-      // Aggregate by metric_name for account-level
       const accountMetrics: Record<string, number> = {};
       const mediaMetrics: Record<string, { likes: number; comments: number; reach: number; impressions: number; saved: number; shares: number }> = {};
       let storyMetrics: Record<string, number> = {};
 
       for (const row of data || []) {
         if (row.media_type === 'account') {
-          // Keep latest value per metric
           if (!accountMetrics[row.metric_name]) {
             accountMetrics[row.metric_name] = Number(row.metric_value);
           }
@@ -74,7 +116,6 @@ export function useInstagramInsights(connectionId?: string) {
         }
       }
 
-      // Calculate totals across media
       const mediaValues = Object.values(mediaMetrics);
       const totalReach = mediaValues.reduce((s, m) => s + m.reach, 0);
       const totalLikes = mediaValues.reduce((s, m) => s + m.likes, 0);
@@ -106,56 +147,4 @@ export function useInstagramInsights(connectionId?: string) {
       };
     },
   });
-}
-
-export function useSyncInstagramInsights() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (connectionId: string) => {
-      const { data, error } = await supabase.functions.invoke('fetch-instagram-insights', {
-        body: { connection_id: connectionId },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['instagram-insights'] });
-      toast.success(`Sincronizado! ${data.saved} métricas coletadas.`);
-    },
-    onError: (error) => {
-      console.error('Sync error:', error);
-      toast.error(`Erro ao sincronizar: ${error.message}`);
-    },
-  });
-}
-
-export function useMetaOAuthCallback() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ code, redirect_uri }: { code: string; redirect_uri: string }) => {
-      const { data, error } = await supabase.functions.invoke('meta-oauth-callback', {
-        body: { code, redirect_uri },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['instagram-connection'] });
-      toast.success(`Conectado a @${data.connection.username}!`);
-    },
-    onError: (error) => {
-      console.error('OAuth error:', error);
-      toast.error(`Erro na conexão: ${error.message}`);
-    },
-  });
-}
-
-export function getMetaOAuthUrl(redirectUri: string, appId: string) {
-  return `https://www.facebook.com/v21.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${SCOPES}&response_type=code`;
 }
