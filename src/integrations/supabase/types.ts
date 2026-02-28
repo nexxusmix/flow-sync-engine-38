@@ -3486,6 +3486,96 @@ export type Database = {
           },
         ]
       }
+      instagram_bio_history: {
+        Row: {
+          active_from: string | null
+          active_until: string | null
+          ai_generated: boolean | null
+          bio_text: string
+          conversion_rate: number | null
+          created_at: string | null
+          focus: string | null
+          id: string
+          workspace_id: string
+        }
+        Insert: {
+          active_from?: string | null
+          active_until?: string | null
+          ai_generated?: boolean | null
+          bio_text: string
+          conversion_rate?: number | null
+          created_at?: string | null
+          focus?: string | null
+          id?: string
+          workspace_id?: string
+        }
+        Update: {
+          active_from?: string | null
+          active_until?: string | null
+          ai_generated?: boolean | null
+          bio_text?: string
+          conversion_rate?: number | null
+          created_at?: string | null
+          focus?: string | null
+          id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      instagram_campaigns: {
+        Row: {
+          budget: number | null
+          content_plan: Json | null
+          created_at: string | null
+          end_date: string | null
+          id: string
+          key_messages: Json | null
+          kpis: Json | null
+          name: string
+          objective: string | null
+          result_report: Json | null
+          start_date: string | null
+          status: string | null
+          target_audience: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          budget?: number | null
+          content_plan?: Json | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          key_messages?: Json | null
+          kpis?: Json | null
+          name: string
+          objective?: string | null
+          result_report?: Json | null
+          start_date?: string | null
+          status?: string | null
+          target_audience?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          budget?: number | null
+          content_plan?: Json | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          key_messages?: Json | null
+          kpis?: Json | null
+          name?: string
+          objective?: string | null
+          result_report?: Json | null
+          start_date?: string | null
+          status?: string | null
+          target_audience?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       instagram_connections: {
         Row: {
           access_token: string | null
@@ -3515,6 +3605,308 @@ export type Database = {
           ig_username?: string
           token_expires_at?: string | null
           updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      instagram_hooks: {
+        Row: {
+          ai_generated: boolean | null
+          category: string | null
+          created_at: string | null
+          format: string | null
+          hook_score: number | null
+          hook_text: string
+          id: string
+          score_breakdown: Json | null
+          times_used: number | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          format?: string | null
+          hook_score?: number | null
+          hook_text: string
+          id?: string
+          score_breakdown?: Json | null
+          times_used?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          format?: string | null
+          hook_score?: number | null
+          hook_text?: string
+          id?: string
+          score_breakdown?: Json | null
+          times_used?: number | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      instagram_post_metrics: {
+        Row: {
+          collected_at: string | null
+          comments: number | null
+          dm_received: number | null
+          id: string
+          impressions: number | null
+          likes: number | null
+          link_clicks: number | null
+          post_id: string | null
+          profile_visits: number | null
+          reach: number | null
+          retention_rate: number | null
+          saves: number | null
+          shares: number | null
+          workspace_id: string
+        }
+        Insert: {
+          collected_at?: string | null
+          comments?: number | null
+          dm_received?: number | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          link_clicks?: number | null
+          post_id?: string | null
+          profile_visits?: number | null
+          reach?: number | null
+          retention_rate?: number | null
+          saves?: number | null
+          shares?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          collected_at?: string | null
+          comments?: number | null
+          dm_received?: number | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          link_clicks?: number | null
+          post_id?: string | null
+          profile_visits?: number | null
+          reach?: number | null
+          retention_rate?: number | null
+          saves?: number | null
+          shares?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_post_metrics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_posts: {
+        Row: {
+          ai_generated: boolean | null
+          campaign_id: string | null
+          caption_long: string | null
+          caption_medium: string | null
+          caption_short: string | null
+          carousel_slides: Json | null
+          checklist: Json | null
+          cover_suggestion: string | null
+          created_at: string | null
+          created_by: string | null
+          cta: string | null
+          format: string
+          hashtags: string[] | null
+          hook: string | null
+          id: string
+          objective: string | null
+          pillar: string | null
+          pinned_comment: string | null
+          position: number | null
+          project_id: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          script: string | null
+          status: string
+          story_sequence: Json | null
+          title: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          campaign_id?: string | null
+          caption_long?: string | null
+          caption_medium?: string | null
+          caption_short?: string | null
+          carousel_slides?: Json | null
+          checklist?: Json | null
+          cover_suggestion?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cta?: string | null
+          format?: string
+          hashtags?: string[] | null
+          hook?: string | null
+          id?: string
+          objective?: string | null
+          pillar?: string | null
+          pinned_comment?: string | null
+          position?: number | null
+          project_id?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          script?: string | null
+          status?: string
+          story_sequence?: Json | null
+          title: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          campaign_id?: string | null
+          caption_long?: string | null
+          caption_medium?: string | null
+          caption_short?: string | null
+          carousel_slides?: Json | null
+          checklist?: Json | null
+          cover_suggestion?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cta?: string | null
+          format?: string
+          hashtags?: string[] | null
+          hook?: string | null
+          id?: string
+          objective?: string | null
+          pillar?: string | null
+          pinned_comment?: string | null
+          position?: number | null
+          project_id?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          script?: string | null
+          status?: string
+          story_sequence?: Json | null
+          title?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      instagram_profile_config: {
+        Row: {
+          autopilot_enabled: boolean | null
+          avatar_url: string | null
+          bio_current: string | null
+          bio_suggestions: Json | null
+          brand_voice: string | null
+          competitors: Json | null
+          content_pillars: Json | null
+          created_at: string | null
+          id: string
+          last_analysis_at: string | null
+          niche: string | null
+          posting_frequency: Json | null
+          profile_analysis: Json | null
+          profile_handle: string | null
+          profile_name: string | null
+          profile_score: number | null
+          strategic_briefing: Json | null
+          sub_niche: string | null
+          target_audience: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          autopilot_enabled?: boolean | null
+          avatar_url?: string | null
+          bio_current?: string | null
+          bio_suggestions?: Json | null
+          brand_voice?: string | null
+          competitors?: Json | null
+          content_pillars?: Json | null
+          created_at?: string | null
+          id?: string
+          last_analysis_at?: string | null
+          niche?: string | null
+          posting_frequency?: Json | null
+          profile_analysis?: Json | null
+          profile_handle?: string | null
+          profile_name?: string | null
+          profile_score?: number | null
+          strategic_briefing?: Json | null
+          sub_niche?: string | null
+          target_audience?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          autopilot_enabled?: boolean | null
+          avatar_url?: string | null
+          bio_current?: string | null
+          bio_suggestions?: Json | null
+          brand_voice?: string | null
+          competitors?: Json | null
+          content_pillars?: Json | null
+          created_at?: string | null
+          id?: string
+          last_analysis_at?: string | null
+          niche?: string | null
+          posting_frequency?: Json | null
+          profile_analysis?: Json | null
+          profile_handle?: string | null
+          profile_name?: string | null
+          profile_score?: number | null
+          strategic_briefing?: Json | null
+          sub_niche?: string | null
+          target_audience?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      instagram_profile_snapshots: {
+        Row: {
+          avg_engagement: number | null
+          avg_reach: number | null
+          best_posting_time: string | null
+          created_at: string | null
+          followers: number | null
+          following: number | null
+          id: string
+          posts_count: number | null
+          snapshot_date: string | null
+          workspace_id: string
+        }
+        Insert: {
+          avg_engagement?: number | null
+          avg_reach?: number | null
+          best_posting_time?: string | null
+          created_at?: string | null
+          followers?: number | null
+          following?: number | null
+          id?: string
+          posts_count?: number | null
+          snapshot_date?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          avg_engagement?: number | null
+          avg_reach?: number | null
+          best_posting_time?: string | null
+          created_at?: string | null
+          followers?: number | null
+          following?: number | null
+          id?: string
+          posts_count?: number | null
+          snapshot_date?: string | null
           workspace_id?: string
         }
         Relationships: []

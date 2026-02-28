@@ -119,6 +119,7 @@ import MkSettingsPage from "./pages/marketing-hub/MkSettingsPage";
 import MkInstagramPage from "./pages/marketing-hub/MkInstagramPage";
 import MkTemplatesPage from "./pages/marketing-hub/MkTemplatesPage";
 import MkIdeasPage from "./pages/marketing-hub/MkIdeasPage";
+import InstagramEnginePage from "./pages/InstagramEnginePage";
 
 const queryClient = new QueryClient();
 
@@ -255,6 +256,7 @@ function AppRoutes() {
       <Route path="/m/relatorios" element={<ProtectedRoute><MkReportsPage /></ProtectedRoute>} />
       <Route path="/m/automacoes" element={<ProtectedRoute><MkAutomationsPage /></ProtectedRoute>} />
       <Route path="/m/configuracoes" element={<ProtectedRoute><MkSettingsPage /></ProtectedRoute>} />
+      <Route path="/instagram-engine" element={<ProtectedRoute><InstagramEnginePage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

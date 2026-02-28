@@ -31,6 +31,7 @@ const mainMenuItems: MenuItem[] = [
       { name: "Studio Criativo", href: "/marketing/studio", icon: "palette" },
     ],
   },
+  { name: "Instagram Engine", href: "/instagram-engine", icon: "photo_camera" },
   { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
   { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
   { name: "Clientes", href: "/clientes", icon: "groups" },
