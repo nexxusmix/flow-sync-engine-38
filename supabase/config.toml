@@ -202,3 +202,6 @@ verify_jwt = false
 [functions.detect-duplicate-tasks]
 verify_jwt = false
 
+[functions.suggest-task-priorities]
+verify_jwt = false
+

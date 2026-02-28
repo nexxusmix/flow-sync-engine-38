@@ -1,92 +1,91 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Authorization header missing");
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error("Not authenticated");
 
-    const { task_ids } = await req.json();
-
-    // Fetch specified tasks
-    let query = supabase
+    const { data: tasks, error } = await supabase
       .from("tasks")
-      .select("id, title, description, status, category, tags, due_date, created_at, priority")
+      .select("id, title, description, category, status, priority, due_date, tags")
       .eq("user_id", user.id)
-      .neq("status", "done");
+      .neq("status", "done")
+      .order("created_at", { ascending: false })
+      .limit(80);
 
-    if (task_ids?.length) {
-      query = query.in("id", task_ids);
-    } else {
-      query = query.in("priority", ["normal", "low"]);
-    }
-
-    const { data: tasks, error } = await query;
     if (error) throw error;
     if (!tasks || tasks.length === 0) {
       return new Response(
-        JSON.stringify({ suggestions: [], message: "Nenhuma tarefa para priorizar." }),
+        JSON.stringify({ suggestions: [], message: "Sem tarefas pendentes." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+    const taskList = tasks
+      .slice(0, 60)
+      .map(t => `ID:${t.id} | "${t.title}" | prio:${t.priority} | status:${t.status} | prazo:${t.due_date || "sem"} | cat:${t.category}`)
+      .join("\n");
 
-    const prompt = `Analise as seguintes tarefas e sugira prioridade para cada uma. Use APENAS: urgent, high, normal, low.
+    const prompt = `Analise estas tarefas e sugira MUDANÇAS de prioridade. Data atual: ${today}.
+
+Prioridades: urgent, high, normal, low.
 
 Critérios:
-- urgent: vence hoje ou está atrasada, ou bloqueante
-- high: vence em 3 dias, ou é importante para o projeto
-- normal: vence em 7+ dias, rotineira
-- low: sem prazo, pouco impacto
+- Tarefas com prazo próximo (< 3 dias) devem ser urgent ou high
+- Tarefas atrasadas devem ser urgent
+- Tarefas sem prazo e sem importância clara: low
+- Só sugira MUDANÇAS (onde a prioridade atual parece errada)
+- Máximo 10 sugestões
 
-Hoje: ${todayStr}
+TAREFAS:
+${taskList}
 
-Tarefas:
-${tasks.map(t => `- ID: ${t.id} | Título: "${t.title}" | Prazo: ${t.due_date || "sem prazo"} | Categoria: ${t.category} | Prioridade atual: ${t.priority} | Criada: ${t.created_at.split("T")[0]}`).join("\n")}
+Responda SOMENTE JSON (sem markdown):
+{"suggestions":[{"id":"uuid","priority":"urgent|high|normal|low","reason":"motivo curto (max 12 palavras)"}]}
+Se nenhuma mudança: {"suggestions":[]}`;
 
-Responda SOMENTE em JSON array: [{"id": "...", "priority": "...", "reason": "explicação curta em português"}]`;
+    const aiResult = await chatCompletion({
+      model: "google/gemini-2.5-flash-lite",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+      max_tokens: 1500,
+    });
 
-    const geminiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!geminiKey) throw new Error("GEMINI_API_KEY not configured");
+    const rawText = aiResult.choices?.[0]?.message?.content || "{}";
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    let result = { suggestions: [] as any[] };
+    try {
+      result = jsonMatch ? JSON.parse(jsonMatch[0]) : { suggestions: [] };
+    } catch {
+      result = { suggestions: [] };
+    }
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 1000, temperature: 0.3 },
-        }),
-      }
-    );
-
-    const geminiData = await geminiRes.json();
-    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-
-    // Extract JSON from markdown code blocks if present
-    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-    const suggestions = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    // Filter only valid task IDs
+    const taskIds = new Set(tasks.map(t => t.id));
+    result.suggestions = (result.suggestions || []).filter((s: any) => taskIds.has(s.id));
 
     return new Response(
-      JSON.stringify({ suggestions }),
+      JSON.stringify(result),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    console.error("suggest-task-priorities error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
