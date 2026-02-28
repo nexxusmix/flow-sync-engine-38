@@ -1,34 +1,36 @@
 
 
-## Analysis
+## Auditoria — Executive Dashboard
 
-The `TaskAIPreviewPanel` and related files are production-ready. After reviewing all 4 key files, I found only minor polish items remaining:
+### Bugs encontrados
 
-### Issues Found
+1. **Heatmap com cores quebradas** — `hsla(var(--primary), 0.5)` não funciona. CSS variables no formato `210 80% 50%` precisam de `hsl(var(--primary) / alpha)` com a sintaxe moderna, não `hsla()`.
 
-1. **No scroll-to-error on validation** — When a task with empty title is below the scroll fold, the user sees no visual feedback. Should auto-scroll to the first error.
+2. **Limite de 1000 rows do banco** — Todas as queries usam `.select('*')` sem `.limit()`. Tabelas como `tasks`, `revenues` e `expenses` podem ultrapassar 1000 registros e retornar dados truncados silenciosamente, gerando métricas incorretas.
 
-2. **No keyboard shortcuts** — Missing `Enter` to confirm and `Escape` to go back from preview.
+3. **Sem estado de erro** — Se qualquer query falhar, `data` fica `undefined` e o dashboard exibe spinner infinito. Precisa de fallback visual.
 
-3. **Category chip click doesn't filter/toggle** — The summary chips are display-only. Clicking a category chip could toggle selection of all tasks in that category.
+4. **Productivity score instável** — Quando não há mês anterior (`revenuePrevMonth = 0`), `revenueDelta` fica 0 e 30 pontos do score são zerados. A fórmula penaliza indevidamente quando falta histórico.
 
-4. **Regenerate doesn't preserve guidance prompt** — When clicking "Regenerar", the guidance prompt and default category/column from step 1 are used, but the user can't see or adjust them from the preview step.
+5. **Sem auto-refresh** — `staleTime: 30_000` mas sem `refetchInterval`, então o dashboard não atualiza sozinho enquanto o usuário observa.
 
-5. **Toast on success doesn't show task count by category** — After confirming, only shows "X tarefas criadas" without breakdown.
+6. **"A Receber" mistura pendente e atrasado** — Valores overdue e pending são somados sem distinção visual de urgência.
 
-### Proposed Changes
+### Correções
 
-**`TaskAIPreviewPanel.tsx`:**
-- Add `useRef` to scroll container and auto-scroll to first validation error
-- Add keyboard listener: `Enter` → confirm, `Escape` → back (with edit-loss check)
-- Make category summary chips clickable to toggle-select tasks of that category
-- Add subtle animation on task removal (opacity fade)
+**`src/hooks/useExecutiveDashboard.ts`:**
+- Adicionar `.limit(5000)` em todas as queries para evitar truncamento silencioso
+- Separar `pendingRevenue` e `overdueRevenue` como métricas distintas
+- Ajustar fórmula do `productivityScore`: quando não há dado histórico, usar peso proporcional aos dados disponíveis
+- Adicionar `refetchInterval: 60_000` para auto-refresh a cada minuto
 
-**`TasksPage.tsx`:**
-- Improve success toast to show category breakdown: "5 tarefas criadas (3 Operação, 2 Pessoal)"
-- Add `Escape` handler to close AI sheet when in input step
+**`src/pages/ExecutiveDashboardPage.tsx`:**
+- Corrigir heatmap: `hsl(var(--primary) / ${opacity})` com sintaxe CSS moderna
+- Adicionar estado de erro com botão de retry
+- Separar card "A Receber" em pendente vs atrasado (com cor de alerta para overdue)
+- Adicionar indicador de "última atualização" no header
 
-### Files
-- `src/components/tasks/TaskAIPreviewPanel.tsx`
-- `src/pages/TasksPage.tsx`
+### Arquivos
+- `src/hooks/useExecutiveDashboard.ts`
+- `src/pages/ExecutiveDashboardPage.tsx`
 
