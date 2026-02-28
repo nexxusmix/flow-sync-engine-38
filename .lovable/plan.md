@@ -1,67 +1,26 @@
 
 
-## Plano: Cirurgia de Hierarquia — Header do Projeto
+## Plano: Corrigir cliques no dropdown Ferramentas
 
-### Diagnóstico
-
-O header do projeto tem o mesmo problema da tela de tarefas: 8 botões primários competindo. Além disso, 3 botões de IA se sobrepõem:
-
-1. **Sincronizar Financeiro** → chama `sync-project-finances` (só finanças)
-2. **Auto Update IA** → chama `auto-update-project` (já inclui sync financeiro + tarefas + calendário)
-3. **Atualizar com IA** → abre `ProjectCommandCenter` (chat livre com IA)
-
-"Sincronizar Financeiro" é redundante — já está dentro do "Auto Update IA". E os nomes são confusos entre si.
+### Problema
+Cada componente (TaskAnalysisPanel, TaskExecutionGuide, etc.) renderiza seu próprio `<Button>` internamente. Ao colocá-los dentro de `<DropdownMenuItem asChild><div>`, o dropdown fecha antes do onClick do Button disparar. Resultado: nada acontece.
 
 ### Solução
+Substituir os componentes embutidos por `<DropdownMenuItem onClick={...}>` simples que controlam estado no pai (`TasksPage`). Os componentes são renderizados fora do dropdown e recebem uma prop `open`/`onOpenChange` para controle externo.
 
-**1. Eliminar "Sincronizar Financeiro" do header** — redundante, já vive dentro do Auto Update e no menu ⚙.
+### Mudanças em `TasksPage.tsx`
+1. Adicionar estados para cada ferramenta: `showAnalysis`, `showPrioritySuggestions`, `showDeadlineSuggestions`, `showDuplicates`, `showExecutionGuide`
+2. No dropdown Ferramentas, trocar os componentes por DropdownMenuItems simples com onClick que setam esses estados
+3. Renderizar os componentes fora do dropdown, passando prop de controle externo
 
-**2. Unificar em 2 linhas limpas no header (`ProjectHeader.tsx`)**
+### Mudanças em cada componente (5 arquivos)
+Cada componente ganha props opcionais `externalOpen?: boolean` e `onExternalOpenChange?: (open: boolean) => void`. Quando `externalOpen` muda para `true`, dispara a ação automaticamente (runAnalysis, fetchSuggestions, etc.). O Button trigger original continua funcionando para uso standalone.
 
-Ações primárias (visíveis):
-- `🔵 Enviar Material` (CTA primário, faz sentido como ação frequente)
-- `✨ Auto Update IA` → renomear para **"Atualizar Projeto ✨"** (botão outline com destaque primary, hero da IA)
-- `🟢 Enviar ao Cliente` (ação de entrega, verde)
-- `Portal do Cliente` (outline)
-
-Ações secundárias → **botão ⚙ Ferramentas** (dropdown):
-- Sincronizar Financeiro (mantém como opção manual para power users)
-- Comando IA (antigo "Atualizar com IA" — abre o Command Center)
-- Exportar PDF
-- Copiar Link
-- Gerar Cliente + Pipeline (já está no ProjectActionsMenu)
-
-**3. Renomear para eliminar confusão**
-- "Auto Update IA" → **"Atualizar Projeto"** (com ícone ✨) — botão principal
-- "Atualizar com IA" → **"Comando IA"** — dentro do dropdown Ferramentas
-- "Sincronizar Financeiro" → mantém label, dentro do dropdown
-
-**4. Melhorar feedback do Auto Update (`ProjectHeader.tsx`)**
-- Após execução, mostrar toast detalhado com as ações realizadas (já retorna `actions[]`)
-- Listar cada ação: ✓ Financeiro sincronizado, ✓ 4 tarefas criadas, ✓ Entrega agendada
-
-**5. Melhorar edge function (`auto-update-project/index.ts`)**
-- Adicionar Action 4: atualizar `health_score` após todas as ações (chama `calculate_project_health_score`)
-- Adicionar Action 5: se projeto não tem `due_date`, sugerir com IA baseado no template e criar
-- Tratar melhor o caso de tasks — hoje só cria se não existe NENHUMA task do user (deveria checar tasks do projeto via `project_id`)
-
-### Arquivos impactados
-- `src/components/projects/detail/ProjectHeader.tsx` — reestruturar toolbar, agrupar em dropdown Ferramentas
-- `supabase/functions/auto-update-project/index.ts` — adicionar health_score refresh, melhorar query de tasks, sugerir due_date
-
-### Resultado visual esperado
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  [Banner]                                                    │
-│                                                              │
-│  [📤 Enviar Material]  [✨ Atualizar Projeto]                │
-│  [📨 Enviar ao Cliente]  [🌐 Portal]  [⚙ Ferramentas ▾]    │
-│                                                              │
-│  active  filme_institucional  Briefing                       │
-│  🖼 Fazenda da Matta // Vídeo Institucional                  │
-│     Amanda  Fazenda da Matta                                 │
-│                                                              │
-│  💰 R$ 2.200  │  📊 100%  │  📅 26 fev  │  👤 Matheus      │
-└──────────────────────────────────────────────────────────────┘
-```
+**Arquivos:**
+- `src/pages/TasksPage.tsx` — dropdown com onClick simples + estados + renderização externa
+- `src/components/tasks/TaskAnalysisPanel.tsx` — add `externalOpen` prop
+- `src/components/tasks/TaskExecutionGuide.tsx` — add `externalOpen` prop
+- `src/components/tasks/TaskAIPrioritySuggestions.tsx` — add `externalOpen` prop
+- `src/components/tasks/TaskAIDeadlineSuggestions.tsx` — add `externalOpen` prop
+- `src/components/tasks/TaskDuplicateDetection.tsx` — add `externalOpen` prop
 
