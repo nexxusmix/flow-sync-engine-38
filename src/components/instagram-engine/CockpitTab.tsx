@@ -7,6 +7,7 @@ import { Loader2, AlertTriangle, CheckCircle2, Clock, TrendingUp, Zap } from 'lu
 import { formatDistanceToNow, differenceInDays, addDays, format, isAfter, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { InstagramMetaConnect } from './InstagramMetaConnect';
 
 export function CockpitTab() {
   const { data: posts, isLoading: loadingPosts } = useInstagramPosts();
@@ -57,6 +58,9 @@ export function CockpitTab() {
 
   return (
     <div className="space-y-6">
+      {/* Meta Graph API Connection & Real Metrics */}
+      <InstagramMetaConnect />
+
       {/* Profile Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatCard label="Seguidores" value={latestSnapshot?.followers?.toLocaleString() || '—'} icon="group" />
