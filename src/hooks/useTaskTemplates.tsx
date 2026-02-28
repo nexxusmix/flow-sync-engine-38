@@ -45,7 +45,6 @@ export function useTaskTemplates() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['task-templates'] });
-      toast.success('Template criado!');
     },
     onError: () => toast.error('Erro ao criar template'),
   });
@@ -62,5 +61,42 @@ export function useTaskTemplates() {
     onError: () => toast.error('Erro ao excluir template'),
   });
 
-  return { templates, isLoading, createTemplate, deleteTemplate };
+  const generateTemplatesAI = useMutation({
+    mutationFn: async ({ prompt, existingTasks }: { prompt?: string; existingTasks?: any[] }) => {
+      const { data, error } = await supabase.functions.invoke('generate-task-templates', {
+        body: { prompt, existingTasks },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const templates = data.templates || [];
+      
+      // Save each generated template
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Not authenticated');
+
+      for (const t of templates) {
+        await supabase
+          .from('task_templates')
+          .insert([{
+            title: t.title,
+            description: t.description,
+            category: t.category,
+            priority: t.priority,
+            tags: t.tags,
+            checklist_items: t.checklist_items,
+            user_id: userData.user.id,
+          }] as any);
+      }
+
+      return templates;
+    },
+    onSuccess: (templates) => {
+      qc.invalidateQueries({ queryKey: ['task-templates'] });
+      toast.success(`${templates.length} templates gerados com IA!`);
+    },
+    onError: (err: Error) => toast.error(err.message || 'Erro ao gerar templates'),
+  });
+
+  return { templates, isLoading, createTemplate, deleteTemplate, generateTemplatesAI };
 }
