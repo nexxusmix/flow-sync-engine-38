@@ -217,18 +217,19 @@ export function useTasksUnified() {
   });
 
   const createTasksFromAIMutation = useMutation({
-    mutationFn: async (aiTasks: Array<Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'position' | 'completed_at'>>) => {
+    mutationFn: async (aiTasks: Array<Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'completed_at'> & { position?: number }>) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Not authenticated');
       const toInsert = aiTasks.map((t, i) => ({
         user_id: userData.user!.id,
-        title: t.title,
-        description: t.description || null,
+        title: (t.title || '').trim(),
+        description: t.description?.trim() || null,
         status: t.status || 'backlog',
         category: t.category || 'operacao',
-        tags: t.tags || [],
+        tags: (t.tags || []).map(tag => tag.trim()).filter(Boolean),
         due_date: t.due_date || null,
-        position: i,
+        priority: (t as any).priority || 'normal',
+        position: typeof t.position === 'number' ? t.position : i,
       }));
       const { data, error } = await supabase.from('tasks').insert(toInsert).select();
       if (error) throw error;

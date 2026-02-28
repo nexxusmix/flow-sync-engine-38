@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAX_TASKS = 50;
+
 interface TaskInput {
   rawText: string;
   extractedTexts?: string[];
@@ -58,12 +60,14 @@ Sua função é transformar texto livre em tarefas estruturadas.
 
 REGRAS:
 1. Cada linha ou item do texto deve virar uma tarefa
-2. Extraia o título principal da tarefa
+2. Extraia o título principal da tarefa (máximo 120 caracteres)
 3. Se houver detalhes, coloque em description
 4. Identifique categorias: "pessoal" (coisas de casa, família, saúde), "operacao" (trabalho, negócios), "projeto" (projetos específicos)
-5. Extraia tags relevantes (palavras-chave, contexto)
+5. Extraia tags relevantes (palavras-chave, contexto) — máximo 5 tags por tarefa
 6. Se houver data mencionada, extraia no formato YYYY-MM-DD
 7. Status padrão é o informado pelo usuário
+8. Máximo de ${MAX_TASKS} tarefas por geração
+9. NÃO gere tarefas com título vazio ou duplicado
 ${guidancePrompt ? `\nINSTRUÇÃO ADICIONAL DO USUÁRIO:\n${guidancePrompt}` : ''}
 
 Retorne as tarefas usando a função extract_tasks.`;
@@ -75,7 +79,6 @@ Status/Coluna padrão: ${defaultColumn}
 TEXTO:
 ${combinedText}`;
 
-    // Define tool for structured extraction
     const tools = [
       {
         type: 'function',
@@ -107,7 +110,6 @@ ${combinedText}`;
       },
     ];
 
-    // Build messages
     const messages: any[] = [
       { role: 'system', content: systemPrompt },
     ];
@@ -134,18 +136,15 @@ ${combinedText}`;
       tool_choice: { type: 'function', function: { name: 'extract_tasks' } },
     });
 
-    // Extract tasks from tool call response
     let tasks: GeneratedTask[] = [];
     const toolCalls = aiResponse.choices?.[0]?.message?.tool_calls;
     const content = aiResponse.choices?.[0]?.message?.content;
 
     if (toolCalls && toolCalls.length > 0) {
-      // Native tool calling worked
       const args = JSON.parse(toolCalls[0].function.arguments);
       tasks = args.tasks || [];
       console.log('[generate-tasks] Extracted via tool calling');
     } else if (content) {
-      // Fallback: parse from content (some providers may not support tool calling)
       let jsonStr = content.trim();
       if (jsonStr.startsWith('```json')) {
         jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/```\s*$/, '');
@@ -163,27 +162,50 @@ ${combinedText}`;
       throw new Error('Empty response from AI');
     }
 
-    // Validate and sanitize
-    const validatedTasks = tasks.map((task, index) => ({
-      title: task.title || `Tarefa ${index + 1}`,
-      description: task.description || null,
-      category: ['pessoal', 'operacao', 'projeto'].includes(task.category) ? task.category : defaultCategory,
-      tags: Array.isArray(task.tags) ? task.tags.filter(t => typeof t === 'string') : [],
-      due_date: task.due_date && /^\d{4}-\d{2}-\d{2}$/.test(task.due_date) ? task.due_date : null,
-      status: ['backlog', 'week', 'today', 'done'].includes(task.status) ? task.status : defaultColumn,
-    }));
+    // Sanitize and validate
+    const warnings: string[] = [];
+    const seenTitles = new Set<string>();
 
-    console.log(`Generated ${validatedTasks.length} tasks`);
+    const validatedTasks = tasks
+      .map((task, index) => ({
+        title: (task.title || '').trim().substring(0, 120),
+        description: task.description?.trim() || null,
+        category: ['pessoal', 'operacao', 'projeto'].includes(task.category) ? task.category : defaultCategory,
+        tags: Array.isArray(task.tags)
+          ? [...new Set(task.tags.map(t => typeof t === 'string' ? t.trim() : '').filter(Boolean))].slice(0, 5)
+          : [],
+        due_date: task.due_date && /^\d{4}-\d{2}-\d{2}$/.test(task.due_date) ? task.due_date : null,
+        status: ['backlog', 'week', 'today', 'done'].includes(task.status) ? task.status : defaultColumn,
+      }))
+      .filter((task, index) => {
+        if (!task.title) {
+          warnings.push(`Item ${index + 1} descartado: título vazio`);
+          return false;
+        }
+        const key = task.title.toLowerCase();
+        if (seenTitles.has(key)) {
+          warnings.push(`Item "${task.title}" descartado: duplicado`);
+          return false;
+        }
+        seenTitles.add(key);
+        return true;
+      })
+      .slice(0, MAX_TASKS);
+
+    if (tasks.length > MAX_TASKS) {
+      warnings.push(`Limitado a ${MAX_TASKS} tarefas (${tasks.length} geradas)`);
+    }
+
+    console.log(`Generated ${validatedTasks.length} tasks, ${warnings.length} warnings`);
 
     return new Response(
-      JSON.stringify({ tasks: validatedTasks }),
+      JSON.stringify({ tasks: validatedTasks, warnings }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error generating tasks:', error);
     
-    // Detect rate limit / payment errors
     const msg = error.message || '';
     const isRateLimit = msg.includes('429') || msg.toLowerCase().includes('rate');
     const isPayment = msg.includes('402') || msg.toLowerCase().includes('quota');
