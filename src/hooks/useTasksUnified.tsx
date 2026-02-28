@@ -103,7 +103,30 @@ export function useTasksUnified() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Subscribe to automation action_log entries for toast notifications
+    const automationChannel = supabase
+      .channel('task-automation-log')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'action_log' },
+        (payload) => {
+          const log = payload.new as any;
+          if (log.action_type?.startsWith('automation:') && log.after_snapshot) {
+            const snap = log.after_snapshot as any;
+            const ruleName = snap?.rule_name || 'Automação';
+            toast.info(`⚡ ${ruleName}`, {
+              description: `Regra executada automaticamente na tarefa`,
+              duration: 4000,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(automationChannel);
+    };
   }, [qc]);
 
   // ── Mutations (optimistic) ─────────────────────────────
