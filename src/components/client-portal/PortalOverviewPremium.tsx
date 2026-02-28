@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { ProjectInfo, ProjectStage, PortalDeliverable } from "@/hooks/useClientPortalEnhanced";
+import { PortalIntelligenceBlock } from "@/components/client-portal/PortalIntelligenceBlock";
 
 interface PortalOverviewPremiumProps {
   project: ProjectInfo;
@@ -214,6 +215,9 @@ function PortalOverviewPremiumComponent({
 
   return (
     <div className="space-y-6">
+      {/* Predictive Intelligence - Read Only */}
+      <PortalIntelligenceBlock project={project} stages={stages} />
+
       {/* Progress Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-5">

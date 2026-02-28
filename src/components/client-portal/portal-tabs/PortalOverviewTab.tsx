@@ -29,6 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { ProjectInfo, ProjectStage } from "@/hooks/useClientPortalEnhanced";
+import { PortalIntelligenceBlock } from "@/components/client-portal/PortalIntelligenceBlock";
 
 interface PortalOverviewTabProps {
   project: ProjectInfo;
@@ -85,6 +86,9 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
 
   return (
     <div className="space-y-6">
+      {/* Predictive Intelligence - Read Only */}
+      <PortalIntelligenceBlock project={project} stages={stages} />
+
       {/* Top Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div className="glass-card rounded-xl p-4">
