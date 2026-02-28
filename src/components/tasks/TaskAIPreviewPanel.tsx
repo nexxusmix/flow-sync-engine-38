@@ -204,6 +204,8 @@ export function TaskAIPreviewPanel({
 }: TaskAIPreviewPanelProps) {
   const prefix = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevTasksRef = useRef(initialTasks);
+  const [regenerationKey, setRegenerationKey] = useState(0);
   const [previewTasks, setPreviewTasks] = useState<PreviewTask[]>(
     initialTasks.map((t, i) => ({ ...t, selected: true, _id: `${prefix}-${i}` }))
   );
@@ -212,13 +214,24 @@ export function TaskAIPreviewPanel({
   const [confirmAction, setConfirmAction] = useState<'back' | 'regenerate' | null>(null);
   const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
 
-  // Sync when parent regenerates tasks
+  // Sync when parent provides new tasks (regenerate or first load)
+  // Use deep comparison on length + first title to detect actual changes
   useEffect(() => {
-    setPreviewTasks(initialTasks.map((t, i) => ({ ...t, selected: true, _id: `${prefix}-${i}` })));
-    setEditingId(null);
-    setHasEdited(false);
-    setValidationErrors(new Set());
-  }, [initialTasks, prefix]);
+    const changed = initialTasks !== prevTasksRef.current || 
+      initialTasks.length !== prevTasksRef.current.length ||
+      initialTasks[0]?.title !== prevTasksRef.current[0]?.title;
+    
+    if (changed) {
+      prevTasksRef.current = initialTasks;
+      setRegenerationKey(k => k + 1);
+      setPreviewTasks(initialTasks.map((t, i) => ({ ...t, selected: true, _id: `${prefix}-regen${regenerationKey}-${i}` })));
+      setEditingId(null);
+      setHasEdited(false);
+      setValidationErrors(new Set());
+      // Scroll to top on regeneration
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [initialTasks, prefix, regenerationKey]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -281,7 +294,6 @@ export function TaskAIPreviewPanel({
     });
     if (errors.size > 0) {
       setValidationErrors(errors);
-      // Auto-scroll to first error
       requestAnimationFrame(() => {
         const firstErrorId = Array.from(errors)[0];
         const el = scrollRef.current?.querySelector(`[data-task-id="${firstErrorId}"]`);
@@ -293,7 +305,10 @@ export function TaskAIPreviewPanel({
 
     const selected = previewTasks
       .filter(t => t.selected)
-      .map(({ selected, _id, ...rest }, index) => ({ ...rest, position: index }));
+      .map(({ selected: _sel, _id, ...rest }, index) => ({
+        ...rest,
+        position: index,
+      }));
     if (selected.length === 0) return;
     onConfirm(selected);
   }, [previewTasks, isConfirming, isRegenerating, onConfirm]);
@@ -357,7 +372,7 @@ export function TaskAIPreviewPanel({
   const getColumnLabel = (key: string) => TASK_COLUMNS.find(c => c.key === key)?.title || key;
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${isConfirming ? 'pointer-events-none opacity-70' : ''}`}>
       {/* Header with summary */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -415,13 +430,24 @@ export function TaskAIPreviewPanel({
         <SortableContext items={previewTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
           <div ref={scrollRef} className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
             {previewTasks.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
-                <PackageOpen className="w-8 h-8" />
-                <p className="text-sm">Nenhuma tarefa na lista.</p>
-                <Button variant="outline" size="sm" onClick={() => handleBackOrRegenerate('regenerate')} disabled={isRegenerating} className="gap-1.5 mt-1">
-                  {isRegenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                  Gerar novamente
-                </Button>
+              <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
+                  <PackageOpen className="w-6 h-6" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-medium text-foreground">Nenhuma tarefa na prévia</p>
+                  <p className="text-xs">Todas foram removidas. Gere novamente ou volte para ajustar o prompt.</p>
+                </div>
+                <div className="flex gap-2 mt-1">
+                  <Button variant="outline" size="sm" onClick={() => handleBackOrRegenerate('back')} className="gap-1.5 text-xs">
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    Voltar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleBackOrRegenerate('regenerate')} disabled={isRegenerating} className="gap-1.5 text-xs">
+                    {isRegenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                    Gerar novamente
+                  </Button>
+                </div>
               </div>
             ) : previewTasks.map((task, index) => (
               <SortableTaskCard
