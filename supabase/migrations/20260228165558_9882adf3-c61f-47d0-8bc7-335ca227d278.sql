@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN archived_at timestamptz DEFAULT NULL;

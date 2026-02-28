@@ -55,6 +55,7 @@ async function fetchTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
+    .is('archived_at', null)
     .order('position', { ascending: true })
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -422,6 +423,47 @@ export function useTasksUnified() {
     return days;
   }, [tasks, today]);
 
+  // ── Bulk archive done ───────────────────────────────────
+  const bulkArchiveDoneMutation = useMutation({
+    mutationFn: async () => {
+      const doneTasks = tasks.filter(t => t.status === 'done');
+      if (doneTasks.length === 0) throw new Error('Nenhuma tarefa concluída');
+      const ids = doneTasks.map(t => t.id);
+      const { error } = await supabase
+        .from('tasks')
+        .update({ archived_at: new Date().toISOString() } as any)
+        .in('id', ids);
+      if (error) throw error;
+      return ids;
+    },
+    onSuccess: (ids) => {
+      qc.setQueryData<Task[]>(['tasks'], (old) =>
+        old ? old.filter(t => !ids.includes(t.id)) : old
+      );
+      toast.success(`${ids.length} tarefa(s) arquivada(s)`);
+    },
+    onError: () => toast.error('Erro ao arquivar tarefas'),
+  });
+
+  // ── Bulk delete done ──────────────────────────────────
+  const bulkDeleteDoneMutation = useMutation({
+    mutationFn: async () => {
+      const doneTasks = tasks.filter(t => t.status === 'done');
+      if (doneTasks.length === 0) throw new Error('Nenhuma tarefa concluída');
+      const ids = doneTasks.map(t => t.id);
+      const { error } = await supabase.from('tasks').delete().in('id', ids);
+      if (error) throw error;
+      return ids;
+    },
+    onSuccess: (ids) => {
+      qc.setQueryData<Task[]>(['tasks'], (old) =>
+        old ? old.filter(t => !ids.includes(t.id)) : old
+      );
+      toast.success(`${ids.length} tarefa(s) excluída(s) permanentemente`);
+    },
+    onError: () => toast.error('Erro ao excluir tarefas'),
+  });
+
   return {
     tasks,
     isLoading,
@@ -435,7 +477,11 @@ export function useTasksUnified() {
     toggleComplete,
     moveTask,
     createTasksFromAI: createTasksFromAIMutation.mutateAsync,
+    bulkArchiveDone: bulkArchiveDoneMutation.mutateAsync,
+    bulkDeleteDone: bulkDeleteDoneMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isGenerating: createTasksFromAIMutation.isPending,
+    isArchiving: bulkArchiveDoneMutation.isPending,
+    isDeleting: bulkDeleteDoneMutation.isPending,
   };
 }

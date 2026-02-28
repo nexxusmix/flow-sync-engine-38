@@ -29,7 +29,7 @@ import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
   Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain, BarChart3, Zap,
-  Settings2, ChevronRight, SlidersHorizontal, ChevronDown,
+  Settings2, ChevronRight, SlidersHorizontal, ChevronDown, Archive, Trash2, Lightbulb,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -47,6 +47,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { DailyPlanDialog } from "@/components/tasks/DailyPlanDialog";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
 } from "@/components/ui/sheet";
@@ -84,6 +89,7 @@ export default function TasksPage() {
     tasks, isLoading, isCreating, isGenerating, stats,
     createTask, updateTask, toggleComplete, deleteTask, moveTask,
     createTasksFromAI, timelineItems,
+    bulkArchiveDone, bulkDeleteDone, isArchiving, isDeleting,
   } = useTasksUnified();
 
   const { isExporting, exportTasks } = useExportPdf();
@@ -102,6 +108,8 @@ export default function TasksPage() {
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showExecutionGuide, setShowExecutionGuide] = useState(false);
+  const [showDailyPlan, setShowDailyPlan] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPrioritySuggestions, setShowPrioritySuggestions] = useState(false);
   const [showDeadlineSuggestions, setShowDeadlineSuggestions] = useState(false);
   const [showDuplicates, setShowDuplicates] = useState(false);
@@ -437,6 +445,57 @@ export default function TasksPage() {
                 <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs rounded-lg" onClick={() => setIsAutomationOpen(true)}>
                   <Zap className="w-3.5 h-3.5" /> Automações
                 </Button>
+
+                <div className="w-px h-5 bg-border mx-1" />
+
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-8 gap-1.5 text-xs rounded-lg"
+                  onClick={() => setShowDailyPlan(true)}
+                >
+                  <Lightbulb className="w-3.5 h-3.5" /> Plano do Dia
+                </Button>
+                <Button
+                  variant="ghost" size="sm"
+                  className="h-8 gap-1.5 text-xs rounded-lg"
+                  onClick={() => bulkArchiveDone()}
+                  disabled={isArchiving || tasks.filter(t => t.status === 'done').length === 0}
+                >
+                  {isArchiving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Archive className="w-3.5 h-3.5" />}
+                  Arquivar Concluídas
+                </Button>
+                <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost" size="sm"
+                      className="h-8 gap-1.5 text-xs rounded-lg text-destructive hover:text-destructive"
+                      disabled={isDeleting || tasks.filter(t => t.status === 'done').length === 0}
+                    >
+                      {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      Apagar Concluídas
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Apagar tarefas concluídas?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Isso vai excluir permanentemente {tasks.filter(t => t.status === 'done').length} tarefa(s) concluída(s). Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => bulkDeleteDone()}
+                      >
+                        Apagar permanentemente
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <div className="w-px h-5 bg-border mx-1" />
+
                 <Button
                   variant="ghost" size="sm"
                   className="h-8 gap-1.5 text-xs rounded-lg"
@@ -784,6 +843,16 @@ export default function TasksPage() {
         <TaskAIPrioritySuggestions externalOpen={showPrioritySuggestions} onExternalOpenChange={setShowPrioritySuggestions} />
         <TaskAIDeadlineSuggestions externalOpen={showDeadlineSuggestions} onExternalOpenChange={setShowDeadlineSuggestions} />
         <TaskDuplicateDetection externalOpen={showDuplicates} onExternalOpenChange={setShowDuplicates} />
+        <DailyPlanDialog
+          open={showDailyPlan}
+          onOpenChange={setShowDailyPlan}
+          tasks={tasks}
+          onApply={(taskIds) => {
+            taskIds.forEach((id, i) => {
+              updateTask(id, { status: 'today', position: i } as any);
+            });
+          }}
+        />
       </div>
     </DashboardLayout>
   );
