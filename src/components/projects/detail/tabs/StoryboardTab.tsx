@@ -266,8 +266,9 @@ function StoryboardForm({ project, onGenerate, onClose }: {
       deliverableId: deliverableId || undefined,
       sourceFiles: allFileSummaries,
       projectContext: finalContext,
+    }, {
+      onSuccess: () => onClose(),
     });
-    onClose();
   };
 
   return (
