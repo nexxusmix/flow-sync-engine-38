@@ -1,36 +1,46 @@
 
 
-## Auditoria — Executive Dashboard
+## Diagnóstico
 
-### Bugs encontrados
+A geração do Storyboard falha por **timeout da edge function**. A função `generate-storyboard-ai` tenta:
+1. Gerar o storyboard via IA (texto) — ~30s (com fallback para OpenAI quando Gemini dá 429)
+2. Gerar imagens para TODAS as cenas em paralelo via `gemini-3-pro-image-preview` — ~30s+
+3. Upload de cada imagem no storage
 
-1. **Heatmap com cores quebradas** — `hsla(var(--primary), 0.5)` não funciona. CSS variables no formato `210 80% 50%` precisam de `hsl(var(--primary) / alpha)` com a sintaxe moderna, não `hsla()`.
+Isso ultrapassa o limite de 60s das edge functions, causando timeout silencioso. O usuário vê "Processando..." para sempre.
 
-2. **Limite de 1000 rows do banco** — Todas as queries usam `.select('*')` sem `.limit()`. Tabelas como `tasks`, `revenues` e `expenses` podem ultrapassar 1000 registros e retornar dados truncados silenciosamente, gerando métricas incorretas.
+## Plano de Correção
 
-3. **Sem estado de erro** — Se qualquer query falhar, `data` fica `undefined` e o dashboard exibe spinner infinito. Precisa de fallback visual.
+### 1. Separar geração de texto e imagens na edge function
+- Remover a geração de imagens do fluxo principal da `generate-storyboard-ai`
+- A função retorna apenas o JSON de cenas (rápido, ~15-20s)
+- Usar modelo `google/gemini-2.5-flash` (mais rápido e sem quota issues)
 
-4. **Productivity score instável** — Quando não há mês anterior (`revenuePrevMonth = 0`), `revenueDelta` fica 0 e 30 pontos do score são zerados. A fórmula penaliza indevidamente quando falta histórico.
+### 2. Gerar imagens sob demanda
+- Manter o botão existente de gerar imagem individual por cena
+- As imagens são geradas após o storyboard já estar salvo no banco
 
-5. **Sem auto-refresh** — `staleTime: 30_000` mas sem `refetchInterval`, então o dashboard não atualiza sozinho enquanto o usuário observa.
+### 3. Melhorar UX do formulário
+- NÃO fechar o formulário imediatamente ao clicar em gerar
+- Mostrar estado de loading no botão até a mutation completar
+- Fechar o formulário apenas no `onSuccess` da mutation
 
-6. **"A Receber" mistura pendente e atrasado** — Valores overdue e pending são somados sem distinção visual de urgência.
+### 4. Robustez do parsing JSON
+- Adicionar regex fallback para extrair JSON da resposta da IA
+- Tratar respostas truncadas
 
-### Correções
+### Detalhes Técnicos
 
-**`src/hooks/useExecutiveDashboard.ts`:**
-- Adicionar `.limit(5000)` em todas as queries para evitar truncamento silencioso
-- Separar `pendingRevenue` e `overdueRevenue` como métricas distintas
-- Ajustar fórmula do `productivityScore`: quando não há dado histórico, usar peso proporcional aos dados disponíveis
-- Adicionar `refetchInterval: 60_000` para auto-refresh a cada minuto
+**Edge function `generate-storyboard-ai/index.ts`:**
+- Remover função `generateSceneImage` e todo o bloco de geração de imagens em paralelo (linhas 14-78, 230-249)
+- Trocar modelo de `google/gemini-3-flash-preview` para `google/gemini-2.5-flash`
+- Adicionar regex fallback para JSON parsing
+- Retornar apenas `{ scenes }` sem imagens
 
-**`src/pages/ExecutiveDashboardPage.tsx`:**
-- Corrigir heatmap: `hsl(var(--primary) / ${opacity})` com sintaxe CSS moderna
-- Adicionar estado de erro com botão de retry
-- Separar card "A Receber" em pendente vs atrasado (com cor de alerta para overdue)
-- Adicionar indicador de "última atualização" no header
+**`StoryboardTab.tsx` (linhas 258-270):**
+- Remover `onClose()` da linha 270
+- Mover o `onClose()` para o `onSuccess` callback da mutation no hook
 
-### Arquivos
-- `src/hooks/useExecutiveDashboard.ts`
-- `src/pages/ExecutiveDashboardPage.tsx`
+**`useProjectStoryboards.ts` (mutation `onSuccess`):**
+- Aceitar callback `onSuccess` opcional para fechar o formulário
 
