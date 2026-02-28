@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useExecutiveDashboard } from '@/hooks/useExecutiveDashboard';
 import { formatCurrencyBRL } from '@/utils/format';
 import { Card } from '@/components/ui/card';
+import { Tilt3DCard } from '@/components/ui/tilt-3d-card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import {
@@ -538,30 +539,32 @@ function KPICard({ label, value, delta, prevValue, icon: Icon, danger, accent }:
   label: string; value: string; delta?: number; prevValue?: string; icon?: any; danger?: boolean; accent?: boolean;
 }) {
   return (
-    <Card className={`glass-card p-4 ${danger ? 'border-destructive/30' : ''} ${accent ? 'border-primary/30' : ''}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
-          <p className={`text-xl font-semibold ${danger ? 'text-destructive' : 'text-foreground'}`}>{value}</p>
-          {delta !== undefined && (
-            <div className="flex items-center gap-1 mt-1">
-              {delta >= 0 ? (
-                <TrendingUp className="w-3 h-3 text-emerald-500" />
-              ) : (
-                <TrendingDown className="w-3 h-3 text-destructive" />
-              )}
-              <span className={`text-[10px] ${delta >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                {Math.abs(delta).toFixed(1)}%
-              </span>
-              {prevValue && (
-                <span className="text-[10px] text-muted-foreground ml-1">vs {prevValue}</span>
-              )}
-            </div>
-          )}
+    <Tilt3DCard intensity={4}>
+      <Card className={`glass-card p-4 h-full ${danger ? 'border-destructive/30' : ''} ${accent ? 'border-primary/30' : ''}`}>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+            <p className={`text-xl font-semibold ${danger ? 'text-destructive' : 'text-foreground'}`}>{value}</p>
+            {delta !== undefined && (
+              <div className="flex items-center gap-1 mt-1">
+                {delta >= 0 ? (
+                  <TrendingUp className="w-3 h-3 text-emerald-500" />
+                ) : (
+                  <TrendingDown className="w-3 h-3 text-destructive" />
+                )}
+                <span className={`text-[10px] ${delta >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
+                  {Math.abs(delta).toFixed(1)}%
+                </span>
+                {prevValue && (
+                  <span className="text-[10px] text-muted-foreground ml-1">vs {prevValue}</span>
+                )}
+              </div>
+            )}
+          </div>
+          {Icon && <Icon className={`w-5 h-5 ${danger ? 'text-destructive' : 'text-muted-foreground'}`} />}
         </div>
-        {Icon && <Icon className={`w-5 h-5 ${danger ? 'text-destructive' : 'text-muted-foreground'}`} />}
-      </div>
-    </Card>
+      </Card>
+    </Tilt3DCard>
   );
 }
 
