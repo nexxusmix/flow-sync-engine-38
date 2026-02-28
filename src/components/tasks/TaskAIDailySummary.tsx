@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, X, Loader2, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sparkles, Loader2, AlertTriangle, CheckCircle2, Clock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SummaryData {
@@ -13,11 +13,10 @@ interface SummaryData {
 export function TaskAIDailySummary() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check session storage to avoid re-fetching
     const cached = sessionStorage.getItem("task-daily-summary");
     if (cached) {
       try {
@@ -43,63 +42,56 @@ export function TaskAIDailySummary() {
     }
   };
 
-  if (dismissed) return null;
-
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        className="rounded-xl border border-primary/10 bg-primary/[0.03] p-4 relative"
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground/50 hover:text-foreground"
-          onClick={() => setDismissed(true)}
-        >
-          <X className="w-3.5 h-3.5" />
-        </Button>
-
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 p-1.5 rounded-lg bg-primary/10">
-            <Sparkles className="w-4 h-4 text-primary" />
-          </div>
-
-          <div className="flex-1 min-w-0 space-y-2">
-            <h4 className="text-xs uppercase tracking-widest text-primary font-medium">Resumo do dia</h4>
-
-            {loading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Analisando suas tarefas...
-              </div>
-            ) : error ? (
-              <p className="text-sm text-destructive">{error}</p>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-2 w-full py-1.5 px-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group">
+        <Sparkles className="w-3.5 h-3.5 text-primary" />
+        <span className="text-xs font-medium text-primary tracking-wide">Resumo do dia</span>
+        {data && !open && (
+          <span className="text-[10px] text-muted-foreground ml-1">
+            {data.stats.pending} pendentes
+            {data.stats.overdue > 0 && ` · ${data.stats.overdue} atrasadas`}
+          </span>
+        )}
+        {loading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground ml-1" />}
+        <ChevronRight className={cn(
+          "w-3 h-3 text-muted-foreground/50 ml-auto transition-transform",
+          open && "rotate-90"
+        )} />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-lg border border-primary/10 bg-primary/[0.02] p-3 mt-1.5"
+          >
+            {error ? (
+              <p className="text-xs text-destructive">{error}</p>
             ) : data ? (
-              <>
-                <p className="text-sm text-foreground/80 leading-relaxed font-light">{data.summary}</p>
-                <div className="flex items-center gap-4 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+              <div className="space-y-1.5">
+                <p className="text-xs text-foreground/80 leading-relaxed font-light">{data.summary}</p>
+                <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-muted-foreground/60">
                   <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {data.stats.pending} pendentes
+                    <Clock className="w-2.5 h-2.5" /> {data.stats.pending} pendentes
                   </span>
                   {data.stats.overdue > 0 && (
                     <span className="flex items-center gap-1 text-destructive/70">
-                      <AlertTriangle className="w-3 h-3" /> {data.stats.overdue} atrasadas
+                      <AlertTriangle className="w-2.5 h-2.5" /> {data.stats.overdue} atrasadas
                     </span>
                   )}
                   {data.stats.dueToday > 0 && (
                     <span className="flex items-center gap-1 text-amber-500/70">
-                      <CheckCircle2 className="w-3 h-3" /> {data.stats.dueToday} para hoje
+                      <CheckCircle2 className="w-2.5 h-2.5" /> {data.stats.dueToday} para hoje
                     </span>
                   )}
                 </div>
-              </>
+              </div>
             ) : null}
-          </div>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
