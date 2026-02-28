@@ -25,6 +25,7 @@ import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PreviewTask extends GeneratedTask {
   selected: boolean;
@@ -77,13 +78,18 @@ function SortableTaskCard({
   };
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
       data-task-id={task._id}
-      className={`rounded-lg border p-3 transition-all duration-200 ${
+      layout
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, x: -30, scale: 0.95 }}
+      transition={{ duration: 0.25, delay: index * 0.04, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className={`rounded-lg border p-3 transition-colors duration-200 ${
         hasError
-          ? 'border-destructive/50 bg-destructive/5 animate-in fade-in'
+          ? 'border-destructive/50 bg-destructive/5'
           : task.selected
             ? 'border-primary/30 bg-primary/5'
             : 'border-border bg-muted/30 opacity-60'
@@ -190,7 +196,7 @@ function SortableTaskCard({
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -429,8 +435,16 @@ export function TaskAIPreviewPanel({
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={previewTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
           <div ref={scrollRef} className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            <AnimatePresence mode="popLayout">
             {previewTasks.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+              <motion.div
+                key="empty-state"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center gap-3 py-10 text-muted-foreground"
+              >
                 <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
                   <PackageOpen className="w-6 h-6" />
                 </div>
@@ -448,7 +462,7 @@ export function TaskAIPreviewPanel({
                     Gerar novamente
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             ) : previewTasks.map((task, index) => (
               <SortableTaskCard
                 key={task._id}
@@ -465,6 +479,7 @@ export function TaskAIPreviewPanel({
                 getColumnLabel={getColumnLabel}
               />
             ))}
+            </AnimatePresence>
           </div>
         </SortableContext>
       </DndContext>
