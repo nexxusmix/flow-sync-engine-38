@@ -4,19 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { useInstagramConnection, useConnectInstagramManual, useDisconnectInstagram, useScrapeInstagramProfile } from '@/hooks/useInstagramAPI';
+import { useInstagramConnection, useConnectInstagramManual, useDisconnectInstagram } from '@/hooks/useInstagramAPI';
 import { useProfileSnapshots } from '@/hooks/useInstagramEngine';
-import { Loader2, Link2, Unlink, Instagram, RefreshCw } from 'lucide-react';
+import { Loader2, Link2, Unlink, Instagram, Save } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export function InstagramMetaConnect() {
   const { data: connection, isLoading: loadingConn } = useInstagramConnection();
   const connectMutation = useConnectInstagramManual();
   const disconnectMutation = useDisconnectInstagram();
-  const scrapeMutation = useScrapeInstagramProfile();
   const { data: snapshots } = useProfileSnapshots();
   const [username, setUsername] = useState('');
+  const [followers, setFollowers] = useState('');
+  const [following, setFollowing] = useState('');
+  const [postsCount, setPostsCount] = useState('');
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
 
   const latestSnapshot = snapshots?.[0];
 
@@ -28,12 +35,7 @@ export function InstagramMetaConnect() {
     const handleConnect = () => {
       const cleaned = username.trim().replace(/^@/, '');
       if (!cleaned) return;
-      connectMutation.mutate(cleaned, {
-        onSuccess: () => {
-          // Auto-fetch data after connecting
-          scrapeMutation.mutate(cleaned);
-        }
-      });
+      connectMutation.mutate(cleaned);
     };
 
     return (
@@ -44,7 +46,7 @@ export function InstagramMetaConnect() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Conectar Instagram</h3>
-            <p className="text-xs text-muted-foreground">Insira seu @ para buscar métricas automaticamente</p>
+            <p className="text-xs text-muted-foreground">Insira seu @ para registrar métricas manualmente</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -57,11 +59,11 @@ export function InstagramMetaConnect() {
           />
           <Button
             onClick={handleConnect}
-            disabled={!username.trim() || connectMutation.isPending || scrapeMutation.isPending}
+            disabled={!username.trim() || connectMutation.isPending}
             className="bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white hover:opacity-90"
             size="sm"
           >
-            {(connectMutation.isPending || scrapeMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4 mr-1" />}
+            {connectMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4 mr-1" />}
             Conectar
           </Button>
         </div>
@@ -69,8 +71,36 @@ export function InstagramMetaConnect() {
     );
   }
 
-  const handleRefresh = () => {
-    scrapeMutation.mutate(connection.ig_username);
+  const handleSaveSnapshot = async () => {
+    const f = parseInt(followers) || 0;
+    const fg = parseInt(following) || 0;
+    const p = parseInt(postsCount) || 0;
+    if (f === 0 && fg === 0 && p === 0) {
+      toast.error('Preencha ao menos um campo');
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from('instagram_profile_snapshots')
+      .insert({
+        followers: f,
+        following: fg,
+        posts_count: p,
+        avg_engagement: 0,
+        avg_reach: 0,
+        snapshot_date: new Date().toISOString().split('T')[0],
+      } as any);
+
+    if (error) {
+      toast.error('Erro ao salvar snapshot');
+    } else {
+      toast.success('Snapshot salvo! 📊');
+      qc.invalidateQueries({ queryKey: ['instagram-profile-snapshots'] });
+      setFollowers('');
+      setFollowing('');
+      setPostsCount('');
+    }
+    setSaving(false);
   };
 
   return (
@@ -90,27 +120,15 @@ export function InstagramMetaConnect() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={scrapeMutation.isPending}
-            className="text-xs"
-          >
-            {scrapeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-            Atualizar
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => disconnectMutation.mutate(connection.id)}
-            disabled={disconnectMutation.isPending}
-            className="text-xs text-muted-foreground hover:text-destructive"
-          >
-            {disconnectMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlink className="w-3 h-3" />}
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => disconnectMutation.mutate(connection.id)}
+          disabled={disconnectMutation.isPending}
+          className="text-xs text-muted-foreground hover:text-destructive"
+        >
+          {disconnectMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlink className="w-3 h-3" />}
+        </Button>
       </div>
 
       {latestSnapshot && (
@@ -129,6 +147,43 @@ export function InstagramMetaConnect() {
           </div>
         </div>
       )}
+
+      <div className="mt-3 border-t border-border/40 pt-3">
+        <p className="text-[10px] text-muted-foreground mb-2">Atualizar métricas manualmente</p>
+        <div className="grid grid-cols-3 gap-2">
+          <Input
+            type="number"
+            value={followers}
+            onChange={(e) => setFollowers(e.target.value)}
+            placeholder="Seguidores"
+            className="text-xs h-8"
+          />
+          <Input
+            type="number"
+            value={following}
+            onChange={(e) => setFollowing(e.target.value)}
+            placeholder="Seguindo"
+            className="text-xs h-8"
+          />
+          <Input
+            type="number"
+            value={postsCount}
+            onChange={(e) => setPostsCount(e.target.value)}
+            placeholder="Posts"
+            className="text-xs h-8"
+          />
+        </div>
+        <Button
+          onClick={handleSaveSnapshot}
+          disabled={saving}
+          size="sm"
+          className="w-full mt-2 text-xs"
+          variant="outline"
+        >
+          {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />}
+          Salvar Snapshot
+        </Button>
+      </div>
     </Card>
   );
 }
