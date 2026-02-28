@@ -199,3 +199,6 @@ verify_jwt = false
 [functions.generate-content-suggestions]
 verify_jwt = false
 
+[functions.detect-duplicate-tasks]
+verify_jwt = false
+
