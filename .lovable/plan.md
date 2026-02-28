@@ -1,125 +1,51 @@
 
 
-## Cockpit Executivo com IA Preditiva e Prescritiva
+## Plano: Inteligência Preditiva na Overview do Projeto
 
-O dashboard atual é descritivo (mostra o que aconteceu). Vamos transformá-lo num cockpit preditivo e prescritivo que responde: **o que vai dar errado, quando, e o que fazer agora**.
+O dashboard executivo (`/executivo`) já tem componentes preditivos (Risk Radar, Revenue Forecast, Capacity, etc.). Agora vamos trazer essa mesma inteligência para a **OverviewTab de cada projeto individual** — focada no contexto daquele projeto específico.
 
-### Arquitetura
+### O que será adicionado à OverviewTab
 
-```text
-┌─────────────────────────────────────────────┐
-│  Edge Function: generate-executive-insights  │
-│  (Gemini 2.5 Flash)                          │
-│  Input: all metrics + tasks + projects       │
-│  Output: structured JSON with:               │
-│    - risk_radar (array of risks)             │
-│    - revenue_forecast (30/60/90d)            │
-│    - capacity_forecast (weekly load)         │
-│    - bottlenecks (detected patterns)         │
-│    - action_items (prescriptive)             │
-│    - executive_summary (1 paragraph)         │
-│    - cash_runway_months                      │
-│    - project_health_scores                   │
-│    - backlog_clear_date                      │
-└─────────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────────┐
-│  useExecutiveDashboard.ts                    │
-│  + Add computed predictive metrics:          │
-│    - backlogClearDate (velocity math)        │
-│    - cashRunwayMonths (balance/burn rate)    │
-│    - revenueForecast30/60/90                 │
-│    - projectRiskScores per project           │
-│    - capacityLoadByWeek                      │
-│    - pipelineRunwayDays                      │
-└─────────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────────┐
-│  ExecutiveDashboardPage.tsx                   │
-│  NEW SECTIONS (inserted at top):             │
-│  1. AI Executive Summary banner              │
-│  2. Risk Radar (color-coded risk cards)      │
-│  3. Capacity Forecast (weekly bar chart)     │
-│  4. Revenue Forecast (30/60/90 cards)        │
-│  5. Cash Runway indicator                    │
-│  6. "O que fazer hoje" action block          │
-│  7. Project Health Ranking                   │
-│  + Emergency state when score<70 + vel<1     │
-└─────────────────────────────────────────────┘
-```
+1. **Edge Function `generate-project-insights`** — Análise IA focada em UM projeto
+   - Recebe: dados do projeto, tarefas do projeto, receitas do projeto, stages
+   - Retorna: `risk_assessment` (probabilidade de atraso, risco financeiro, saúde do cliente), `completion_forecast` (data prevista real), `action_items` (o que fazer agora), `bottlenecks`, `executive_summary`
+   - Usa `chatCompletion` do `_shared/ai-client.ts`
 
-### Implementation Steps
+2. **Hook `useProjectIntelligence(projectId)`** — Métricas preditivas por projeto
+   - Busca tarefas e receitas do projeto
+   - Calcula client-side:
+     - **Velocity do projeto** (tarefas concluídas/dia últimos 30d)
+     - **Data prevista de conclusão** (tarefas pendentes / velocity)
+     - **Risco de atraso (%)** = (overdue stages / total × velocity × days remaining)
+     - **ROI do projeto** = contract_value / horas estimadas
+     - **Status financeiro** = pago vs total, receitas vencidas
+     - **Saúde do cliente** = tempo desde última reunião, revisões pendentes, feedback pendente
+     - **Alerta de prazo** = se data prevista > due_date
 
-#### 1. New Edge Function `generate-executive-insights`
-- Receives all dashboard metrics, tasks, projects, revenues, deals as context
-- Uses `google/gemini-2.5-flash` with tool calling to return structured analysis
-- Tool schema: `save_executive_insights` with fields for risk_radar, forecasts, action_items, executive_summary, bottlenecks, project_health_scores
-- Each risk: `{ type, severity (red/yellow/green), title, description, metric }`
-- Each action: `{ priority, title, reason, impact_area }`
+3. **Novos componentes na OverviewTab** (inseridos no topo, antes do conteúdo atual):
 
-#### 2. Expand `useExecutiveDashboard.ts` with computed predictive metrics
-All calculated client-side from existing data (no AI needed):
-- **backlogClearDate**: `tasksPending / velocityPerDay` → projected date
-- **cashRunwayMonths**: `(balance + pendingRevenue) / avgMonthlyExpense`
-- **revenueForecast30/60/90**: based on deals by stage × probability
-- **projectRiskScores**: per project = (overdue stages / total stages × velocity × days remaining)
-- **capacityLoadWeekly**: estimated hours from tasks created vs completed per week (4 weeks ahead)
-- **pipelineRunwayDays**: `active projects backlog / velocity` — how many days of work are covered
-- **burnRateMonthly**: average of last 3 months expenses
-- **breakEvenPoint**: monthly fixed cost threshold
+   **A. Banner de Alerta de Prazo** — Se a data prevista de conclusão ultrapassar o due_date:
+   - Banner vermelho/amarelo com: "Risco de atraso: conclusão prevista em X, prazo em Y"
+   - Mostra velocity atual vs necessária
 
-#### 3. Redesign `ExecutiveDashboardPage.tsx` — New top sections
+   **B. Bloco de Inteligência do Projeto** (`ProjectIntelligenceBlock`):
+   - 4 cards: Risco de Atraso (%), Previsão de Conclusão (data), ROI (R$/h), Saúde do Cliente (score)
+   - Cores: verde/amarelo/vermelho baseado nos valores
 
-**A. Emergency State Banner** — When `productivityScore < 70` AND `velocityPerDay < 1`:
-- Full-width red/amber banner: "O que você vai cortar ou delegar hoje?"
-- Shows: backlog clear date, capacity overload percentage
+   **C. Botão "Análise IA do Projeto"** — Chama a edge function com dados do projeto:
+   - Gera sumário executivo, riscos, ações recomendadas e gargalos
+   - Renderiza usando ExecutiveActionBlock e cards de risco (reutilizando padrão do AIRiskRadar)
+   - Cache em localStorage por projeto
 
-**B. AI Risk Radar** (new component `AIRiskRadar.tsx`):
-- Button "Gerar Análise IA" that calls `generate-executive-insights`
-- Renders color-coded risk cards: 🔴 high, 🟠 medium, 🟡 low
-- Categories: prazo, financeiro, sobrecarga, pipeline, gargalo
-- Cached in localStorage with timestamp
+### Arquivos
 
-**C. Revenue Forecast Cards** (3 cards: 30d, 60d, 90d):
-- Computed from deals pipeline × stage probability
-- Shows projected revenue with confidence indicator
-
-**D. Cash Runway Indicator**:
-- Formula: `(balanceCurrent + pendingRevenue) / burnRateMonthly`
-- Visual: progress bar showing months of runway
-- Alert if < 2 months
-
-**E. Capacity Forecast Chart** (new `CapacityForecast` component):
-- 4-week ahead bar chart showing estimated load % vs capacity
-- Red bars for overload weeks (>100%)
-
-**F. "O que fazer hoje" Block** (AI-generated):
-- Top 3 prioritized actions from AI analysis
-- Each with reason and impact area
-- Generated alongside risk radar
-
-**G. Project Health Ranking**:
-- Table/list of active projects sorted by computed risk score
-- Each with: name, risk %, days to deadline, tasks remaining, financial status
-- Color-coded rows
-
-#### 4. Register and deploy edge function
-- Add `generate-executive-insights` to `supabase/config.toml`
-- Deploy function
-
-### Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `supabase/functions/generate-executive-insights/index.ts` | Create |
-| `src/hooks/useExecutiveDashboard.ts` | Expand with predictive metrics |
-| `src/components/dashboard/AIRiskRadar.tsx` | Create |
-| `src/components/dashboard/CapacityForecast.tsx` | Create |
-| `src/components/dashboard/RevenueForecaster.tsx` | Create |
-| `src/components/dashboard/CashRunwayIndicator.tsx` | Create |
-| `src/components/dashboard/ExecutiveActionBlock.tsx` | Create |
-| `src/components/dashboard/ProjectHealthRanking.tsx` | Create |
-| `src/components/dashboard/EmergencyBanner.tsx` | Create |
-| `src/pages/ExecutiveDashboardPage.tsx` | Restructure layout with new sections at top |
-| `supabase/config.toml` | Register new function |
+| Arquivo | Ação |
+|---------|------|
+| `supabase/functions/generate-project-insights/index.ts` | Criar |
+| `src/hooks/useProjectIntelligence.ts` | Criar |
+| `src/components/projects/detail/ProjectIntelligenceBlock.tsx` | Criar |
+| `src/components/projects/detail/ProjectDeadlineAlert.tsx` | Criar |
+| `src/components/projects/detail/ProjectAIAnalysis.tsx` | Criar |
+| `src/components/projects/detail/tabs/OverviewTab.tsx` | Adicionar novos blocos no topo |
+| `supabase/config.toml` | Registrar nova function |
 
