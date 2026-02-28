@@ -146,6 +146,28 @@ export interface ProjectStage {
   actual_end: string | null;
 }
 
+export interface PortalTask {
+  id: string;
+  title: string;
+  status: string;
+  due_date: string | null;
+  assignee_name: string | null;
+  priority: string | null;
+  category: string | null;
+}
+
+export interface PortalTimelineEvent {
+  id: string;
+  portal_link_id: string;
+  event_type: string;
+  title: string;
+  description: string | null;
+  actor_name: string | null;
+  actor_type: string | null;
+  metadata: any;
+  created_at: string;
+}
+
 export interface PortalData {
   portal: PortalLink;
   project: ProjectInfo | null;
@@ -156,6 +178,8 @@ export interface PortalData {
   approvals: PortalApproval[];
   changeRequests: PortalChangeRequest[];
   versions: PortalVersion[];
+  tasks: PortalTask[];
+  timelineEvents: PortalTimelineEvent[];
 }
 
 export function useClientPortalEnhanced(shareToken: string | undefined) {
@@ -204,6 +228,8 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
         approvals: (result.approvals || []) as PortalApproval[],
         changeRequests: (result.changeRequests || []) as PortalChangeRequest[],
         versions: (result.versions || []) as PortalVersion[],
+        tasks: (result.tasks || []) as PortalTask[],
+        timelineEvents: (result.timelineEvents || []) as PortalTimelineEvent[],
       };
     },
     enabled: !!shareToken,

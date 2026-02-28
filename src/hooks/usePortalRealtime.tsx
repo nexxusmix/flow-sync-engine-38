@@ -118,6 +118,32 @@ export function usePortalRealtime(portalLinkId: string | undefined, projectId: s
           queryClient.invalidateQueries({ queryKey: ['client-portal'] });
         }
       )
+      // Portal timeline events (activity feed)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'portal_timeline_events',
+          filter: portalLinkId ? `portal_link_id=eq.${portalLinkId}` : undefined,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['client-portal'] });
+        }
+      )
+      // Tasks changes (for project tasks in portal)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: projectId ? `project_id=eq.${projectId}` : undefined,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['client-portal'] });
+        }
+      )
       .subscribe();
 
     return () => {
