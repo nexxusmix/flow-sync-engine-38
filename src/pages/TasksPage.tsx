@@ -307,7 +307,14 @@ export default function TasksPage() {
     setIsConfirmingAI(true);
     try {
       const created = await createTasksFromAI(tasks as any);
-      toast.success(`${created.length} tarefas criadas!`);
+      // Build category breakdown for toast
+      const catCounts: Record<string, number> = {};
+      tasks.forEach(t => {
+        const label = TASK_CATEGORIES.find(c => c.key === t.category)?.label || t.category;
+        catCounts[label] = (catCounts[label] || 0) + 1;
+      });
+      const breakdown = Object.entries(catCounts).map(([k, v]) => `${v} ${k}`).join(', ');
+      toast.success(`${created.length} tarefas criadas (${breakdown})`);
       setIsAISheetOpen(false);
       setAiText('');
       setUploadedFiles([]);
