@@ -1,89 +1,60 @@
 
 
-## Plano: Upload Universal — Múltiplos Arquivos, Qualquer Tipo, Drag & Drop
+## Plano: Ações Interativas no Resumo do Dia (Stand By / Recusar / Aprovar)
 
-### Inventário de uploads encontrados (14 locais)
+### O que será feito
 
-| # | Arquivo | Múltiplo | Drag&Drop | Accept restritivo |
-|---|---------|----------|-----------|-------------------|
-| 1 | `ClientUploadDialog.tsx` | ✅ | ✅ | Parcial (falta .7z, .tar) |
-| 2 | `UploadMaterialDialog.tsx` | ✅ | ✅ | Sem restrict (ok) |
-| 3 | `AddMaterialDialog.tsx` | ❌ single | ❌ | Restritivo |
-| 4 | `FilesTab.tsx` | ✅ | ✅ folders | Sem restrict (ok) |
-| 5 | `GalleryTab.tsx` | ✅ | ❌ | `image/*,.pdf,.doc,.docx` |
-| 6 | `DeliverablesTab.tsx` | ✅ | ❌ | Sem restrict (ok) |
-| 7 | `ContentAssetsTab.tsx` | ✅ | ❌ | `image/*,video/*,audio/*,.pdf,.doc,.docx` |
-| 8 | `LibraryPage.tsx` | ✅ | ❌ | `image/*,video/*,audio/*,.pdf` |
-| 9 | `MkAssetsPage.tsx` | ✅ | ✅ | Sem restrict (ok) |
-| 10 | `TaskEditDrawer.tsx` | ✅ | ❌ | Sem restrict (ok) |
-| 11 | `TaskDetailModal.tsx` | ✅ | ❌ | Sem restrict (ok) |
-| 12 | `ContractAiUploadDialog.tsx` | ❌ single | ✅ | `.pdf,.docx,.doc,.jpg...` |
-| 13 | `ContractAiUpdateDialog.tsx` | ❌ single | ✅ | `.pdf,.docx,.doc,.jpg...` |
-| 14 | `TranscribePage.tsx` | ✅ | ❌ | `audio/*,video/*` |
-| 15 | `AddUpdateModal.tsx` | ✅ | ❌ | `image/*` |
-| 16 | `AiAddTasksDialog.tsx` | ✅ | ❌ | Restritivo |
-| 17 | `AIAssistant.tsx` | ✅ | ❌ | Restritivo |
+Adicionar botões de ação em cada item do "Resumo do Dia — Visão 360°" (ações recomendadas e clientes para contatar) com 3 opções:
+- **✅ Feito** — marca como concluído, salva na memória do Polo AI para não repetir
+- **⏸️ Stand By** — adia para relembrar depois (snooze com data)
+- **❌ Recusar** — descarta a ação, salva na memória para não sugerir novamente
 
-### Mudanças por arquivo
+### Banco de Dados
 
-**1. Criar componente reutilizável `DropZone.tsx`** (novo)
-- Componente genérico de drag & drop + click-to-select
-- Props: `multiple`, `accept`, `onFiles`, `disabled`, `children`
-- Visual: borda tracejada, highlight ao arrastar, texto "Arraste arquivos aqui"
-- Usado como base para padronizar todos os uploads
+Criar tabela `daily_summary_actions` para persistir decisões:
 
-**2. `AddMaterialDialog.tsx`** — Maior refactor
-- Trocar de single file para múltiplos arquivos (array)
-- Remover restrict de `accept` → aceitar tudo (`*/*`)
-- Adicionar drag & drop zone
-- Upload em loop (já existe padrão no projeto)
+```sql
+CREATE TABLE public.daily_summary_actions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  action_type TEXT NOT NULL, -- 'action_item' | 'client_action'
+  action_text TEXT NOT NULL, -- texto original da ação/cliente
+  action_key TEXT NOT NULL, -- hash/chave única para deduplicar
+  decision TEXT NOT NULL, -- 'done' | 'standby' | 'dismissed'
+  standby_until TIMESTAMPTZ, -- data para relembrar (se standby)
+  notes TEXT, -- observação opcional
+  metadata JSONB DEFAULT '{}', -- dados extras (client_name, urgency, etc)
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
 
-**3. `GalleryTab.tsx`**
-- Remover `accept="image/*,.pdf,.doc,.docx"` → aceitar tudo
-- Adicionar drag & drop na área de upload (onDragOver/onDrop)
+ALTER TABLE public.daily_summary_actions ENABLE ROW LEVEL SECURITY;
 
-**4. `ContentAssetsTab.tsx`**
-- Remover `accept` restritivo → aceitar tudo
-- Adicionar drag & drop zone
+CREATE POLICY "Users manage own summary actions"
+  ON public.daily_summary_actions FOR ALL
+  USING (auth.uid() = user_id);
 
-**5. `LibraryPage.tsx`**
-- Remover `accept="image/*,video/*,audio/*,.pdf"` → aceitar tudo
-- Adicionar drag & drop (já existe no MkAssetsPage, replicar padrão)
+CREATE INDEX idx_daily_summary_actions_user ON public.daily_summary_actions(user_id, decision);
+CREATE INDEX idx_daily_summary_actions_key ON public.daily_summary_actions(action_key, user_id);
+```
 
-**6. `TranscribePage.tsx`**
-- Manter accept `audio/*,video/*` (faz sentido para transcrição)
-- Adicionar drag & drop zone
+### Implementação no Frontend (`AIDailySummary.tsx`)
 
-**7. `TaskEditDrawer.tsx`** + **`TaskDetailModal.tsx`**
-- Adicionar drag & drop na área de attachments
-- Manter `multiple` (já tem)
+1. **Buscar decisões existentes** via `useQuery` na tabela `daily_summary_actions` para filtrar itens já decididos
+2. **Cada ação recomendada** ganha 3 botões inline:
+   - ✅ Feito → insere com `decision: 'done'`
+   - ⏸️ Stand By → popover com seletor de data, insere com `decision: 'standby'` + `standby_until`
+   - ❌ Recusar → insere com `decision: 'dismissed'`
+3. **Cada client_action** ganha os mesmos 3 botões ao lado dos botões Copiar/WhatsApp
+4. **Filtragem**: itens já marcados como `done` ou `dismissed` não aparecem; itens `standby` com data futura ficam ocultos, com data passada voltam a aparecer
+5. **Animação**: ao decidir, o item faz fade-out suave
+6. **Contadores**: mostrar "3 de 5 ações concluídas" no header da seção
+7. **Memória Polo AI**: ao gerar próximo resumo, incluir no prompt as ações recusadas/feitas para evitar repetição
 
-**8. `AddUpdateModal.tsx`**
-- Manter accept `image/*` (é específico para prints)
-- Adicionar drag & drop
+### Arquivos impactados
 
-**9. `AiAddTasksDialog.tsx`**
-- Expandir accept para incluir `.zip,.rar,.7z`
-- Adicionar drag & drop zone
-
-**10. `AIAssistant.tsx`**
-- Expandir accept para incluir `.zip,.rar,.7z,.pptx,.xlsx`
-- Adicionar drag & drop na área de input
-
-**11. `ClientUploadDialog.tsx`**
-- Expandir accept: adicionar `.7z,.tar.gz,.mp3,.mp4,.mov,.avi`
-- Já tem drag & drop ✅
-
-**12. `DeliverablesTab.tsx`**
-- Adicionar drag & drop na área de upload
-
-**13. Contratos (`ContractAiUploadDialog.tsx` + `ContractAiUpdateDialog.tsx`)**
-- Manter single file (faz sentido — 1 contrato por vez)
-- Já tem drag & drop ✅
-- Expandir accept: adicionar `.zip` para contratos compactados
-
-### Resumo de impacto
-- **1 novo componente**: `src/components/ui/DropZone.tsx`
-- **~14 arquivos editados** para: expandir `accept`, adicionar drag & drop, garantir `multiple`
-- Sem mudanças em edge functions ou banco de dados
+- **Nova tabela**: `daily_summary_actions` (migration)
+- **`src/components/dashboard/AIDailySummary.tsx`**: adicionar botões, queries, filtros, contadores
+- **`supabase/functions/polo-ai-chat/index.ts`**: no bloco `daily_summary`, injetar ações passadas no prompt para contexto
 
