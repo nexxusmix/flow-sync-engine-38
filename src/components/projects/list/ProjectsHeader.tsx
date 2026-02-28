@@ -34,98 +34,92 @@ export function ProjectsHeader() {
     filters.deadline !== 'all' || filters.search;
 
   return (
-    <div className="space-y-4">
-      {/* Main Header Row */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Search */}
-          <div className="relative flex-1 sm:w-72">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar projetos..."
-              value={filters.search}
-              onChange={(e) => setFilters({ search: e.target.value })}
-              className="pl-10 h-11 bg-muted/30 border-border/50 rounded-xl focus:bg-muted/50 transition-colors"
-            />
-            {filters.search && (
-              <button
-                onClick={() => setFilters({ search: '' })}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Filter Toggle */}
-          <Button
-            variant={showFilters ? "secondary" : "outline"}
-            size="icon"
-            onClick={() => setShowFilters(!showFilters)}
-            className="h-11 w-11 rounded-xl relative"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            {hasActiveFilters && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-            )}
-          </Button>
+    <div className="space-y-3">
+      {/* Primary Row: Search + New Project only */}
+      <div className="flex gap-3 items-center">
+        <div className="relative flex-1 sm:max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar projetos..."
+            value={filters.search}
+            onChange={(e) => setFilters({ search: e.target.value })}
+            className="pl-10 h-10 bg-muted/30 border-border/50 rounded-xl focus:bg-muted/50 transition-colors"
+          />
+          {filters.search && (
+            <button
+              onClick={() => setFilters({ search: '' })}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          {/* View Toggle */}
-          <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-xl border border-border/50">
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-9 px-4 rounded-lg gap-2"
-            >
-              <LayoutList className="w-4 h-4" />
-              <span className="hidden sm:inline text-[11px] font-medium">Lista</span>
-            </Button>
-            <Button
-              variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-              className="h-9 px-4 rounded-lg gap-2"
-            >
-              <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline text-[11px] font-medium">Board</span>
-            </Button>
-          </div>
+        {/* Secondary: filters toggle */}
+        <Button
+          variant={showFilters ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => setShowFilters(!showFilters)}
+          className="h-10 w-10 rounded-xl relative shrink-0"
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          {hasActiveFilters && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+          )}
+        </Button>
 
-          {/* New Project Button with Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="h-11 px-6 rounded-xl gap-2 shadow-lg shadow-primary/20">
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Novo Projeto</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setNewProjectModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Manualmente
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setAIProjectModalOpen(true)}>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Criar com IA
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {/* New Project */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="h-10 px-5 rounded-xl gap-2 shadow-lg shadow-primary/20 shrink-0">
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Novo Projeto</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => setNewProjectModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Manualmente
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setAIProjectModalOpen(true)}>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Criar com IA
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Filters Row */}
+      {/* Collapsible toolbar: view mode + filters */}
       {showFilters && (
-        <div className="glass-card rounded-2xl p-4 animate-fade-in">
+        <div className="glass-card rounded-2xl p-3 animate-fade-in">
           <div className="flex flex-wrap gap-3 items-center">
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/40">
+              <Button
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="h-8 px-3 rounded-md gap-1.5"
+              >
+                <LayoutList className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium">Lista</span>
+              </Button>
+              <Button
+                variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+                className="h-8 px-3 rounded-md gap-1.5"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium">Board</span>
+              </Button>
+            </div>
+
+            <div className="w-px h-6 bg-border/50 hidden sm:block" />
+
             {/* Status */}
-            <Select
-              value={filters.status}
-              onValueChange={(value) => setFilters({ status: value as any })}
-            >
-              <SelectTrigger className="w-[130px] h-10 bg-muted/30 border-border/50 rounded-xl">
+            <Select value={filters.status} onValueChange={(v) => setFilters({ status: v as any })}>
+              <SelectTrigger className="w-[120px] h-8 bg-muted/30 border-border/50 rounded-lg text-xs">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -138,11 +132,8 @@ export function ProjectsHeader() {
             </Select>
 
             {/* Template */}
-            <Select
-              value={filters.template}
-              onValueChange={(value) => setFilters({ template: value as any })}
-            >
-              <SelectTrigger className="w-[160px] h-10 bg-muted/30 border-border/50 rounded-xl">
+            <Select value={filters.template} onValueChange={(v) => setFilters({ template: v as any })}>
+              <SelectTrigger className="w-[140px] h-8 bg-muted/30 border-border/50 rounded-lg text-xs">
                 <SelectValue placeholder="Template" />
               </SelectTrigger>
               <SelectContent>
@@ -154,11 +145,8 @@ export function ProjectsHeader() {
             </Select>
 
             {/* Deadline */}
-            <Select
-              value={filters.deadline}
-              onValueChange={(value) => setFilters({ deadline: value as any })}
-            >
-              <SelectTrigger className="w-[140px] h-10 bg-muted/30 border-border/50 rounded-xl">
+            <Select value={filters.deadline} onValueChange={(v) => setFilters({ deadline: v as any })}>
+              <SelectTrigger className="w-[120px] h-8 bg-muted/30 border-border/50 rounded-lg text-xs">
                 <SelectValue placeholder="Prazo" />
               </SelectTrigger>
               <SelectContent>
@@ -169,15 +157,15 @@ export function ProjectsHeader() {
               </SelectContent>
             </Select>
 
-            {/* Reset Filters */}
+            {/* Reset */}
             {hasActiveFilters && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={resetFilters}
-                className="h-10 px-4 rounded-xl text-muted-foreground hover:text-foreground"
+                className="h-8 px-3 rounded-lg text-xs text-muted-foreground hover:text-foreground"
               >
-                <X className="w-4 h-4 mr-2" />
+                <X className="w-3.5 h-3.5 mr-1" />
                 Limpar
               </Button>
             )}
