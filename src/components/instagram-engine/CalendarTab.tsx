@@ -10,7 +10,16 @@ import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns,
 import { useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send, Filter, X } from 'lucide-react';
+
+type ActiveFilters = {
+  statuses: string[];
+  formats: string[];
+  pillars: string[];
+  campaigns: string[];
+};
+
+const emptyFilters: ActiveFilters = { statuses: [], formats: [], pillars: [], campaigns: [] };
 
 export function CalendarTab() {
   const { data: posts, isLoading } = useInstagramPosts();
@@ -23,8 +32,25 @@ export function CalendarTab() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showPublish, setShowPublish] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<ActiveFilters>(emptyFilters);
   const [publishData, setPublishData] = useState({ image_url: '', caption: '', media_type: 'IMAGE' as 'IMAGE' | 'CAROUSEL' | 'REELS', video_url: '', image_urls: '' });
   const [newPost, setNewPost] = useState({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '' });
+
+  const hasActiveFilters = filters.statuses.length > 0 || filters.formats.length > 0 || filters.pillars.length > 0 || filters.campaigns.length > 0;
+  const activeFilterCount = filters.statuses.length + filters.formats.length + filters.pillars.length + filters.campaigns.length;
+
+  // Filter posts
+  const filteredPosts = useMemo(() => {
+    if (!posts) return [];
+    return posts.filter(p => {
+      if (filters.statuses.length > 0 && !filters.statuses.includes(p.status)) return false;
+      if (filters.formats.length > 0 && !filters.formats.includes(p.format)) return false;
+      if (filters.pillars.length > 0 && (!p.pillar || !filters.pillars.includes(p.pillar))) return false;
+      if (filters.campaigns.length > 0 && (!p.campaign_id || !filters.campaigns.includes(p.campaign_id))) return false;
+      return true;
+    });
+  }, [posts, filters]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -32,8 +58,8 @@ export function CalendarTab() {
   const startDayOfWeek = getDay(monthStart);
 
   const dayPosts = useMemo(() => {
-    const map: Record<string, typeof posts> = {};
-    (posts || []).forEach(p => {
+    const map: Record<string, typeof filteredPosts> = {};
+    filteredPosts.forEach(p => {
       const date = p.scheduled_at || p.published_at;
       if (date) {
         const key = format(new Date(date), 'yyyy-MM-dd');
@@ -42,9 +68,19 @@ export function CalendarTab() {
       }
     });
     return map;
-  }, [posts]);
+  }, [filteredPosts]);
 
   const selectedDayPosts = selectedDay ? (dayPosts[format(selectedDay, 'yyyy-MM-dd')] || []) : [];
+
+  const toggleFilter = (category: keyof ActiveFilters, value: string) => {
+    setFilters(prev => {
+      const arr = prev[category];
+      return {
+        ...prev,
+        [category]: arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value],
+      };
+    });
+  };
 
   const handleCreate = async () => {
     if (!newPost.title.trim() || !selectedDay) return;
@@ -113,18 +149,139 @@ export function CalendarTab() {
     in_production: 'bg-amber-500', planned: 'bg-blue-500', idea: 'bg-muted-foreground/40',
   };
 
-  const isConnected = !!connection;
-
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-4">
-      {/* Month Nav */}
+      {/* Month Nav + Filters Toggle */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="w-4 h-4" /></Button>
         <h3 className="text-sm font-medium text-foreground capitalize">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</h3>
-        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="w-4 h-4" /></Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant={showFilters ? 'default' : 'ghost'}
+            size="icon"
+            onClick={() => setShowFilters(v => !v)}
+            className="relative"
+          >
+            <Filter className="w-4 h-4" />
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="w-4 h-4" /></Button>
+        </div>
       </div>
+
+      {/* Filter Bar */}
+      {showFilters && (
+        <Card className="glass-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
+              <Filter className="w-3 h-3" /> Filtros
+            </h4>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" className="text-[10px] h-6 text-muted-foreground" onClick={() => setFilters(emptyFilters)}>
+                <X className="w-3 h-3 mr-1" /> Limpar
+              </Button>
+            )}
+          </div>
+
+          {/* Status filters */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wide">Status</p>
+            <div className="flex flex-wrap gap-1.5">
+              {POST_STATUSES.map(s => (
+                <button
+                  key={s.key}
+                  onClick={() => toggleFilter('statuses', s.key)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border ${
+                    filters.statuses.includes(s.key)
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/30 text-muted-foreground border-border/50 hover:border-border'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Format filters */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wide">Formato</p>
+            <div className="flex flex-wrap gap-1.5">
+              {FORMATS.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => toggleFilter('formats', f.key)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border flex items-center gap-1 ${
+                    filters.formats.includes(f.key)
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/30 text-muted-foreground border-border/50 hover:border-border'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[12px]">{f.icon}</span>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Pillar filters */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wide">Pilar</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PILLARS.map(p => (
+                <button
+                  key={p.key}
+                  onClick={() => toggleFilter('pillars', p.key)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border ${
+                    filters.pillars.includes(p.key)
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/30 text-muted-foreground border-border/50 hover:border-border'
+                  }`}
+                >
+                  <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: p.color }} />
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Campaign filters */}
+          {(campaigns || []).length > 0 && (
+            <div>
+              <p className="text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wide">Campanha</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(campaigns || []).map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => toggleFilter('campaigns', c.id)}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border flex items-center gap-1 ${
+                      filters.campaigns.includes(c.id)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted/30 text-muted-foreground border-border/50 hover:border-border'
+                    }`}
+                  >
+                    <Megaphone className="w-2.5 h-2.5" />
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Active filter summary */}
+          {hasActiveFilters && (
+            <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+              Mostrando {filteredPosts.length} de {(posts || []).length} posts
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* Calendar Grid */}
       <Card className="glass-card p-3">
