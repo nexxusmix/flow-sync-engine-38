@@ -1,4 +1,4 @@
-import { useState, useId, useEffect, useRef } from "react";
+import { useState, useId, useEffect, useRef, useCallback } from "react";
 import { GeneratedTask } from "@/types/tasks";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { Button } from "@/components/ui/button";
@@ -80,9 +80,10 @@ function SortableTaskCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-lg border p-3 transition-colors ${
+      data-task-id={task._id}
+      className={`rounded-lg border p-3 transition-all duration-200 ${
         hasError
-          ? 'border-destructive/50 bg-destructive/5'
+          ? 'border-destructive/50 bg-destructive/5 animate-in fade-in'
           : task.selected
             ? 'border-primary/30 bg-primary/5'
             : 'border-border bg-muted/30 opacity-60'
@@ -202,6 +203,7 @@ export function TaskAIPreviewPanel({
   onBack,
 }: TaskAIPreviewPanelProps) {
   const prefix = useId();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [previewTasks, setPreviewTasks] = useState<PreviewTask[]>(
     initialTasks.map((t, i) => ({ ...t, selected: true, _id: `${prefix}-${i}` }))
   );
@@ -270,7 +272,8 @@ export function TaskAIPreviewPanel({
     markEdited();
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
+    if (isConfirming || isRegenerating) return;
     // Validate: no empty titles
     const errors = new Set<string>();
     previewTasks.forEach(t => {
@@ -278,6 +281,12 @@ export function TaskAIPreviewPanel({
     });
     if (errors.size > 0) {
       setValidationErrors(errors);
+      // Auto-scroll to first error
+      requestAnimationFrame(() => {
+        const firstErrorId = Array.from(errors)[0];
+        const el = scrollRef.current?.querySelector(`[data-task-id="${firstErrorId}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
       return;
     }
     setValidationErrors(new Set());
@@ -287,6 +296,35 @@ export function TaskAIPreviewPanel({
       .map(({ selected, _id, ...rest }, index) => ({ ...rest, position: index }));
     if (selected.length === 0) return;
     onConfirm(selected);
+  }, [previewTasks, isConfirming, isRegenerating, onConfirm]);
+
+  // Keyboard shortcuts: Enter = confirm, Escape = back
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleConfirm();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleBackOrRegenerate('back');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleConfirm, hasEdited]);
+
+  // Toggle all tasks of a category
+  const toggleCategory = (catKey: string) => {
+    const tasksInCat = previewTasks.filter(t => t.category === catKey);
+    const allSelected = tasksInCat.every(t => t.selected);
+    setPreviewTasks(prev => prev.map(t =>
+      t.category === catKey ? { ...t, selected: !allSelected } : t
+    ));
+    markEdited();
   };
 
   const handleBackOrRegenerate = (action: 'back' | 'regenerate') => {
@@ -338,7 +376,13 @@ export function TaskAIPreviewPanel({
         {categorySummary.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {categorySummary.map(cat => (
-              <Badge key={cat.key} variant="secondary" className="text-[10px] h-5 gap-1">
+              <Badge
+                key={cat.key}
+                variant="secondary"
+                className="text-[10px] h-5 gap-1 cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all"
+                onClick={() => toggleCategory(cat.key)}
+                title={`Clique para alternar seleção de ${cat.label}`}
+              >
                 <span className={`w-1.5 h-1.5 rounded-full ${cat.color}`} />
                 {cat.count} {cat.label}
               </Badge>
@@ -369,7 +413,7 @@ export function TaskAIPreviewPanel({
       {/* Sortable task cards */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={previewTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+          <div ref={scrollRef} className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
             {previewTasks.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
                 <PackageOpen className="w-8 h-8" />
