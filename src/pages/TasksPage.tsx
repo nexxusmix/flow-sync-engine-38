@@ -269,14 +269,29 @@ export default function TasksPage() {
 
   const handleGenerateFromAI = async () => {
     if (!aiText.trim() && uploadedFiles.length === 0) { toast.error('Cole ou digite o texto com as tarefas'); return; }
+    if (isProcessingUploads) { toast.error('Aguarde o processamento dos arquivos'); return; }
+    if (isConfirmingAI) return; // Prevent concurrent
     setIsGeneratingLocal(true);
     try {
       const extractedTexts = uploadedFiles.filter(f => f.extractedText).map(f => f.extractedText!);
       const { data, error } = await supabase.functions.invoke('generate-tasks-from-text', {
         body: { rawText: aiText, extractedTexts, defaultCategory: aiCategory, defaultColumn: aiColumn, guidancePrompt: aiGuidancePrompt || undefined },
       });
-      if (error) throw error;
+      if (error) {
+        const msg = typeof error === 'object' && error.message ? error.message : String(error);
+        if (msg.includes('429') || msg.toLowerCase().includes('rate')) {
+          toast.error('Limite de requisições atingido. Aguarde alguns segundos e tente novamente.', { action: { label: 'Tentar novamente', onClick: handleGenerateFromAI } });
+        } else if (msg.includes('402') || msg.toLowerCase().includes('quota')) {
+          toast.error('Cota de IA esgotada. Entre em contato com o administrador.');
+        } else {
+          throw error;
+        }
+        return;
+      }
       if (!data?.tasks || data.tasks.length === 0) { toast.error('Nenhuma tarefa identificada no texto'); return; }
+      if (data.warnings && data.warnings.length > 0) {
+        toast.info(`${data.warnings.length} item(ns) descartado(s) pela IA`);
+      }
       setPreviewTasks(data.tasks as GeneratedTask[]);
     } catch (err: any) {
       console.error('Error generating tasks:', err);
@@ -736,7 +751,7 @@ export default function TasksPage() {
                 </div>
                 <SheetFooter>
                   <Button variant="outline" onClick={() => handleAISheetChange(false)}>Cancelar</Button>
-                  <Button onClick={handleGenerateFromAI} disabled={isGeneratingLocal || isRecording || (!aiText.trim() && uploadedFiles.length === 0)}>
+                  <Button onClick={handleGenerateFromAI} disabled={isGeneratingLocal || isRecording || isProcessingUploads || isConfirmingAI || (!aiText.trim() && uploadedFiles.length === 0)}>
                     {isGeneratingLocal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                     Gerar Tarefas
                   </Button>
