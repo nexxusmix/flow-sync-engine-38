@@ -26,7 +26,8 @@ import { useUrlState } from "@/hooks/useUrlState";
 import { useScrollPersistence } from "@/hooks/usePersistedState";
 import {
   Plus, Sparkles, Loader2, LayoutDashboard, Columns3, Calendar as CalendarIcon, FileDown, List,
-  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain, MoreHorizontal, BarChart3, Zap
+  Mic, Square as StopIcon, CheckSquare, Upload, X, FileText, Image, Music, Brain, BarChart3, Zap,
+  Settings2, ChevronRight,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -334,41 +335,21 @@ export default function TasksPage() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="hidden md:flex items-center gap-2 lg:gap-3 flex-wrap">
-              {/* Select All */}
-              {viewMode !== 'dashboard' && (
-                <Button variant="outline" size="sm" onClick={selectAll} className="gap-1.5">
-                  <CheckSquare className="w-4 h-4" />
-                  <span className="hidden lg:inline">{selectedIds.size === tasks.length && tasks.length > 0 ? 'Desmarcar' : 'Selecionar Tudo'}</span>
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={() => exportTasks()} disabled={isExporting}>
-                {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                <span className="hidden lg:inline">Exportar PDF</span>
-              </Button>
-              <div className="hidden lg:contents">
-                <TaskAnalysisPanel tasks={tasks} />
-                <TaskExecutionGuide
-                  tasks={tasks}
-                  onComplete={(id) => {
-                    const t = tasks.find(t => t.id === id);
-                    if (t) updateTask(id, { status: 'done', completed_at: new Date().toISOString() } as any);
-                  }}
-                />
-              </div>
+            <div className="hidden md:flex items-center gap-2 ml-auto">
+              {/* Ferramentas dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="lg:hidden gap-1.5">
-                    <MoreHorizontal className="w-4 h-4" />
-                    Mais
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Settings2 className="w-4 h-4" />
+                    Ferramentas
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuItem asChild>
-                    <div><TaskAnalysisPanel tasks={tasks} /></div>
+                    <div className="w-full"><TaskAnalysisPanel tasks={tasks} /></div>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <div>
+                    <div className="w-full">
                       <TaskExecutionGuide
                         tasks={tasks}
                         onComplete={(id) => {
@@ -378,27 +359,49 @@ export default function TasksPage() {
                       />
                     </div>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <div className="w-full"><TaskAIPrioritySuggestions /></div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <div className="w-full"><TaskAIDeadlineSuggestions /></div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <div className="w-full"><TaskDuplicateDetection /></div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsTemplateOpen(true)}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Templates
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsAutomationOpen(true)}>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Automações
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportTasks()} disabled={isExporting}>
+                    {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                    Exportar PDF
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <TaskAIPrioritySuggestions />
-              <TaskAIDeadlineSuggestions />
-              <TaskDuplicateDetection />
-              <Button variant="outline" onClick={() => setIsAISheetOpen(true)}>
-                <Sparkles className="w-4 h-4 mr-2" />
-                <span className="hidden lg:inline">Criar com IA</span>
-              </Button>
-              <Button variant="outline" onClick={() => setIsTemplateOpen(true)}>
-                <FileText className="w-4 h-4 mr-2" />
-                <span className="hidden lg:inline">Templates</span>
-              </Button>
-              <Button variant="outline" onClick={() => setIsAutomationOpen(true)}>
-                <Zap className="w-4 h-4 mr-2" />
-                <span className="hidden lg:inline">Automações</span>
-              </Button>
-              <Button onClick={() => setIsNewTaskOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                <span className="hidden lg:inline">Nova Tarefa</span>
-              </Button>
+
+              {/* CTA único hero */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Nova Tarefa
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsNewTaskOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar manualmente
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsAISheetOpen(true)}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Criar com IA ✨
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
