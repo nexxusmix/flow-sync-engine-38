@@ -23,9 +23,17 @@ import {
   Wand2,
   Check,
   X,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
 import { ProjectBannerSection } from "./ProjectBannerSection";
@@ -173,7 +181,23 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       if (data?.error) throw new Error(data.error);
 
       toast.dismiss(toastId);
-      toast.success(data?.summary || 'Projeto atualizado com sucesso!', { duration: 6000 });
+
+      // Show detailed toast with actions performed
+      const actions = data?.actions as { action: string; status: string; detail?: string }[] | undefined;
+      if (actions && actions.length > 0) {
+        const okActions = actions.filter(a => a.status === 'ok');
+        const errorActions = actions.filter(a => a.status === 'error');
+        const lines: string[] = [];
+        okActions.forEach(a => lines.push(`✓ ${a.action}${a.detail ? ` — ${a.detail}` : ''}`));
+        errorActions.forEach(a => lines.push(`✗ ${a.action}${a.detail ? ` — ${a.detail}` : ''}`));
+        
+        toast.success('Projeto atualizado!', {
+          description: lines.join('\n'),
+          duration: 8000,
+        });
+      } else {
+        toast.success(data?.summary || 'Projeto atualizado com sucesso!', { duration: 6000 });
+      }
 
       // Invalidate all relevant caches
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
@@ -275,6 +299,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           <div className="flex flex-col gap-4">
             {/* Top row - Actions */}
             <div className="flex items-center justify-end gap-2 flex-wrap">
+              {/* Primary actions */}
               <Button
                 size="sm"
                 onClick={() => setUploadDialogOpen(true)}
@@ -286,20 +311,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleSyncFinance}
-                disabled={isSyncingFinance}
-                className="h-9 hidden sm:flex gap-2"
-              >
-                {isSyncingFinance ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 text-emerald-500" />
-                )}
-                Sincronizar Financeiro
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
                 onClick={handleAutoUpdate}
                 disabled={isAutoUpdating}
                 className="h-9 hidden sm:flex gap-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5"
@@ -307,38 +318,9 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 {isAutoUpdating ? (
                   <Loader2 className="w-4 h-4 animate-spin text-primary" />
                 ) : (
-                  <Wand2 className="w-4 h-4 text-primary" />
+                  <Sparkles className="w-4 h-4 text-primary" />
                 )}
-                Auto Update IA
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCommandCenterOpen(true)}
-                className="h-9 hidden sm:flex gap-2"
-              >
-                <Sparkles className="w-4 h-4 text-muted-foreground" />
-                Atualizar com IA
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => exportProject(project.id)}
-                disabled={isExporting}
-                className="h-9 hidden sm:flex"
-              >
-                {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                Exportar PDF
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleCopyPortalLink} 
-                disabled={createLink.isPending}
-                className="h-9 hidden sm:flex"
-              >
-                {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
-                Copiar Link
+                Atualizar Projeto
               </Button>
               <Button
                 size="sm"
@@ -350,13 +332,53 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               </Button>
               <Button 
                 size="sm" 
+                variant="outline"
                 onClick={handleOpenPortal} 
                 disabled={createLink.isPending}
                 className="h-9 hidden sm:flex"
               >
                 {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ExternalLink className="w-4 h-4 mr-2" />}
-                Portal do Cliente
+                Portal
               </Button>
+
+              {/* Tools dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-9 hidden sm:flex gap-2">
+                    <Settings className="w-4 h-4" />
+                    Ferramentas
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={handleSyncFinance}
+                    disabled={isSyncingFinance}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 text-emerald-500 ${isSyncingFinance ? 'animate-spin' : ''}`} />
+                    {isSyncingFinance ? 'Sincronizando...' : 'Sincronizar Financeiro'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCommandCenterOpen(true)}>
+                    <Wand2 className="w-4 h-4 mr-2 text-primary" />
+                    Comando IA
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => exportProject(project.id)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                    Exportar PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleCopyPortalLink}
+                    disabled={createLink.isPending}
+                  >
+                    {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+                    Copiar Link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <ProjectActionsMenu project={project} showOpenOption={false} />
             </div>
 
