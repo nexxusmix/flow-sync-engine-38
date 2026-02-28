@@ -2,50 +2,52 @@
 
 ## Diagnóstico
 
-O recurso "Templates" atualmente é 100% manual:
-- O usuário cria templates preenchendo formulário manualmente (título, descrição, categoria, prioridade, tags, subtarefas)
-- O template é aplicado apenas para preencher o formulário de nova tarefa
-- Não há nenhuma geração, automação ou processamento com IA
+O sistema de **Automações de Tarefas** é 100% manual:
+- O usuário configura regras preenchendo formulários (gatilho, condição, ação)
+- Não há geração com IA, nem análise automática do fluxo de trabalho
+- Não há execução autônoma das regras — elas apenas existem no banco sem serem processadas
 
-## Plano: Templates com IA Autônoma
+## Plano: Automações com IA Autônoma
 
-### 1. Criar Edge Function `generate-task-templates`
-Nova função que recebe um prompt/contexto do usuário e gera automaticamente templates completos:
-- Título, descrição, categoria, prioridade, tags e subtarefas
-- Usa `google/gemini-2.5-flash` via Lovable AI Gateway
-- Gera 3-5 templates de uma vez baseado no contexto fornecido
+### 1. Nova Edge Function `generate-task-automations`
+- Recebe prompt do usuário OU tarefas existentes para análise
+- A IA analisa padrões de trabalho e gera regras de automação inteligentes
+- Usa `google/gemini-2.5-flash` via Lovable AI Gateway com tool calling
+- Retorna array de regras estruturadas (trigger_type, condition_json, action_json)
+- Exemplo: se detecta muitas tarefas movidas manualmente para "done", sugere automação "ao concluir → adicionar tag #concluído"
 
-### 2. Adicionar "Gerar com IA" ao TaskTemplateManager
-- Botão "Gerar Templates com IA" no topo do dialog
-- Campo de texto para o usuário descrever o tipo de templates que precisa (ex: "templates para produção de vídeo", "templates para gestão de projeto de marketing")
-- A IA gera os templates e salva automaticamente no banco
-- Loading state durante geração
+### 2. Adicionar "Gerar com IA" ao TaskAutomationManager
+- Seção no topo do dialog com input de prompt + botão "Gerar Automações com IA"
+- Campo para descrever o tipo de automação (ex: "automações para gestão de prazos", "organizar tarefas por prioridade automaticamente")
+- Loading state com Sparkles icon durante geração
+- Salva as regras automaticamente no banco ao receber resultado
 
-### 3. Adicionar "Aplicar e Criar Tarefa" automático
-- Quando um template é aplicado, ao invés de apenas preencher o formulário, criar a tarefa diretamente com um clique
-- Botão "Criar Tarefa" direto no card do template (além do botão de copiar para formulário)
+### 3. Adicionar "Analisar Minhas Tarefas"
+- Botão que busca as últimas 50 tarefas do usuário
+- Envia para a IA para identificar padrões recorrentes
+- A IA gera automações relevantes baseadas no comportamento real do usuário
+- Ex: detecta que tarefas com tag #urgente sempre são movidas para "em andamento" → cria regra automática
 
-### 4. Adicionar "Gerar Templates a partir das Tarefas"
-- Botão que analisa as tarefas existentes do usuário e sugere templates baseados em padrões recorrentes
-- A IA identifica tarefas similares e cria templates automaticamente
+### 4. Manter formulário manual existente
+- O formulário manual continua disponível como alternativa
+- As regras geradas pela IA seguem o mesmo formato das manuais
 
 ### Detalhes Técnicos
 
-**Edge Function `supabase/functions/generate-task-templates/index.ts`:**
-- Recebe `{ prompt, existingTemplates }` no body
-- Usa tool calling para extrair JSON estruturado com array de templates
-- Cada template: `{ title, description, category, priority, tags, checklist_items }`
-- Retorna array de templates gerados
+**Edge Function `supabase/functions/generate-task-automations/index.ts`:**
+- Mesma estrutura da `generate-task-templates` (já implementada e funcional)
+- Tool calling com schema: `{ rules: [{ name, trigger_type, condition_json, action_json }] }`
+- Trigger types válidos: `on_status_change`, `on_create`, `on_due_date`
+- Action types válidos: `move_to_status`, `set_priority`, `add_tag`
 
-**`src/components/tasks/TaskTemplateManager.tsx`:**
-- Adicionar estado `aiPrompt` e `isGeneratingAI`
-- Seção no topo com input + botão "Gerar com IA"
-- Ao receber resultado, salvar cada template via `createTemplate.mutateAsync`
-- Botão "Analisar Tarefas" que envia tarefas existentes como contexto para gerar templates
+**`src/components/tasks/TaskAutomationManager.tsx`:**
+- Adicionar estados `aiPrompt`, `isGeneratingAI`
+- Seção com input + botão "Gerar com IA" e botão "Analisar Tarefas"
+- Ao receber resultado, salvar cada regra via `createRule`
 
-**`src/hooks/useTaskTemplates.tsx`:**
-- Adicionar mutation `generateTemplatesAI` que chama a edge function e salva os resultados
+**`src/hooks/useTaskAutomationRules.ts`:**
+- Adicionar função `generateAutomationsAI` que invoca a edge function e salva resultados
 
 **`supabase/config.toml`:**
-- Registrar `generate-task-templates` com `verify_jwt = false`
+- Registrar `generate-task-automations` com `verify_jwt = false`
 
