@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { ProjectWithStages } from "@/hooks/useProjects";
 import { SendToClientModal } from "@/components/projects/SendToClientModal";
 import { usePortalLink } from "@/hooks/usePortalLink";
@@ -23,7 +23,7 @@ import {
   Wand2,
   Check,
   X,
-  Settings,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useProjectsStore } from "@/stores/projectsStore";
 import { ProjectActionsMenu } from "@/components/projects/ProjectActionsMenu";
@@ -56,7 +57,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const [sendToClientOpen, setSendToClientOpen] = useState(false);
   const [isSyncingFinance, setIsSyncingFinance] = useState(false);
   const [isAutoUpdating, setIsAutoUpdating] = useState(false);
-  // Inline contract value edit
   const [isEditingValue, setIsEditingValue] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [isSavingValue, setIsSavingValue] = useState(false);
@@ -66,7 +66,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   });
   const { isExporting, exportProject } = useExportPdf();
   
-  // Upload states
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
@@ -133,7 +132,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   };
 
   const handleSyncFinance = async () => {
-    // Proactive validation: open inline edit if no value defined
     if (!project.contract_value || project.contract_value === 0) {
       toast.warning('Defina o valor do contrato antes de sincronizar.', {
         description: 'Clique no valor "R$ 0" no header para editar inline.',
@@ -145,7 +143,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
     setIsSyncingFinance(true);
     try {
-      // Use fetch directly to read body on non-2xx responses
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-project-finances`,
@@ -182,7 +179,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
       toast.dismiss(toastId);
 
-      // Show detailed toast with actions performed
       const actions = data?.actions as { action: string; status: string; detail?: string }[] | undefined;
       if (actions && actions.length > 0) {
         const okActions = actions.filter(a => a.status === 'ok');
@@ -199,7 +195,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
         toast.success(data?.summary || 'Projeto atualizado com sucesso!', { duration: 6000 });
       }
 
-      // Invalidate all relevant caches
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       queryClient.invalidateQueries({ queryKey: ['project-finance', project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -223,7 +218,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       });
       return;
     }
-    
     if (portalUrl) {
       window.open(portalUrl, '_blank');
     }
@@ -240,7 +234,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       });
       return;
     }
-    
     if (portalUrl) {
       navigator.clipboard.writeText(portalUrl);
       toast.success('Link copiado para a área de transferência!');
@@ -285,9 +278,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   return (
     <>
     <div className="space-y-4">
-      {/* Main Info Card */}
       <div className="glass-card rounded-2xl md:rounded-3xl overflow-hidden">
-        {/* Banner Section with AI Generation */}
         <ProjectBannerSection
           projectId={project.id}
           bannerUrl={bannerUrl}
@@ -297,59 +288,58 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
         <div className="p-4 md:p-6">
           <div className="flex flex-col gap-4">
-            {/* Top row - Actions */}
+            {/* Action bar — 3 tiers: Primary CTA | Secondary group | Ferramentas dropdown + overflow */}
             <div className="flex items-center justify-end gap-2 flex-wrap">
-              {/* Primary actions */}
+              {/* Tier 1 — Primary CTA */}
               <Button
                 size="sm"
-                onClick={() => setUploadDialogOpen(true)}
-                className="h-9 hidden sm:flex gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={handleAutoUpdate}
+                disabled={isAutoUpdating}
+                className="h-9 gap-2 shadow-lg shadow-primary/20"
               >
-                <Upload className="w-4 h-4" />
-                Enviar Material
+                {isAutoUpdating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                {isAutoUpdating ? 'Atualizando...' : 'Atualizar Projeto'}
               </Button>
+
+              {/* Tier 2 — Secondary visible actions */}
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleAutoUpdate}
-                disabled={isAutoUpdating}
-                className="h-9 hidden sm:flex gap-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5"
-              >
-                {isAutoUpdating ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                ) : (
-                  <Sparkles className="w-4 h-4 text-primary" />
-                )}
-                Atualizar Projeto
-              </Button>
-              <Button
-                size="sm"
                 onClick={() => setSendToClientOpen(true)}
-                className="h-9 hidden sm:flex gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="h-9 hidden sm:flex gap-2"
               >
                 <Send className="w-4 h-4" />
                 Enviar ao Cliente
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
-                onClick={handleOpenPortal} 
-                disabled={createLink.isPending}
-                className="h-9 hidden sm:flex"
+                onClick={() => setUploadDialogOpen(true)}
+                className="h-9 hidden sm:flex gap-2"
               >
-                {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ExternalLink className="w-4 h-4 mr-2" />}
-                Portal
+                <Upload className="w-4 h-4" />
+                Material
               </Button>
 
-              {/* Tools dropdown */}
+              {/* Tier 3 — Ferramentas consolidated dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="h-9 hidden sm:flex gap-2">
-                    <Settings className="w-4 h-4" />
-                    Ferramentas
+                  <Button size="sm" variant="ghost" className="h-9 gap-2">
+                    <Wrench className="w-4 h-4" />
+                    <span className="hidden sm:inline">Ferramentas</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  {/* AI section */}
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Inteligência Artificial</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setCommandCenterOpen(true)}>
+                    <Wand2 className="w-4 h-4 mr-2 text-primary" />
+                    Comando IA
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleSyncFinance}
                     disabled={isSyncingFinance}
@@ -357,17 +347,17 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                     <RefreshCw className={`w-4 h-4 mr-2 text-emerald-500 ${isSyncingFinance ? 'animate-spin' : ''}`} />
                     {isSyncingFinance ? 'Sincronizando...' : 'Sincronizar Financeiro'}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCommandCenterOpen(true)}>
-                    <Wand2 className="w-4 h-4 mr-2 text-primary" />
-                    Comando IA
-                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
+
+                  {/* Sharing & Export section */}
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Compartilhar</DropdownMenuLabel>
                   <DropdownMenuItem
-                    onClick={() => exportProject(project.id)}
-                    disabled={isExporting}
+                    onClick={handleOpenPortal}
+                    disabled={createLink.isPending}
                   >
-                    {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                    Exportar PDF
+                    {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ExternalLink className="w-4 h-4 mr-2" />}
+                    Portal do Cliente
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleCopyPortalLink}
@@ -376,30 +366,48 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                     {createLink.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
                     Copiar Link
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => exportProject(project.id)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                    Exportar PDF
+                  </DropdownMenuItem>
+
+                  {/* Mobile-only: actions hidden on desktop */}
+                  <div className="sm:hidden">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSendToClientOpen(true)}>
+                      <Send className="w-4 h-4 mr-2" />
+                      Enviar ao Cliente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setUploadDialogOpen(true)}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Enviar Material
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Overflow — lifecycle actions (edit, archive, delete) */}
               <ProjectActionsMenu project={project} showOpenOption={false} />
             </div>
 
-            {/* Bottom row - Project info */}
-            <div className="flex items-center gap-3 mb-3">
-              {/* Badges */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`text-[10px] md:text-xs px-2 py-1 rounded border font-medium ${statusConfig?.color || 'text-muted-foreground'}`}>
-                  {statusConfig?.label || project.status}
-                </span>
-                <span className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                  {project.template || 'Projeto'}
-                </span>
-                <span className="text-[10px] md:text-xs text-primary bg-primary/10 px-2 py-1 rounded font-medium">
-                  {stageInfo?.name || project.stage_current}
-                </span>
-              </div>
+            {/* Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-[10px] md:text-xs px-2 py-1 rounded border font-medium ${statusConfig?.color || 'text-muted-foreground'}`}>
+                {statusConfig?.label || project.status}
+              </span>
+              <span className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                {project.template || 'Projeto'}
+              </span>
+              <span className="text-[10px] md:text-xs text-primary bg-primary/10 px-2 py-1 rounded font-medium">
+                {stageInfo?.name || project.stage_current}
+              </span>
             </div>
 
+            {/* Project identity */}
             <div className="flex items-center gap-3">
-              {/* Logo */}
               <div className="relative group flex-shrink-0">
                 <input type="file" ref={logoInputRef} hidden accept="image/*" onChange={handleLogoUpload} />
                 <button 
@@ -532,7 +540,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       </div>
     </div>
 
-      {/* IA Command Center */}
       <ProjectCommandCenter
         open={commandCenterOpen}
         onOpenChange={setCommandCenterOpen}
@@ -547,14 +554,12 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
         }}
       />
 
-      {/* Upload Material Dialog */}
       <UploadMaterialDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         projectId={project.id}
       />
 
-      {/* Send to Client Modal */}
       <SendToClientModal
         open={sendToClientOpen}
         onOpenChange={setSendToClientOpen}
