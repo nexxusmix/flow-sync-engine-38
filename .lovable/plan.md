@@ -1,63 +1,67 @@
 
 
-## Plano: Redesign Premium do RecentActivityFeed
+## Plano: Cirurgia de Hierarquia — Header do Projeto
 
-### O que muda
+### Diagnóstico
 
-Transformar a lista plana de "Recentes" em um feed visualmente rico, interativo e com profundidade 3D.
+O header do projeto tem o mesmo problema da tela de tarefas: 8 botões primários competindo. Além disso, 3 botões de IA se sobrepõem:
 
-### Mudanças no `RecentActivityFeed.tsx`
+1. **Sincronizar Financeiro** → chama `sync-project-finances` (só finanças)
+2. **Auto Update IA** → chama `auto-update-project` (já inclui sync financeiro + tarefas + calendário)
+3. **Atualizar com IA** → abre `ProjectCommandCenter` (chat livre com IA)
 
-**1. Cards individuais em vez de lista flat**
-- Cada item vira um mini-card com borda sutil, `backdrop-blur`, e efeito 3D ao hover (rotação perspectiva leve usando `Card3D` do PortalAnimations)
-- Ícone do módulo ganha um fundo com gradiente sutil e glow ao hover
-- Status badge vira chip colorido com fundo semi-transparente (não só texto)
+"Sincronizar Financeiro" é redundante — já está dentro do "Auto Update IA". E os nomes são confusos entre si.
 
-**2. Filtros premium**
-- Chips de filtro ganham efeito `Magnetic` (atração magnética ao mouse)
-- Chip ativo: borda animada com glow sutil + ícone animado
-- Transição suave entre filtros com `AnimatePresence` (itens saem com fade + scale, entram com stagger)
+### Solução
 
-**3. Efeitos 3D e interativos por card**
-- Hover: rotação 3D leve (±5°) + elevação com sombra + glare reflexivo
-- Cursor magnético no ícone do módulo
-- Status badge pulsa sutilmente se urgente/atrasado (`PulseRing`)
-- Shimmer effect no card ao hover
+**1. Eliminar "Sincronizar Financeiro" do header** — redundante, já vive dentro do Auto Update e no menu ⚙.
 
-**4. Visual enriquecido**
-- Header com `TextReveal` animado
-- Contador animado de itens por módulo nos chips de filtro
-- Linha de tempo visual sutil à esquerda (vertical line conectando os cards)
-- Gradiente de fundo sutil no container principal
-- Stagger animation nos cards ao entrar na viewport
+**2. Unificar em 2 linhas limpas no header (`ProjectHeader.tsx`)**
 
-**5. Detalhes premium**
-- Tempo relativo com ícone de relógio micro
-- Arrow de navegação com spring animation ao hover
-- Footer CTA com efeito `Shimmer`
+Ações primárias (visíveis):
+- `🔵 Enviar Material` (CTA primário, faz sentido como ação frequente)
+- `✨ Auto Update IA` → renomear para **"Atualizar Projeto ✨"** (botão outline com destaque primary, hero da IA)
+- `🟢 Enviar ao Cliente` (ação de entrega, verde)
+- `Portal do Cliente` (outline)
 
-### Arquivo impactado
-- `src/components/dashboard/RecentActivityFeed.tsx` — rewrite visual completo mantendo mesma lógica de dados
+Ações secundárias → **botão ⚙ Ferramentas** (dropdown):
+- Sincronizar Financeiro (mantém como opção manual para power users)
+- Comando IA (antigo "Atualizar com IA" — abre o Command Center)
+- Exportar PDF
+- Copiar Link
+- Gerar Cliente + Pipeline (já está no ProjectActionsMenu)
+
+**3. Renomear para eliminar confusão**
+- "Auto Update IA" → **"Atualizar Projeto"** (com ícone ✨) — botão principal
+- "Atualizar com IA" → **"Comando IA"** — dentro do dropdown Ferramentas
+- "Sincronizar Financeiro" → mantém label, dentro do dropdown
+
+**4. Melhorar feedback do Auto Update (`ProjectHeader.tsx`)**
+- Após execução, mostrar toast detalhado com as ações realizadas (já retorna `actions[]`)
+- Listar cada ação: ✓ Financeiro sincronizado, ✓ 4 tarefas criadas, ✓ Entrega agendada
+
+**5. Melhorar edge function (`auto-update-project/index.ts`)**
+- Adicionar Action 4: atualizar `health_score` após todas as ações (chama `calculate_project_health_score`)
+- Adicionar Action 5: se projeto não tem `due_date`, sugerir com IA baseado no template e criar
+- Tratar melhor o caso de tasks — hoje só cria se não existe NENHUMA task do user (deveria checar tasks do projeto via `project_id`)
+
+### Arquivos impactados
+- `src/components/projects/detail/ProjectHeader.tsx` — reestruturar toolbar, agrupar em dropdown Ferramentas
+- `supabase/functions/auto-update-project/index.ts` — adicionar health_score refresh, melhorar query de tasks, sugerir due_date
 
 ### Resultado visual esperado
 ```text
-┌──────────────────────────────────────────────────────┐
-│  Recentes                                      ⏱    │
-│  ÚLTIMOS ITENS CRIADOS EM TODOS OS MÓDULOS           │
-│                                                      │
-│  ● TODOS  ✦ LEADS(5)  📁 PROJETOS(3)  ✓ TAREFAS(5) │
-│                                                      │
-│  ┌─ 3D Card ──────────────────────────────────────┐  │
-│  │  🟢  Gerar RAPs com base...        [BACKLOG]   │  │
-│  │      operacao                    há 5 horas →   │  │
-│  └────────────────────────────────────────────────┘  │
-│  │ (timeline line)                                   │
-│  ┌─ 3D Card ──────────────────────────────────────┐  │
-│  │  🟢  Fazer cartão Wilma           [BACKLOG]    │  │
-│  │      operacao                    há 5 horas →   │  │
-│  └────────────────────────────────────────────────┘  │
-│                                                      │
-│              Ver mais →  (shimmer)                    │
-└──────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  [Banner]                                                    │
+│                                                              │
+│  [📤 Enviar Material]  [✨ Atualizar Projeto]                │
+│  [📨 Enviar ao Cliente]  [🌐 Portal]  [⚙ Ferramentas ▾]    │
+│                                                              │
+│  active  filme_institucional  Briefing                       │
+│  🖼 Fazenda da Matta // Vídeo Institucional                  │
+│     Amanda  Fazenda da Matta                                 │
+│                                                              │
+│  💰 R$ 2.200  │  📊 100%  │  📅 26 fev  │  👤 Matheus      │
+└──────────────────────────────────────────────────────────────┘
 ```
 
