@@ -5431,6 +5431,44 @@ export type Database = {
           },
         ]
       }
+      project_file_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          project_id: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          project_id?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          project_id?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_file_categories_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_files: {
         Row: {
           created_at: string | null

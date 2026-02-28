@@ -223,3 +223,6 @@ verify_jwt = false
 [functions.suggest-daily-plan]
 verify_jwt = false
 
+[functions.classify-file]
+verify_jwt = false
+
