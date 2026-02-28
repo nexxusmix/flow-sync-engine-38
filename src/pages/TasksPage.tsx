@@ -16,6 +16,8 @@ import { SavedFocusPlans } from "@/components/tasks/SavedFocusPlans";
 import { TaskAIDailySummary } from "@/components/tasks/TaskAIDailySummary";
 import { TaskAIPrioritySuggestions } from "@/components/tasks/TaskAIPrioritySuggestions";
 import { TaskAIDeadlineSuggestions } from "@/components/tasks/TaskAIDeadlineSuggestions";
+import { TaskAIPreviewPanel } from "@/components/tasks/TaskAIPreviewPanel";
+import type { GeneratedTask } from "@/types/tasks";
 import { TaskDuplicateDetection } from "@/components/tasks/TaskDuplicateDetection";
 import { TaskTemplateManager } from "@/components/tasks/TaskTemplateManager";
 import { TaskGanttView } from "@/components/tasks/TaskGanttView";
@@ -111,6 +113,8 @@ export default function TasksPage() {
   const [uploadedFiles, setUploadedFiles] = useState<{ file: File; status: 'pending' | 'processing' | 'done' | 'error'; extractedText?: string }[]>([]);
   const [isProcessingUploads, setIsProcessingUploads] = useState(false);
   const aiFileInputRef = useRef<HTMLInputElement>(null);
+  const [aiGuidancePrompt, setAiGuidancePrompt] = useState('');
+  const [previewTasks, setPreviewTasks] = useState<GeneratedTask[] | null>(null);
 
   // Persist AI text to localStorage
   useEffect(() => {
@@ -147,7 +151,7 @@ export default function TasksPage() {
   });
 
   const handleAISheetChange = useCallback((open: boolean) => {
-    if (!open) cancelRecording();
+    if (!open) { cancelRecording(); setPreviewTasks(null); }
     setIsAISheetOpen(open);
   }, [cancelRecording]);
 
@@ -269,20 +273,30 @@ export default function TasksPage() {
     try {
       const extractedTexts = uploadedFiles.filter(f => f.extractedText).map(f => f.extractedText!);
       const { data, error } = await supabase.functions.invoke('generate-tasks-from-text', {
-        body: { rawText: aiText, extractedTexts, defaultCategory: aiCategory, defaultColumn: aiColumn },
+        body: { rawText: aiText, extractedTexts, defaultCategory: aiCategory, defaultColumn: aiColumn, guidancePrompt: aiGuidancePrompt || undefined },
       });
       if (error) throw error;
       if (!data?.tasks || data.tasks.length === 0) { toast.error('Nenhuma tarefa identificada no texto'); return; }
-      const newTasks = await createTasksFromAI(data.tasks);
-      toast.success(`${newTasks.length} tarefas criadas!`);
-      setIsAISheetOpen(false);
-      setAiText('');
-      setUploadedFiles([]);
+      setPreviewTasks(data.tasks as GeneratedTask[]);
     } catch (err: any) {
       console.error('Error generating tasks:', err);
       toast.error(err.message || 'Erro ao gerar tarefas');
     } finally {
       setIsGeneratingLocal(false);
+    }
+  };
+
+  const handleConfirmAITasks = async (tasks: GeneratedTask[]) => {
+    try {
+      const created = await createTasksFromAI(tasks as any);
+      toast.success(`${created.length} tarefas criadas!`);
+      setIsAISheetOpen(false);
+      setAiText('');
+      setUploadedFiles([]);
+      setPreviewTasks(null);
+      setAiGuidancePrompt('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao criar tarefas');
     }
   };
 
@@ -586,114 +600,143 @@ export default function TasksPage() {
                 Criar Tarefas com IA
               </SheetTitle>
             </SheetHeader>
-            <div className="space-y-4 py-6">
-              <p className="text-sm text-muted-foreground">
-                Cole uma lista de tarefas, um e-mail, ou qualquer texto — ou use o <strong>microfone</strong> para ditar. Você também pode <strong>enviar arquivos</strong> (PDF, áudio, imagens, documentos).
-              </p>
-
-              {/* File Upload */}
-              <div>
-                <input
-                  ref={aiFileInputRef}
-                  type="file"
-                  multiple
-                  accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.txt,.rtf,.mp3,.wav,.m4a,.ogg,.csv"
-                  onChange={handleAIFileUpload}
-                  className="hidden"
+            {previewTasks ? (
+              /* Step 2: Preview */
+              <div className="py-6">
+                <TaskAIPreviewPanel
+                  tasks={previewTasks}
+                  isRegenerating={isGeneratingLocal}
+                  onConfirm={handleConfirmAITasks}
+                  onRegenerate={handleGenerateFromAI}
+                  onBack={() => setPreviewTasks(null)}
                 />
-                <Button variant="outline" size="sm" onClick={() => aiFileInputRef.current?.click()} disabled={isProcessingUploads} className="gap-1.5 w-full">
-                  {isProcessingUploads ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  Enviar Arquivos
-                </Button>
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {uploadedFiles.map((uf, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border text-xs">
-                        {uf.file.type.startsWith('image/') ? <Image className="w-3.5 h-3.5 text-blue-500 shrink-0" /> :
-                         uf.file.type.startsWith('audio/') ? <Music className="w-3.5 h-3.5 text-purple-500 shrink-0" /> :
-                         <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-                        <span className="truncate flex-1">{uf.file.name}</span>
-                        {uf.status === 'processing' && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
-                        {uf.status === 'done' && <span className="text-green-500 text-[10px] font-medium">✓</span>}
-                        {uf.status === 'error' && <span className="text-destructive text-[10px] font-medium">✗</span>}
-                        <button onClick={() => removeUploadedFile(idx)} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+              </div>
+            ) : (
+              /* Step 1: Input */
+              <>
+                <div className="space-y-4 py-6">
+                  <p className="text-sm text-muted-foreground">
+                    Cole uma lista de tarefas, um e-mail, ou qualquer texto — ou use o <strong>microfone</strong> para ditar. Você também pode <strong>enviar arquivos</strong> (PDF, áudio, imagens, documentos).
+                  </p>
+
+                  {/* File Upload */}
+                  <div>
+                    <input
+                      ref={aiFileInputRef}
+                      type="file"
+                      multiple
+                      accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.txt,.rtf,.mp3,.wav,.m4a,.ogg,.csv"
+                      onChange={handleAIFileUpload}
+                      className="hidden"
+                    />
+                    <Button variant="outline" size="sm" onClick={() => aiFileInputRef.current?.click()} disabled={isProcessingUploads} className="gap-1.5 w-full">
+                      {isProcessingUploads ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      Enviar Arquivos
+                    </Button>
+                    {uploadedFiles.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {uploadedFiles.map((uf, idx) => (
+                          <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border text-xs">
+                            {uf.file.type.startsWith('image/') ? <Image className="w-3.5 h-3.5 text-primary shrink-0" /> :
+                             uf.file.type.startsWith('audio/') ? <Music className="w-3.5 h-3.5 text-primary shrink-0" /> :
+                             <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                            <span className="truncate flex-1">{uf.file.name}</span>
+                            {uf.status === 'processing' && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+                            {uf.status === 'done' && <span className="text-primary text-[10px] font-medium">✓</span>}
+                            {uf.status === 'error' && <span className="text-destructive text-[10px] font-medium">✗</span>}
+                            <button onClick={() => removeUploadedFile(idx)} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <Label>Texto com tarefas</Label>
-                  {isMicSupported ? (
-                    <Button
-                      type="button"
-                      variant={isRecording ? "destructive" : "outline"}
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                      onClick={isRecording ? stopRecording : startRecording}
-                      disabled={isTranscribing}
-                    >
-                      {isTranscribing ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Transcrevendo…</>
-                      ) : isRecording ? (
-                        <><StopIcon className="w-3.5 h-3.5" /><span className="animate-pulse">Gravando…</span></>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label>Texto com tarefas</Label>
+                      {isMicSupported ? (
+                        <Button
+                          type="button"
+                          variant={isRecording ? "destructive" : "outline"}
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs"
+                          onClick={isRecording ? stopRecording : startRecording}
+                          disabled={isTranscribing}
+                        >
+                          {isTranscribing ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" />Transcrevendo…</>
+                          ) : isRecording ? (
+                            <><StopIcon className="w-3.5 h-3.5" /><span className="animate-pulse">Gravando…</span></>
+                          ) : (
+                            <><Mic className="w-3.5 h-3.5" />Ditar</>
+                          )}
+                        </Button>
                       ) : (
-                        <><Mic className="w-3.5 h-3.5" />Ditar</>
+                        <span className="text-[10px] text-muted-foreground">Microfone não suportado</span>
                       )}
-                    </Button>
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground">Microfone não suportado</span>
-                  )}
-                </div>
-                <div className="relative">
-                  <Textarea
-                    value={aiText}
-                    onChange={(e) => setAiText(e.target.value)}
-                    placeholder={`Exemplo:\n- Revisar contrato do cliente X\n- Ligar para contador sobre impostos`}
-                    rows={8}
-                    className="font-mono text-sm"
-                  />
-                  {isRecording && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-medium">
-                      <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                      REC
                     </div>
-                  )}
-                </div>
-                {speechError && (
-                  <div className="flex items-center justify-between mt-1.5 p-2 rounded-md bg-destructive/10 text-destructive text-xs">
-                    <span>{speechError}</span>
-                    <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={startRecording}>
-                      Tentar novamente
-                    </Button>
+                    <div className="relative">
+                      <Textarea
+                        value={aiText}
+                        onChange={(e) => setAiText(e.target.value)}
+                        placeholder={`Exemplo:\n- Revisar contrato do cliente X\n- Ligar para contador sobre impostos`}
+                        rows={6}
+                        className="font-mono text-sm"
+                      />
+                      {isRecording && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-medium">
+                          <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                          REC
+                        </div>
+                      )}
+                    </div>
+                    {speechError && (
+                      <div className="flex items-center justify-between mt-1.5 p-2 rounded-md bg-destructive/10 text-destructive text-xs">
+                        <span>{speechError}</span>
+                        <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={startRecording}>
+                          Tentar novamente
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Categoria padrão</Label>
-                  <Select value={aiCategory} onValueChange={(v) => setAiCategory(v as Task['category'])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{TASK_CATEGORIES.map((cat) => <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>)}</SelectContent>
-                  </Select>
+
+                  {/* Guidance Prompt */}
+                  <div>
+                    <Label>Orientação para a IA (opcional)</Label>
+                    <Textarea
+                      value={aiGuidancePrompt}
+                      onChange={(e) => setAiGuidancePrompt(e.target.value)}
+                      placeholder="Ex: Priorize tarefas urgentes, ignore itens já feitos, use categoria 'projeto' para entregas..."
+                      rows={2}
+                      className="text-sm mt-1"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Categoria padrão</Label>
+                      <Select value={aiCategory} onValueChange={(v) => setAiCategory(v as Task['category'])}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{TASK_CATEGORIES.map((cat) => <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Coluna padrão</Label>
+                      <Select value={aiColumn} onValueChange={(v) => setAiColumn(v as Task['status'])}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{TASK_COLUMNS.filter(c => c.key !== 'done').map((col) => <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label>Coluna padrão</Label>
-                  <Select value={aiColumn} onValueChange={(v) => setAiColumn(v as Task['status'])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{TASK_COLUMNS.filter(c => c.key !== 'done').map((col) => <SelectItem key={col.key} value={col.key}>{col.title}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            <SheetFooter>
-              <Button variant="outline" onClick={() => handleAISheetChange(false)}>Cancelar</Button>
-              <Button onClick={handleGenerateFromAI} disabled={isGeneratingLocal || isRecording || !aiText.trim()}>
-                {isGeneratingLocal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                Gerar Tarefas
-              </Button>
-            </SheetFooter>
+                <SheetFooter>
+                  <Button variant="outline" onClick={() => handleAISheetChange(false)}>Cancelar</Button>
+                  <Button onClick={handleGenerateFromAI} disabled={isGeneratingLocal || isRecording || (!aiText.trim() && uploadedFiles.length === 0)}>
+                    {isGeneratingLocal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                    Gerar Tarefas
+                  </Button>
+                </SheetFooter>
+              </>
+            )}
           </SheetContent>
         </Sheet>
 
