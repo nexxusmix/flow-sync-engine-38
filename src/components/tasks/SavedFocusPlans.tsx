@@ -12,6 +12,8 @@ import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from
 import { useTasksUnified } from '@/hooks/useTasksUnified';
 import { isToday, parseISO } from 'date-fns';
 import { TaskSelectionStep } from './TaskSelectionStep';
+import { AiAddTasksDialog } from './AiAddTasksDialog';
+import type { GeneratedTask } from '@/types/tasks';
 import {
   Dialog,
   DialogContent,
@@ -567,6 +569,59 @@ export function SavedFocusPlans() {
     setAddingTasksToPlanId(null);
   };
 
+  const handleAddAiTasks = async (planId: string, generatedTasks: GeneratedTask[]) => {
+    // 1. Insert tasks into the tasks table
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast.error('Não autenticado'); return; }
+
+    const inserts = generatedTasks.map(t => ({
+      user_id: user.id,
+      title: t.title,
+      description: t.description || null,
+      category: t.category,
+      tags: t.tags,
+      due_date: t.due_date || null,
+      status: t.status,
+      priority: 'normal',
+      position: 0,
+    }));
+
+    const { data: inserted, error } = await supabase.from('tasks').insert(inserts).select();
+    if (error || !inserted) { toast.error('Erro ao criar tarefas'); return; }
+
+    // 2. Add to plan as a new block
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
+    const newBlockTasks = inserted.map((t: any) => ({
+      id: t.id,
+      title: t.title,
+      estimated_minutes: 25,
+      cognitive_type: 'shallow',
+    }));
+
+    const updatedPlanData = {
+      ...plan.plan_data,
+      blocks: [
+        ...(plan.plan_data?.blocks || []),
+        {
+          id: `block_ai_${Date.now()}`,
+          title: 'Tarefas via IA',
+          type: 'shallow_work',
+          technique: 'Geradas por IA',
+          duration_minutes: newBlockTasks.length * 25,
+          tasks: newBlockTasks,
+        },
+      ],
+      total_estimated_minutes: (plan.plan_data?.total_estimated_minutes || 0) + newBlockTasks.length * 25,
+    };
+
+    await supabase.from('saved_focus_plans').update({ plan_data: updatedPlanData as any }).eq('id', planId);
+    setPlans(prev => prev.map(p => p.id === planId ? { ...p, plan_data: updatedPlanData } : p));
+    toast.success(`${inserted.length} tarefa(s) criada(s) e adicionada(s) ao plano!`);
+    setAddingTasksToPlanId(null);
+  };
+
   const handleRegenerate = async (planId: string, excludeCompleted: boolean) => {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
@@ -954,24 +1009,14 @@ export function SavedFocusPlans() {
         </div>
       )}
 
-      {/* Add Tasks Dialog */}
-      <Dialog open={!!addingTasksToPlanId} onOpenChange={(open) => !open && setAddingTasksToPlanId(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto border-border/30 bg-card">
-          <DialogHeader>
-            <DialogTitle className="text-sm flex items-center gap-2">
-              <Plus className="w-4 h-4 text-primary" />
-              Adicionar Tarefas ao Plano
-            </DialogTitle>
-          </DialogHeader>
-          {addingTasksToPlanId && (
-            <TaskSelectionStep
-              tasks={tasks.filter(t => t.status !== 'done')}
-              excludeIds={getTaskIdsFromPlan(plans.find(p => p.id === addingTasksToPlanId)!)}
-              onConfirm={(ids) => handleAddTasks(addingTasksToPlanId, ids)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Add Tasks with AI Dialog */}
+      {addingTasksToPlanId && (
+        <AiAddTasksDialog
+          open={!!addingTasksToPlanId}
+          onOpenChange={(open) => !open && setAddingTasksToPlanId(null)}
+          onConfirm={(generatedTasks) => handleAddAiTasks(addingTasksToPlanId!, generatedTasks)}
+        />
+      )}
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="border-border/30 bg-card">

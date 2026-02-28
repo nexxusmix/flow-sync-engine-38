@@ -12,6 +12,8 @@ interface TaskInput {
   extractedTexts?: string[];
   defaultCategory?: string;
   defaultColumn?: string;
+  guidancePrompt?: string;
+  imageBase64?: string[];
 }
 
 interface GeneratedTask {
@@ -38,7 +40,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authErr } = await sbAuth.auth.getUser();
     if (authErr || !user) return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { rawText, extractedTexts, defaultCategory = 'operacao', defaultColumn = 'backlog' } = await req.json() as TaskInput;
+    const { rawText, extractedTexts, defaultCategory = 'operacao', defaultColumn = 'backlog', guidancePrompt, imageBase64 } = await req.json() as TaskInput;
 
     // Combine rawText with any extracted texts from uploaded files
     const allTexts = [rawText, ...(extractedTexts || [])].filter(t => t && t.trim().length > 0);
@@ -64,6 +66,7 @@ REGRAS:
 5. Extraia tags relevantes (palavras-chave, contexto)
 6. Se houver data mencionada, extraia no formato YYYY-MM-DD
 7. Status padrão é o informado pelo usuário
+${guidancePrompt ? `\nINSTRUÇÃO ADICIONAL DO USUÁRIO:\n${guidancePrompt}` : ''}
 
 IMPORTANTE:
 - Retorne APENAS um array JSON válido
@@ -89,13 +92,29 @@ Retorne um array JSON com as tarefas no formato:
   }
 ]`;
 
+    // Build messages - support multimodal if images provided
+    const messages: any[] = [
+      { role: 'system', content: systemPrompt },
+    ];
+
+    if (imageBase64 && imageBase64.length > 0) {
+      // Multimodal: text + images
+      const contentParts: any[] = [{ type: 'text', text: userPrompt }];
+      for (const img of imageBase64) {
+        contentParts.push({
+          type: 'image_url',
+          image_url: { url: img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}` },
+        });
+      }
+      messages.push({ role: 'user', content: contentParts });
+    } else {
+      messages.push({ role: 'user', content: userPrompt });
+    }
+
     // Use unified AI client
     const aiResponse = await chatCompletion({
       model: 'google/gemini-2.5-flash',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+      messages,
       temperature: 0.3,
       max_tokens: 4096,
     });
