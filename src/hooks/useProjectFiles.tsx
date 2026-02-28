@@ -144,6 +144,39 @@ export function useProjectFiles(projectId: string | undefined) {
     onError: () => toast.error('Erro ao criar categoria'),
   });
 
+  const renameCategory = useMutation({
+    mutationFn: async ({ id, name, slug }: { id: string; name: string; slug: string }) => {
+      const { data, error } = await supabase
+        .from('project_file_categories')
+        .update({ name, slug })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-file-categories', projectId] });
+      toast.success('Categoria renomeada!');
+    },
+    onError: () => toast.error('Erro ao renomear categoria'),
+  });
+
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('project_file_categories')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-file-categories', projectId] });
+      toast.success('Categoria excluída!');
+    },
+    onError: () => toast.error('Erro ao excluir categoria'),
+  });
+
   const deleteFile = useMutation({
     mutationFn: async (fileId: string) => {
       const { data: file, error: fetchError } = await supabase
@@ -254,5 +287,7 @@ export function useProjectFiles(projectId: string | undefined) {
     moveFile,
     togglePortalVisibility,
     createCategory,
+    renameCategory,
+    deleteCategory,
   };
 }
