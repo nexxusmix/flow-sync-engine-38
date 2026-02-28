@@ -98,7 +98,8 @@ async function classifyFile(fileName: string, fileType: string, mimeType: string
 export function FilesTab({ project }: FilesTabProps) {
   const { 
     files, filesByFolder, categories, folderOrder, isLoading, 
-    uploadFile, deleteFile, togglePortalVisibility, moveFile, createCategory 
+    uploadFile, deleteFile, togglePortalVisibility, moveFile, createCategory,
+    renameCategory, deleteCategory,
   } = useProjectFiles(project.id);
   
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -110,6 +111,8 @@ export function FilesTab({ project }: FilesTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [newCategoryModalOpen, setNewCategoryModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [renamingCategory, setRenamingCategory] = useState<FileCategory | null>(null);
+  const [renameCategoryName, setRenameCategoryName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categoryMap = categories.reduce((acc, c) => {
@@ -308,9 +311,43 @@ export function FilesTab({ project }: FilesTabProps) {
                       <Badge variant="secondary" className="text-xs">Custom</Badge>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {folderFiles.length} arquivo{folderFiles.length !== 1 ? 's' : ''}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">
+                      {folderFiles.length} arquivo{folderFiles.length !== 1 ? 's' : ''}
+                    </span>
+                    {cat && !cat.is_default && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <MoreVertical className="w-3 h-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {
+                            setRenamingCategory(cat);
+                            setRenameCategoryName(cat.name);
+                          }}>
+                            <FileText className="w-4 h-4 mr-2" /> Renomear
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              if (folderFiles.length > 0) {
+                                toast.error('Mova ou exclua os arquivos antes de excluir a categoria');
+                                return;
+                              }
+                              if (confirm(`Excluir categoria "${cat.name}"?`)) {
+                                deleteCategory.mutate(cat.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -577,6 +614,50 @@ export function FilesTab({ project }: FilesTabProps) {
             <Button variant="outline" onClick={() => setNewCategoryModalOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreateCategory} disabled={!newCategoryName.trim()}>
               <FolderPlus className="w-4 h-4 mr-2" /> Criar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Category Modal */}
+      <Dialog open={!!renamingCategory} onOpenChange={(open) => { if (!open) setRenamingCategory(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Renomear Categoria</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Novo nome..."
+              value={renameCategoryName}
+              onChange={(e) => setRenameCategoryName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && renamingCategory && renameCategoryName.trim()) {
+                  renameCategory.mutate({
+                    id: renamingCategory.id,
+                    name: renameCategoryName.trim(),
+                    slug: slugify(renameCategoryName),
+                  });
+                  setRenamingCategory(null);
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenamingCategory(null)}>Cancelar</Button>
+            <Button
+              disabled={!renameCategoryName.trim()}
+              onClick={() => {
+                if (renamingCategory) {
+                  renameCategory.mutate({
+                    id: renamingCategory.id,
+                    name: renameCategoryName.trim(),
+                    slug: slugify(renameCategoryName),
+                  });
+                  setRenamingCategory(null);
+                }
+              }}
+            >
+              Renomear
             </Button>
           </DialogFooter>
         </DialogContent>
