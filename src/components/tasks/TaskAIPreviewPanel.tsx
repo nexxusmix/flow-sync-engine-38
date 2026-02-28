@@ -1,4 +1,4 @@
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
 import { GeneratedTask } from "@/types/tasks";
 import { Task, TASK_COLUMNS, TASK_CATEGORIES } from "@/hooks/useTasksUnified";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Check, X, RefreshCw, ArrowLeft, Loader2, Sparkles, Pencil, GripVertical,
+  Check, X, RefreshCw, ArrowLeft, Loader2, Sparkles, Pencil, GripVertical, PackageOpen,
 } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
@@ -29,6 +29,7 @@ interface PreviewTask extends GeneratedTask {
 interface TaskAIPreviewPanelProps {
   tasks: GeneratedTask[];
   isRegenerating: boolean;
+  isConfirming?: boolean;
   onConfirm: (tasks: GeneratedTask[]) => void;
   onRegenerate: () => void;
   onBack: () => void;
@@ -167,6 +168,7 @@ function SortableTaskCard({
 export function TaskAIPreviewPanel({
   tasks: initialTasks,
   isRegenerating,
+  isConfirming = false,
   onConfirm,
   onRegenerate,
   onBack,
@@ -176,6 +178,12 @@ export function TaskAIPreviewPanel({
     initialTasks.map((t, i) => ({ ...t, selected: true, _id: `${prefix}-${i}` }))
   );
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Sync when parent regenerates tasks
+  useEffect(() => {
+    setPreviewTasks(initialTasks.map((t, i) => ({ ...t, selected: true, _id: `${prefix}-${i}` })));
+    setEditingId(null);
+  }, [initialTasks, prefix]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -215,7 +223,7 @@ export function TaskAIPreviewPanel({
   const handleConfirm = () => {
     const selected = previewTasks
       .filter(t => t.selected)
-      .map(({ selected, _id, ...rest }) => rest);
+      .map(({ selected, _id, ...rest }, index) => ({ ...rest, position: index }));
     if (selected.length === 0) return;
     onConfirm(selected);
   };
@@ -242,7 +250,16 @@ export function TaskAIPreviewPanel({
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={previewTasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-            {previewTasks.map((task, index) => (
+            {previewTasks.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
+                <PackageOpen className="w-8 h-8" />
+                <p className="text-sm">Nenhuma tarefa na lista.</p>
+                <Button variant="outline" size="sm" onClick={onRegenerate} disabled={isRegenerating} className="gap-1.5 mt-1">
+                  {isRegenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  Gerar novamente
+                </Button>
+              </div>
+            ) : previewTasks.map((task, index) => (
               <SortableTaskCard
                 key={task._id}
                 task={task}
@@ -272,9 +289,9 @@ export function TaskAIPreviewPanel({
           Regenerar
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={handleConfirm} disabled={selectedCount === 0} className="gap-1.5">
-          <Check className="w-3.5 h-3.5" />
-          Confirmar {selectedCount > 0 ? `(${selectedCount})` : ''}
+        <Button size="sm" onClick={handleConfirm} disabled={selectedCount === 0 || isConfirming} className="gap-1.5">
+          {isConfirming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          {isConfirming ? 'Salvando...' : `Confirmar ${selectedCount > 0 ? `(${selectedCount})` : ''}`}
         </Button>
       </div>
     </div>
