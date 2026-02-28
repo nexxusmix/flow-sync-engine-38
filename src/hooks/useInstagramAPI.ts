@@ -61,20 +61,45 @@ export function useConnectInstagramManual() {
 
   return useMutation({
     mutationFn: async (username: string) => {
+      // First check if connection already exists
+      const { data: existing } = await supabase
+        .from('instagram_connections')
+        .select('id')
+        .eq('workspace_id', DEFAULT_WORKSPACE)
+        .eq('ig_username', username)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { data, error } = await supabase
+          .from('instagram_connections')
+          .update({
+            access_token: 'manual',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+
+      // Insert new
       const { data, error } = await supabase
         .from('instagram_connections')
-        .upsert({
+        .insert({
           workspace_id: DEFAULT_WORKSPACE,
           ig_username: username,
           ig_user_id: `manual_${username}`,
           access_token: 'manual',
           connected_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'workspace_id,ig_username',
         })
         .select()
         .single();
+
+      if (error) throw error;
+      return data;
 
       if (error) throw error;
       return data;
