@@ -1,22 +1,40 @@
 
 
-## Problema
+## Plano: Categorização Automática de Arquivos com IA + Categorias Dinâmicas
 
-O Firecrawl **não suporta Instagram** (retorna 403 "we do not support this site"). Scraping automático do Instagram é bloqueado por todas as ferramentas disponíveis.
+### 1. Criar tabela `project_file_categories`
+- Migration: nova tabela para categorias customizáveis por projeto
+- Campos: `id`, `project_id` (nullable = global), `name`, `slug`, `icon`, `is_default`, `created_at`
+- Seed com as 6 categorias padrão (brutos, projeto, referencias, entregas, contratos, outros) como `is_default = true`
+- O campo `folder` em `project_files` continua como texto livre — não precisa de FK
 
-## Solução: Remover scraping e melhorar entrada manual
+### 2. Criar Edge Function `classify-file`
+- Recebe: `{ fileName, fileType, mimeType, projectContext? }`
+- Usa Lovable AI (gemini-3-flash-preview) para analisar nome + tipo do arquivo
+- Retorna: `{ suggestedFolder: string, confidence: number, isNewCategory: boolean, newCategoryName?: string }`
+- Regras no prompt: mapear para categorias existentes (brutos, projeto, referencias, entregas, contratos, outros) ou sugerir nova
 
-Em vez de tentar scraping que sempre falha, vou:
+### 3. Atualizar fluxo de upload no `FilesTab.tsx`
+- Ao selecionar arquivos, chamar `classify-file` para cada arquivo
+- Exibir sugestão de categoria da IA ao lado de cada arquivo no modal de upload
+- Três opções por arquivo:
+  - **Aceitar sugestão IA** (pré-selecionada)
+  - **Escolher categoria existente** (dropdown)
+  - **Criar nova categoria** (input de texto)
+- Botão "Classificar com IA" para re-processar
 
-1. **Remover o botão/fluxo de scraping automático** do `InstagramMetaConnect.tsx` — elimina a mensagem de erro frustrante
-2. **Melhorar o formulário manual** — campos editáveis para Seguidores, Seguindo, Posts com botão "Salvar Snapshot"
-3. **Manter nota sobre Meta Graph API** — informar que coleta automática requer configuração do Meta App (META_APP_ID + META_APP_SECRET)
+### 4. Atualizar `useProjectFiles.tsx`
+- Adicionar query para buscar categorias customizadas do projeto
+- Atualizar `FileFolder` para aceitar strings dinâmicas (não mais type literal fixo)
+- Adicionar mutation para criar nova categoria
 
-### Arquivos alterados
-- `src/components/instagram-engine/InstagramMetaConnect.tsx` — remover chamada ao scraper, simplificar UI para entrada manual com campos numéricos limpos
+### 5. Atualizar `FOLDER_CONFIG` e `FOLDER_ORDER` no `FilesTab.tsx`
+- Tornar dinâmico: mesclar categorias padrão + categorias customizadas do projeto
+- Novas categorias aparecem na grid de pastas automaticamente
 
-### Resultado
-- Sem mais mensagens de erro sobre coleta indisponível
-- Interface limpa para registrar métricas manualmente
-- Caminho claro para automação futura via Meta Graph API
+### Detalhes Técnicos
+- A classificação IA usa apenas nome do arquivo + mime type (leve e rápido)
+- Categorias customizadas são por projeto (`project_id`)
+- Categorias padrão são globais (`project_id = NULL, is_default = true`)
+- O campo `folder` em `project_files` é texto livre, aceita qualquer slug
 
