@@ -96,8 +96,8 @@ export default function DangerZoneSettingsPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-light text-foreground tracking-tight">Danger Zone</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-section-title font-light text-foreground tracking-tight">Danger Zone</h1>
+            <p className="text-caption text-muted-foreground mt-1">
               Ações irreversíveis e críticas do sistema
             </p>
           </div>

@@ -15,7 +15,7 @@ export default function TeamSettingsPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
-          <h1 className="text-2xl font-light tracking-wide">Equipe do Workspace</h1>
+          <h1 className="text-section-title font-light tracking-wide">Equipe do Workspace</h1>
         </div>
         <TeamManagement />
       </div>
