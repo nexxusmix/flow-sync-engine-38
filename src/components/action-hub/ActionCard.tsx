@@ -1,14 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import {
   Check, Clock, MessageSquare, AlertTriangle, Calendar,
   DollarSign, Package, Zap, Users, FileText, Phone,
   Send, Mail, Video, Mic, PenTool, Briefcase,
   Target, Bell, CreditCard, Receipt, Truck,
-  ClipboardCheck, Settings, Megaphone, Scissors,
+  ClipboardCheck, Settings, Megaphone, Scissors, Copy,
 } from "lucide-react";
 import { ActionItem } from "@/hooks/useActionItems";
 import { cn } from "@/lib/utils";
+import { resolveQuickActions, buildCopySummary, getPrimaryHref } from "./quickActions";
 
 const typeConfig: Record<string, { icon: typeof Check; label: string }> = {
   follow_up:       { icon: Users,          label: "Follow-up" },
@@ -41,18 +44,14 @@ const priorityConfig: Record<string, { bg: string; text: string }> = {
   P3: { bg: "bg-muted/30", text: "text-muted-foreground" },
 };
 
-// Map task type to a contextual icon based on title keywords
 function resolveIcon(item: ActionItem) {
   const title = (item.title || "").toLowerCase();
   const type = item.type;
-
-  // Financial subtypes
   if (type === "financial") {
     if (title.includes("fatura") || title.includes("parcela")) return Receipt;
     if (title.includes("cobrança")) return DollarSign;
     return CreditCard;
   }
-  // Alert subtypes
   if (type === "alert") {
     if (title.includes("tarefa") && title.includes("atrasada")) return AlertTriangle;
     if (title.includes("revisar") || title.includes("revisão")) return ClipboardCheck;
@@ -63,24 +62,20 @@ function resolveIcon(item: ActionItem) {
     if (title.includes("proposta") || title.includes("enviar")) return Send;
     return Bell;
   }
-  // Deadline subtypes
   if (type === "deadline") {
     if (title.includes("vídeo") || title.includes("video")) return Video;
     if (title.includes("entrega")) return Truck;
     return Calendar;
   }
-  // Production subtypes
   if (type === "production_step") {
     if (title.includes("gravar")) return Mic;
     if (title.includes("editar") || title.includes("motion")) return PenTool;
     if (title.includes("corte")) return Scissors;
     return Zap;
   }
-
   return typeConfig[type]?.icon || Bell;
 }
 
-// Icon animation variants per type
 const iconAnimations: Record<string, any> = {
   alert:           { rotate: [0, -12, 12, -8, 8, 0], transition: { duration: 0.6, ease: "easeInOut" } },
   financial:       { y: [0, -3, 0], transition: { duration: 0.5, ease: "easeInOut" } },
@@ -91,6 +86,27 @@ const iconAnimations: Record<string, any> = {
   meeting:         { scale: [1, 1.1, 1], transition: { duration: 0.4, ease: "easeInOut" } },
   message_draft:   { y: [0, -2, 0], transition: { duration: 0.4, ease: "easeInOut" } },
 };
+
+// Relative time badge
+function useRelativeTime(dueAt: string | null) {
+  if (!dueAt) return null;
+  const diff = new Date(dueAt).getTime() - Date.now();
+  const absDiff = Math.abs(diff);
+  const isPast = diff < 0;
+
+  if (absDiff < 60 * 60 * 1000) {
+    const mins = Math.round(absDiff / 60000);
+    return { label: isPast ? `${mins}min atrás` : `em ${mins}min`, urgent: !isPast && mins <= 30, overdue: isPast };
+  }
+  if (absDiff < 24 * 60 * 60 * 1000) {
+    const hrs = Math.round(absDiff / 3600000);
+    return { label: isPast ? `${hrs}h atrás` : `em ${hrs}h`, urgent: !isPast && hrs <= 2, overdue: isPast };
+  }
+  const days = Math.round(absDiff / 86400000);
+  if (days === 0) return { label: "Hoje", urgent: true, overdue: isPast };
+  if (days === 1) return { label: isPast ? "Ontem" : "Amanhã", urgent: !isPast, overdue: isPast };
+  return { label: isPast ? `D+${days} atrasado` : `em ${days}d`, urgent: false, overdue: isPast };
+}
 
 interface ActionCardProps {
   item: ActionItem;
@@ -103,10 +119,18 @@ interface ActionCardProps {
 export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, compact }: ActionCardProps) {
   const [showSnooze, setShowSnooze] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+
   const config = typeConfig[item.type] || typeConfig.alert;
   const prio = priorityConfig[item.priority] || priorityConfig.P2;
   const ResolvedIcon = resolveIcon(item);
   const hoverAnim = iconAnimations[item.type] || iconAnimations.alert;
+  const quickActions = resolveQuickActions(item);
+  const timeInfo = useRelativeTime(item.due_at);
+
+  const isOverdue = item.due_at && new Date(item.due_at) < new Date();
+  const iconColor = isOverdue ? "text-destructive" : "text-primary";
+  const iconBg = isOverdue ? "bg-destructive/10" : "bg-primary/10";
 
   const snoozeOptions = [
     { label: "1h", value: new Date(Date.now() + 3600000).toISOString() },
@@ -115,20 +139,18 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
     { label: "7 dias", value: new Date(Date.now() + 604800000).toISOString() },
   ];
 
-  const dueLabel = item.due_at
-    ? (() => {
-        const diff = Math.ceil((new Date(item.due_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        if (diff < 0) return `D+${Math.abs(diff)} atrasado`;
-        if (diff === 0) return "Hoje";
-        if (diff === 1) return "Amanhã";
-        return `em ${diff}d`;
-      })()
-    : null;
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(buildCopySummary(item));
+    toast.success("Resumo copiado!");
+  };
 
-  const isOverdue = item.due_at && new Date(item.due_at) < new Date();
-  const iconColor = isOverdue ? "text-destructive" : "text-primary";
-  const iconBg = isOverdue ? "bg-destructive/10" : "bg-primary/10";
+  const handleQuickNav = () => {
+    const href = getPrimaryHref(item);
+    if (href) navigate(href);
+  };
 
+  // ── Compact mode ──
   if (compact) {
     return (
       <motion.div
@@ -136,6 +158,7 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
         whileHover={{ scale: 1.02, y: -2 }}
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
+        onClick={handleQuickNav}
       >
         <div className="flex items-start gap-2.5">
           <motion.div
@@ -148,10 +171,17 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
             <p className="text-[11px] font-normal text-foreground truncate">{item.title}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className={cn("text-[8px] px-1.5 py-0.5 rounded-full font-mono uppercase", prio.bg, prio.text)}>{item.priority}</span>
-              {dueLabel && (
-                <span className={cn("text-[8px] font-mono", isOverdue ? "text-destructive" : "text-muted-foreground")}>
-                  {dueLabel}
-                </span>
+              {timeInfo && (
+                <motion.span
+                  className={cn(
+                    "text-[8px] font-mono",
+                    timeInfo.overdue ? "text-destructive" : timeInfo.urgent ? "text-primary" : "text-muted-foreground"
+                  )}
+                  animate={timeInfo.urgent || timeInfo.overdue ? { opacity: [1, 0.5, 1] } : {}}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  {timeInfo.label}
+                </motion.span>
               )}
             </div>
           </div>
@@ -162,6 +192,9 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
           </button>
           <button onClick={(e) => { e.stopPropagation(); onGenerateMessage(item); }} className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors" title="Gerar mensagem IA">
             <MessageSquare className="w-3 h-3 text-primary" strokeWidth={1.5} />
+          </button>
+          <button onClick={handleCopy} className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors" title="Copiar resumo">
+            <Copy className="w-3 h-3 text-primary" strokeWidth={1.5} />
           </button>
           <button onClick={(e) => { e.stopPropagation(); setShowSnooze(!showSnooze); }} className="w-6 h-6 rounded-md bg-muted/30 flex items-center justify-center hover:bg-muted/50 transition-colors" title="Adiar">
             <Clock className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
@@ -180,6 +213,7 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
     );
   }
 
+  // ── Full mode ──
   return (
     <motion.div
       className="glass-card rounded-2xl p-4 group hover:border-primary/20 transition-all"
@@ -204,16 +238,42 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
           </div>
           <p className="text-sm font-normal text-foreground">{item.title}</p>
           {item.description && <p className="text-[11px] text-muted-foreground font-light mt-1 line-clamp-2">{item.description}</p>}
-          {dueLabel && (
+          {timeInfo && (
             <div className="flex items-center gap-1 mt-2">
               <Calendar className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
-              <span className={cn("text-[9px] font-mono", isOverdue ? "text-destructive" : "text-muted-foreground")}>{dueLabel}</span>
+              <motion.span
+                className={cn(
+                  "text-[9px] font-mono",
+                  timeInfo.overdue ? "text-destructive" : timeInfo.urgent ? "text-primary font-semibold" : "text-muted-foreground"
+                )}
+                animate={timeInfo.urgent || timeInfo.overdue ? { opacity: [1, 0.6, 1] } : {}}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                {timeInfo.label}
+              </motion.span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
+      {/* Action bar */}
+      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30 flex-wrap">
+        {/* Quick actions (contextual) */}
+        {quickActions.map((qa, i) => {
+          const QaIcon = qa.icon;
+          return (
+            <motion.button
+              key={i}
+              onClick={() => { if (qa.href) navigate(qa.href); qa.onClick?.(); }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors text-[10px] font-mono uppercase"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <QaIcon className="w-3 h-3" strokeWidth={1.5} /> {qa.label}
+            </motion.button>
+          );
+        })}
+
         <motion.button
           onClick={() => onComplete(item.id)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-[10px] font-mono uppercase"
@@ -231,6 +291,14 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
           <MessageSquare className="w-3 h-3" strokeWidth={1.5} /> Msg IA
         </motion.button>
         <motion.button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-[10px] font-mono uppercase"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Copy className="w-3 h-3" strokeWidth={1.5} /> Copiar
+        </motion.button>
+        <motion.button
           onClick={() => setShowSnooze(!showSnooze)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/20 text-muted-foreground hover:bg-muted/40 transition-colors text-[10px] font-mono uppercase"
           whileHover={{ scale: 1.05 }}
@@ -240,6 +308,7 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
         </motion.button>
         {item.metadata?.financialRef && (
           <motion.button
+            onClick={() => navigate("/financeiro/receitas")}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors text-[10px] font-mono uppercase ml-auto"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
