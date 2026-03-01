@@ -315,17 +315,47 @@ export function useSaveHooks() {
 }
 
 // AI Actions
+function getInstagramAIFriendlyErrorMessage(input?: string): string {
+  const msg = (input || '').toLowerCase();
+
+  if (
+    msg.includes('402') ||
+    msg.includes('insufficient_credits') ||
+    msg.includes('créditos insuficientes') ||
+    msg.includes('payment required')
+  ) {
+    return 'Créditos insuficientes. Adicione créditos ao workspace para usar as funções de IA.';
+  }
+
+  if (msg.includes('429') || msg.includes('rate limit')) {
+    return 'Limite de requisições atingido. Aguarde alguns segundos e tente novamente.';
+  }
+
+  if (msg.includes('non-2xx') || msg.includes('edge function returned')) {
+    return 'Não foi possível processar a IA agora. Tente novamente em instantes.';
+  }
+
+  return input || 'Erro na IA';
+}
+
 export function useInstagramAI() {
   return useMutation({
     mutationFn: async ({ action, data }: { action: string; data: any }) => {
       const { data: result, error } = await supabase.functions.invoke('instagram-ai', {
         body: { action, data },
       });
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
+
+      if (error) {
+        throw new Error(getInstagramAIFriendlyErrorMessage(error.message));
+      }
+
+      if (result?.error) {
+        throw new Error(getInstagramAIFriendlyErrorMessage(result.error));
+      }
+
       return result?.result;
     },
-    onError: (e: any) => toast.error(e.message || 'Erro na IA'),
+    onError: (e: any) => toast.error(getInstagramAIFriendlyErrorMessage(e?.message || 'Erro na IA')),
   });
 }
 
