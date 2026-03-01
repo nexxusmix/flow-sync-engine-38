@@ -63,7 +63,7 @@ function ContentCard({
       onClick={onClick}
       className={`glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing border transition-all hover:scale-[1.02] ${
         isDragging ? 'opacity-50 scale-95 border-primary' : 
-        isOverdue ? 'border-l-2 border-l-red-500 border-transparent' : 
+        isOverdue ? 'border-l-2 border-l-destructive border-transparent' : 
         'border-transparent hover:border-primary/20'
       }`}
     >
@@ -127,12 +127,12 @@ function ContentCard({
       {/* Due Date / Scheduled */}
       <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
         {item.scheduled_at ? (
-          <span className="flex items-center gap-1 text-cyan-500">
+          <span className="flex items-center gap-1 text-primary">
             <Calendar className="w-3 h-3" />
             {new Date(item.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
           </span>
         ) : item.due_at ? (
-          <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-500' : ''}`}>
+          <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive' : ''}`}>
             {isOverdue && <AlertTriangle className="w-3 h-3" />}
             <Calendar className="w-3 h-3" />
             {new Date(item.due_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}

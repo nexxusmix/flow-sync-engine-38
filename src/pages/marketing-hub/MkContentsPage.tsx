@@ -72,12 +72,12 @@ export default function MkContentsPage() {
             onClick={() => setStatusFilter(statusFilter === s.type ? "all" : s.type)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[10px] uppercase tracking-[0.08em] font-medium transition-all whitespace-nowrap ${
               statusFilter === s.type
-                ? "bg-[rgba(0,156,202,0.1)] border-[rgba(0,156,202,0.3)] text-[hsl(195,100%,60%)]"
-                : "border-white/[0.04] text-white/30 hover:border-white/10 hover:text-white/50"
+                ? "bg-primary/10 border-primary/30 text-primary"
+                : "border-border/30 text-muted-foreground hover:border-border hover:text-foreground/60"
             }`}
           >
             <span>{s.name}</span>
-            <span className={`text-[9px] font-mono ${s.count > 0 ? "text-[hsl(195,100%,50%)]" : "text-white/15"}`}>
+            <span className={`text-[9px] font-mono ${s.count > 0 ? "text-primary" : "text-muted-foreground/30"}`}>
               {s.count}
             </span>
           </button>
@@ -86,37 +86,37 @@ export default function MkContentsPage() {
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-2 text-[11px] text-white/25">
-          <span className="font-mono text-[hsl(195,100%,50%)]">{filtered.length}</span>
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="font-mono text-primary">{filtered.length}</span>
           <span>itens {statusFilter !== "all" ? `em "${CONTENT_ITEM_STAGES.find(s => s.type === statusFilter)?.name}"` : "no total"}</span>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-52">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar conteúdo..."
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs text-white/70 placeholder:text-white/15 focus:outline-none focus:border-[rgba(0,156,202,0.3)] transition-colors"
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-muted/20 border border-border/30 text-xs text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
             />
           </div>
-          <div className="flex rounded-lg border border-white/[0.06] overflow-hidden">
+          <div className="flex rounded-lg border border-border/30 overflow-hidden">
             <button
               onClick={() => setView("grid")}
-              className={`p-2 transition-colors ${view === "grid" ? "bg-[rgba(0,156,202,0.12)] text-[hsl(195,100%,55%)]" : "text-white/20 hover:text-white/40"}`}
+              className={`p-2 transition-colors ${view === "grid" ? "bg-primary/10 text-primary" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setView("kanban")}
-              className={`p-2 transition-colors ${view === "kanban" ? "bg-[rgba(0,156,202,0.12)] text-[hsl(195,100%,55%)]" : "text-white/20 hover:text-white/40"}`}
+              className={`p-2 transition-colors ${view === "kanban" ? "bg-primary/10 text-primary" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
             >
               <List className="w-3.5 h-3.5" />
             </button>
           </div>
           <button
             onClick={() => setDialogOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[rgba(0,156,202,0.3)] bg-[rgba(0,156,202,0.08)] text-[hsl(195,100%,55%)] text-[11px] font-medium hover:bg-[rgba(0,156,202,0.15)] transition-colors shrink-0 uppercase tracking-wider"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary text-[11px] font-medium hover:bg-primary/15 transition-colors shrink-0 uppercase tracking-wider"
           >
             <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Novo</span>
@@ -140,14 +140,14 @@ export default function MkContentsPage() {
             return (
               <div
                 key={stage.type}
-                className={`min-w-[260px] max-w-[280px] flex-shrink-0 transition-all ${isOver ? "ring-1 ring-[rgba(0,156,202,0.4)] rounded-lg" : ""}`}
+                className={`min-w-[260px] max-w-[280px] flex-shrink-0 transition-all ${isOver ? "ring-1 ring-primary/40 rounded-lg" : ""}`}
                 onDragOver={(e) => { e.preventDefault(); setDragOverStage(stage.type); }}
                 onDragLeave={() => setDragOverStage(null)}
                 onDrop={(e) => handleDrop(e, stage.type)}
               >
                 <div className="flex items-center gap-2 mb-3 px-1">
                   <MkStatusBadge label={stage.name} variant={stageVariant[stage.type] || "slate"} />
-                  <span className="text-[10px] font-mono text-white/15">{items.length}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground/30">{items.length}</span>
                 </div>
                 <div className="space-y-2.5">
                   {items.map(item => (
@@ -157,7 +157,7 @@ export default function MkContentsPage() {
                       onStatusChange={updateContentStatus}
                       onDelete={deleteContentItem}
                       onRefresh={fetchContentItems}
-                      onClick={() => navigate(`/marketing/content/${item.id}`)}
+                      onClick={() => navigate(`/m/content/${item.id}`)}
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData("contentItemId", item.id);
@@ -167,9 +167,9 @@ export default function MkContentsPage() {
                   ))}
                   {items.length === 0 && (
                     <div className={`rounded-lg border border-dashed py-8 flex items-center justify-center transition-all ${
-                      isOver ? "border-[rgba(0,156,202,0.3)] bg-[rgba(0,156,202,0.05)]" : "border-white/[0.04]"
+                      isOver ? "border-primary/30 bg-primary/5" : "border-border/30"
                     }`}>
-                      <span className="text-[10px] text-white/10">{isOver ? "Solte aqui" : "Vazio"}</span>
+                      <span className="text-[10px] text-muted-foreground/30">{isOver ? "Solte aqui" : "Vazio"}</span>
                     </div>
                   )}
                 </div>
@@ -192,7 +192,7 @@ export default function MkContentsPage() {
                 onStatusChange={updateContentStatus}
                 onDelete={deleteContentItem}
                 onRefresh={fetchContentItems}
-                onClick={() => navigate(`/marketing/content/${item.id}`)}
+                onClick={() => navigate(`/m/content/${item.id}`)}
               />
             </motion.div>
           ))}
@@ -201,38 +201,38 @@ export default function MkContentsPage() {
 
       {/* Create Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-[#0a0a0c] border-white/[0.08] text-white max-w-lg">
+        <DialogContent className="bg-card border-border text-foreground max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-base font-medium text-white/90">Novo Conteúdo</DialogTitle>
+            <DialogTitle className="text-base font-medium text-foreground">Novo Conteúdo</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <Label className="text-white/40 text-[10px] uppercase tracking-wider">Título *</Label>
+              <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Título *</Label>
               <Input
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                className="bg-white/[0.03] border-white/[0.08] text-white/80 mt-1.5 text-xs h-9"
+                className="bg-muted/20 border-border text-foreground mt-1.5 text-xs h-9"
                 placeholder="Reel de lançamento..."
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-white/40 text-[10px] uppercase tracking-wider">Canal</Label>
+                <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Canal</Label>
                 <select
                   value={form.channel}
                   onChange={e => setForm(f => ({ ...f, channel: e.target.value }))}
-                  className="w-full mt-1.5 py-2 px-3 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-white/60 focus:outline-none focus:border-[rgba(0,156,202,0.3)]"
+                  className="w-full mt-1.5 py-2 px-3 rounded-lg bg-muted/20 border border-border text-xs text-foreground/70 focus:outline-none focus:border-primary/30"
                 >
                   <option value="">Selecionar</option>
                   {CONTENT_CHANNELS.map(c => <option key={c.type} value={c.type}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <Label className="text-white/40 text-[10px] uppercase tracking-wider">Status</Label>
+                <Label className="text-muted-foreground text-[10px] uppercase tracking-wider">Status</Label>
                 <select
                   value={form.status}
                   onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                  className="w-full mt-1.5 py-2 px-3 rounded-lg bg-white/[0.03] border border-white/[0.08] text-xs text-white/60 focus:outline-none focus:border-[rgba(0,156,202,0.3)]"
+                  className="w-full mt-1.5 py-2 px-3 rounded-lg bg-muted/20 border border-border text-xs text-foreground/70 focus:outline-none focus:border-primary/30"
                 >
                   {CONTENT_ITEM_STAGES.map(s => <option key={s.type} value={s.type}>{s.name}</option>)}
                 </select>
@@ -240,7 +240,7 @@ export default function MkContentsPage() {
             </div>
             <button
               onClick={handleCreate}
-              className="w-full py-2.5 rounded-lg border border-[rgba(0,156,202,0.3)] bg-[rgba(0,156,202,0.1)] text-[hsl(195,100%,55%)] text-xs font-medium hover:bg-[rgba(0,156,202,0.18)] transition-colors uppercase tracking-wider"
+              className="w-full py-2.5 rounded-lg border border-primary/30 bg-primary/10 text-primary text-xs font-medium hover:bg-primary/15 transition-colors uppercase tracking-wider"
             >
               Criar Conteúdo
             </button>

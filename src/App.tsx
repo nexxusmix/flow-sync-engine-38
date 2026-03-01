@@ -248,6 +248,7 @@ function AppRoutes() {
       <Route path="/m/ideias" element={<ProtectedRoute><MkIdeasPage /></ProtectedRoute>} />
       <Route path="/m/campanhas" element={<ProtectedRoute><MkCampaignsPage /></ProtectedRoute>} />
       <Route path="/m/conteudos" element={<ProtectedRoute><MkContentsPage /></ProtectedRoute>} />
+      <Route path="/m/content/:contentItemId" element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>} />
       <Route path="/m/calendario" element={<ProtectedRoute><MkCalendarPage /></ProtectedRoute>} />
       <Route path="/m/instagram" element={<ProtectedRoute><MkInstagramPage /></ProtectedRoute>} />
       <Route path="/m/templates" element={<ProtectedRoute><MkTemplatesPage /></ProtectedRoute>} />
