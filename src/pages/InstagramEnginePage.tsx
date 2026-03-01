@@ -167,7 +167,7 @@ export default function InstagramEnginePage() {
           <TabsContent value="cockpit" className="mt-6"><CockpitTab /></TabsContent>
           <TabsContent value="insights" className="mt-6"><InsightsAnalyzerTab /></TabsContent>
           <TabsContent value="calendar" className="mt-6"><CalendarTab /></TabsContent>
-          <TabsContent value="scripts" className="mt-6"><ScriptsTab /></TabsContent>
+          <TabsContent value="scripts" className="mt-6"><ScriptsTab onNavigateToCalendar={() => setActiveTab('calendar')} /></TabsContent>
           <TabsContent value="create" className="mt-6"><CreateWithAITab /></TabsContent>
           <TabsContent value="campaigns" className="mt-6"><CampaignsTab /></TabsContent>
           <TabsContent value="snapshots" className="mt-6"><SnapshotsTab /></TabsContent>
