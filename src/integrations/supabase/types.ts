@@ -3818,6 +3818,7 @@ export type Database = {
           script: string | null
           status: string
           story_sequence: Json | null
+          thumbnail_url: string | null
           title: string
           updated_at: string | null
           workspace_id: string
@@ -3849,6 +3850,7 @@ export type Database = {
           script?: string | null
           status?: string
           story_sequence?: Json | null
+          thumbnail_url?: string | null
           title: string
           updated_at?: string | null
           workspace_id?: string
@@ -3880,6 +3882,7 @@ export type Database = {
           script?: string | null
           status?: string
           story_sequence?: Json | null
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
           workspace_id?: string

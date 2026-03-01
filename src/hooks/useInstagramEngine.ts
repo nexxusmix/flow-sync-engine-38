@@ -28,6 +28,7 @@ export interface InstagramPost {
   project_id: string | null;
   campaign_id: string | null;
   post_url: string | null;
+  thumbnail_url: string | null;
   position: number;
   created_at: string;
   updated_at: string;

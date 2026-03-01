@@ -47,21 +47,30 @@ export function PostsGrid({ posts }: PostsGridProps) {
               onClick={() => setSelectedPost(post)}
               className="group relative aspect-square bg-muted/40 hover:bg-muted/60 transition-all duration-200 overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              {/* Background gradient based on pillar */}
-              <div
-                className="absolute inset-0 opacity-20"
-                style={{ background: pillar ? `linear-gradient(135deg, ${pillar.color}22, ${pillar.color}44)` : undefined }}
-              />
+              {/* Thumbnail image or gradient background */}
+              {post.thumbnail_url ? (
+                <img
+                  src={post.thumbnail_url}
+                  alt={post.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div
+                  className="absolute inset-0 opacity-20"
+                  style={{ background: pillar ? `linear-gradient(135deg, ${pillar.color}22, ${pillar.color}44)` : undefined }}
+                />
+              )}
 
-              {/* Content */}
-              <div className="relative h-full flex flex-col items-center justify-center p-2 gap-1.5">
+              {/* Content overlay */}
+              <div className={`relative h-full flex flex-col items-center justify-center p-2 gap-1.5 ${post.thumbnail_url ? 'bg-black/40' : ''}`}>
                 {/* Format icon */}
                 <div className="w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground">
                   {FORMAT_ICONS[post.format] || <Image className="w-3.5 h-3.5" />}
                 </div>
 
                 {/* Title */}
-                <p className="text-[10px] md:text-xs text-foreground font-medium text-center line-clamp-2 leading-tight px-1">
+                <p className={`text-[10px] md:text-xs font-medium text-center line-clamp-2 leading-tight px-1 ${post.thumbnail_url ? 'text-white' : 'text-foreground'}`}>
                   {post.title}
                 </p>
 
@@ -74,7 +83,7 @@ export function PostsGrid({ posts }: PostsGridProps) {
 
                 {/* Scheduled date */}
                 {isScheduled && post.scheduled_at && (
-                  <p className="text-[8px] text-muted-foreground">
+                  <p className={`text-[8px] ${post.thumbnail_url ? 'text-white/70' : 'text-muted-foreground'}`}>
                     {format(new Date(post.scheduled_at), "dd/MM HH:mm")}
                   </p>
                 )}
