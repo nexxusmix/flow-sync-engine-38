@@ -38,21 +38,28 @@ function CadenceCard({
   onToggleActive,
   onAddStep,
   onDeleteStep,
+  onUpdateStepTemplate,
   onEdit,
+  onDelete,
 }: { 
   cadence: Cadence;
   onToggleActive: () => void;
   onAddStep: (step: Partial<CadenceStep>) => void;
   onDeleteStep: (stepId: string) => void;
+  onUpdateStepTemplate: (stepId: string, template: string) => void;
   onEdit: () => void;
+  onDelete: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isAddingStep, setIsAddingStep] = useState(false);
+  const [generatingStepId, setGeneratingStepId] = useState<string | null>(null);
   const [newStep, setNewStep] = useState({
     day_offset: '0',
     channel: 'whatsapp' as const,
     template: '',
   });
+
+  const { generateMessages, isGenerating: isAIGenerating } = useProspectAI();
 
   const handleAddStep = () => {
     if (!newStep.template) {
@@ -69,6 +76,35 @@ function CadenceCard({
     
     setNewStep({ day_offset: '0', channel: 'whatsapp', template: '' });
     setIsAddingStep(false);
+  };
+
+  const handleGenerateForStep = async (stepId: string, channel: string) => {
+    setGeneratingStepId(stepId);
+    const result = await generateMessages(undefined, undefined, {
+      goal: 'prospecting',
+      channel,
+      cadence_name: cadence.name,
+      niche: cadence.target_niche || '',
+    });
+    if (result?.variant_media) {
+      onUpdateStepTemplate(stepId, result.variant_media);
+      toast.success('Mensagem gerada com IA!');
+    }
+    setGeneratingStepId(null);
+  };
+
+  const handleGenerateForNewStep = async () => {
+    const result = await generateMessages(undefined, undefined, {
+      goal: 'prospecting',
+      channel: newStep.channel,
+      cadence_name: cadence.name,
+      niche: cadence.target_niche || '',
+      day_offset: newStep.day_offset,
+    });
+    if (result?.variant_media) {
+      setNewStep(prev => ({ ...prev, template: result.variant_media }));
+      toast.success('Mensagem gerada com IA!');
+    }
   };
 
   return (
@@ -105,6 +141,9 @@ function CadenceCard({
           <div className="flex items-center gap-2">
             <Switch checked={cadence.is_active} onCheckedChange={onToggleActive} />
             <Button variant="ghost" size="sm" onClick={onEdit}>Editar</Button>
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-8 w-8 p-0" onClick={onDelete}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
@@ -138,6 +177,20 @@ function CadenceCard({
                             </span>
                           </div>
                           <p className="text-sm text-foreground whitespace-pre-wrap">{step.template}</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1 text-xs text-primary mt-2 p-0"
+                            onClick={() => handleGenerateForStep(step.id, step.channel)}
+                            disabled={generatingStepId === step.id}
+                          >
+                            {generatingStepId === step.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3" />
+                            )}
+                            {generatingStepId === step.id ? 'Gerando...' : '✨ Gerar com IA'}
+                          </Button>
                         </div>
 
                         <Button
@@ -195,15 +248,19 @@ function CadenceCard({
                       placeholder="Olá {nome}, tudo bem?..."
                       rows={4}
                     />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setIsAddingStep(false)}>
-                      Cancelar
-                    </Button>
-                    <Button size="sm" onClick={handleAddStep}>
-                      Adicionar Passo
-                    </Button>
-                  </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={handleGenerateForNewStep} disabled={isAIGenerating}>
+                        {isAIGenerating ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1" />}
+                        ✨ Gerar com IA
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setIsAddingStep(false)}>
+                        Cancelar
+                      </Button>
+                      <Button size="sm" onClick={handleAddStep}>
+                        Adicionar Passo
+                      </Button>
+                    </div>
                 </div>
               ) : (
                 <Button
@@ -231,6 +288,7 @@ export default function CadencesPage() {
     updateCadence,
     deleteCadence,
     addCadenceStep,
+    updateCadenceStep,
     deleteCadenceStep,
   } = useProspectingStore();
 
@@ -297,6 +355,10 @@ export default function CadencesPage() {
   const handleDeleteStep = async (stepId: string) => {
     await deleteCadenceStep(stepId);
     toast.success('Passo removido');
+  };
+
+  const handleUpdateStepTemplate = async (stepId: string, template: string) => {
+    await updateCadenceStep(stepId, { template });
   };
 
   const handleGenerateWithAI = async () => {
@@ -368,7 +430,12 @@ export default function CadencesPage() {
                 onToggleActive={() => handleToggleActive(cadence)}
                 onAddStep={(step) => handleAddStep(cadence.id, step)}
                 onDeleteStep={handleDeleteStep}
+                onUpdateStepTemplate={handleUpdateStepTemplate}
                 onEdit={() => setEditingCadence(cadence)}
+                onDelete={async () => {
+                  await deleteCadence(cadence.id);
+                  toast.success('Cadência excluída');
+                }}
               />
             ))
           )}

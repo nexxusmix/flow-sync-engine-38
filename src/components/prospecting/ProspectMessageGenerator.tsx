@@ -345,7 +345,7 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
               </Button>
               <Button
                 size="sm"
-                className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="flex-1 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={() => handleWhatsApp(selectedVariant)}
                 disabled={isSendingWhatsApp}
               >
@@ -462,7 +462,7 @@ export function ProspectMessageGenerator({ prospect, opportunity, onClose }: Pro
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 gap-1 text-xs text-emerald-400 flex-1"
+                      className="h-7 gap-1 text-xs text-primary flex-1"
                       onClick={() => {
                         handleWhatsApp(selectedVariant);
                         toast.info('Envie o áudio manualmente após abrir o WhatsApp');

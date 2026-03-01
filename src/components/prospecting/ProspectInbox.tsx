@@ -19,14 +19,14 @@ interface Props {
 }
 
 const STAGE_LABELS: Record<string, { label: string; color: string }> = {
-  new: { label: 'Novo', color: 'bg-slate-500/20 text-slate-400' },
-  contacted: { label: 'Contato feito', color: 'bg-blue-500/20 text-blue-400' },
-  conversation: { label: 'Em conversa', color: 'bg-cyan-500/20 text-cyan-400' },
-  qualified: { label: 'Qualificado', color: 'bg-purple-500/20 text-purple-400' },
-  proposal: { label: 'Proposta', color: 'bg-amber-500/20 text-amber-400' },
-  negotiation: { label: 'Fechamento', color: 'bg-orange-500/20 text-orange-400' },
-  won: { label: 'Ganho', color: 'bg-emerald-500/20 text-emerald-400' },
-  lost: { label: 'Perdido', color: 'bg-red-500/20 text-red-400' },
+  new: { label: 'Novo', color: 'bg-muted text-muted-foreground' },
+  contacted: { label: 'Contato feito', color: 'bg-primary/10 text-primary' },
+  conversation: { label: 'Em conversa', color: 'bg-primary/15 text-primary' },
+  qualified: { label: 'Qualificado', color: 'bg-primary/20 text-primary' },
+  proposal: { label: 'Proposta', color: 'bg-primary/25 text-primary' },
+  negotiation: { label: 'Fechamento', color: 'bg-primary/30 text-primary' },
+  won: { label: 'Ganho', color: 'bg-primary/20 text-primary' },
+  lost: { label: 'Perdido', color: 'bg-destructive/20 text-destructive' },
 };
 
 export function ProspectInbox({ prospects, opportunities }: Props) {

@@ -109,13 +109,13 @@ function ProspectCard({
   };
 
   return (
-    <div className={`glass-card rounded-xl p-4 border ${prospect.status === 'blacklisted' ? 'border-red-500/20 opacity-60' : 'border-transparent hover:border-primary/20'} transition-all`}>
+    <div className={`glass-card rounded-xl p-4 border ${prospect.status === 'blacklisted' ? 'border-destructive/20 opacity-60' : 'border-transparent hover:border-primary/20'} transition-all`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="text-sm font-medium text-foreground truncate">{prospect.company_name}</h4>
             {prospect.status === 'blacklisted' && (
-              <Ban className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+              <Ban className="w-3.5 h-3.5 text-destructive flex-shrink-0" />
             )}
           </div>
           {prospect.niche && (
@@ -187,7 +187,7 @@ function ProspectCard({
                 Editar
               </DropdownMenuItem>
               {prospect.status !== 'blacklisted' && (
-                <DropdownMenuItem onClick={onBlacklist} className="text-red-500">
+                <DropdownMenuItem onClick={onBlacklist} className="text-destructive">
                   <Ban className="w-4 h-4 mr-2" />
                   Não Contatar
                 </DropdownMenuItem>

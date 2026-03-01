@@ -72,7 +72,7 @@ function OpportunityCard({
       onDragEnd={handleDragEnd}
       className={`glass-card rounded-xl p-4 cursor-grab active:cursor-grabbing border border-transparent hover:border-primary/20 transition-all ${
         isDragging ? 'opacity-50 scale-95' : ''
-      } ${isOverdue ? 'border-l-2 border-l-red-500' : ''}`}
+      } ${isOverdue ? 'border-l-2 border-l-destructive' : ''}`}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0 flex-1">
@@ -112,7 +112,7 @@ function OpportunityCard({
 
       {/* Next Action */}
       {opportunity.next_action_at && (
-        <div className={`flex items-center gap-2 text-[10px] ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
+        <div className={`flex items-center gap-2 text-[10px] ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
           {isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
           <span>
             {new Date(opportunity.next_action_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
@@ -472,11 +472,64 @@ export default function OpportunitiesPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Próxima Ação</Label>
+                    <Label>Estágio</Label>
+                    <Select
+                      value={editingOpp.stage}
+                      onValueChange={(v: any) => setEditingOpp({ ...editingOpp, stage: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {OPPORTUNITY_STAGES.map(s => (
+                          <SelectItem key={s.type} value={s.type}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Próxima Ação</Label>
+                      <Input
+                        type="date"
+                        value={editingOpp.next_action_at ? new Date(editingOpp.next_action_at).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEditingOpp({ ...editingOpp, next_action_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Tipo da Ação</Label>
+                      <Select
+                        value={editingOpp.next_action_type || ''}
+                        onValueChange={(v: any) => setEditingOpp({ ...editingOpp, next_action_type: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="dm">DM</SelectItem>
+                          <SelectItem value="call">Ligação</SelectItem>
+                          <SelectItem value="email">E-mail</SelectItem>
+                          <SelectItem value="followup">Follow-up</SelectItem>
+                          <SelectItem value="meeting">Reunião</SelectItem>
+                          <SelectItem value="proposal">Proposta</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Notas da Próxima Ação</Label>
                     <Input
-                      type="date"
-                      value={editingOpp.next_action_at ? new Date(editingOpp.next_action_at).toISOString().split('T')[0] : ''}
-                      onChange={(e) => setEditingOpp({ ...editingOpp, next_action_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                      value={editingOpp.next_action_notes || ''}
+                      onChange={(e) => setEditingOpp({ ...editingOpp, next_action_notes: e.target.value })}
+                      placeholder="O que fazer na próxima ação..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Responsável</Label>
+                    <Input
+                      value={editingOpp.owner_name || ''}
+                      onChange={(e) => setEditingOpp({ ...editingOpp, owner_name: e.target.value })}
+                      placeholder="Nome do responsável"
                     />
                   </div>
                   <div>
@@ -488,6 +541,17 @@ export default function OpportunitiesPage() {
                       rows={3}
                     />
                   </div>
+                  {editingOpp.stage === 'lost' && (
+                    <div>
+                      <Label>Motivo da Perda</Label>
+                      <Textarea
+                        value={editingOpp.lost_reason || ''}
+                        onChange={(e) => setEditingOpp({ ...editingOpp, lost_reason: e.target.value })}
+                        placeholder="Por que foi perdida..."
+                        rows={2}
+                      />
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setEditingOpp(null)}>Cancelar</Button>
@@ -497,8 +561,13 @@ export default function OpportunitiesPage() {
                       estimated_value: editingOpp.estimated_value,
                       probability: editingOpp.probability,
                       fit_score: editingOpp.fit_score,
+                      stage: editingOpp.stage,
                       next_action_at: editingOpp.next_action_at,
+                      next_action_type: editingOpp.next_action_type,
+                      next_action_notes: editingOpp.next_action_notes,
+                      owner_name: editingOpp.owner_name,
                       conversation_summary: editingOpp.conversation_summary,
+                      lost_reason: editingOpp.lost_reason,
                     });
                     setEditingOpp(null);
                     toast.success('Oportunidade atualizada');
