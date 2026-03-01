@@ -6,13 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, usePublishToInstagram, PILLARS, FORMATS, POST_STATUSES, InstagramPost } from '@/hooks/useInstagramEngine';
+import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, usePublishToInstagram, useInstagramAI, PILLARS, FORMATS, POST_STATUSES, InstagramPost } from '@/hooks/useInstagramEngine';
 import { useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { InstagramEmbed } from './InstagramEmbed';
 import { PostEditDialog } from './PostEditDialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send, Filter, X, Link2, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send, Filter, X, Link2, Sparkles, CalendarPlus, Wand2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { addDays, startOfWeek, nextMonday } from 'date-fns';
 
 type ActiveFilters = {
   statuses: string[];
@@ -41,6 +43,66 @@ export function CalendarTab() {
   const [editingPostUrl, setEditingPostUrl] = useState<string | null>(null);
   const [tempPostUrl, setTempPostUrl] = useState('');
   const [editingPost, setEditingPost] = useState<InstagramPost | null>(null);
+  const [isGeneratingWeek, setIsGeneratingWeek] = useState(false);
+  const aiMutation = useInstagramAI();
+
+  const handleGenerateWeeklyCalendar = async () => {
+    setIsGeneratingWeek(true);
+    try {
+      // Determine the target week: next Monday from current month view
+      const weekStart = startOfWeek(currentMonth, { weekStartsOn: 1 });
+      const targetMonday = weekStart < new Date() ? nextMonday(new Date()) : weekStart;
+
+      const result = await aiMutation.mutateAsync({
+        action: 'generate_calendar',
+        data: {
+          pillars: PILLARS.map(p => p.key),
+          posts_per_week: 4,
+          weeks: 1,
+        },
+      });
+
+      if (!result || !Array.isArray(result)) {
+        throw new Error('IA não retornou calendário válido');
+      }
+
+      const weekData = result[0];
+      if (!weekData?.posts || !Array.isArray(weekData.posts)) {
+        throw new Error('Formato de resposta inválido');
+      }
+
+      const dayMap: Record<string, number> = {
+        segunda: 0, terça: 1, terca: 1, quarta: 2, quinta: 3, sexta: 4, sábado: 5, sabado: 5, domingo: 6,
+      };
+
+      let created = 0;
+      for (const post of weekData.posts) {
+        const dayOffset = dayMap[post.day_of_week?.toLowerCase()] ?? created;
+        const scheduledDate = addDays(targetMonday, dayOffset);
+        // Set time to 10:00
+        scheduledDate.setHours(10, 0, 0, 0);
+
+        await createPost.mutateAsync({
+          title: post.title || `Post ${created + 1}`,
+          format: post.format === 'carousel' ? 'carousel' : post.format === 'story' ? 'story' : 'reel',
+          pillar: post.pillar || 'autoridade',
+          status: 'planned',
+          scheduled_at: scheduledDate.toISOString(),
+          hook: post.hook || null,
+          script: post.brief || null,
+          ai_generated: true,
+        } as any);
+        created++;
+      }
+
+      toast.success(`${created} posts criados para a semana de ${format(targetMonday, "dd/MM", { locale: ptBR })}! 🚀`);
+      setCurrentMonth(targetMonday);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar calendário');
+    } finally {
+      setIsGeneratingWeek(false);
+    }
+  };
 
   const hasActiveFilters = filters.statuses.length > 0 || filters.formats.length > 0 || filters.pillars.length > 0 || filters.campaigns.length > 0;
   const activeFilterCount = filters.statuses.length + filters.formats.length + filters.pillars.length + filters.campaigns.length;
@@ -160,10 +222,23 @@ export function CalendarTab() {
   return (
     <div className="space-y-4">
       {/* Month Nav + Filters Toggle */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="w-4 h-4" /></Button>
-        <h3 className="text-sm font-medium text-foreground capitalize">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</h3>
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="w-4 h-4" /></Button>
+          <h3 className="text-sm font-medium text-foreground capitalize">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</h3>
+          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="w-4 h-4" /></Button>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+            onClick={handleGenerateWeeklyCalendar}
+            disabled={isGeneratingWeek}
+          >
+            {isGeneratingWeek ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+            {isGeneratingWeek ? 'Gerando...' : 'Gerar Semana com IA'}
+          </Button>
           <Button
             variant={showFilters ? 'default' : 'ghost'}
             size="icon"
@@ -177,7 +252,6 @@ export function CalendarTab() {
               </span>
             )}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="w-4 h-4" /></Button>
         </div>
       </div>
 
