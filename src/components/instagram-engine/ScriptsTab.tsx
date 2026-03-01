@@ -5,11 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import {
   useInstagramHooks, useInstagramAI, useSaveHooks, useCreatePost,
-  useProfileConfig, PILLARS
+  useProfileConfig, useInstagramCampaigns, PILLARS
 } from '@/hooks/useInstagramEngine';
-import { Loader2, Sparkles, Search, Star, Copy, Check, Rocket, CalendarPlus, ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Sparkles, Search, Star, Copy, Check, Rocket, CalendarPlus, ArrowRight, Zap, Target, ListChecks, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addDays, setHours, setMinutes } from 'date-fns';
@@ -20,6 +24,14 @@ const HOOK_CATEGORIES = [
   { key: 'bastidores', label: 'Bastidores' },
   { key: 'educacao', label: 'Educação' },
   { key: 'venda', label: 'Venda Consultiva' },
+];
+
+const VOLUME_PRESETS = [
+  { key: 'starter', label: '3/semana', posts: 3, desc: 'Consistente e sustentável' },
+  { key: 'growth', label: '5/semana', posts: 5, desc: 'Crescimento acelerado (recomendado)' },
+  { key: 'aggressive', label: '7/semana', posts: 7, desc: '1 post/dia — máximo impacto' },
+  { key: 'month', label: 'Mês inteiro', posts: 20, desc: '~20 posts para 4 semanas' },
+  { key: 'custom', label: 'Personalizado', posts: 0, desc: 'Escolha a quantidade' },
 ];
 
 interface ScriptsTabProps {
@@ -38,17 +50,27 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Autopilot state
+  const [showAutopilotDialog, setShowAutopilotDialog] = useState(false);
+  const [selectedVolume, setSelectedVolume] = useState('growth');
+  const [customCount, setCustomCount] = useState([5]);
   const [autopilotRunning, setAutopilotRunning] = useState(false);
   const [autopilotStep, setAutopilotStep] = useState('');
   const [autopilotProgress, setAutopilotProgress] = useState(0);
   const [autopilotDone, setAutopilotDone] = useState(false);
-  const [autopilotStats, setAutopilotStats] = useState<{ hooks: number; posts: number } | null>(null);
+  const [autopilotStats, setAutopilotStats] = useState<{
+    hooks: number; posts: number; campaign: string; stories: number; checklists: number;
+  } | null>(null);
 
   const filteredHooks = (hooks || []).filter(h => {
     if (search && !h.hook_text.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCategory !== 'all' && h.category !== filterCategory) return false;
     return true;
   });
+
+  const getPostCount = () => {
+    if (selectedVolume === 'custom') return customCount[0];
+    return VOLUME_PRESETS.find(v => v.key === selectedVolume)?.posts || 5;
+  };
 
   const handleGenerate = async (category: string) => {
     setGenerating(true);
@@ -76,37 +98,64 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
   };
 
   const handleAutopilot = async () => {
+    const postCount = getPostCount();
+    setShowAutopilotDialog(false);
     setAutopilotRunning(true);
     setAutopilotDone(false);
     setAutopilotStats(null);
-    setAutopilotProgress(10);
-    setAutopilotStep('🧠 Analisando perfil e planejando semana...');
+    setAutopilotProgress(5);
+    setAutopilotStep('🧠 Planejando campanha, hooks, roteiros, stories e checklists...');
 
     try {
       // Step 1: Generate everything with AI
-      setAutopilotProgress(20);
-      setAutopilotStep('✨ Gerando hooks, roteiros, legendas e agendamento...');
+      setAutopilotProgress(15);
 
       const profileContext = profileConfig ? {
         handle: profileConfig.profile_handle,
         niche: profileConfig.niche,
         target_audience: profileConfig.target_audience,
+        followers: undefined as number | undefined,
+        avg_engagement: undefined as number | undefined,
       } : undefined;
 
       const result = await aiMutation.mutateAsync({
         action: 'autopilot_full',
         data: {
           pillars: profileConfig?.content_pillars?.map((p: any) => p.key) || undefined,
-          posts_count: 5,
+          posts_count: postCount,
           profile_context: profileContext,
         },
       });
 
       if (!result) throw new Error('IA não retornou resultado');
 
-      // Step 2: Save hooks
-      setAutopilotProgress(50);
-      setAutopilotStep('💾 Salvando hooks na biblioteca...');
+      // Step 2: Create campaign
+      setAutopilotProgress(35);
+      setAutopilotStep('🎯 Criando campanha...');
+
+      let campaignId: string | null = null;
+      const campaignData = result.campaign;
+      if (campaignData) {
+        const { data: newCampaign, error: campErr } = await supabase
+          .from('instagram_campaigns')
+          .insert({
+            name: campaignData.name || 'Campanha Autopilot',
+            objective: campaignData.objective || null,
+            target_audience: campaignData.target_audience || null,
+            key_messages: campaignData.key_messages || [],
+            kpis: campaignData.kpis || null,
+            status: 'active',
+          } as any)
+          .select('id')
+          .single();
+        if (!campErr && newCampaign) {
+          campaignId = newCampaign.id;
+        }
+      }
+
+      // Step 3: Save hooks
+      setAutopilotProgress(45);
+      setAutopilotStep('✨ Salvando hooks na biblioteca...');
 
       const generatedHooks = result.hooks || [];
       if (generatedHooks.length > 0) {
@@ -120,18 +169,25 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
         })));
       }
 
-      // Step 3: Create posts with scheduled dates
-      setAutopilotProgress(70);
-      setAutopilotStep('📅 Criando posts e agendando no calendário...');
+      // Step 4: Create posts with checklists, stories, and schedule
+      setAutopilotProgress(55);
+      setAutopilotStep('📅 Criando posts com roteiros, stories e checklists...');
 
       const generatedPosts = result.posts || [];
       const now = new Date();
+      let totalStories = 0;
+      let totalChecklists = 0;
 
       for (let i = 0; i < generatedPosts.length; i++) {
         const p = generatedPosts[i];
         const dayOffset = p.scheduled_day_offset || (i + 1);
         const [hour, minute] = (p.scheduled_time || '10:00').split(':').map(Number);
         const scheduledDate = setMinutes(setHours(addDays(now, dayOffset), hour || 10), minute || 0);
+
+        const storySeq = p.story_sequence || [];
+        const checklist = p.checklist || [];
+        totalStories += storySeq.length;
+        totalChecklists += checklist.length;
 
         await createPost.mutateAsync({
           title: p.title || `Post ${i + 1}`,
@@ -150,20 +206,34 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
           hashtags: p.hashtags || [],
           cover_suggestion: p.cover_suggestion || null,
           carousel_slides: p.carousel_slides || [],
-          story_sequence: p.story_sequence || [],
+          story_sequence: storySeq,
+          checklist: checklist,
+          campaign_id: campaignId,
           ai_generated: true,
           position: i,
         } as any);
 
-        setAutopilotProgress(70 + Math.round((i + 1) / generatedPosts.length * 25));
+        setAutopilotProgress(55 + Math.round((i + 1) / generatedPosts.length * 30));
       }
 
+      // Step 5: Save projections if available
+      setAutopilotProgress(90);
+      setAutopilotStep('📊 Finalizando projeções de crescimento...');
+
+      // Projections are returned but displayed in the summary — no separate table needed
+
       setAutopilotProgress(100);
-      setAutopilotStep('✅ Autopilot concluído!');
-      setAutopilotStats({ hooks: generatedHooks.length, posts: generatedPosts.length });
+      setAutopilotStep('✅ Autopilot Mega concluído!');
+      setAutopilotStats({
+        hooks: generatedHooks.length,
+        posts: generatedPosts.length,
+        campaign: campaignData?.name || 'Campanha',
+        stories: totalStories,
+        checklists: totalChecklists,
+      });
       setAutopilotDone(true);
 
-      toast.success(`Autopilot: ${generatedHooks.length} hooks + ${generatedPosts.length} posts criados e agendados! 🚀`);
+      toast.success(`🚀 Autopilot: ${generatedPosts.length} posts completos com campanha, stories e checklists!`);
     } catch (e: any) {
       toast.error(e.message || 'Erro no autopilot');
       setAutopilotStep('');
@@ -188,7 +258,7 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Autopilot Banner */}
+      {/* Autopilot Progress Banner */}
       <AnimatePresence>
         {(autopilotRunning || autopilotDone) && (
           <motion.div
@@ -208,16 +278,27 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex flex-wrap items-center gap-3 mt-2"
+                  className="space-y-3 mt-2"
                 >
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    <Sparkles className="w-3 h-3" /> {autopilotStats.hooks} hooks
-                  </Badge>
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    <CalendarPlus className="w-3 h-3" /> {autopilotStats.posts} posts agendados
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Sparkles className="w-3 h-3" /> {autopilotStats.hooks} hooks
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <CalendarPlus className="w-3 h-3" /> {autopilotStats.posts} posts
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Target className="w-3 h-3" /> {autopilotStats.campaign}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Zap className="w-3 h-3" /> {autopilotStats.stories} stories
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <ListChecks className="w-3 h-3" /> {autopilotStats.checklists} tarefas
+                    </Badge>
+                  </div>
                   {onNavigateToCalendar && (
-                    <Button size="sm" className="ml-auto gap-1.5 text-xs" onClick={onNavigateToCalendar}>
+                    <Button size="sm" className="gap-1.5 text-xs" onClick={onNavigateToCalendar}>
                       Ver no Calendário <ArrowRight className="w-3.5 h-3.5" />
                     </Button>
                   )}
@@ -255,7 +336,7 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
           <Button
             size="sm"
             className="gap-1.5 text-xs bg-gradient-to-r from-primary to-primary/70"
-            onClick={handleAutopilot}
+            onClick={() => setShowAutopilotDialog(true)}
             disabled={autopilotRunning || generating}
           >
             {autopilotRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
@@ -280,9 +361,8 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
         <Card className="glass-card p-8 text-center">
           <Sparkles className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground mb-3">Nenhum hook ainda. Use o Autopilot para gerar tudo de uma vez!</p>
-          <Button size="sm" onClick={handleAutopilot} disabled={autopilotRunning} className="gap-1.5">
-            {autopilotRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-            Gerar Tudo + Agendar
+          <Button size="sm" onClick={() => setShowAutopilotDialog(true)} disabled={autopilotRunning} className="gap-1.5">
+            <Rocket className="w-4 h-4" /> Gerar Tudo + Agendar
           </Button>
         </Card>
       ) : (
@@ -302,7 +382,7 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
                       </Badge>
                     )}
                     {h.hook_score >= 85 && (
-                      <Badge className="bg-amber-500/15 text-amber-400 text-[9px] gap-0.5">
+                      <Badge className="bg-primary/15 text-primary text-[9px] gap-0.5">
                         <Star className="w-2.5 h-2.5" /> Viral Potential
                       </Badge>
                     )}
@@ -322,6 +402,96 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
           ))}
         </div>
       )}
+
+      {/* Autopilot Config Dialog */}
+      <Dialog open={showAutopilotDialog} onOpenChange={setShowAutopilotDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Rocket className="w-5 h-5 text-primary" />
+              Autopilot — Gerar Tudo
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              A IA vai criar campanha, hooks, roteiros completos, stories, checklists e agendar tudo no calendário.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-5 mt-2">
+            {/* Volume Selection */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Quantidade de posts</Label>
+              <div className="grid grid-cols-1 gap-2">
+                {VOLUME_PRESETS.map(v => (
+                  <button
+                    key={v.key}
+                    onClick={() => setSelectedVolume(v.key)}
+                    className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all ${
+                      selectedVolume === v.key
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border/50 text-muted-foreground hover:border-primary/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{v.label}</span>
+                      {v.key === 'growth' && (
+                        <Badge variant="secondary" className="text-[9px]">Recomendado</Badge>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{v.desc}</p>
+                  </button>
+                ))}
+              </div>
+
+              {selectedVolume === 'custom' && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Posts:</Label>
+                    <span className="text-sm font-bold text-primary">{customCount[0]}</span>
+                  </div>
+                  <Slider
+                    value={customCount}
+                    onValueChange={setCustomCount}
+                    min={1}
+                    max={30}
+                    step={1}
+                    className="mt-1"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* What will be generated */}
+            <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">O que será gerado:</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { icon: Target, label: '1 Campanha temática' },
+                  { icon: Sparkles, label: `${getPostCount()} Hooks com score` },
+                  { icon: CalendarPlus, label: `${getPostCount()} Posts completos` },
+                  { icon: Zap, label: 'Stories interativos' },
+                  { icon: ListChecks, label: 'Checklists de produção' },
+                  { icon: TrendingUp, label: 'Projeções de crescimento' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-[11px] text-foreground/80">
+                    <item.icon className="w-3 h-3 text-primary/60" />
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" size="sm" onClick={() => setShowAutopilotDialog(false)}>
+              Cancelar
+            </Button>
+            <Button size="sm" className="gap-1.5" onClick={handleAutopilot}>
+              <Rocket className="w-4 h-4" />
+              Executar Autopilot ({getPostCount()} posts)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
