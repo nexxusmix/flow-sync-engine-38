@@ -16,7 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+const COLORS = ['hsl(195 100% 40%)', 'hsl(195 80% 50%)', 'hsl(195 60% 60%)', 'hsl(195 40% 45%)'];
 
 export default function SalesReport() {
   const navigate = useNavigate();
@@ -105,8 +105,8 @@ export default function SalesReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Eye className="w-5 h-5 text-amber-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Eye className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">
@@ -122,8 +122,8 @@ export default function SalesReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">
@@ -139,8 +139,8 @@ export default function SalesReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-red-500" />
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-destructive" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.proposalStats.rejected || 0}</p>

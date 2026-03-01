@@ -109,9 +109,9 @@ export default function OperationsReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-red-500" />
-                </div>
+                 <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                   <Clock className="w-5 h-5 text-destructive" />
+                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.delayedCount || 0}</p>
                   <p className="text-xs text-muted-foreground">Projetos Atrasados</p>
@@ -123,9 +123,9 @@ export default function OperationsReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-amber-500" />
-                </div>
+                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                   <AlertTriangle className="w-5 h-5 text-muted-foreground" />
+                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.avgDelayDays || 0}</p>
                   <p className="text-xs text-muted-foreground">Média Atraso (dias)</p>
@@ -137,9 +137,9 @@ export default function OperationsReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-blue-500" />
-                </div>
+                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                   <MessageSquare className="w-5 h-5 text-primary" />
+                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.openComments || 0}</p>
                   <p className="text-xs text-muted-foreground">Comentários Abertos</p>
@@ -151,9 +151,9 @@ export default function OperationsReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <CheckSquare className="w-5 h-5 text-violet-500" />
-                </div>
+                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                   <CheckSquare className="w-5 h-5 text-primary" />
+                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.pendingApprovals || 0}</p>
                   <p className="text-xs text-muted-foreground">Aprovações Pendentes</p>
@@ -220,7 +220,7 @@ export default function OperationsReport() {
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm text-foreground">{stage.count} itens</span>
                             {isBottleneck && (
-                              <Badge variant="outline" className="text-amber-500 border-amber-500 text-[9px]">
+                             <Badge variant="outline" className="text-muted-foreground border-border text-[9px]">
                                 Gargalo
                               </Badge>
                             )}

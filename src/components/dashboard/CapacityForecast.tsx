@@ -36,7 +36,7 @@ export function CapacityForecast({ weeklyLoad }: CapacityForecastProps) {
             {weeklyLoad.map((entry, i) => (
               <Cell
                 key={i}
-                fill={entry.loadPct > 100 ? 'hsl(var(--destructive))' : entry.loadPct > 80 ? 'hsl(40, 90%, 50%)' : 'hsl(var(--primary))'}
+                fill={entry.loadPct > 100 ? 'hsl(var(--destructive))' : entry.loadPct > 80 ? 'hsl(195, 40%, 50%)' : 'hsl(var(--primary))'}
               />
             ))}
           </Bar>
