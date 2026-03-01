@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useUpdatePost, useUpdatePostWithAI, InstagramPost, PILLARS, FORMATS } from '@/hooks/useInstagramEngine';
+import { useUpdatePost, useUpdatePostWithAI, useSaveAIFeedback, InstagramPost, PILLARS, FORMATS } from '@/hooks/useInstagramEngine';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, Link2, Upload, FileText, X } from 'lucide-react';
@@ -31,6 +31,7 @@ const FIELDS = [
 export function PostEditDialog({ post, open, onOpenChange }: PostEditDialogProps) {
   const updatePost = useUpdatePost();
   const { generateAndUpdate, isPending: aiPending } = useUpdatePostWithAI();
+  const saveFeedback = useSaveAIFeedback();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -43,6 +44,7 @@ export function PostEditDialog({ post, open, onOpenChange }: PostEditDialogProps
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [generatingField, setGeneratingField] = useState<string | null>(null);
+  const [aiOriginals, setAiOriginals] = useState<Record<string, string>>({}); // Track AI-generated values for feedback
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -67,6 +69,25 @@ export function PostEditDialog({ post, open, onOpenChange }: PostEditDialogProps
     updates.hashtags = hashtags.split(',').map(h => h.trim().replace(/^#/, '')).filter(Boolean);
     updates.thumbnail_url = thumbnailUrl;
     await updatePost.mutateAsync(updates);
+
+    // Auto-save feedback for any field the user edited after AI generation
+    if (post.ai_generated) {
+      FIELDS.forEach(({ key }) => {
+        const original = aiOriginals[key] || (post as any)[key] || '';
+        const edited = fields[key] || '';
+        if (original && edited && original !== edited) {
+          saveFeedback.mutate({
+            post_id: post.id,
+            field_name: key,
+            original_text: original,
+            edited_text: edited,
+            category: post.pillar || undefined,
+            format: post.format,
+          });
+        }
+      });
+    }
+
     toast.success('Post atualizado');
     onOpenChange(false);
   };

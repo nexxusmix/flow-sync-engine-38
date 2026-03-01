@@ -3486,6 +3486,75 @@ export type Database = {
           },
         ]
       }
+      instagram_ai_memory: {
+        Row: {
+          category: string | null
+          created_at: string
+          edited_text: string | null
+          engagement_score: number | null
+          field_name: string | null
+          format: string | null
+          id: string
+          input_data: Json | null
+          memory_type: string
+          original_text: string | null
+          output_data: Json | null
+          post_id: string | null
+          style_tags: string[] | null
+          tone: string | null
+          topic: string | null
+          trend_data: Json | null
+          updated_at: string
+          user_id: string
+          was_accepted: boolean | null
+          workspace_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          edited_text?: string | null
+          engagement_score?: number | null
+          field_name?: string | null
+          format?: string | null
+          id?: string
+          input_data?: Json | null
+          memory_type: string
+          original_text?: string | null
+          output_data?: Json | null
+          post_id?: string | null
+          style_tags?: string[] | null
+          tone?: string | null
+          topic?: string | null
+          trend_data?: Json | null
+          updated_at?: string
+          user_id: string
+          was_accepted?: boolean | null
+          workspace_id?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          edited_text?: string | null
+          engagement_score?: number | null
+          field_name?: string | null
+          format?: string | null
+          id?: string
+          input_data?: Json | null
+          memory_type?: string
+          original_text?: string | null
+          output_data?: Json | null
+          post_id?: string | null
+          style_tags?: string[] | null
+          tone?: string | null
+          topic?: string | null
+          trend_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          was_accepted?: boolean | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       instagram_bio_history: {
         Row: {
           active_from: string | null
