@@ -61,6 +61,92 @@ export function CockpitTab() {
       {/* Instagram Connection */}
       <InstagramMetaConnect />
 
+      {/* AI Profile Summary */}
+      {config && (config.bio_current || config.content_pillars?.length > 0 || config.strategic_briefing) && (
+        <Card className="glass-card p-5 border border-primary/20">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="material-symbols-outlined text-primary text-lg">auto_awesome</span>
+            <h3 className="text-sm font-medium text-foreground">Perfil IA Configurado</h3>
+            {config.profile_name && (
+              <Badge variant="secondary" className="text-[10px] ml-auto">{config.profile_name}</Badge>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Bio */}
+            {config.bio_current && (
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Bio Otimizada</p>
+                <p className="text-xs text-foreground whitespace-pre-line leading-relaxed bg-muted/30 rounded-lg p-3">{config.bio_current}</p>
+              </div>
+            )}
+
+            {/* Posting Frequency */}
+            {config.posting_frequency && typeof config.posting_frequency === 'object' && (config.posting_frequency as any).posts_per_week && (
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Frequência Ideal</p>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+                  <p className="text-xs text-foreground"><span className="font-medium">{(config.posting_frequency as any).posts_per_week}x</span> por semana</p>
+                  {(config.posting_frequency as any).best_days && (
+                    <p className="text-[10px] text-muted-foreground">📅 {(config.posting_frequency as any).best_days.join(', ')}</p>
+                  )}
+                  {(config.posting_frequency as any).best_times && (
+                    <p className="text-[10px] text-muted-foreground">🕐 {(config.posting_frequency as any).best_times.join(', ')}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Strategic Briefing */}
+            {config.strategic_briefing && typeof config.strategic_briefing === 'object' && (config.strategic_briefing as any).positioning && (
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Posicionamento</p>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-xs text-foreground italic leading-relaxed">"{(config.strategic_briefing as any).positioning}"</p>
+                  {(config.strategic_briefing as any).differentials && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {((config.strategic_briefing as any).differentials as string[]).slice(0, 3).map((d: string, i: number) => (
+                        <Badge key={i} variant="outline" className="text-[9px]">{d}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Content Pillars from AI */}
+          {config.content_pillars && Array.isArray(config.content_pillars) && config.content_pillars.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Pilares de Conteúdo IA</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {(config.content_pillars as any[]).map((p: any, i: number) => (
+                  <div key={i} className="bg-muted/30 rounded-lg p-2.5">
+                    <p className="text-xs font-medium text-foreground">{p.label || p.key}</p>
+                    {p.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{p.description}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bio Suggestions */}
+          {config.bio_suggestions && Array.isArray(config.bio_suggestions) && config.bio_suggestions.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Sugestões de Bio</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                {(config.bio_suggestions as any[]).map((b: any, i: number) => (
+                  <div key={i} className="bg-muted/30 rounded-lg p-2.5">
+                    <p className="text-[10px] text-primary font-medium mb-0.5">{b.focus}</p>
+                    <p className="text-[10px] text-muted-foreground whitespace-pre-line">{b.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
       {/* Profile Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatCard label="Seguidores" value={latestSnapshot?.followers?.toLocaleString() || '—'} icon="group" />
