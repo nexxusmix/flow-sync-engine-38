@@ -493,9 +493,9 @@ export default function ExecutiveDashboardPage() {
           <motion.div variants={fadeUp}>
             <Card className="glass-card p-5">
               <div className="flex items-center gap-2 mb-4">
-                <Users className="w-4 h-4 text-emerald-500" />
+                <Users className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-medium text-foreground">Online Agora</h3>
-                <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
                   {onlineUsers.length}
                 </span>
               </div>
@@ -509,7 +509,7 @@ export default function ExecutiveDashboardPage() {
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
                           {(u.full_name || "?").slice(0, 2).toUpperCase()}
                         </div>
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-background" />
                       </div>
                       <span className="text-sm text-foreground truncate">{u.full_name || "Anônimo"}</span>
                     </div>
@@ -548,11 +548,11 @@ function KPICard({ label, value, delta, prevValue, icon: Icon, danger, accent }:
             {delta !== undefined && (
               <div className="flex items-center gap-1 mt-1">
                 {delta >= 0 ? (
-                  <TrendingUp className="w-3 h-3 text-emerald-500" />
+                  <TrendingUp className="w-3 h-3 text-primary" />
                 ) : (
                   <TrendingDown className="w-3 h-3 text-destructive" />
                 )}
-                <span className={`text-[10px] ${delta >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
+                <span className={`text-[10px] ${delta >= 0 ? 'text-primary' : 'text-destructive'}`}>
                   {Math.abs(delta).toFixed(1)}%
                 </span>
                 {prevValue && (

@@ -18,9 +18,9 @@ interface Suggestion {
 }
 
 const COMPLEXITY_LABEL: Record<string, { label: string; className: string }> = {
-  simple: { label: "Simples", className: "text-emerald-400" },
-  medium: { label: "Média", className: "text-amber-400" },
-  complex: { label: "Complexa", className: "text-red-400" },
+  simple: { label: "Simples", className: "text-primary" },
+  medium: { label: "Média", className: "text-muted-foreground" },
+  complex: { label: "Complexa", className: "text-destructive" },
 };
 
 interface TaskAIDeadlineSuggestionsProps {

@@ -32,11 +32,11 @@ const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
 
 const ACTIVITY_COLORS: Record<string, string> = {
   note: "bg-muted text-muted-foreground",
-  call: "bg-emerald-500/15 text-emerald-400",
-  email: "bg-blue-500/15 text-blue-400",
-  meeting: "bg-violet-500/15 text-violet-400",
-  stage_change: "bg-amber-500/15 text-amber-400",
-  follow_up: "bg-orange-500/15 text-orange-400",
+  call: "bg-primary/15 text-primary",
+  email: "bg-primary/10 text-primary/70",
+  meeting: "bg-primary/15 text-primary",
+  stage_change: "bg-muted text-muted-foreground",
+  follow_up: "bg-muted text-muted-foreground",
   score_update: "bg-primary/15 text-primary",
 };
 
@@ -88,10 +88,10 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
   };
 
   const scoreColor = (deal.score || 0) > 70
-    ? "text-emerald-400 bg-emerald-500/15 border-emerald-500/20"
+    ? "text-primary bg-primary/15 border-primary/20"
     : (deal.score || 0) > 40
-    ? "text-amber-400 bg-amber-500/15 border-amber-500/20"
-    : "text-red-400 bg-red-500/15 border-red-500/20";
+    ? "text-muted-foreground bg-muted border-border"
+    : "text-destructive bg-destructive/15 border-destructive/20";
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -301,7 +301,7 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
                     <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
                       <span className="text-xs text-foreground">{r.factor}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-medium ${r.impact >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        <span className={`text-xs font-medium ${r.impact >= 0 ? "text-primary" : "text-destructive"}`}>
                           {r.impact >= 0 ? "+" : ""}{r.impact}
                         </span>
                       </div>

@@ -29,9 +29,9 @@ const roleIcons: Record<WorkspaceRole, React.ReactNode> = {
 };
 
 const roleBadgeClass: Record<WorkspaceRole, string> = {
-  owner: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  admin: "bg-primary/15 text-primary border-primary/20",
-  editor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  owner: "bg-primary/15 text-primary border-primary/20",
+  admin: "bg-primary/10 text-primary/80 border-primary/15",
+  editor: "bg-muted text-foreground border-border",
   viewer: "bg-muted text-muted-foreground border-border",
 };
 
@@ -182,7 +182,7 @@ export function TeamManagement() {
                   </AvatarFallback>
                 </Avatar>
                 {isOnline(member.user_id) && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-background" />
                 )}
               </div>
 

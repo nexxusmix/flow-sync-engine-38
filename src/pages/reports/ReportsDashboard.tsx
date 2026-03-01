@@ -23,8 +23,8 @@ const reportTypes = [
     description: 'Visão consolidada: projetos entregues, abertos, atrasados e percentuais por período',
     icon: Target,
     path: '/relatorios/360',
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'sales',
@@ -32,8 +32,8 @@ const reportTypes = [
     description: 'Funil de vendas, conversões, propostas e motivos de perda',
     icon: TrendingUp,
     path: '/relatorios/vendas',
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'ops',
@@ -41,8 +41,8 @@ const reportTypes = [
     description: 'Projetos por etapa, atrasos, revisões, aprovações e gargalos',
     icon: Settings,
     path: '/relatorios/operacao',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'finance',
@@ -50,8 +50,8 @@ const reportTypes = [
     description: 'Receitas, despesas, forecast 30/60/90 e inadimplência',
     icon: DollarSign,
     path: '/relatorios/financeiro',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'marketing',
@@ -59,8 +59,8 @@ const reportTypes = [
     description: 'Produção de conteúdo, publicações, campanhas e backlog',
     icon: Megaphone,
     path: '/relatorios/marketing',
-    color: 'text-pink-500',
-    bgColor: 'bg-pink-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'projects',
@@ -68,8 +68,8 @@ const reportTypes = [
     description: 'Visão geral de todos os projetos com drill-down',
     icon: FolderKanban,
     path: '/relatorios/projetos',
-    color: 'text-violet-500',
-    bgColor: 'bg-violet-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'clients',
@@ -77,8 +77,8 @@ const reportTypes = [
     description: 'Relatório por cliente para reduzir ansiedade e cobrança',
     icon: UserCheck,
     path: '/relatorios/clientes',
-    color: 'text-cyan-500',
-    bgColor: 'bg-cyan-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'crm',
@@ -86,8 +86,8 @@ const reportTypes = [
     description: 'Funil de deals, lead scoring, temperatura e conversão',
     icon: TrendingUp,
     path: '/relatorios/crm',
-    color: 'text-rose-500',
-    bgColor: 'bg-rose-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
 ];
 

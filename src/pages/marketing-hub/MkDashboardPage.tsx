@@ -241,12 +241,12 @@ export default function MkDashboardPage() {
                 </div>
                 <div className="space-y-2.5">
                   {[
-                    { label: 'Publicados', value: kpis?.publishedCount || 0, color: 'bg-emerald-500' },
-                    { label: 'Aprovados', value: kpis?.approvedCount || 0, color: 'bg-green-400' },
-                    { label: 'Agendados', value: kpis?.scheduledCount || 0, color: 'bg-[hsl(195,100%,50%)]' },
-                    { label: 'Em Review', value: kpis?.reviewCount || 0, color: 'bg-amber-500' },
+                    { label: 'Publicados', value: kpis?.publishedCount || 0, color: 'bg-primary' },
+                    { label: 'Aprovados', value: kpis?.approvedCount || 0, color: 'bg-primary/70' },
+                    { label: 'Agendados', value: kpis?.scheduledCount || 0, color: 'bg-primary/50' },
+                    { label: 'Em Review', value: kpis?.reviewCount || 0, color: 'bg-muted-foreground' },
                     { label: 'Rascunhos', value: kpis?.draftCount || 0, color: 'bg-white/20' },
-                    { label: 'Atrasados', value: kpis?.overdueCount || 0, color: 'bg-red-500' },
+                    { label: 'Atrasados', value: kpis?.overdueCount || 0, color: 'bg-destructive' },
                   ].map((s) => (
                     <div key={s.label} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -262,7 +262,7 @@ export default function MkDashboardPage() {
               {/* Próximas Entregas */}
               <motion.div {...fadeUp(0.45)} className="holographic-card rounded-lg p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                   <span className="text-[10px] text-white/25 uppercase tracking-[0.12em]">Próximas_Entregas</span>
                 </div>
                 {kpis && kpis.recentItems.filter(i => i.scheduled_at).length > 0 ? (
@@ -288,7 +288,7 @@ export default function MkDashboardPage() {
               {kpis && kpis.channelBreakdown.length > 0 && (
                 <motion.div {...fadeUp(0.5)} className="holographic-card rounded-lg p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                    <div className="w-2 h-2 rounded-full bg-primary/60" />
                     <span className="text-[10px] text-white/25 uppercase tracking-[0.12em]">Por_Canal</span>
                   </div>
                   <div className="space-y-2">

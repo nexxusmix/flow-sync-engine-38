@@ -185,7 +185,7 @@ export default function RolesSettingsPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
-                    <Shield className={`w-5 h-5 ${role.is_system ? 'text-amber-500' : 'text-primary'}`} />
+                    <Shield className={`w-5 h-5 ${role.is_system ? 'text-muted-foreground' : 'text-primary'}`} />
                     <CardTitle className="text-base font-medium">{role.name}</CardTitle>
                   </div>
                   {role.is_system && (

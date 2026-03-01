@@ -113,7 +113,7 @@ export function InstagramMetaConnect() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-foreground">@{connection.ig_username}</span>
-              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px]">Conectado</Badge>
+              <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px]">Conectado</Badge>
             </div>
             <p className="text-[10px] text-muted-foreground">
               {connection.connected_at && formatDistanceToNow(new Date(connection.connected_at), { addSuffix: true, locale: ptBR })}

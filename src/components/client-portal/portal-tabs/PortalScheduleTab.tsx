@@ -121,14 +121,14 @@ function PortalScheduleTabComponent({ stages, dueDate }: PortalScheduleTabProps)
                 {!isLast && (
                   <div className={cn(
                     "absolute left-4 top-10 w-0.5 h-full -translate-x-1/2",
-                    isCompleted ? "bg-emerald-500" : "bg-border"
+                    isCompleted ? "bg-primary" : "bg-border"
                   )} />
                 )}
 
                 {/* Status icon */}
                 <div className={cn(
                   "w-8 h-8 rounded-full flex items-center justify-center z-10 flex-shrink-0",
-                  isCompleted ? "bg-emerald-500 text-white" :
+                  isCompleted ? "bg-primary text-white" :
                   isInProgress ? "bg-primary text-primary-foreground" :
                   "bg-muted text-muted-foreground"
                 )}>
@@ -146,7 +146,7 @@ function PortalScheduleTabComponent({ stages, dueDate }: PortalScheduleTabProps)
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className={cn(
                       "font-medium",
-                      isCompleted ? "text-emerald-500" :
+                      isCompleted ? "text-primary" :
                       isInProgress ? "text-primary" :
                       "text-muted-foreground"
                     )}>
@@ -174,7 +174,7 @@ function PortalScheduleTabComponent({ stages, dueDate }: PortalScheduleTabProps)
 
                   {/* Actual dates if completed */}
                   {isCompleted && stage.actual_end && (
-                    <p className="text-[10px] text-emerald-500 mt-1">
+                    <p className="text-[10px] text-primary mt-1">
                       Concluída em {formatDate(stage.actual_end)}
                     </p>
                   )}

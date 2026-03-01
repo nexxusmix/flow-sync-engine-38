@@ -23,9 +23,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Health Score Indicator Component
 function HealthScoreIndicator({ score, compact = false }: { score: number; compact?: boolean }) {
   const getStatusColor = (s: number) => {
-    if (s > 90) return { main: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', bar: 'bg-emerald-500' };
-    if (s > 70) return { main: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', bar: 'bg-primary' };
-    return { main: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20', bar: 'bg-red-500' };
+    if (s > 90) return { main: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', bar: 'bg-primary' };
+    if (s > 70) return { main: 'text-primary/70', bg: 'bg-primary/10', border: 'border-primary/15', bar: 'bg-primary/70' };
+    return { main: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20', bar: 'bg-destructive' };
   };
 
   const colors = getStatusColor(score);
@@ -304,8 +304,8 @@ export function ProjectsDashboard() {
                       <div className="h-1.5 bg-muted rounded-full">
                         <div 
                           className={`h-full rounded-full ${
-                            (p.health_score || 0) > 90 ? 'bg-emerald-500' : 
-                            (p.health_score || 0) > 70 ? 'bg-primary' : 'bg-amber-500'
+                            (p.health_score || 0) > 90 ? 'bg-primary' : 
+                            (p.health_score || 0) > 70 ? 'bg-primary/70' : 'bg-muted-foreground'
                           }`}
                           style={{ width: `${Math.min(100, (idx + 1) * 25 + 10)}%` }}
                         />
@@ -336,7 +336,7 @@ export function ProjectsDashboard() {
                   <span className="text-[10px] text-muted-foreground">Cloud Storage</span>
                   <div className="flex items-center gap-2">
                     <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500" style={{ width: '0%' }}></div>
+                      <div className="h-full bg-primary" style={{ width: '0%' }}></div>
                     </div>
                     <span className="text-[10px] font-medium text-foreground">0%</span>
                   </div>
@@ -352,8 +352,8 @@ export function ProjectsDashboard() {
           <div className="grid grid-cols-2 gap-3">
             <div className="glass-card rounded-2xl p-4 min-w-0">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-primary" />
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Pipeline Ativo</p>
@@ -372,8 +372,8 @@ export function ProjectsDashboard() {
 
             <div className="glass-card rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Bolt className="w-4 h-4 text-amber-500" />
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center">
+                  <Bolt className="w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Health Médio</p>
@@ -382,8 +382,8 @@ export function ProjectsDashboard() {
 
             <div className="glass-card rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <Wallet className="w-4 h-4 text-emerald-500" />
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-primary" />
                 </div>
               </div>
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Margem Líquida</p>

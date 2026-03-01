@@ -130,7 +130,7 @@ function PortalMaterialCardComponent({
         {/* Status Badge */}
         <div className="absolute top-2 left-2 flex gap-1">
           {isApproved && (
-            <Badge className="bg-emerald-500/90 text-white text-mono">
+            <Badge className="bg-primary/90 text-white text-mono">
               <CheckCircle2 className="w-3 h-3 mr-1" />
               Aprovado
             </Badge>

@@ -6,10 +6,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const typeColors: Record<string, string> = {
-  info: 'bg-blue-500',
-  success: 'bg-emerald-500',
-  warning: 'bg-amber-500',
-  error: 'bg-red-500',
+  info: 'bg-primary',
+  success: 'bg-primary',
+  warning: 'bg-muted-foreground',
+  error: 'bg-destructive',
 };
 
 export function NotificationDropdown() {

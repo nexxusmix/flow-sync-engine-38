@@ -238,9 +238,9 @@
 }
 
 .holo .holo-badge-active {
-  border: 1px solid hsl(142 70% 45% / 0.4);
-  color: hsl(142 70% 45%);
-  background: hsl(142 70% 45% / 0.06);
+  border: 1px solid hsl(var(--holo-primary) / 0.3);
+  color: hsl(var(--holo-primary) / 0.8);
+  background: hsl(var(--holo-primary) / 0.04);
 }
 
 .holo .holo-badge-queued {
@@ -250,9 +250,9 @@
 }
 
 .holo .holo-badge-warning {
-  border: 1px solid hsl(38 92% 50% / 0.4);
-  color: hsl(38 92% 50%);
-  background: hsl(38 92% 50% / 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .holo .holo-badge-danger {
@@ -464,9 +464,9 @@
   letter-spacing: 0.1em;
   padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid hsl(142 70% 45% / 0.3);
-  color: hsl(142 70% 45%);
-  background: hsl(142 70% 45% / 0.06);
+  border: 1px solid hsl(var(--holo-primary) / 0.3);
+  color: hsl(var(--holo-primary));
+  background: hsl(var(--holo-primary) / 0.06);
 }
 
 .holo .holo-trend-down {
