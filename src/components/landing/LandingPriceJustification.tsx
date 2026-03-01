@@ -1,20 +1,41 @@
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { ScrollLinked } from "./ScrollLinked";
 
 const tools = [
   "Gestão de tarefas", "CRM", "Financeiro", "Planejamento editorial",
   "Storyboard", "IA", "Armazenamento", "Portal cliente",
 ];
 
-export function LandingPriceJustification() {
+const springCfg = { stiffness: 120, damping: 30 };
+
+function ToolTag({ text, index }: { text: string; index: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "center center"] });
+  const scale = useSpring(useTransform(scrollYProgress, [0, 1], [0.8, 1]), springCfg);
+  const opacity = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1]), springCfg);
+
   return (
-    <section className="relative z-10 px-6 md:px-12 py-24 md:py-32">
+    <motion.span
+      ref={ref}
+      className="px-3 py-1.5 rounded-full text-xs border border-border/30 text-muted-foreground bg-muted/30"
+      style={{ scale, opacity }}
+    >
+      {text}
+    </motion.span>
+  );
+}
+
+export function LandingPriceJustification() {
+  const priceRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: priceRef, offset: ["start end", "center center"] });
+  const priceScale = useSpring(useTransform(scrollYProgress, [0, 1], [0.85, 1]), springCfg);
+  const priceOpacity = useSpring(useTransform(scrollYProgress, [0, 0.5], [0, 1]), springCfg);
+
+  return (
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-24 md:py-32">
       <div className="max-w-4xl mx-auto">
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-        >
+        <div className="text-center">
           <h2 className="text-3xl md:text-4xl font-light text-foreground mb-8 tracking-tight">
             Por que o preço é <span className="text-primary">justo</span>?
           </h2>
@@ -22,25 +43,14 @@ export function LandingPriceJustification() {
 
           <div className="flex flex-wrap justify-center gap-2 mb-10">
             {tools.map((t, i) => (
-              <motion.span
-                key={i}
-                className="px-3 py-1.5 rounded-full text-xs border border-border/30 text-muted-foreground bg-muted/30"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.04 }}
-              >
-                {t}
-              </motion.span>
+              <ToolTag key={i} text={t} index={i} />
             ))}
           </div>
 
           <motion.div
+            ref={priceRef}
             className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+            style={{ scale: priceScale, opacity: priceOpacity }}
           >
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1 uppercase tracking-wider">Separadas</p>
@@ -55,18 +65,12 @@ export function LandingPriceJustification() {
             </div>
           </motion.div>
 
-          <motion.p
-            className="text-sm text-muted-foreground/50 mt-10"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
-          >
+          <p className="text-sm text-muted-foreground/50 mt-10">
             Sem truques. Sem taxa escondida. Sem pegadinha.<br />
             <span className="text-foreground/60 font-medium">Preço Brasil. Produto nível global.</span>
-          </motion.p>
-        </motion.div>
+          </p>
+        </div>
       </div>
-    </section>
+    </ScrollLinked>
   );
 }
