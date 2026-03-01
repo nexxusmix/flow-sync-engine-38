@@ -1,75 +1,69 @@
 
 
-## Diagnóstico Completo da Prospecção
+## Plano: IA Integrada em Todo o Instagram Engine
 
-### O que FUNCIONA (estruturalmente pronto)
+### Situação Atual
 
-| Componente | Status |
-|---|---|
-| **Tabelas no banco** | Todas existem com RLS habilitado |
-| **Store Zustand** | CRUD completo, getters e filters |
-| **Edge function `prospect-ai-generate`** | Funcional, usa Gemini 3 Flash |
-| **Edge function `prospect-tts`** | Funcional, usa ElevenLabs |
-| **Pipeline Kanban (Oportunidades)** | Drag & drop, criar, mover estágios |
-| **Atividades** | CRUD, filtros, concluir com outcome |
-| **Cadências** | Criar, adicionar passos, ativar/desativar |
-| **Inbox / WhatsApp** | Geração de mensagem IA, envio WhatsApp, áudio |
-| **Automações** | Toggle rules, kill switch, timeline |
-| **Scout** | Pipeline separado com geração de copy/áudio |
+O Instagram Engine tem a IA isolada na aba "Criar com IA". As outras áreas (Calendário, edição de posts, etc.) são 100% manuais — sem opção de gerar texto, processar links ou arquivos com IA.
 
-### O que esta QUEBRADO ou INCOMPLETO
+### O que será implementado
 
-#### 1. Editar Prospect — Dialog inexistente
-`TargetsPage` define `editingProspect` state e o botão "Editar" seta o valor, mas **nao existe nenhum Dialog de edição**. Clicar em "Editar" não faz nada visível.
+#### 1. Botão "Gerar com IA" no Dialog de Criação/Edição do Calendário
+Quando o usuário cria ou edita um post no calendário, poderá clicar em **"✨ Preencher com IA"** que:
+- Usa o título + formato + pilar como contexto
+- Chama `instagram-ai` com action `generate_content`
+- Preenche automaticamente: hook, script, legenda curta/média/longa, CTA, hashtags, sugestão de capa, slides do carrossel
+- Campos ficam editáveis após preenchimento
 
-**Correção**: Criar Dialog de edição que reutiliza o formulário do "Novo Target", pré-populado com os dados do prospect, e chama `updateProspect`.
+#### 2. Dialog de Edição Completo para Posts do Calendário
+Atualmente não há como editar conteúdo textual dos posts no calendário. Será adicionado:
+- Dialog de edição com todos os campos textuais (hook, script, legendas, CTA, hashtags, comentário fixado)
+- Botão "✨ Gerar" ao lado de cada campo individual para regenerar só aquele campo
+- Botão "✨ Gerar Tudo" para preencher todos de uma vez
 
-#### 2. Cadências — Botão "Editar" é noop
-`CadencesPage` passa `onEdit={() => {}}` para o CadenceCard. Clicar em "Editar" não faz nada.
+#### 3. Campo de Comando/Prompt Livre
+Em cada post (no dialog de edição), um campo **"Comando para IA"** onde o usuário pode digitar instruções específicas:
+- "Foque em urgência e escassez"
+- "Adapte para público feminino 25-35"
+- "Use tom humorístico"
+A IA processa o comando junto com os dados do post e regenera o conteúdo.
 
-**Correção**: Criar Dialog de edição de cadência (nome, nicho alvo, limite diário, descrição).
+#### 4. Campo de Link/URL para Contexto IA
+O usuário pode colar um link (YouTube, artigo, referência) e a IA usa como contexto:
+- Extrai o conteúdo/tema do link
+- Gera conteúdo Instagram baseado naquela referência
+- Útil para "transformar este vídeo em post Instagram"
 
-#### 3. Cadências — "Gerar com IA" sem ação
-O botão "Gerar com IA" na CadencesPage não tem `onClick` handler.
+#### 5. Upload de Arquivo para Processamento IA
+Botão de upload no dialog de criação/edição:
+- Aceita imagens, PDFs, textos
+- Faz upload para o bucket `marketing-assets`
+- Envia URL/conteúdo como contexto para a IA gerar o post
+- Ex: fazer upload de briefing em PDF e gerar post a partir dele
 
-**Correção**: Conectar ao `useProspectAI` com command `plan_campaign` e preencher automaticamente cadência + passos.
+### Arquivos alterados
 
-#### 4. Oportunidades — Sem dialog de edição
-`OpportunitiesPage` define `editingOpp` state mas não tem o Dialog correspondente para editar valor, probabilidade, fit_score, next_action etc.
+| Arquivo | Mudança |
+|---------|---------|
+| `src/components/instagram-engine/CalendarTab.tsx` | Dialog de edição completo com IA integrada, campo de comando, link e upload |
+| `supabase/functions/instagram-ai/index.ts` | Nova action `generate_from_context` que aceita link, comando, e file_url como contexto adicional |
+| `src/hooks/useInstagramEngine.ts` | Nova mutation `useUpdatePostWithAI` que combina geração IA + update |
 
-**Correção**: Criar Dialog de edição completo da oportunidade.
+### Detalhes Técnicos
 
-#### 5. ProspectAutomations — Cores inconsistentes
-Usa `text-amber-400`, `bg-amber-500/10`, `text-emerald-500` em vez da paleta azul/branco/vermelho do resto do app.
+**Nova action na Edge Function `instagram-ai`:**
+- `generate_from_context`: recebe `{ topic, format, pillar, command, reference_url, file_content }` e gera conteúdo completo usando esses dados como contexto extra no prompt
+- Reutiliza a mesma estrutura de output do `generate_content`
 
-**Correção**: Substituir amber → primary, emerald → primary.
+**Dialog de edição no CalendarTab:**
+- Abre ao clicar no título do post
+- Tabs internas: "Conteúdo" (campos textuais) | "IA" (comando livre + link + upload)
+- Cada campo textual tem um mini-botão ✨ para regenerar individualmente
+- Botão principal "✨ Gerar Tudo com IA" no topo
 
-#### 6. Oportunidades — Fit Score usa cores fora da paleta
-`bg-emerald-500/10 text-emerald-500`, `bg-amber-500/10 text-amber-500` hardcoded.
-
-**Correção**: Mapear para `text-primary`/`text-destructive`.
-
-#### 7. Scout — Cores fora da paleta
-`ScoutDashboard` usa `text-yellow-400`, `text-green-400`, `text-red-400`, `bg-green-600`, `bg-yellow-500/20 text-yellow-400`, `bg-purple-500/20`, `bg-blue-500/20`, `bg-orange-500/20`.
-
-**Correção**: Padronizar com a paleta do sistema.
-
-### Plano de Implementação
-
-**Arquivo 1 — `src/pages/prospecting/TargetsPage.tsx`**
-- Adicionar Dialog de edição que pré-popula com `editingProspect`, chama `updateProspect(id, data)` e fecha
-
-**Arquivo 2 — `src/pages/prospecting/CadencesPage.tsx`**
-- Criar Dialog de edição de cadência
-- Conectar botão "Gerar com IA" ao `useProspectAI.planCampaign` que cria cadência + passos automaticamente
-
-**Arquivo 3 — `src/pages/prospecting/OpportunitiesPage.tsx`**
-- Criar Dialog de edição de oportunidade (valor, probabilidade, fit_score, next_action_at, conversation_summary)
-- Padronizar cores do fit_score badge
-
-**Arquivo 4 — `src/components/prospecting/ProspectAutomations.tsx`**
-- Substituir amber/emerald por primary/destructive
-
-**Arquivo 5 — `src/components/scout/ScoutDashboard.tsx`**
-- Padronizar cores com a paleta do sistema
+**Upload de arquivo:**
+- Usa `supabase.storage.from('marketing-assets').upload()`
+- Gera URL pública
+- Para imagens: passa a URL para a IA como contexto visual
+- Para textos/PDFs: extrai conteúdo no frontend e passa como texto
 
