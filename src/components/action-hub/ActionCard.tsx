@@ -12,6 +12,7 @@ import {
 import { ActionItem } from "@/hooks/useActionItems";
 import { cn } from "@/lib/utils";
 import { resolveQuickActions, buildCopySummary, getPrimaryHref } from "./quickActions";
+import { DelegatePopover } from "./DelegatePopover";
 
 const typeConfig: Record<string, { icon: typeof Check; label: string }> = {
   follow_up:       { icon: Users,          label: "Follow-up" },
@@ -113,10 +114,11 @@ interface ActionCardProps {
   onComplete: (id: string) => void;
   onSnooze: (id: string, until: string) => void;
   onGenerateMessage: (item: ActionItem) => void;
+  onDelegate?: (id: string, userId: string, userName: string) => void;
   compact?: boolean;
 }
 
-export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, compact }: ActionCardProps) {
+export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, onDelegate, compact }: ActionCardProps) {
   const [showSnooze, setShowSnooze] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
@@ -131,6 +133,8 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
   const isOverdue = item.due_at && new Date(item.due_at) < new Date();
   const iconColor = isOverdue ? "text-destructive" : "text-primary";
   const iconBg = isOverdue ? "bg-destructive/10" : "bg-primary/10";
+  const assigneeName = (item.metadata as any)?.assignee_name as string | undefined;
+  const assigneeId = (item.metadata as any)?.assignee_id as string | undefined;
 
   const snoozeOptions = [
     { label: "1h", value: new Date(Date.now() + 3600000).toISOString() },
@@ -143,6 +147,11 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
     e.stopPropagation();
     navigator.clipboard.writeText(buildCopySummary(item));
     toast.success("Resumo copiado!");
+  };
+
+  const handleDelegate = (userId: string, userName: string) => {
+    onDelegate?.(item.id, userId, userName);
+    toast.success(`Delegado para ${userName}`);
   };
 
   const handleQuickNav = () => {
@@ -171,6 +180,11 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
             <p className="text-[11px] font-normal text-foreground truncate">{item.title}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className={cn("text-[8px] px-1.5 py-0.5 rounded-full font-mono uppercase", prio.bg, prio.text)}>{item.priority}</span>
+              {assigneeName && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono truncate max-w-[80px]">
+                  → {assigneeName.split(" ")[0]}
+                </span>
+              )}
               {timeInfo && (
                 <motion.span
                   className={cn(
@@ -235,6 +249,11 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
             <span className={cn("text-[8px] px-1.5 py-0.5 rounded-full font-mono uppercase", prio.bg, prio.text)}>{item.priority}</span>
             <span className="text-[8px] text-muted-foreground font-mono uppercase">{config.label}</span>
             {item.source === "ai" && <span className="text-[8px] text-primary font-mono uppercase">IA</span>}
+            {assigneeName && (
+              <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono">
+                → {assigneeName}
+              </span>
+            )}
           </div>
           <p className="text-sm font-normal text-foreground">{item.title}</p>
           {item.description && <p className="text-[11px] text-muted-foreground font-light mt-1 line-clamp-2">{item.description}</p>}
@@ -298,6 +317,12 @@ export function ActionCard({ item, onComplete, onSnooze, onGenerateMessage, comp
         >
           <Copy className="w-3 h-3" strokeWidth={1.5} /> Copiar
         </motion.button>
+        {onDelegate && (
+          <DelegatePopover
+            onDelegate={(userId, userName) => handleDelegate(userId, userName)}
+            currentAssignee={assigneeId}
+          />
+        )}
         <motion.button
           onClick={() => setShowSnooze(!showSnooze)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/20 text-muted-foreground hover:bg-muted/40 transition-colors text-[10px] font-mono uppercase"

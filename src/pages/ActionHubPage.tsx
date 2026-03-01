@@ -6,6 +6,7 @@ import { MessageDraftModal } from "@/components/action-hub/MessageDraftModal";
 import { motion } from "framer-motion";
 import { Zap, Search, Filter, CheckCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 const filters = [
   { key: "all", label: "Todas" },
@@ -145,6 +146,11 @@ export default function ActionHubPage() {
                 onComplete={(id) => completeAction.mutate(id)}
                 onSnooze={(id, until) => snoozeAction.mutate({ id, until })}
                 onGenerateMessage={setMessageItem}
+                onDelegate={async (id, userId, userName) => {
+                  await supabase.from("action_items" as any)
+                    .update({ metadata: { ...item.metadata, assignee_id: userId, assignee_name: userName } } as any)
+                    .eq("id", id);
+                }}
               />
             ))}
           </motion.div>

@@ -5,6 +5,7 @@ import { useActionItems, generateActionItems, ActionItem } from "@/hooks/useActi
 import { ActionCard } from "./ActionCard";
 import { MessageDraftModal } from "./MessageDraftModal";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   projectId?: string;
@@ -84,6 +85,11 @@ export function ActionHubRail({ projectId, title = "Central de Ações" }: Props
                 onComplete={(id) => completeAction.mutate(id)}
                 onSnooze={(id, until) => snoozeAction.mutate({ id, until })}
                 onGenerateMessage={setMessageItem}
+                onDelegate={async (id, userId, userName) => {
+                  await supabase.from("action_items" as any)
+                    .update({ metadata: { ...item.metadata, assignee_id: userId, assignee_name: userName } } as any)
+                    .eq("id", id);
+                }}
               />
             </div>
           ))}
