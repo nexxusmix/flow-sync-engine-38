@@ -3,7 +3,7 @@ import squadLogo from "@/assets/squad-hub-logo.png";
 const marqueeItems = [
   "SQUAD HUB",
   "·",
-  "Produtora + Marketing",
+  "Hub Criativo Completo",
   "·",
   "Tecnologia Brasileira",
   "·",

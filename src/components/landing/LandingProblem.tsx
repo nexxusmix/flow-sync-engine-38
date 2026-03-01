@@ -1,5 +1,7 @@
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { X } from "lucide-react";
+import { ScrollLinked } from "./ScrollLinked";
 
 const painPoints = [
   "Tarefas espalhadas",
@@ -12,76 +14,47 @@ const painPoints = [
   "CRM em outra",
 ];
 
-const maskContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
-};
-const maskChild = {
-  hidden: { y: "100%", opacity: 0 },
-  visible: { y: "0%", opacity: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
-};
+const springCfg = { stiffness: 120, damping: 30 };
 
-export function LandingProblem() {
-  const titleWords = "Agências e produtoras vivem o mesmo drama".split(" ");
+function PainItem({ text, index, total }: { text: string; index: number; total: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "center center"] });
+  const opacity = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1]), springCfg);
+  const y = useSpring(useTransform(scrollYProgress, [0, 1], [20, 0]), springCfg);
 
   return (
-    <section className="relative z-10 px-6 md:px-12 py-24 md:py-32">
-      <div className="max-w-5xl mx-auto">
-        {/* Section label */}
-        <motion.div
-          className="text-center mb-16"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <span className="text-[10px] uppercase tracking-[0.2em] text-destructive font-medium">O problema</span>
+    <motion.div
+      ref={ref}
+      className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-destructive/5 border border-destructive/8"
+      style={{ opacity, y }}
+    >
+      <X className="w-3 h-3 text-destructive/50 shrink-0" />
+      <span className="text-sm text-foreground/70">{text}</span>
+    </motion.div>
+  );
+}
 
-          <motion.h2
-            className="text-3xl md:text-5xl font-light text-foreground mt-4 tracking-tight flex flex-wrap justify-center"
-            variants={maskContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-          >
-            {titleWords.map((word, i) => (
-              <span key={i} className="overflow-hidden mr-[0.25em]">
-                <motion.span
-                  variants={maskChild}
-                  className={`inline-block ${["mesmo", "drama"].includes(word) ? "text-destructive" : ""}`}
-                >
-                  {word}
-                </motion.span>
-              </span>
-            ))}
-          </motion.h2>
-        </motion.div>
+export function LandingProblem() {
+  return (
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-24 md:py-32">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-16">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-destructive font-medium">O problema</span>
+          <h2 className="text-3xl md:text-5xl font-light text-foreground mt-4 tracking-tight">
+            Agências e produtoras vivem o <span className="text-destructive">mesmo drama</span>
+          </h2>
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-16">
           {painPoints.map((point, i) => (
-            <motion.div
-              key={i}
-              className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-destructive/5 border border-destructive/8"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.04, duration: 0.4 }}
-            >
-              <X className="w-3 h-3 text-destructive/50 shrink-0" />
-              <span className="text-sm text-foreground/70">{point}</span>
-            </motion.div>
+            <PainItem key={i} text={point} index={i} total={painPoints.length} />
           ))}
         </div>
 
-        <motion.p
-          className="text-center text-xl md:text-2xl text-foreground/60 font-light"
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-        >
+        <p className="text-center text-xl md:text-2xl text-foreground/60 font-light">
           Resultado? <span className="text-destructive font-normal">Caos operacional.</span> Retrabalho. <span className="text-destructive font-normal">Perda de dinheiro.</span>
-        </motion.p>
+        </p>
       </div>
-    </section>
+    </ScrollLinked>
   );
 }
