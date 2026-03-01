@@ -41,11 +41,11 @@ function TodayActivityCard({ activity, onComplete }: { activity: any; onComplete
   const activityType = ACTIVITY_TYPES.find(t => t.type === activity.type);
   
   return (
-    <div className={`glass-card rounded-xl p-4 border ${isOverdue ? 'border-red-500/30' : 'border-transparent'}`}>
+    <div className={`glass-card rounded-xl p-4 border ${isOverdue ? 'border-destructive/30' : 'border-transparent'}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-            isOverdue ? 'bg-red-500/10 text-red-500' : 'bg-primary/10 text-primary'
+            isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
           }`}>
             <span className="material-symbols-outlined text-lg">{activityType?.icon || 'task'}</span>
           </div>
@@ -55,7 +55,7 @@ function TodayActivityCard({ activity, onComplete }: { activity: any; onComplete
               {activity.opportunity?.prospect?.company_name || 'Prospect'}
             </p>
             {activity.due_at && (
-              <p className={`text-[10px] mt-1 ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
+              <p className={`text-[10px] mt-1 ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
                 {new Date(activity.due_at).toLocaleString('pt-BR', { 
                   day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
                 })}
@@ -138,20 +138,20 @@ export default function ProspectingPage() {
             value={stats.totalOpportunities}
             icon={Target}
             trend={`${stats.wonOpportunities} ganhas`}
-            color="text-emerald-500"
+            color="text-primary"
           />
           <StatCard
             title="Pipeline"
             value={formatCurrencyBRL(stats.pipelineValue)}
             icon={TrendingUp}
-            color="text-amber-500"
+            color="text-primary"
           />
           <StatCard
             title="Atividades Hoje"
             value={stats.todayActivities}
             icon={stats.overdueActivities > 0 ? AlertTriangle : Clock}
             trend={stats.overdueActivities > 0 ? `${stats.overdueActivities} atrasadas` : 'Em dia'}
-            color={stats.overdueActivities > 0 ? "text-red-500" : "text-primary"}
+            color={stats.overdueActivities > 0 ? "text-destructive" : "text-primary"}
           />
         </div>
 

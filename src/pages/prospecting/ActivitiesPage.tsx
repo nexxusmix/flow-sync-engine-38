@@ -52,15 +52,15 @@ function ActivityItem({
   return (
     <>
       <div className={`glass-card rounded-xl p-4 border-l-2 ${
-        activity.completed ? 'border-l-emerald-500 opacity-60' : 
-        isOverdue ? 'border-l-red-500' : 
+        activity.completed ? 'border-l-primary opacity-60' : 
+        isOverdue ? 'border-l-destructive' : 
         'border-l-primary'
       }`}>
         <div className="flex items-start gap-4">
           {/* Icon */}
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            activity.completed ? 'bg-emerald-500/10 text-emerald-500' :
-            isOverdue ? 'bg-red-500/10 text-red-500' :
+            activity.completed ? 'bg-primary/10 text-primary' :
+            isOverdue ? 'bg-destructive/10 text-destructive' :
             'bg-primary/10 text-primary'
           }`}>
             <span className="material-symbols-outlined">{activityType?.icon || 'task'}</span>
@@ -86,7 +86,7 @@ function ActivityItem({
               {/* Status & Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 {activity.completed ? (
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-500 font-medium">
+                  <span className="flex items-center gap-1 text-[10px] text-primary font-medium">
                     <CheckCircle className="w-3.5 h-3.5" />
                     Concluída
                   </span>
@@ -116,7 +116,7 @@ function ActivityItem({
                 </span>
               )}
               {activity.due_at && (
-                <span className={`flex items-center gap-1 ${isOverdue && !activity.completed ? 'text-red-500 font-medium' : ''}`}>
+                <span className={`flex items-center gap-1 ${isOverdue && !activity.completed ? 'text-destructive font-medium' : ''}`}>
                   {isOverdue && !activity.completed ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                   {new Date(activity.due_at).toLocaleDateString('pt-BR', { 
                     day: '2-digit', 
@@ -256,7 +256,7 @@ export default function ActivitiesPage() {
           <div>
             <h1 className="text-2xl font-medium text-foreground tracking-tight">Atividades</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {overdueCount > 0 && <span className="text-red-500 font-medium">{overdueCount} atrasadas • </span>}
+              {overdueCount > 0 && <span className="text-destructive font-medium">{overdueCount} atrasadas • </span>}
               {todayCount} para hoje
             </p>
           </div>
@@ -279,7 +279,7 @@ export default function ActivitiesPage() {
               variant={filter === f.key ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter(f.key as any)}
-              className={f.key === 'overdue' && f.count > 0 ? 'border-red-500/30 text-red-500' : ''}
+              className={f.key === 'overdue' && f.count > 0 ? 'border-destructive/30 text-destructive' : ''}
             >
               {f.label}
               {f.count > 0 && (
