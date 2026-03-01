@@ -14,6 +14,7 @@ import { InstagramMetaConnect } from './InstagramMetaConnect';
 import { ProfileCard } from './ProfileCard';
 import { PostsGrid } from './PostsGrid';
 import { ScheduledTimeline } from './ScheduledTimeline';
+import { InstagramFeedPreview } from './InstagramFeedPreview';
 import { toast } from 'sonner';
 
 export function CockpitTab() {
@@ -212,7 +213,10 @@ export function CockpitTab() {
         <div className="flex items-center gap-2 mb-3">
           <span className="material-symbols-outlined text-primary text-lg">grid_view</span>
           <h3 className="text-sm font-medium text-foreground">Feed Preview</h3>
-          <Badge variant="secondary" className="text-[9px] ml-auto">{allPosts.length} posts</Badge>
+          <Badge variant="secondary" className="text-[9px]">{allPosts.length} posts</Badge>
+          <div className="ml-auto">
+            <InstagramFeedPreview posts={allPosts} config={config || null} snapshot={latestSnapshot || null} />
+          </div>
         </div>
         <PostsGrid posts={allPosts} />
       </div>
