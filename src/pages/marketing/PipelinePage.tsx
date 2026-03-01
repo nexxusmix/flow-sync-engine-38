@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
-import { ContentItem, ContentItemStatus, CONTENT_ITEM_STAGES, CONTENT_CHANNELS, CONTENT_FORMATS, CONTENT_PILLARS } from "@/types/marketing";
+import { ContentItem, ContentItemStatus, ContentFormat, ContentChannel, ContentPillar, CONTENT_ITEM_STAGES, CONTENT_CHANNELS, CONTENT_FORMATS, CONTENT_PILLARS } from "@/types/marketing";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Plus, Search, MoreHorizontal, Calendar, AlertTriangle,
-  Link as LinkIcon, ExternalLink, LayoutTemplate, Sparkles, Trash2
+  Link as LinkIcon, ExternalLink, LayoutTemplate, Sparkles, Trash2, Wand2, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -262,6 +262,7 @@ export default function PipelinePage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
+  const [isGeneratingWeek, setIsGeneratingWeek] = useState(false);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ id: string; status: ContentItemStatus } | null>(null);
@@ -399,6 +400,71 @@ export default function PipelinePage() {
     navigate(`/marketing/content/${item.id}`);
   };
 
+  const handleGenerateWeek = async () => {
+    setIsGeneratingWeek(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('instagram-ai', {
+        body: {
+          action: 'generate_calendar',
+          data: {
+            pillars: CONTENT_PILLARS.map(p => p.type),
+            posts_per_week: 5,
+            weeks: 1,
+          },
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+
+      const weekData = result?.result;
+      if (!weekData || !Array.isArray(weekData) || !weekData[0]?.posts) {
+        throw new Error('IA não retornou calendário válido');
+      }
+
+      const posts = weekData[0].posts;
+      const formatMap: Record<string, ContentFormat> = {
+        reel: 'reel', carousel: 'carousel', story: 'story', post: 'post',
+      };
+
+      const now = new Date();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + ((8 - now.getDay()) % 7 || 7));
+
+      const dayMap: Record<string, number> = {
+        segunda: 0, terça: 1, terca: 1, quarta: 2, quinta: 3, sexta: 4, sábado: 5, sabado: 5, domingo: 6,
+      };
+
+      let created = 0;
+      for (const post of posts) {
+        const dayOffset = dayMap[post.day_of_week?.toLowerCase()] ?? created;
+        const dueDate = new Date(monday);
+        dueDate.setDate(monday.getDate() + dayOffset);
+
+        const pillarKey = CONTENT_PILLARS.find(
+          p => p.type === post.pillar || p.name.toLowerCase() === post.pillar?.toLowerCase()
+        )?.type as ContentPillar | undefined;
+
+        await createContentItem({
+          title: post.title || `Conteúdo ${created + 1}`,
+          format: (formatMap[post.format] || 'reel') as ContentFormat,
+          channel: 'instagram' as ContentChannel,
+          pillar: pillarKey || ('autoridade' as ContentPillar),
+          status: 'briefing' as ContentItemStatus,
+          due_at: dueDate.toISOString(),
+          hook: post.hook || undefined,
+          notes: post.brief || undefined,
+        });
+        created++;
+      }
+
+      toast.success(`${created} conteúdos criados para a próxima semana! 🚀`);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar calendário com IA');
+    } finally {
+      setIsGeneratingWeek(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Pipeline de Conteúdo">
       <div className="space-y-6">
@@ -410,7 +476,7 @@ export default function PipelinePage() {
               {contentItems.length} conteúdos no total
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -420,6 +486,15 @@ export default function PipelinePage() {
                 onChange={(e) => setContentFilters({ search: e.target.value })}
               />
             </div>
+            <Button
+              variant="outline"
+              className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+              onClick={handleGenerateWeek}
+              disabled={isGeneratingWeek}
+            >
+              {isGeneratingWeek ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+              {isGeneratingWeek ? 'Gerando...' : 'Gerar Semana com IA'}
+            </Button>
             <Button onClick={() => setIsNewItemOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Conteúdo
