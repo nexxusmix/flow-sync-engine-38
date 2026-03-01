@@ -220,8 +220,14 @@ Retorne um JSON com a estrutura exata (sem markdown, só JSON puro):
       }
 
       case "setup_profile": {
-        const { handle, niche, sub_niche, target_audience, brand_voice } = data;
+        const { handle, niche, sub_niche, target_audience, brand_voice, command, reference_url, file_content } = data;
         systemPrompt = `Você é um consultor estratégico de Instagram para produtoras audiovisuais premium. Gere configurações completas de perfil com base no nicho e posicionamento fornecido. Sempre em português do Brasil.`;
+
+        let contextBlock = "";
+        if (command) contextBlock += `\nINSTRUÇÃO DO USUÁRIO: ${command}`;
+        if (reference_url) contextBlock += `\nLINK DE REFERÊNCIA (use como contexto/inspiração): ${reference_url}`;
+        if (file_content) contextBlock += `\nCONTEÚDO DE ARQUIVO ENVIADO:\n${String(file_content).substring(0, 4000)}`;
+
         userPrompt = `Configure o perfil Instagram de uma produtora audiovisual premium com base nos dados:
 
 Handle: @${handle || 'squadfilme'}
@@ -229,6 +235,7 @@ Nicho: ${niche || 'produção audiovisual premium'}
 Sub-nicho: ${sub_niche || 'imóveis de luxo, cavalos, veículos premium'}
 Público-alvo: ${target_audience || 'incorporadoras, haras, concessionárias de luxo em Brasília/DF e GO'}
 Tom de voz: ${brand_voice || 'cinematográfico, aspiracional, técnico mas acessível'}
+${contextBlock}
 
 Retorne JSON puro (sem markdown):
 {
