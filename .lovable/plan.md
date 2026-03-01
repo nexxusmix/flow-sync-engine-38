@@ -1,49 +1,43 @@
 
 
-## Plano: Refinar Paleta de Cores para Azul, Branco e Preto
+## Plano: Ações Rápidas Contextuais no ActionCard
 
-### Problema
-A plataforma usa muitas cores diferentes (verde/emerald, amarelo/amber, roxo/purple, vermelho/red, laranja/orange, rosa/pink) espalhadas por ~280 arquivos, criando poluição visual que dificulta a experiência do usuário.
+### O que muda
 
-### Abordagem
-Consolidar a paleta em variações de **azul (#009CCA)**, **branco** e **preto**, mantendo apenas vermelho para estados destrutivos/erro (necessário para acessibilidade). Status como "sucesso" e "aviso" passarão a usar tons de azul e cinza ao invés de verde e amarelo.
+Cada ActionCard ganha **botões de ação rápida contextuais** baseados no tipo da tarefa, que levam o usuário direto para executar/resolver. Além disso, adiciono funcionalidades novas que antecipam necessidades.
 
-### Mudanças
+### Ações por tipo de tarefa
 
-**1. Tokens CSS (`src/index.css`)**
-- `--success` → tom de azul claro (ex: `195 80% 45%`) ao invés de verde
-- `--warning` → tom neutro/cinza quente (ex: `200 10% 55%`) ao invés de amarelo/amber
-- `--info` → mesmo azul primário (já está correto no dark mode)
-- Manter `--destructive` em vermelho (necessário para UX de erros)
-- Light mode: mesmas mudanças
+| Tipo | Botão Principal | Destino/Ação |
+|------|----------------|--------------|
+| `financial` | **Ver Fatura →** | `/financeiro/receitas` |
+| `deadline` | **Abrir Projeto →** | `/projetos/{project_id}` |
+| `delivery` | **Ver Entrega →** | `/projetos/{project_id}` |
+| `production_step` | **Ir para Produção →** | `/projetos/{project_id}` |
+| `follow_up` | **Abrir CRM →** | `/crm` |
+| `task_overdue` | **Ver Tarefa →** | `/tarefas` |
+| `meeting` / `call` | **Ver Agenda →** | `/agenda` |
+| `proposal` | **Ver Proposta →** | `/propostas` |
+| `contract` | **Ver Contrato →** | `/contratos` |
+| `campaign` | **Ver Marketing →** | `/marketing` |
 
-**2. Componentes com cores hardcoded (~280 arquivos)**
-Substituições em massa nos componentes mais usados:
-- `text-emerald-*` / `text-green-*` → `text-primary` ou `text-primary/70`
-- `bg-emerald-*` / `bg-green-*` → `bg-primary/10`
-- `text-amber-*` / `text-yellow-*` → `text-muted-foreground`
-- `bg-amber-*` / `bg-yellow-*` → `bg-muted`
-- `text-purple-*` / `bg-purple-*` → `text-primary` / `bg-primary/10`
-- `text-orange-*` / `bg-orange-*` → `text-muted-foreground`
-- `text-pink-*` / `bg-pink-*` → `text-primary`
+### Funcionalidades novas (antecipadas)
 
-Arquivos prioritários (mais impacto visual):
-- `ExecutiveDashboardPage.tsx` — KPIs, trends, online users
-- `TasksDashboardBI.tsx` — status badges do kanban
-- `ReportsDashboard.tsx` — ícones de relatórios
-- `ProposalDetailPage.tsx` — alertas amber
-- `ReportMetricsBar.tsx` — health score
-- Todos os badges em `index.css` (`.badge-success`, `.badge-warning`)
-- Charts/Recharts: cores de gráficos nas configs
+1. **Botão "Copiar Resumo"** — Copia título + descrição + prazo para a clipboard (útil para colar no WhatsApp, email, etc.)
+2. **Botão "Delegar"** — Abre tooltip para atribuir a outro membro (usa metadata para marcar assignee)
+3. **Badge de tempo relativo animado** — "Há 2h", "Vence em 30min" com cor pulsante para urgentes
+4. **Quick-nav no compact mode** — Mesmo no rail do dashboard, o card leva direto ao destino ao clicar
 
-**3. CSS auxiliares**
-- `squad-holo.css` — badges active/warning já usam verde/amarelo → azul/cinza
-- `mk-holographic.css` — já usa azul, minimal changes
+### Implementação técnica
 
-**4. Recharts / Gráficos**
-- Substituir paletas multicoloridas por gradientes de azul + cinza
-- Cores de fill/stroke em componentes de chart
+- Criar função `resolveQuickActions(item)` que retorna array de `{ label, icon, href, onClick? }` baseado no `type` e `metadata`
+- Usar `useNavigate()` do react-router para navegação
+- Botões com `motion.button` + hover scale + ícone contextual (ExternalLink, Copy, UserPlus)
+- No modo compact: clique no card inteiro navega para o destino principal
+- No modo expandido: botões aparecem na barra de ações inferior, ao lado dos existentes (Concluir, Msg IA, Adiar)
+- Botão "Copiar" usa `navigator.clipboard.writeText()` + toast de confirmação
 
-### Resultado
-Paleta limpa: azul primário para positivo/ativo, cinza para neutro/aviso, vermelho apenas para erro/destruição. Visual coeso e premium alinhado com a estética Sonance/Apple.
+### Arquivo alterado
+
+- `src/components/action-hub/ActionCard.tsx` — único arquivo, toda a lógica fica aqui
 
