@@ -8,12 +8,12 @@ const variants: Record<BadgeVariant, string> = {
   processing: "border border-white/15 text-white/50",
   queued: "border border-white/10 text-white/30",
   blue: "border border-[rgba(0,156,202,0.3)] text-[hsl(195,100%,55%)]",
-  amber: "border border-amber-500/30 text-amber-400",
-  emerald: "border border-emerald-500/30 text-emerald-400",
-  purple: "border border-purple-500/30 text-purple-400",
-  red: "border border-red-500/30 text-red-400",
+  amber: "border border-white/15 text-white/50",
+  emerald: "border border-[rgba(0,156,202,0.3)] text-[hsl(195,100%,55%)]",
+  purple: "border border-[rgba(0,156,202,0.25)] text-[hsl(195,100%,55%)]",
+  red: "border border-destructive/30 text-destructive",
   slate: "border border-white/10 text-white/40",
-  cyan: "border border-cyan-500/30 text-cyan-400",
+  cyan: "border border-[rgba(0,156,202,0.3)] text-[hsl(195,100%,55%)]",
 };
 
 interface MkStatusBadgeProps {

@@ -66,10 +66,10 @@ const ROLE_LABELS: Record<AppRole, string> = {
 };
 
 const ROLE_COLORS: Record<AppRole, string> = {
-  admin: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  comercial: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  operacao: "bg-green-500/10 text-green-500 border-green-500/20",
-  financeiro: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  admin: "bg-primary/10 text-primary border-primary/20",
+  comercial: "bg-primary/10 text-primary/80 border-primary/20",
+  operacao: "bg-primary/10 text-primary/70 border-primary/20",
+  financeiro: "bg-primary/10 text-primary/60 border-primary/20",
 };
 
 export default function UsersSettingsPage() {

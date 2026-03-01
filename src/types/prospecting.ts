@@ -131,14 +131,14 @@ export interface DoNotContact {
 
 // Pipeline stages config
 export const OPPORTUNITY_STAGES: { type: OpportunityStage; name: string; color: string }[] = [
-  { type: 'new', name: 'Novo', color: 'bg-slate-500' },
-  { type: 'contacted', name: 'Contatado', color: 'bg-blue-500' },
-  { type: 'conversation', name: 'Em Conversa', color: 'bg-cyan-500' },
-  { type: 'qualified', name: 'Qualificado', color: 'bg-purple-500' },
-  { type: 'proposal', name: 'Proposta', color: 'bg-amber-500' },
-  { type: 'negotiation', name: 'Negociação', color: 'bg-orange-500' },
-  { type: 'won', name: 'Ganhou', color: 'bg-emerald-500' },
-  { type: 'lost', name: 'Perdeu', color: 'bg-red-500' },
+  { type: 'new', name: 'Novo', color: 'bg-muted-foreground' },
+  { type: 'contacted', name: 'Contatado', color: 'bg-primary/40' },
+  { type: 'conversation', name: 'Em Conversa', color: 'bg-primary/55' },
+  { type: 'qualified', name: 'Qualificado', color: 'bg-primary/70' },
+  { type: 'proposal', name: 'Proposta', color: 'bg-primary/80' },
+  { type: 'negotiation', name: 'Negociação', color: 'bg-primary/90' },
+  { type: 'won', name: 'Ganhou', color: 'bg-primary' },
+  { type: 'lost', name: 'Perdeu', color: 'bg-destructive' },
 ];
 
 export const ACTIVITY_TYPES: { type: ActivityType; name: string; icon: string }[] = [

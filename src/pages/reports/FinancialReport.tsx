@@ -87,8 +87,8 @@ export default function FinancialReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-500" />
+                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                   <TrendingUp className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold text-foreground">{formatCurrency(metrics?.receivedPeriod || 0)}</p>
@@ -101,8 +101,8 @@ export default function FinancialReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-500" />
+                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                   <Clock className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold text-foreground">{formatCurrency(metrics?.pendingReceivable || 0)}</p>
@@ -115,8 +115,8 @@ export default function FinancialReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                 <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                   <AlertTriangle className="w-5 h-5 text-destructive" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold text-foreground">{formatCurrency(metrics?.overdueReceivable || 0)}</p>
@@ -129,8 +129,8 @@ export default function FinancialReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Ban className="w-5 h-5 text-amber-500" />
+                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                   <Ban className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
                   <p className="text-xl font-semibold text-foreground">{metrics?.blockedProjects || 0}</p>
@@ -146,7 +146,7 @@ export default function FinancialReport() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Saldo do Período (Receita - Despesa)</p>
-              <p className={`text-4xl font-light tracking-tight ${(metrics?.periodBalance || 0) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              <p className={`text-4xl font-light tracking-tight ${(metrics?.periodBalance || 0) >= 0 ? 'text-primary' : 'text-destructive'}`}>
                 {formatCurrency(metrics?.periodBalance || 0)}
               </p>
             </div>
@@ -164,24 +164,24 @@ export default function FinancialReport() {
           <Card className="glass-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-500" />
+                <DollarSign className="w-4 h-4 text-primary" />
                 Forecast 30/60/90 dias
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-3 rounded-lg bg-emerald-500/10">
-                  <p className="text-xs text-muted-foreground">30 dias</p>
-                  <p className="text-lg font-semibold text-emerald-500">{formatCurrency(metrics?.forecast30 || 0)}</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-blue-500/10">
-                  <p className="text-xs text-muted-foreground">60 dias</p>
-                  <p className="text-lg font-semibold text-blue-500">{formatCurrency(metrics?.forecast60 || 0)}</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-violet-500/10">
-                  <p className="text-xs text-muted-foreground">90 dias</p>
-                  <p className="text-lg font-semibold text-violet-500">{formatCurrency(metrics?.forecast90 || 0)}</p>
-                </div>
+                 <div className="text-center p-3 rounded-lg bg-primary/10">
+                   <p className="text-xs text-muted-foreground">30 dias</p>
+                   <p className="text-lg font-semibold text-primary">{formatCurrency(metrics?.forecast30 || 0)}</p>
+                 </div>
+                 <div className="text-center p-3 rounded-lg bg-primary/10">
+                   <p className="text-xs text-muted-foreground">60 dias</p>
+                   <p className="text-lg font-semibold text-primary/80">{formatCurrency(metrics?.forecast60 || 0)}</p>
+                 </div>
+                 <div className="text-center p-3 rounded-lg bg-primary/10">
+                   <p className="text-xs text-muted-foreground">90 dias</p>
+                   <p className="text-lg font-semibold text-primary/60">{formatCurrency(metrics?.forecast90 || 0)}</p>
+                 </div>
               </div>
               <div className="h-40">
                 <ResponsiveContainer width="100%" height="100%">
@@ -212,7 +212,7 @@ export default function FinancialReport() {
           <Card className="glass-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500" />
+                <AlertTriangle className="w-4 h-4 text-destructive" />
                 Inadimplência por Aging
               </CardTitle>
             </CardHeader>
@@ -225,7 +225,7 @@ export default function FinancialReport() {
                         <p className="font-medium text-foreground">{bucket.range}</p>
                         <p className="text-xs text-muted-foreground">{bucket.count} parcelas</p>
                       </div>
-                      <p className={`font-semibold ${bucket.value > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                      <p className={`font-semibold ${bucket.value > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                         {formatCurrency(bucket.value)}
                       </p>
                     </div>
@@ -233,7 +233,7 @@ export default function FinancialReport() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <CheckCircle className="w-12 h-12 text-emerald-500/50 mb-2" />
+                  <CheckCircle className="w-12 h-12 text-primary/50 mb-2" />
                   <p className="text-sm text-muted-foreground">Nenhuma inadimplência 🎉</p>
                 </div>
               )}

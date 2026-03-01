@@ -22,14 +22,14 @@ export interface PortalMaterialVersion {
 
 // Predefined revision tags with colors
 export const REVISION_TAGS = [
-  { id: 'color', label: 'Cor/Grade', color: 'bg-purple-500' },
-  { id: 'audio', label: 'Áudio', color: 'bg-blue-500' },
-  { id: 'cut', label: 'Corte', color: 'bg-amber-500' },
-  { id: 'graphics', label: 'Grafismos', color: 'bg-emerald-500' },
-  { id: 'vo', label: 'Locução', color: 'bg-pink-500' },
-  { id: 'music', label: 'Música', color: 'bg-cyan-500' },
-  { id: 'text', label: 'Texto', color: 'bg-orange-500' },
-  { id: 'other', label: 'Outros', color: 'bg-gray-500' },
+  { id: 'color', label: 'Cor/Grade', color: 'bg-primary' },
+  { id: 'audio', label: 'Áudio', color: 'bg-primary/80' },
+  { id: 'cut', label: 'Corte', color: 'bg-primary/65' },
+  { id: 'graphics', label: 'Grafismos', color: 'bg-primary/50' },
+  { id: 'vo', label: 'Locução', color: 'bg-primary/70' },
+  { id: 'music', label: 'Música', color: 'bg-primary/60' },
+  { id: 'text', label: 'Texto', color: 'bg-primary/55' },
+  { id: 'other', label: 'Outros', color: 'bg-muted-foreground' },
 ] as const;
 
 export type RevisionTagId = typeof REVISION_TAGS[number]['id'];

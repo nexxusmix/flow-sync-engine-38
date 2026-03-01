@@ -71,13 +71,13 @@ const projectStatusLabel: Record<string, { label: string; variant: string }> = {
 
 // ── status badge styles ───────────────────────────────────────────────────
 const badgeStyles: Record<string, string> = {
-  emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  red: "bg-red-500/10 text-red-400 border-red-500/20",
+  emerald: "bg-primary/10 text-primary border-primary/20",
+  blue: "bg-primary/10 text-primary border-primary/20",
+  amber: "bg-muted text-muted-foreground border-border",
+  purple: "bg-primary/10 text-primary border-primary/20",
+  red: "bg-destructive/10 text-destructive border-destructive/20",
   slate: "bg-white/[0.04] text-muted-foreground border-white/10",
-  cyan: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  cyan: "bg-primary/10 text-primary border-primary/20",
 };
 
 // ── module meta ────────────────────────────────────────────────────────────

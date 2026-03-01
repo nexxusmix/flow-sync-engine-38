@@ -18,8 +18,8 @@ interface TasksCalendarViewProps {
 }
 
 const PRIORITY_DOTS: Record<string, string> = {
-  urgent: "bg-red-500",
-  high: "bg-orange-400",
+  urgent: "bg-destructive",
+  high: "bg-primary",
   normal: "bg-muted-foreground/40",
   low: "bg-muted-foreground/20",
 };

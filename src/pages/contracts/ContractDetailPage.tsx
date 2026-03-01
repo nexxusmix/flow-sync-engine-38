@@ -425,7 +425,7 @@ export default function ContractDetailPage() {
                       description: 'O contrato será encerrado antecipadamente. Parcelas pendentes não serão afetadas.'
                     })}
                   >
-                    <Ban className="w-4 h-4 mr-2 text-orange-500" />
+                    <Ban className="w-4 h-4 mr-2 text-muted-foreground" />
                     Encerrar
                   </DropdownMenuItem>
                 )}

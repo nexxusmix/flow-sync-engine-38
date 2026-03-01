@@ -48,27 +48,27 @@ const URL_TYPE_CONFIG: Record<UrlType, { label: string; icon: React.ReactNode; c
   instagram: {
     label: "Instagram",
     icon: <Instagram className="w-3.5 h-3.5" />,
-    color: "bg-pink-500/10 text-pink-600 border-pink-500/20",
+    color: "bg-primary/10 text-primary border-primary/20",
   },
   behance: {
     label: "Behance",
     icon: <Globe className="w-3.5 h-3.5" />,
-    color: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    color: "bg-primary/10 text-primary border-primary/20",
   },
   pinterest: {
     label: "Pinterest",
     icon: <Globe className="w-3.5 h-3.5" />,
-    color: "bg-red-500/10 text-red-600 border-red-500/20",
+    color: "bg-primary/10 text-primary border-primary/20",
   },
   youtube: {
     label: "YouTube",
     icon: <Globe className="w-3.5 h-3.5" />,
-    color: "bg-red-500/10 text-red-600 border-red-500/20",
+    color: "bg-primary/10 text-primary border-primary/20",
   },
   linkedin: {
     label: "LinkedIn",
     icon: <Globe className="w-3.5 h-3.5" />,
-    color: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    color: "bg-primary/10 text-primary border-primary/20",
   },
   generic: {
     label: "Site",

@@ -157,7 +157,7 @@ export function ProspectAutomations() {
             status: s.status,
             created_at: s.created_at,
             icon: Loader2,
-            color: s.status === 'applied' ? 'text-emerald-400' : s.status === 'ignored' ? 'text-muted-foreground' : 'text-amber-400',
+            color: s.status === 'applied' ? 'text-primary' : s.status === 'ignored' ? 'text-muted-foreground' : 'text-primary/60',
           });
         });
       }
@@ -183,7 +183,7 @@ export function ProspectAutomations() {
             status: 'sent',
             created_at: e.created_at,
             icon: e.action === 'whatsapp.sent' ? Smartphone : Send,
-            color: 'text-emerald-400',
+            color: 'text-primary',
           });
         });
       }

@@ -6,14 +6,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const typeConfig: Record<string, { icon: typeof Check; color: string; label: string }> = {
-  follow_up: { icon: Users, color: "text-blue-400", label: "Follow-up" },
-  deadline: { icon: Calendar, color: "text-amber-400", label: "Prazo" },
-  delivery: { icon: Package, color: "text-emerald-400", label: "Entrega" },
-  production_step: { icon: Zap, color: "text-violet-400", label: "Produção" },
-  financial: { icon: DollarSign, color: "text-red-400", label: "Financeiro" },
-  message_draft: { icon: MessageSquare, color: "text-cyan-400", label: "Mensagem" },
-  alert: { icon: AlertTriangle, color: "text-orange-400", label: "Alerta" },
-  meeting: { icon: Users, color: "text-indigo-400", label: "Reunião" },
+  follow_up: { icon: Users, color: "text-primary", label: "Follow-up" },
+  deadline: { icon: Calendar, color: "text-muted-foreground", label: "Prazo" },
+  delivery: { icon: Package, color: "text-primary", label: "Entrega" },
+  production_step: { icon: Zap, color: "text-primary/70", label: "Produção" },
+  financial: { icon: DollarSign, color: "text-destructive", label: "Financeiro" },
+  message_draft: { icon: MessageSquare, color: "text-primary", label: "Mensagem" },
+  alert: { icon: AlertTriangle, color: "text-muted-foreground", label: "Alerta" },
+  meeting: { icon: Users, color: "text-primary/70", label: "Reunião" },
 };
 
 const priorityConfig: Record<string, { bg: string; text: string }> = {

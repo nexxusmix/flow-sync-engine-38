@@ -187,20 +187,20 @@ export const getStageInfo = (type: ProjectStageType) => {
 };
 
 export const STAGE_COLORS: Record<ProjectStageType, string> = {
-  briefing: 'bg-slate-500',
-  roteiro: 'bg-blue-500',
-  pre_producao: 'bg-indigo-500',
-  captacao: 'bg-violet-500',
-  edicao: 'bg-amber-500',
-  revisao: 'bg-orange-500',
-  aprovacao: 'bg-emerald-500',
-  entrega: 'bg-green-500',
-  pos_venda: 'bg-pink-500',
+  briefing: 'bg-muted-foreground',
+  roteiro: 'bg-primary/40',
+  pre_producao: 'bg-primary/50',
+  captacao: 'bg-primary/60',
+  edicao: 'bg-primary/70',
+  revisao: 'bg-primary/80',
+  aprovacao: 'bg-primary/90',
+  entrega: 'bg-primary',
+  pos_venda: 'bg-primary/50',
 };
 
 export const STATUS_CONFIG = {
-  ok: { label: 'Ok', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-  em_risco: { label: 'Em Risco', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  atrasado: { label: 'Atrasado', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
-  bloqueado: { label: 'Bloqueado', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' },
+  ok: { label: 'Ok', color: 'bg-primary/20 text-primary border-primary/30' },
+  em_risco: { label: 'Em Risco', color: 'bg-muted text-muted-foreground border-border' },
+  atrasado: { label: 'Atrasado', color: 'bg-destructive/20 text-destructive border-destructive/30' },
+  bloqueado: { label: 'Bloqueado', color: 'bg-muted text-muted-foreground border-border' },
 };

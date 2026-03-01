@@ -527,8 +527,8 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
             {/* Owner */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                <Users className="w-4 h-4 md:w-5 md:h-5 text-violet-500" />
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{project.owner_name || 'Não definido'}</p>

@@ -225,9 +225,9 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
   const getPriorityBadge = (priority: string | null) => {
     switch (priority) {
       case 'urgent':
-        return <Badge className="bg-red-500 text-[10px]">Urgente</Badge>;
+        return <Badge className="bg-destructive text-[10px]">Urgente</Badge>;
       case 'high':
-        return <Badge className="bg-amber-500 text-[10px]">Alta</Badge>;
+        return <Badge className="bg-primary text-[10px]">Alta</Badge>;
       default:
         return null;
     }
@@ -237,21 +237,21 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
     switch (status) {
       case 'resolved':
         return (
-          <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px]">
+          <Badge className="bg-primary/20 text-primary text-[10px]">
             <CheckCircle2 className="w-3 h-3 mr-1" />
             Resolvido
           </Badge>
         );
       case 'in_progress':
         return (
-          <Badge className="bg-blue-500/20 text-blue-400 text-[10px]">
+          <Badge className="bg-primary/10 text-primary/70 text-[10px]">
             <Clock className="w-3 h-3 mr-1" />
             Em Análise
           </Badge>
         );
       default:
         return (
-          <Badge className="bg-amber-500/20 text-amber-400 text-[10px]">
+          <Badge className="bg-muted text-muted-foreground text-[10px]">
             <AlertTriangle className="w-3 h-3 mr-1" />
             Pendente
           </Badge>
@@ -316,9 +316,9 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
         {/* Stats Header */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatsCard icon={MessageSquare} label="Total" value={0} color="text-muted-foreground" />
-          <StatsCard icon={Clock} label="Pendentes" value={0} color="text-amber-500" />
-          <StatsCard icon={RefreshCw} label="Em Análise" value={0} color="text-blue-500" />
-          <StatsCard icon={CheckCircle2} label="Resolvidos" value={0} color="text-emerald-500" />
+          <StatsCard icon={Clock} label="Pendentes" value={0} color="text-muted-foreground" />
+          <StatsCard icon={RefreshCw} label="Em Análise" value={0} color="text-primary/70" />
+          <StatsCard icon={CheckCircle2} label="Resolvidos" value={0} color="text-primary" />
         </div>
 
         <div className="glass-card rounded-2xl p-12 text-center">
@@ -339,9 +339,9 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
       {/* Stats Header */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatsCard icon={MessageSquare} label="Total" value={stats.total} color="text-muted-foreground" />
-        <StatsCard icon={Clock} label="Pendentes" value={stats.pending} color="text-amber-500" />
-        <StatsCard icon={RefreshCw} label="Em Análise" value={stats.inProgress} color="text-blue-500" />
-        <StatsCard icon={CheckCircle2} label="Resolvidos" value={stats.resolved} color="text-emerald-500" />
+        <StatsCard icon={Clock} label="Pendentes" value={stats.pending} color="text-muted-foreground" />
+        <StatsCard icon={RefreshCw} label="Em Análise" value={stats.inProgress} color="text-primary/70" />
+        <StatsCard icon={CheckCircle2} label="Resolvidos" value={stats.resolved} color="text-primary" />
       </div>
 
       {/* Two Column Layout */}
@@ -390,12 +390,12 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         {group.pending > 0 && (
-                          <span className="text-[10px] text-amber-500 font-medium">
+                          <span className="text-[10px] text-primary font-medium">
                             {group.pending} pendente{group.pending > 1 ? 's' : ''}
                           </span>
                         )}
                         {group.inProgress > 0 && (
-                          <span className="text-[10px] text-blue-500">
+                          <span className="text-[10px] text-primary/70">
                             {group.inProgress} em análise
                           </span>
                         )}
@@ -409,7 +409,7 @@ export function RevisionsTab({ project }: RevisionsTabProps) {
 
                     {/* Indicator */}
                     {group.pending > 0 && (
-                      <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                     )}
                     <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   </button>

@@ -42,21 +42,21 @@ interface TasksBoardViewProps {
 }
 
 const STATUS_BADGES: Record<Task['status'], { label: string; className: string }> = {
-  backlog: { label: 'Backlog', className: 'border-violet-500/25 text-violet-400' },
-  week: { label: 'Semana', className: 'border-blue-500/25 text-blue-400' },
-  today: { label: 'Hoje', className: 'border-amber-500/25 text-amber-400' },
-  done: { label: 'Concluído', className: 'border-emerald-500/25 text-emerald-400' },
+  backlog: { label: 'Backlog', className: 'border-border text-muted-foreground' },
+  week: { label: 'Semana', className: 'border-primary/25 text-primary' },
+  today: { label: 'Hoje', className: 'border-primary/30 text-primary' },
+  done: { label: 'Concluído', className: 'border-primary/20 text-primary/70' },
 };
 
 const CATEGORY_BADGES: Record<Task['category'], { label: string; className: string }> = {
-  operacao: { label: 'Operação', className: 'border-blue-500/20 text-blue-400' },
-  pessoal: { label: 'Pessoal', className: 'border-purple-500/20 text-purple-400' },
-  projeto: { label: 'Projeto', className: 'border-orange-500/20 text-orange-400' },
+  operacao: { label: 'Operação', className: 'border-primary/20 text-primary' },
+  pessoal: { label: 'Pessoal', className: 'border-primary/15 text-primary/70' },
+  projeto: { label: 'Projeto', className: 'border-primary/15 text-primary/60' },
 };
 
 const PRIORITY_CONFIG: Record<string, { icon: typeof Flame; label: string; className: string; order: number }> = {
-  urgent: { icon: Flame, label: 'Urgente', className: 'text-red-400', order: 0 },
-  high: { icon: ArrowUp, label: 'Alta', className: 'text-orange-400', order: 1 },
+  urgent: { icon: Flame, label: 'Urgente', className: 'text-destructive', order: 0 },
+  high: { icon: ArrowUp, label: 'Alta', className: 'text-primary', order: 1 },
   normal: { icon: Minus, label: 'Normal', className: 'text-muted-foreground/40', order: 2 },
   low: { icon: ArrowDown, label: 'Baixa', className: 'text-muted-foreground/30', order: 3 },
 };

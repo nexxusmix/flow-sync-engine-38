@@ -127,8 +127,8 @@ export default function OwnerDailyReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-emerald-500" />
+                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                   <Users className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.leadsToday || 0}</p>
@@ -141,8 +141,8 @@ export default function OwnerDailyReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                   <TrendingUp className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.opportunitiesActive || 0}</p>
@@ -155,8 +155,8 @@ export default function OwnerDailyReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-violet-500" />
+                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                   <FileText className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">
@@ -174,8 +174,8 @@ export default function OwnerDailyReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Truck className="w-5 h-5 text-amber-500" />
+                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                   <Truck className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.deliveriesIn7Days || 0}</p>
@@ -188,8 +188,8 @@ export default function OwnerDailyReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-red-500" />
+                 <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                   <AlertCircle className="w-5 h-5 text-destructive" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.overdueCount || 0}</p>
@@ -205,7 +205,7 @@ export default function OwnerDailyReport() {
           <Card className="glass-card lg:col-span-2">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500" />
+                <AlertTriangle className="w-4 h-4 text-destructive" />
                 3 coisas que vão te ferrar se você ignorar
               </CardTitle>
             </CardHeader>

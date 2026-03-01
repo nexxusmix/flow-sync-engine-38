@@ -54,7 +54,7 @@ export function AlertsOverviewCard() {
           </span>
         )}
         {waitingCount > 0 && (
-          <span className="px-2 py-1 rounded-md bg-purple-500/10 text-purple-400 text-[10px] font-medium">
+          <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-medium">
             {waitingCount} sem contato
           </span>
         )}

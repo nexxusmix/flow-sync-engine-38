@@ -98,11 +98,11 @@ export const DEFAULT_SECTIONS: { type: SectionType; title: string; order: number
 
 export const STATUS_LABELS: Record<ProposalStatus, { label: string; color: string }> = {
   draft: { label: 'Rascunho', color: 'bg-muted text-muted-foreground' },
-  sent: { label: 'Enviada', color: 'bg-blue-500/20 text-blue-500' },
-  viewed: { label: 'Visualizada', color: 'bg-amber-500/20 text-amber-500' },
-  approved: { label: 'Aprovada', color: 'bg-emerald-500/20 text-emerald-500' },
-  rejected: { label: 'Recusada', color: 'bg-red-500/20 text-red-500' },
-  expired: { label: 'Expirada', color: 'bg-zinc-500/20 text-zinc-500' },
+  sent: { label: 'Enviada', color: 'bg-primary/20 text-primary' },
+  viewed: { label: 'Visualizada', color: 'bg-primary/10 text-primary/70' },
+  approved: { label: 'Aprovada', color: 'bg-primary/20 text-primary' },
+  rejected: { label: 'Recusada', color: 'bg-destructive/20 text-destructive' },
+  expired: { label: 'Expirada', color: 'bg-muted text-muted-foreground' },
 };
 
 export const SECTION_TYPE_LABELS: Record<SectionType, string> = {

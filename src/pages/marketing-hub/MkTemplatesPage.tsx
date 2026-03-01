@@ -46,11 +46,11 @@ interface Generation {
 }
 
 const FORMAT_CONFIG: Record<string, { icon: typeof Film; label: string; color: string }> = {
-  reels: { icon: Film, label: "Reels", color: "text-pink-400" },
-  carrossel: { icon: LayoutGrid, label: "Carrossel", color: "text-blue-400" },
-  stories: { icon: Camera, label: "Stories", color: "text-amber-400" },
-  post: { icon: ImageIcon, label: "Post", color: "text-emerald-400" },
-  thread: { icon: MessageSquare, label: "Thread", color: "text-purple-400" },
+  reels: { icon: Film, label: "Reels", color: "text-primary" },
+  carrossel: { icon: LayoutGrid, label: "Carrossel", color: "text-primary/80" },
+  stories: { icon: Camera, label: "Stories", color: "text-primary/70" },
+  post: { icon: ImageIcon, label: "Post", color: "text-primary/60" },
+  thread: { icon: MessageSquare, label: "Thread", color: "text-primary/50" },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -411,11 +411,11 @@ export default function MkTemplatesPage() {
               </div>
             ))}
             <div className="flex items-center gap-2 text-[10px] text-white/30">
-              <div className="w-1 h-1 rounded-full bg-amber-400" />
+              <div className="w-1 h-1 rounded-full bg-primary/60" />
               3 variações de legenda
             </div>
             <div className="flex items-center gap-2 text-[10px] text-white/30">
-              <div className="w-1 h-1 rounded-full bg-pink-400" />
+              <div className="w-1 h-1 rounded-full bg-primary/50" />
               Shotlist / Decupagem
             </div>
             <div className="flex items-center gap-2 text-[10px] text-white/30">
@@ -530,7 +530,7 @@ export default function MkTemplatesPage() {
                 {generation.shotlist && generation.shotlist.length > 0 && (
                   <OutputCard
                     title="Shotlist / Decupagem"
-                    icon={<Camera className="w-3.5 h-3.5 text-pink-400" />}
+                    icon={<Camera className="w-3.5 h-3.5 text-primary/60" />}
                     onCopy={() => copyToClipboard(
                       generation.shotlist!.map(s => `Cena ${s.scene}: ${s.description} | ${s.camera} | ${s.duration}`).join("\n"),
                       "shotlist"
@@ -540,7 +540,7 @@ export default function MkTemplatesPage() {
                     <div className="space-y-1.5">
                       {generation.shotlist.map((s, i) => (
                         <div key={i} className="flex gap-3 p-2 rounded-lg bg-white/[0.02] border border-white/5 text-[10px]">
-                          <span className="text-pink-400/60 font-mono font-medium shrink-0">#{s.scene}</span>
+                          <span className="text-primary/40 font-mono font-medium shrink-0">#{s.scene}</span>
                           <div className="flex-1">
                             <p className="text-white/55">{s.description}</p>
                             <div className="flex gap-3 mt-1 text-white/25">

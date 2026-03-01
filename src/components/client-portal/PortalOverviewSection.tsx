@@ -77,10 +77,10 @@ function PortalOverviewSectionComponent({ project, stages, hasPaymentBlock }: Po
         {/* Current Stage Card */}
         <div className="glass-card rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <Layers className="w-4 h-4 text-purple-500" />
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+              <Layers className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-[9px] font-bold text-purple-500 uppercase">Etapa</span>
+            <span className="text-[9px] font-bold text-primary uppercase">Etapa</span>
           </div>
           <p className="text-sm font-bold text-foreground truncate">
             {currentStageName || 'Não definida'}

@@ -8,9 +8,9 @@ interface ExecutionPlanBadgeProps {
 }
 
 const ENERGY_CONFIG = {
-  baixa: { label: "Baixa", color: "text-emerald-400" },
-  media: { label: "Média", color: "text-amber-400" },
-  alta: { label: "Alta", color: "text-red-400" },
+  baixa: { label: "Baixa", color: "text-primary/60" },
+  media: { label: "Média", color: "text-primary" },
+  alta: { label: "Alta", color: "text-destructive" },
 } as const;
 
 const MODE_CONFIG = {
