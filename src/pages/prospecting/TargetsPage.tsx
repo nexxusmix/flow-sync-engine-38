@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useProspectingStore } from "@/stores/prospectingStore";
 import { Prospect, ProspectList } from "@/types/prospecting";
 import { 
   Plus, Search, Filter, Upload, MoreHorizontal, 
   Instagram, Globe, Linkedin, Mail, Phone, Ban,
-  Building2, MapPin, User, ChevronRight
+  Building2, MapPin, User, ChevronRight, FileSpreadsheet, X, Check, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +32,60 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { DropZone } from "@/components/ui/DropZone";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-function ProspectCard({ 
+const CSV_COLUMN_MAP: Record<string, string> = {
+  'empresa': 'company_name', 'company': 'company_name', 'company_name': 'company_name', 'nome': 'company_name',
+  'nicho': 'niche', 'niche': 'niche', 'segmento': 'niche',
+  'cidade': 'city', 'city': 'city',
+  'instagram': 'instagram', 'ig': 'instagram',
+  'website': 'website', 'site': 'website', 'url': 'website',
+  'email': 'email', 'e-mail': 'email',
+  'telefone': 'phone', 'phone': 'phone', 'cel': 'phone', 'celular': 'phone', 'whatsapp': 'phone',
+  'decisor': 'decision_maker_name', 'decision_maker': 'decision_maker_name', 'decision_maker_name': 'decision_maker_name',
+  'cargo': 'decision_maker_role', 'cargo_decisor': 'decision_maker_role', 'decision_maker_role': 'decision_maker_role',
+  'prioridade': 'priority', 'priority': 'priority',
+  'notas': 'notes', 'notes': 'notes', 'observacoes': 'notes',
+  'linkedin': 'linkedin',
+};
+
+function parseCSV(text: string): Record<string, string>[] {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const firstLine = lines[0];
+  const sep = firstLine.includes(';') ? ';' : firstLine.includes('\t') ? '\t' : ',';
+  const headers = firstLine.split(sep).map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+  const rows: Record<string, string>[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(sep).map(v => v.trim().replace(/^["']|["']$/g, ''));
+    if (vals.every(v => !v)) continue;
+    const row: Record<string, string> = {};
+    headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function mapCSVToProspects(rows: Record<string, string>[]): Partial<Prospect>[] {
+  return rows.map(row => {
+    const prospect: Record<string, any> = { status: 'active', priority: 'medium' };
+    for (const [csvCol, value] of Object.entries(row)) {
+      const mappedKey = CSV_COLUMN_MAP[csvCol.toLowerCase().trim()];
+      if (mappedKey && value) {
+        if (mappedKey === 'priority') {
+          const v = value.toLowerCase();
+          prospect[mappedKey] = v === 'alta' || v === 'high' ? 'high' : v === 'baixa' || v === 'low' ? 'low' : 'medium';
+        } else {
+          prospect[mappedKey] = value;
+        }
+      }
+    }
+    return prospect as Partial<Prospect>;
+  }).filter(p => p.company_name);
+}
+
+function ProspectCard({
   prospect, 
   onCreateOpportunity,
   onBlacklist,
@@ -159,6 +211,7 @@ export default function TargetsPage() {
     updateProspect,
     blacklistProspect,
     createOpportunity,
+    importProspects,
     prospectFilters,
     setProspectFilters,
     getFilteredProspects,
@@ -166,6 +219,10 @@ export default function TargetsPage() {
 
   const [isNewProspectOpen, setIsNewProspectOpen] = useState(false);
   const [isNewListOpen, setIsNewListOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<Partial<Prospect>[]>([]);
+  const [importListId, setImportListId] = useState<string>('');
+  const [isImporting, setIsImporting] = useState(false);
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
   const [newProspect, setNewProspect] = useState<Partial<Prospect>>({
     priority: 'medium',
@@ -219,6 +276,43 @@ export default function TargetsPage() {
     toast.success('Prospect marcado como não contatar');
   };
 
+  const handleCSVFiles = (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const rows = parseCSV(text);
+      const mapped = mapCSVToProspects(rows);
+      if (mapped.length === 0) {
+        toast.error('Nenhum target válido encontrado. Verifique se a coluna "empresa" ou "company_name" existe.');
+        return;
+      }
+      setCsvPreview(mapped);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportConfirm = async () => {
+    if (csvPreview.length === 0) return;
+    setIsImporting(true);
+    try {
+      const toImport = csvPreview.map(p => ({
+        ...p,
+        ...(importListId ? { list_id: importListId } : {}),
+      }));
+      await importProspects(toImport);
+      toast.success(`${csvPreview.length} targets importados com sucesso!`);
+      setCsvPreview([]);
+      setIsImportOpen(false);
+      setImportListId('');
+    } catch {
+      toast.error('Erro ao importar targets');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Targets">
       <div className="space-y-6">
@@ -231,6 +325,10 @@ export default function TargetsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { setCsvPreview([]); setIsImportOpen(true); }}>
+              <Upload className="w-4 h-4 mr-2" />
+              Importar CSV
+            </Button>
             <Button variant="outline" onClick={() => setIsNewListOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Nova Lista
@@ -637,6 +735,126 @@ export default function TargetsPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsNewListOpen(false)}>Cancelar</Button>
               <Button onClick={handleCreateList}>Criar Lista</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Import CSV Dialog */}
+        <Dialog open={isImportOpen} onOpenChange={(open) => { if (!open) { setCsvPreview([]); setImportListId(''); } setIsImportOpen(open); }}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-primary" />
+                Importar Targets via CSV
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {csvPreview.length === 0 ? (
+                <>
+                  <DropZone
+                    onFiles={handleCSVFiles}
+                    multiple={false}
+                    accept=".csv,.tsv,.txt,.xls,.xlsx"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2 py-4">
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Arraste um arquivo CSV aqui ou clique para selecionar
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60">
+                        Formatos: .csv, .tsv — Separadores: vírgula, ponto-e-vírgula ou tab
+                      </p>
+                    </div>
+                  </DropZone>
+                  <div className="rounded-lg border border-border bg-muted/30 p-4">
+                    <p className="text-xs font-medium text-foreground mb-2">Colunas reconhecidas automaticamente:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['empresa', 'nicho', 'cidade', 'instagram', 'website', 'email', 'telefone', 'decisor', 'cargo', 'prioridade', 'notas', 'linkedin'].map(col => (
+                        <span key={col} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">{col}</span>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      Também aceita nomes em inglês: company_name, niche, city, phone, etc.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">{csvPreview.length} targets encontrados</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setCsvPreview([])}>
+                      <X className="w-4 h-4 mr-1" />
+                      Limpar
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Adicionar à lista (opcional)</Label>
+                    <Select value={importListId} onValueChange={setImportListId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sem lista específica" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Sem lista</SelectItem>
+                        {lists.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <ScrollArea className="max-h-[300px] rounded-lg border border-border">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/50 sticky top-0">
+                          <tr>
+                            <th className="text-left p-2 font-medium text-muted-foreground">#</th>
+                            <th className="text-left p-2 font-medium text-muted-foreground">Empresa</th>
+                            <th className="text-left p-2 font-medium text-muted-foreground">Nicho</th>
+                            <th className="text-left p-2 font-medium text-muted-foreground">Cidade</th>
+                            <th className="text-left p-2 font-medium text-muted-foreground">Instagram</th>
+                            <th className="text-left p-2 font-medium text-muted-foreground">E-mail</th>
+                            <th className="text-left p-2 font-medium text-muted-foreground">Prioridade</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {csvPreview.slice(0, 50).map((p, i) => (
+                            <tr key={i} className="border-t border-border/50 hover:bg-muted/20">
+                              <td className="p-2 text-muted-foreground">{i + 1}</td>
+                              <td className="p-2 font-medium text-foreground">{p.company_name}</td>
+                              <td className="p-2 text-muted-foreground">{p.niche || '—'}</td>
+                              <td className="p-2 text-muted-foreground">{p.city || '—'}</td>
+                              <td className="p-2 text-muted-foreground">{p.instagram || '—'}</td>
+                              <td className="p-2 text-muted-foreground">{p.email || '—'}</td>
+                              <td className="p-2">
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                  p.priority === 'high' ? 'bg-destructive/10 text-destructive' : 
+                                  p.priority === 'low' ? 'bg-muted text-muted-foreground' : 
+                                  'bg-primary/10 text-primary'
+                                }`}>
+                                  {p.priority === 'high' ? 'Alta' : p.priority === 'low' ? 'Baixa' : 'Média'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {csvPreview.length > 50 && (
+                      <p className="text-[10px] text-muted-foreground text-center py-2">
+                        Mostrando 50 de {csvPreview.length} targets
+                      </p>
+                    )}
+                  </ScrollArea>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setIsImportOpen(false); setCsvPreview([]); }}>Cancelar</Button>
+              <Button onClick={handleImportConfirm} disabled={csvPreview.length === 0 || isImporting}>
+                {isImporting ? 'Importando...' : `Importar ${csvPreview.length} Targets`}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
