@@ -5,6 +5,7 @@ import { Menu, X, ChevronDown, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import squadHubLogo from "@/assets/squad-hub-logo.png";
+import instagramIcon from "@/assets/instagram-icon.png";
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -14,6 +15,7 @@ interface MenuItem {
   name: string;
   href: string;
   icon: string;
+  customIcon?: string;
   badge?: number;
   children?: MenuItem[];
 }
@@ -34,7 +36,7 @@ const mainMenuItems: MenuItem[] = [
       { name: "Studio Criativo", href: "/marketing/studio", icon: "palette" },
     ],
   },
-  { name: "Instagram Engine", href: "/instagram-engine", icon: "photo_camera" },
+  { name: "Instagram Engine", href: "/instagram-engine", icon: "photo_camera", customIcon: instagramIcon },
   { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
   { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
   { name: "Clientes", href: "/clientes", icon: "groups" },
@@ -254,14 +256,26 @@ function SidebarMenuItem({
           collapsed && "justify-center px-2"
         )}
       >
-        <span
-          className={cn(
-            "material-symbols-outlined text-xl",
-            isActive ? "text-black" : "text-muted-foreground/70 group-hover:text-primary"
-          )}
-        >
-          {item.icon}
-        </span>
+        {item.customIcon ? (
+          <img
+            src={item.customIcon}
+            alt={item.name}
+            className={cn(
+              "w-5 h-5 object-contain",
+              isActive ? "opacity-100" : "opacity-50 group-hover:opacity-80"
+            )}
+            style={{ filter: isActive ? 'none' : 'grayscale(100%)' }}
+          />
+        ) : (
+          <span
+            className={cn(
+              "material-symbols-outlined text-xl",
+              isActive ? "text-black" : "text-muted-foreground/70 group-hover:text-primary"
+            )}
+          >
+            {item.icon}
+          </span>
+        )}
         <AnimatePresence mode="wait">
           {!collapsed && (
             <motion.div
