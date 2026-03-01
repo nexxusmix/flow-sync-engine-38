@@ -268,6 +268,70 @@ Retorne JSON puro (sem markdown):
         break;
       }
 
+      case "analyze_insights": {
+        const { text_input, file_content: fc, command: cmd, profile_context } = data;
+        systemPrompt = `Você é um analista de dados e estrategista de Instagram de alto nível. Analise dados de Insights do Instagram fornecidos (textos, dados numéricos, prints, relatórios) e gere um relatório estratégico completo. Sempre em português do Brasil. Seja extremamente detalhado e acionável.`;
+
+        let insightsContext = "";
+        if (cmd) insightsContext += `\nCOMANDO DO USUÁRIO: ${cmd}`;
+        if (text_input) insightsContext += `\nDADOS DE INSIGHTS FORNECIDOS:\n${text_input.substring(0, 6000)}`;
+        if (fc) insightsContext += `\nCONTEÚDO DE ARQUIVOS:\n${String(fc).substring(0, 6000)}`;
+        if (profile_context) insightsContext += `\nCONTEXTO DO PERFIL:\nHandle: @${profile_context.handle}\nNicho: ${profile_context.niche}\nSeguidores: ${profile_context.followers}\nPosts: ${profile_context.posts_count}\nEngajamento: ${profile_context.avg_engagement}%`;
+
+        userPrompt = `Analise os dados de Insights do Instagram abaixo e gere um relatório estratégico completo:
+${insightsContext}
+
+Retorne JSON puro (sem markdown) com a estrutura exata:
+{
+  "diagnosis": {
+    "summary": "resumo executivo do estado atual do perfil em 3-5 linhas",
+    "health_score": 0-100,
+    "key_metrics": [{"label": "nome da métrica", "value": "valor", "trend": "up/down/stable", "note": "observação"}],
+    "period_comparison": {"current": "descrição período atual", "previous": "descrição período anterior", "change_pct": 0}
+  },
+  "priority_actions": [
+    {"priority": 1, "title": "ação concreta", "description": "como executar", "impact": "alto/médio/baixo", "effort": "alto/médio/baixo", "deadline": "prazo sugerido"}
+  ],
+  "suggested_calendar": [
+    {"day": "segunda", "time": "10:00", "format": "reel/carousel/story", "topic": "tema", "pillar": "pilar", "hook": "hook sugerido", "objective": "objetivo"}
+  ],
+  "projections": {
+    "followers_30d": 0,
+    "followers_90d": 0,
+    "engagement_trend": "descrição da tendência",
+    "reach_trend": "descrição da tendência",
+    "revenue_potential": "estimativa de potencial de conversão",
+    "growth_scenarios": [{"scenario": "conservador/otimista/agressivo", "followers_90d": 0, "actions_needed": "o que fazer"}]
+  },
+  "content_guidance": {
+    "best_formats": [{"format": "reel", "reason": "motivo", "engagement_avg": "X%"}],
+    "best_times": ["10:00", "18:00"],
+    "best_days": ["segunda", "quarta"],
+    "content_mix": {"autoridade": 30, "portfolio": 25, "bastidores": 25, "social_proof": 20},
+    "trending_topics": ["tema1", "tema2"],
+    "avoid": ["o que evitar"]
+  },
+  "alerts": [
+    {"type": "risk/opportunity", "severity": "high/medium/low", "title": "título", "description": "descrição detalhada", "action": "ação recomendada"}
+  ],
+  "consistency_score": {
+    "score": 0-100,
+    "posts_last_7d": 0,
+    "posts_last_30d": 0,
+    "ideal_frequency": 0,
+    "streak_days": 0,
+    "note": "observação sobre consistência"
+  },
+  "top_performing": {
+    "patterns": ["padrão de sucesso identificado"],
+    "best_hooks": ["melhores hooks identificados"],
+    "best_formats": ["formatos com melhor performance"],
+    "recommendations": ["recomendação baseada nos padrões"]
+  }
+}`;
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
