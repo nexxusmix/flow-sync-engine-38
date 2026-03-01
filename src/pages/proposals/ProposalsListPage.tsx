@@ -234,13 +234,13 @@ export default function ProposalsListPage() {
           </Card>
           <Card className="glass-card p-4">
             <p className="text-xs text-muted-foreground">Aguardando</p>
-            <p className="text-2xl font-semibold text-amber-500">
+            <p className="text-2xl font-semibold text-muted-foreground">
               {proposals.filter(p => ['sent', 'viewed'].includes(p.status)).length}
             </p>
           </Card>
           <Card className="glass-card p-4">
             <p className="text-xs text-muted-foreground">Aprovadas</p>
-            <p className="text-2xl font-semibold text-emerald-500">
+            <p className="text-2xl font-semibold text-primary">
               {proposals.filter(p => p.status === 'approved').length}
             </p>
           </Card>

@@ -235,11 +235,11 @@ export default function ContractsListPage() {
 
         {/* Alerts Banner */}
         {renewingSoon.length > 0 && (
-          <Card className="p-4 bg-amber-500/10 border-amber-500/30">
+          <Card className="p-4 bg-muted border-border">
             <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-amber-500" />
+              <Bell className="w-5 h-5 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-amber-500">
+                <p className="text-sm font-medium text-foreground">
                   {renewingSoon.length} contrato(s) vencendo nos próximos 30 dias
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -258,13 +258,13 @@ export default function ContractsListPage() {
           </Card>
           <Card className="glass-card p-4">
             <p className="text-xs text-muted-foreground">Aguardando Assinatura</p>
-            <p className="text-2xl font-semibold text-amber-500">
+            <p className="text-2xl font-semibold text-muted-foreground">
               {contracts.filter(c => ['sent', 'viewed'].includes(c.status)).length}
             </p>
           </Card>
           <Card className="glass-card p-4">
             <p className="text-xs text-muted-foreground">Ativos</p>
-            <p className="text-2xl font-semibold text-emerald-500">
+            <p className="text-2xl font-semibold text-primary">
               {contracts.filter(c => c.status === 'signed' || c.status === 'active').length}
             </p>
           </Card>
@@ -325,7 +325,7 @@ export default function ContractsListPage() {
                           <div>
                             <p className="font-medium text-foreground">{contract.project_name}</p>
                             {hasAlert && (
-                              <Badge variant="outline" className="text-[9px] text-amber-500 border-amber-500">
+                              <Badge variant="outline" className="text-[9px] text-muted-foreground border-border">
                                 <AlertTriangle className="w-3 h-3 mr-1" />
                                 Alerta
                               </Badge>

@@ -455,14 +455,14 @@ function ClientUploadDialogComponent({
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-gray-500 uppercase tracking-wider">
                   {queue.length} {queue.length === 1 ? 'item' : 'itens'} na fila
-                  {successCount > 0 && <span className="text-emerald-500 ml-1">• {successCount} enviados</span>}
+                  {successCount > 0 && <span className="text-primary ml-1">• {successCount} enviados</span>}
                   {failedCount > 0 && <span className="text-red-500 ml-1">• {failedCount} falharam</span>}
                 </span>
                 {!sending && (
                   <button 
                     onClick={fillAllWithAI} 
                     disabled={isFillingAI}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400 text-[10px] uppercase tracking-wider font-medium hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-[10px] uppercase tracking-wider font-medium hover:bg-primary/20 transition-colors disabled:opacity-50"
                   >
                     {isFillingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     {isFillingAI ? 'Preenchendo...' : 'Preencher com IA'}
@@ -484,9 +484,9 @@ function ClientUploadDialogComponent({
                     transition={{ delay: i * 0.03 }} 
                     className={cn(
                       "border p-3 space-y-2 transition-colors",
-                      isItemDone ? "border-emerald-500/20 bg-emerald-500/[0.03]" :
-                      isItemFailed ? "border-red-500/20 bg-red-500/[0.03]" :
-                      isItemSending ? "border-cyan-500/20 bg-cyan-500/[0.03]" :
+                      isItemDone ? "border-primary/20 bg-primary/[0.03]" :
+                      isItemFailed ? "border-destructive/20 bg-destructive/[0.03]" :
+                      isItemSending ? "border-primary/20 bg-primary/[0.03]" :
                       "border-[#1a1a1a]"
                     )}
                   >
@@ -496,17 +496,17 @@ function ClientUploadDialogComponent({
                         {item.preview ? (
                           <img src={item.preview} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-red-500' : item.type === 'link' ? 'text-cyan-500' : 'text-purple-500')} />
+                          <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-destructive' : 'text-primary')} />
                         )}
                         {/* Status overlay */}
                         {isItemSending && (
                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
                           </div>
                         )}
                         {isItemDone && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                            <CheckCircle2 className="w-5 h-5 text-primary" />
                           </div>
                         )}
                         {isItemFailed && (
@@ -532,7 +532,7 @@ function ClientUploadDialogComponent({
                         {isItemFailed && (
                           <button 
                             onClick={() => retryFailedItem(item.id)} 
-                            className="text-amber-400 hover:text-amber-300 transition-colors"
+                            className="text-muted-foreground hover:text-foreground transition-colors"
                             title="Tentar novamente"
                           >
                             <RotateCcw className="w-4 h-4" />

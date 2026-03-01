@@ -20,9 +20,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  deliverable: "bg-emerald-500/20 text-emerald-400",
-  reference: "bg-blue-500/20 text-blue-400",
-  raw: "bg-amber-500/20 text-amber-400",
+  deliverable: "bg-primary/20 text-primary",
+  reference: "bg-primary/10 text-primary/70",
+  raw: "bg-muted text-muted-foreground",
   other: "bg-muted text-muted-foreground",
 };
 

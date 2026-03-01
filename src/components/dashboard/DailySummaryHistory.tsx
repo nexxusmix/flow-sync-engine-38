@@ -21,9 +21,9 @@ interface HistoryAction {
 }
 
 const decisionConfig: Record<string, { label: string; icon: typeof Check; color: string; bg: string }> = {
-  done: { label: 'Concluída', icon: Check, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  dismissed: { label: 'Recusada', icon: X, color: 'text-red-400', bg: 'bg-red-500/10' },
-  standby: { label: 'Adiada', icon: Pause, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+  done: { label: 'Concluída', icon: Check, color: 'text-primary', bg: 'bg-primary/10' },
+  dismissed: { label: 'Recusada', icon: X, color: 'text-destructive', bg: 'bg-destructive/10' },
+  standby: { label: 'Adiada', icon: Pause, color: 'text-muted-foreground', bg: 'bg-muted' },
 };
 
 const filterOptions = [
@@ -160,7 +160,7 @@ export function DailySummaryHistory() {
                             </span>
                           )}
                           {isStandbyActive && action.standby_until && (
-                            <span className="text-caption text-amber-400">
+                            <span className="text-caption text-muted-foreground">
                               até {format(new Date(action.standby_until), "dd/MM", { locale: ptBR })}
                             </span>
                           )}

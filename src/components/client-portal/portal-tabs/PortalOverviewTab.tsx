@@ -60,9 +60,9 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
   };
 
   const getHealthColor = (health: number) => {
-    if (health >= 90) return 'text-emerald-500';
-    if (health >= 70) return 'text-amber-500';
-    return 'text-red-500';
+    if (health >= 90) return 'text-primary';
+    if (health >= 70) return 'text-muted-foreground';
+    return 'text-destructive';
   };
 
   const currentStageName = project.stage_current 
@@ -76,7 +76,7 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+        return <CheckCircle2 className="w-4 h-4 text-primary" />;
       case 'in_progress':
         return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
       default:
@@ -93,10 +93,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div className="glass-card rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-              <Target className="w-4 h-4 text-emerald-500" />
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+              <Target className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-caption font-bold text-emerald-500 uppercase">Progresso</span>
+            <span className="text-caption font-bold text-primary uppercase">Progresso</span>
           </div>
           <p className="text-lg font-bold text-foreground">{stageProgress}%</p>
           <p className="text-mono text-muted-foreground">{completedStages}/{totalStages} etapas</p>
@@ -204,10 +204,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
 
       {/* Key Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <div className="glass-card rounded-xl p-4 border-l-2 border-emerald-500">
+        <div className="glass-card rounded-xl p-4 border-l-2 border-primary">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-            <span className="text-[8px] font-bold text-emerald-500 uppercase">Status</span>
+            <TrendingUp className="w-4 h-4 text-primary" />
+            <span className="text-[8px] font-bold text-primary uppercase">Status</span>
           </div>
           <p className="text-[10px] text-muted-foreground mb-1">Status do Projeto</p>
           <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>

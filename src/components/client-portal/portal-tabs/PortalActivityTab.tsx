@@ -44,11 +44,11 @@ function getEventIcon(eventType: string) {
     case 'stage_update':
       return <ArrowRight className="w-4 h-4 text-primary" />;
     case 'task_completed':
-      return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+      return <CheckCircle2 className="w-4 h-4 text-primary" />;
     case 'chat_message':
-      return <MessageSquare className="w-4 h-4 text-blue-500" />;
+      return <MessageSquare className="w-4 h-4 text-primary/60" />;
     case 'file_uploaded':
-      return <FileUp className="w-4 h-4 text-amber-500" />;
+      return <FileUp className="w-4 h-4 text-muted-foreground" />;
     case 'approval':
       return <Star className="w-4 h-4 text-yellow-500" />;
     case 'revision_requested':

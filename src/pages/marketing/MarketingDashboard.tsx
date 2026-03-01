@@ -145,20 +145,20 @@ export default function MarketingDashboard() {
             value={metricsAggregated.totalReach.toLocaleString('pt-BR')}
             subtitle="com métricas"
             icon={Users}
-            color="bg-purple-500"
+            color="bg-primary/60"
           />
           <StatCard
             title="Engajamento Médio"
             value={metricsAggregated.averageEngagement.toLocaleString('pt-BR')}
             subtitle="likes + comentários"
             icon={Heart}
-            color="bg-red-500"
+            color="bg-destructive"
           />
           <StatCard
             title="Atrasados"
             value={stats.overdue}
             icon={AlertTriangle}
-            color="bg-red-500"
+            color="bg-destructive"
             alert={stats.overdue > 0}
           />
         </div>
@@ -169,27 +169,27 @@ export default function MarketingDashboard() {
             title="Em Revisão"
             value={contentItems.filter(i => i.status === 'review').length}
             icon={Target}
-            color="bg-amber-500"
+            color="bg-muted-foreground"
           />
           <StatCard
             title="Aprovados"
             value={stats.approved}
             icon={CheckCircle}
-            color="bg-emerald-500"
+            color="bg-primary"
           />
           <StatCard
             title="Agendados"
             value={stats.scheduledThisWeek}
             subtitle="esta semana"
             icon={Calendar}
-            color="bg-cyan-500"
+            color="bg-primary/70"
           />
           <StatCard
             title="Ideias"
             value={stats.totalIdeas}
             subtitle="no banco"
             icon={Lightbulb}
-            color="bg-purple-500"
+            color="bg-primary/50"
           />
         </div>
 
@@ -466,7 +466,7 @@ function CampaignCard({ campaign, onClick }: any) {
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{campaign.objective}</p>
       )}
       <div className="flex items-center gap-2 mt-3">
-        <Badge className="bg-emerald-500 text-white text-[9px]">Ativa</Badge>
+        <Badge className="bg-primary text-white text-[9px]">Ativa</Badge>
         {campaign.content_items_count && (
           <span className="text-[10px] text-muted-foreground">{campaign.content_items_count} conteúdos</span>
         )}

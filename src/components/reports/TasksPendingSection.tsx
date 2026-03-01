@@ -8,7 +8,7 @@ import { ptBR } from "date-fns/locale";
 
 const PRIORITY_ICON: Record<string, { icon: typeof Flame; className: string }> = {
   urgent: { icon: Flame, className: "text-destructive" },
-  high: { icon: ArrowUp, className: "text-orange-400" },
+  high: { icon: ArrowUp, className: "text-muted-foreground" },
 };
 
 export function TasksPendingSection() {
@@ -52,8 +52,8 @@ export function TasksPendingSection() {
           <p className="text-2xl font-bold text-destructive">{overdue.length}</p>
           <p className="text-xs text-muted-foreground">Atrasadas</p>
         </div>
-        <div className="text-center p-3 rounded-lg bg-amber-500/5">
-          <p className="text-2xl font-bold text-amber-500">{todayTasks.length}</p>
+        <div className="text-center p-3 rounded-lg bg-muted">
+          <p className="text-2xl font-bold text-muted-foreground">{todayTasks.length}</p>
           <p className="text-xs text-muted-foreground">Hoje</p>
         </div>
         <div className="text-center p-3 rounded-lg bg-muted/30">

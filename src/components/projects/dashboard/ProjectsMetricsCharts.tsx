@@ -14,8 +14,8 @@ interface ProjectsMetricsChartsProps {
 
 const STATUS_COLORS = {
   active: 'hsl(var(--primary))',
-  paused: 'hsl(45, 93%, 47%)',
-  completed: 'hsl(142, 76%, 36%)',
+  paused: 'hsl(var(--muted-foreground))',
+  completed: 'hsl(195, 70%, 55%)',
   archived: 'hsl(var(--muted-foreground))',
 };
 
@@ -80,9 +80,9 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
   const healthDistribution = useMemo(() => {
     const ranges = [
       { name: 'Crítico (0-50)', min: 0, max: 50, count: 0, fill: 'hsl(0, 84%, 60%)' },
-      { name: 'Atenção (51-70)', min: 51, max: 70, count: 0, fill: 'hsl(45, 93%, 47%)' },
+      { name: 'Atenção (51-70)', min: 51, max: 70, count: 0, fill: 'hsl(var(--muted-foreground))' },
       { name: 'Bom (71-90)', min: 71, max: 90, count: 0, fill: 'hsl(var(--primary))' },
-      { name: 'Excelente (91-100)', min: 91, max: 100, count: 0, fill: 'hsl(142, 76%, 36%)' },
+      { name: 'Excelente (91-100)', min: 91, max: 100, count: 0, fill: 'hsl(195, 70%, 55%)' },
     ];
     
     projects.filter(p => p.status === 'active').forEach(p => {
@@ -116,8 +116,8 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
 
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-2xl font-medium text-foreground">{metrics.completed}</p>
@@ -129,8 +129,8 @@ export function ProjectsMetricsCharts({ projects }: ProjectsMetricsChartsProps) 
 
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-amber-500" />
+            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
               <p className="text-lg font-medium text-foreground truncate">{formatCurrency(metrics.totalValue)}</p>

@@ -30,10 +30,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const PRIORITY_DOT: Record<string, string> = {
-  urgent: 'bg-red-500',
-  high: 'bg-orange-400',
-  normal: 'bg-blue-400',
-  low: 'bg-slate-500',
+  urgent: 'bg-destructive',
+  high: 'bg-foreground/60',
+  normal: 'bg-primary',
+  low: 'bg-muted-foreground',
 };
 
 type StatusFilter = 'all' | 'today' | 'week' | 'urgent';

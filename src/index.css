@@ -30,12 +30,12 @@
     --ring: 195 100% 35%;
     --radius: 0.75rem;
 
-    /* Status colors */
-    --success: 142 70% 45%;
+    /* Status colors — monochromatic blue/gray palette */
+    --success: 195 80% 45%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
-    --info: 199 89% 48%;
+    --warning: 210 10% 55%;
+    --warning-foreground: 0 0% 100%;
+    --info: 195 100% 40%;
     --info-foreground: 0 0% 100%;
 
     /* Glass tokens for light mode */
@@ -91,11 +91,11 @@
     --input: 195 10% 8%;
     --ring: 195 100% 40%;
 
-    /* Status colors */
-    --success: 142 40% 40%;
+    /* Status colors — monochromatic blue/gray palette */
+    --success: 195 70% 42%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 60% 45%;
-    --warning-foreground: 0 0% 0%;
+    --warning: 210 8% 50%;
+    --warning-foreground: 0 0% 100%;
     --info: 195 100% 40%;
     --info-foreground: 0 0% 100%;
 

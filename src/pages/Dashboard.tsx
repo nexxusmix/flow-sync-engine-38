@@ -88,15 +88,15 @@ export default function Dashboard() {
 
   const getStatusBadge = (status: string) => {
     if (status === 'active') {
-      return <span className="text-[8px] font-normal text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Ok</span>;
+      return <span className="text-[8px] font-normal text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Ok</span>;
     }
-    return <span className="text-[8px] font-normal text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full uppercase tracking-wide">Em Risco</span>;
+    return <span className="text-[8px] font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full uppercase tracking-wide">Em Risco</span>;
   };
 
   const getHealthColor = (health: number) => {
-    if (health >= 90) return 'text-emerald-500';
-    if (health >= 70) return 'text-amber-500';
-    return 'text-red-500';
+    if (health >= 90) return 'text-primary';
+    if (health >= 70) return 'text-muted-foreground';
+    return 'text-destructive';
   };
 
   // Get only stages with projects for visual board
@@ -301,7 +301,7 @@ export default function Dashboard() {
                 {recentProjects.length > 0 ? (
                   recentProjects.slice(0, 4).map((project) => {
                     const progress = Math.min(100, Math.max(0, project.health_score));
-                    const color = progress >= 80 ? 'bg-primary' : progress >= 60 ? 'bg-amber-500' : 'bg-red-500';
+                    const color = progress >= 80 ? 'bg-primary' : progress >= 60 ? 'bg-muted-foreground' : 'bg-destructive';
                     return (
                       <div key={project.id} className="space-y-1">
                         <div className="flex justify-between items-center">
@@ -344,13 +344,13 @@ export default function Dashboard() {
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                      <HardDrive className="w-3 h-3 text-violet-500" />
+                      <HardDrive className="w-3 h-3 text-primary/60" />
                       <span className="text-[10px] text-foreground font-light">Eventos Próx. 30D</span>
                     </div>
-                    <span className="text-[10px] font-normal text-violet-500">{metrics?.eventsNext30Days || 0}</span>
+                    <span className="text-[10px] font-normal text-primary/60">{metrics?.eventsNext30Days || 0}</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min(100, (metrics?.eventsNext30Days || 0) * 5)}%` }} />
+                    <div className="h-full bg-primary/60 rounded-full" style={{ width: `${Math.min(100, (metrics?.eventsNext30Days || 0) * 5)}%` }} />
                   </div>
                 </div>
               </div>
@@ -369,10 +369,10 @@ export default function Dashboard() {
           viewport={{ once: true, margin: "-80px" }}
           transition={{ delay: 0.45 }}
         >
-          <div className="glass-card rounded-xl p-4 border-l-2 border-emerald-500 min-h-[100px]">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-primary min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-[8px] font-normal text-emerald-500 uppercase">Pipeline</span>
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <span className="text-[8px] font-normal text-primary uppercase">Pipeline</span>
             </div>
             <p className="text-[10px] text-muted-foreground mb-1 font-light">Pipeline Ativo</p>
             <p className="text-lg font-normal text-foreground">{formatCurrencyBRL(metrics?.totalPipelineValue || 0)}</p>
@@ -387,19 +387,19 @@ export default function Dashboard() {
             <p className="text-lg font-normal text-foreground">{metrics?.totalProjectsActive || 0}</p>
           </div>
 
-          <div className="glass-card rounded-xl p-4 border-l-2 border-amber-500 min-h-[100px]">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-muted-foreground min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-4 h-4 text-amber-500" />
-              <span className="text-[8px] font-normal text-amber-500 uppercase">Deadlines</span>
+              <Zap className="w-4 h-4 text-muted-foreground" />
+              <span className="text-[8px] font-normal text-muted-foreground uppercase">Deadlines</span>
             </div>
             <p className="text-[10px] text-muted-foreground mb-1 font-light">Próximas Entregas</p>
             <p className="text-lg font-normal text-foreground">{metrics?.upcomingDeadlines || 0}</p>
           </div>
 
-          <div className="glass-card rounded-xl p-4 border-l-2 border-violet-500 min-h-[100px]">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-primary/60 min-h-[100px]">
             <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="w-4 h-4 text-violet-500" />
-              <span className="text-[8px] font-normal text-violet-500 uppercase">Faturamento</span>
+              <DollarSign className="w-4 h-4 text-primary/60" />
+              <span className="text-[8px] font-normal text-primary/60 uppercase">Faturamento</span>
             </div>
             <p className="text-[10px] text-muted-foreground mb-1 font-light">Projetos Ativos</p>
             <p className="text-lg font-normal text-foreground">{metrics?.totalProjectsActive || 0}</p>

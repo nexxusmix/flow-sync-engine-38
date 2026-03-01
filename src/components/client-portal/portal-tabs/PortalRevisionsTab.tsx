@@ -179,11 +179,11 @@ function PortalRevisionsTabComponent({
   const getStatusIcon = (status: string | null) => {
     switch (status) {
       case 'resolved':
-        return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+        return <CheckCircle2 className="w-4 h-4 text-primary" />;
       case 'in_progress':
-        return <RefreshCw className="w-4 h-4 text-blue-500" />;
+        return <RefreshCw className="w-4 h-4 text-primary/60" />;
       default:
-        return <AlertTriangle className="w-4 h-4 text-amber-500" />;
+        return <AlertTriangle className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -201,9 +201,9 @@ function PortalRevisionsTabComponent({
   const getPriorityBadge = (priority: string | null) => {
     switch (priority) {
       case 'urgent':
-        return <Badge className="bg-red-500/90 text-white text-[10px]">Urgente</Badge>;
+        return <Badge className="bg-destructive/90 text-white text-[10px]">Urgente</Badge>;
       case 'high':
-        return <Badge className="bg-amber-500/90 text-white text-[10px]">Alta</Badge>;
+        return <Badge className="bg-muted text-foreground text-[10px]">Alta</Badge>;
       default:
         return null;
     }
@@ -220,19 +220,19 @@ function PortalRevisionsTabComponent({
       {/* Summary Stats */}
       <div className="flex items-center gap-6 px-4 py-3 rounded-xl bg-[#0a0a0a] border border-[#1a1a1a]">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-amber-500" />
+          <div className="w-2 h-2 rounded-full bg-muted-foreground" />
           <span className="text-sm text-gray-400">
             <span className="font-semibold text-white">{pendingCount}</span> Pendentes
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <div className="w-2 h-2 rounded-full bg-primary/60" />
           <span className="text-sm text-gray-400">
             <span className="font-semibold text-white">{inProgressCount}</span> Em Análise
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+          <div className="w-2 h-2 rounded-full bg-primary" />
           <span className="text-sm text-gray-400">
             <span className="font-semibold text-white">{resolvedCount}</span> Resolvidos
           </span>

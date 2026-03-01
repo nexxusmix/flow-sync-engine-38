@@ -45,15 +45,15 @@ function ProspectCard({
   onEdit: () => void;
 }) {
   const priorityColors = {
-    high: 'bg-red-500/10 text-red-500 border-red-500/20',
-    medium: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-    low: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+    high: 'bg-destructive/10 text-destructive border-destructive/20',
+    medium: 'bg-muted text-muted-foreground border-border',
+    low: 'bg-muted text-muted-foreground border-border',
   };
 
   const statusColors = {
-    active: 'text-emerald-500',
-    paused: 'text-amber-500',
-    blacklisted: 'text-red-500',
+    active: 'text-primary',
+    paused: 'text-muted-foreground',
+    blacklisted: 'text-destructive',
   };
 
   return (

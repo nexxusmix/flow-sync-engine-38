@@ -8,7 +8,7 @@ import { memo } from "react";
 function PortalAuditBadgeComponent() {
   return (
     <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-4 flex items-center gap-3">
-      <span className="material-symbols-outlined text-emerald-400" style={{ fontSize: 20 }}>
+      <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }}>
         verified_user
       </span>
       <div>
