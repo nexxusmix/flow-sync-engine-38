@@ -262,9 +262,9 @@ function SidebarMenuItem({
             alt={item.name}
             className={cn(
               "w-5 h-5 object-contain",
-              isActive ? "opacity-100" : "opacity-50 group-hover:opacity-80"
+              isActive ? "opacity-100" : "opacity-70 group-hover:opacity-90"
             )}
-            style={{ filter: isActive ? 'none' : 'grayscale(100%)' }}
+            style={{ filter: isActive ? 'brightness(1.2)' : 'grayscale(100%) brightness(1.5)' }}
           />
         ) : (
           <span
