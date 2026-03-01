@@ -356,18 +356,28 @@ Retorne JSON puro (sem markdown) com a estrutura exata:
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Tente novamente em alguns segundos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({
+          error: "Limite de requisições atingido. Tente novamente em alguns segundos.",
+          code: "RATE_LIMITED",
+        }), {
+          // Keep 200 so frontend can handle gracefully without generic non-2xx runtime errors
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao workspace." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({
+          error: "Créditos insuficientes. Adicione créditos ao workspace.",
+          code: "INSUFFICIENT_CREDITS",
+        }), {
+          // Keep 200 so frontend shows a friendly message instead of edge non-2xx error
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
+      return new Response(JSON.stringify({ error: "Erro no serviço de IA", code: "AI_GATEWAY_ERROR" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
