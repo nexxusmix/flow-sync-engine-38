@@ -156,6 +156,69 @@ Retorne JSON puro (sem markdown):
         break;
       }
 
+      case "generate_from_context": {
+        const { topic, format: fmt, pillar, command, reference_url, file_content, field } = data;
+        systemPrompt = `Você é o diretor de conteúdo da SQUAD Film, uma produtora audiovisual premium de Brasília/DF especializada em imóveis de luxo, cavalos e veículos premium.
+
+Estilo da marca: cinematográfico, aspiracional, técnico mas acessível. Tipografia bold, paleta escura com acentos em azul ciano (#009CCA).
+
+Equipamento principal: Sony FX3. Pós-produção com color grading cinematográfico.
+
+Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
+
+        let contextBlock = "";
+        if (command) contextBlock += `\nINSTRUÇÃO DO USUÁRIO: ${command}`;
+        if (reference_url) contextBlock += `\nLINK DE REFERÊNCIA (use como contexto/inspiração): ${reference_url}`;
+        if (file_content) contextBlock += `\nCONTEÚDO DE ARQUIVO ENVIADO:\n${file_content.substring(0, 4000)}`;
+
+        if (field) {
+          // Single field regeneration
+          const fieldMap: Record<string, string> = {
+            hook: "hook (frase impactante dos primeiros 3 segundos)",
+            script: "roteiro completo com marcações de tempo",
+            caption_short: "legenda curta até 3 linhas",
+            caption_medium: "legenda média com storytelling 1 parágrafo",
+            caption_long: "legenda longa com narrativa completa e CTA",
+            cta: "chamada para ação",
+            pinned_comment: "comentário fixado sugerido",
+            hashtags: "array de até 15 hashtags estratégicas",
+            cover_suggestion: "descrição da capa/thumbnail ideal",
+          };
+          userPrompt = `Gere APENAS o campo "${field}" para um post Instagram da SQUAD Film:
+
+Tema: ${topic || 'conteúdo audiovisual premium'}
+Formato: ${fmt || 'reel'}
+Pilar: ${pillar || 'autoridade'}
+${contextBlock}
+
+Retorne JSON puro (sem markdown) com APENAS a chave solicitada:
+{"${field}": ${field === 'hashtags' ? '["hashtag1", "hashtag2"]' : '"valor gerado"'}}`;
+        } else {
+          userPrompt = `Gere um pacote completo de conteúdo Instagram para a SQUAD Film:
+
+Tema: ${topic || 'conteúdo audiovisual premium'}
+Formato: ${fmt || 'reel'}
+Pilar: ${pillar || 'autoridade'}
+${contextBlock}
+
+Retorne um JSON com a estrutura exata (sem markdown, só JSON puro):
+{
+  "hook": "frase de hook dos primeiros 3 segundos",
+  "script": "roteiro completo com marcações de tempo",
+  "caption_short": "legenda curta até 3 linhas",
+  "caption_medium": "legenda média com storytelling 1 parágrafo",
+  "caption_long": "legenda longa com narrativa completa e CTA",
+  "cta": "chamada para ação",
+  "pinned_comment": "comentário fixado sugerido",
+  "hashtags": ["hashtag1", "hashtag2", "...até 15 hashtags estratégicas do nicho"],
+  "cover_suggestion": "descrição da capa/thumbnail ideal",
+  "carousel_slides": [{"title": "título slide", "body": "corpo slide"}],
+  "story_sequence": [{"text": "texto", "media_type": "foto/video/boomerang", "interactive": "enquete/pergunta/null"}]
+}`;
+        }
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,

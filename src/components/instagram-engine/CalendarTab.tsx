@@ -6,12 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, usePublishToInstagram, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
+import { useInstagramPosts, useCreatePost, useUpdatePost, useInstagramCampaigns, usePublishToInstagram, PILLARS, FORMATS, POST_STATUSES, InstagramPost } from '@/hooks/useInstagramEngine';
 import { useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { InstagramEmbed } from './InstagramEmbed';
+import { PostEditDialog } from './PostEditDialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send, Filter, X, Link2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2, Megaphone, Send, Filter, X, Link2, Sparkles } from 'lucide-react';
 
 type ActiveFilters = {
   statuses: string[];
@@ -39,6 +40,7 @@ export function CalendarTab() {
   const [newPost, setNewPost] = useState({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '', post_url: '' });
   const [editingPostUrl, setEditingPostUrl] = useState<string | null>(null);
   const [tempPostUrl, setTempPostUrl] = useState('');
+  const [editingPost, setEditingPost] = useState<InstagramPost | null>(null);
 
   const hasActiveFilters = filters.statuses.length > 0 || filters.formats.length > 0 || filters.pillars.length > 0 || filters.campaigns.length > 0;
   const activeFilterCount = filters.statuses.length + filters.formats.length + filters.pillars.length + filters.campaigns.length;
@@ -346,7 +348,11 @@ export function CalendarTab() {
                         {FORMATS.find(f => f.key === p.format)?.icon || 'image'}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground font-medium truncate">{p.title}</p>
+                        <p
+                          className="text-sm text-foreground font-medium truncate cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => setEditingPost(p)}
+                          title="Clique para editar com IA"
+                        >{p.title}</p>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {status && <Badge className={`${status.color} text-[9px]`}>{status.label}</Badge>}
                           {p.pillar && <Badge variant="secondary" className="text-[9px]">{PILLARS.find(pl => pl.key === p.pillar)?.label}</Badge>}
@@ -359,6 +365,14 @@ export function CalendarTab() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-primary gap-1"
+                          onClick={() => setEditingPost(p)}
+                        >
+                          <Sparkles className="w-3 h-3" /> Editar
+                        </Button>
                         {!p.post_url && !isEditingUrl && (
                           <Button
                             size="sm"
@@ -571,6 +585,13 @@ export function CalendarTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Post Edit Dialog with AI */}
+      <PostEditDialog
+        post={editingPost}
+        open={!!editingPost}
+        onOpenChange={(open) => { if (!open) setEditingPost(null); }}
+      />
     </div>
   );
 }
