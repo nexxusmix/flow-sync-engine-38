@@ -1,69 +1,95 @@
 
 
-## Plano: IA Integrada em Todo o Instagram Engine
+## Diagnóstico Completo do Pipeline de Conteúdo
 
-### Situação Atual
+Existem **duas versões** do Pipeline: a versão legada (`/marketing/pipeline`) e a versão holográfica do Marketing Hub (`/m/conteudos`). Ambas compartilham o mesmo store e banco de dados.
 
-O Instagram Engine tem a IA isolada na aba "Criar com IA". As outras áreas (Calendário, edição de posts, etc.) são 100% manuais — sem opção de gerar texto, processar links ou arquivos com IA.
+---
 
-### O que será implementado
+### O que FUNCIONA
 
-#### 1. Botão "Gerar com IA" no Dialog de Criação/Edição do Calendário
-Quando o usuário cria ou edita um post no calendário, poderá clicar em **"✨ Preencher com IA"** que:
-- Usa o título + formato + pilar como contexto
-- Chama `instagram-ai` com action `generate_content`
-- Preenche automaticamente: hook, script, legenda curta/média/longa, CTA, hashtags, sugestão de capa, slides do carrossel
-- Campos ficam editáveis após preenchimento
+| Componente | Status |
+|---|---|
+| **Store Zustand** (`marketingStore`) | CRUD completo, filtros, getters por status |
+| **Criar conteúdo** (ambas versões) | Funcional, persiste no banco |
+| **Mover status via dropdown** (ambas) | Funcional |
+| **Drag & drop** (versão legada) | Funcional |
+| **Dialogs de agendamento e publicação** (legada) | Funcionais, salvam `scheduled_at` e `post_url` |
+| **Filtro por status** (Hub) | Funcional com pílulas de contagem |
+| **Busca** (ambas) | Funcional |
+| **Toggle grid/kanban** (Hub) | Funcional |
+| **Geração IA via dropdown** (Hub) | Funcional via `generate-content-ai` edge function |
+| **Excluir conteúdo** (Hub) | Funcional com confirmação |
+| **ContentDetailPage** | Edição completa com tabs, checklist, comentários, assets, IA |
 
-#### 2. Dialog de Edição Completo para Posts do Calendário
-Atualmente não há como editar conteúdo textual dos posts no calendário. Será adicionado:
-- Dialog de edição com todos os campos textuais (hook, script, legendas, CTA, hashtags, comentário fixado)
-- Botão "✨ Gerar" ao lado de cada campo individual para regenerar só aquele campo
-- Botão "✨ Gerar Tudo" para preencher todos de uma vez
+---
 
-#### 3. Campo de Comando/Prompt Livre
-Em cada post (no dialog de edição), um campo **"Comando para IA"** onde o usuário pode digitar instruções específicas:
-- "Foque em urgência e escassez"
-- "Adapte para público feminino 25-35"
-- "Use tom humorístico"
-A IA processa o comando junto com os dados do post e regenera o conteúdo.
+### O que está QUEBRADO ou INCOMPLETO
 
-#### 4. Campo de Link/URL para Contexto IA
-O usuário pode colar um link (YouTube, artigo, referência) e a IA usa como contexto:
-- Extrai o conteúdo/tema do link
-- Gera conteúdo Instagram baseado naquela referência
-- Útil para "transformar este vídeo em post Instagram"
+#### 1. Navegação para detalhe do item — ROTA ERRADA (CRÍTICO)
+**5 arquivos** navegam para `/marketing/item/${id}`, mas a rota registrada é `/marketing/content/:contentItemId`. Resultado: **clicar em qualquer card do Pipeline leva a página 404**.
 
-#### 5. Upload de Arquivo para Processamento IA
-Botão de upload no dialog de criação/edição:
-- Aceita imagens, PDFs, textos
-- Faz upload para o bucket `marketing-assets`
-- Envia URL/conteúdo como contexto para a IA gerar o post
-- Ex: fazer upload de briefing em PDF e gerar post a partir dele
+Arquivos afetados:
+- `PipelinePage.tsx` (linha 383)
+- `CalendarPage.tsx` (linha 158)
+- `MarketingPage.tsx` (linha 114)
+- `IdeasPage.tsx` (linha 263)
+- `MarketingDashboard.tsx` (linhas 214, 294, 318, 340)
 
-### Arquivos alterados
+**Correção**: Trocar todas as ocorrências de `/marketing/item/` para `/marketing/content/`.
 
-| Arquivo | Mudança |
-|---------|---------|
-| `src/components/instagram-engine/CalendarTab.tsx` | Dialog de edição completo com IA integrada, campo de comando, link e upload |
-| `supabase/functions/instagram-ai/index.ts` | Nova action `generate_from_context` que aceita link, comando, e file_url como contexto adicional |
-| `src/hooks/useInstagramEngine.ts` | Nova mutation `useUpdatePostWithAI` que combina geração IA + update |
+#### 2. Kanban do Hub — SEM drag & drop
+A versão holográfica (`MkContentsPage`) renderiza cards sem `draggable`. Mover conteúdo entre colunas só é possível via dropdown do menu contextual.
 
-### Detalhes Técnicos
+**Correção**: Adicionar `draggable` + `onDragStart`/`onDragEnd` nos cards do Hub e `onDragOver`/`onDrop` nas colunas, similar ao que já funciona na versão legada.
 
-**Nova action na Edge Function `instagram-ai`:**
-- `generate_from_context`: recebe `{ topic, format, pillar, command, reference_url, file_content }` e gera conteúdo completo usando esses dados como contexto extra no prompt
-- Reutiliza a mesma estrutura de output do `generate_content`
+#### 3. Pipeline legado — SEM opção de excluir conteúdo
+O `ContentCard` e `KanbanColumn` da versão legada não têm botão de excluir nem passam `onDelete`. Único jeito de deletar é pelo Hub.
 
-**Dialog de edição no CalendarTab:**
-- Abre ao clicar no título do post
-- Tabs internas: "Conteúdo" (campos textuais) | "IA" (comando livre + link + upload)
-- Cada campo textual tem um mini-botão ✨ para regenerar individualmente
-- Botão principal "✨ Gerar Tudo com IA" no topo
+**Correção**: Adicionar item "Excluir" no `DropdownMenu` do `ContentCard` com `AlertDialog` de confirmação.
 
-**Upload de arquivo:**
-- Usa `supabase.storage.from('marketing-assets').upload()`
-- Gera URL pública
-- Para imagens: passa a URL para a IA como contexto visual
-- Para textos/PDFs: extrai conteúdo no frontend e passa como texto
+#### 4. Pipeline legado — SEM filtros de canal/pilar/campanha
+A UI tem campo de busca mas não expõe filtros visuais por canal, pilar ou campanha (o store suporta todos).
+
+**Correção**: Adicionar barra de filtros com Select para canal, pilar e campanha.
+
+#### 5. Hub Pipeline — Cards não clicáveis para detalhe
+Os `PipelineContentCard` não têm `onClick` para navegar ao detalhe do conteúdo. O único jeito de ver/editar é pelo menu contextual.
+
+**Correção**: Adicionar prop `onClick` ao `PipelineContentCard` e navegar para `/marketing/content/${item.id}`.
+
+#### 6. Cores dos stages — Fora da paleta no CONTENT_ITEM_STAGES
+`CONTENT_ITEM_STAGES` usa `bg-slate-500`, `bg-purple-500`, `bg-orange-500`, `bg-amber-500`, `bg-emerald-500`, `bg-cyan-500` — cores legadas fora da paleta azul/branco/vermelho.
+
+**Correção**: Padronizar para paleta do sistema (primary, muted, destructive).
+
+#### 7. ContentDetailPage — Cores legadas no badge "Publicado"
+Linha 560: `bg-emerald-500/10 border-emerald-500/20 text-emerald-500` hardcoded.
+
+**Correção**: Substituir por `bg-primary/10 border-primary/20 text-primary`.
+
+---
+
+### Plano de Implementação
+
+**Arquivo 1 — Corrigir rotas em 5 arquivos**
+Trocar `/marketing/item/` → `/marketing/content/` em: `PipelinePage.tsx`, `CalendarPage.tsx`, `MarketingPage.tsx`, `IdeasPage.tsx`, `MarketingDashboard.tsx`
+
+**Arquivo 2 — `PipelinePage.tsx`**
+- Adicionar filtros visuais (canal, pilar, campanha) na toolbar
+- Adicionar item "Excluir" no dropdown do ContentCard com AlertDialog
+
+**Arquivo 3 — `MkContentsPage.tsx`**
+- Adicionar drag & drop nas colunas kanban (onDragOver/onDrop) e nos cards (draggable)
+- Tornar cards clicáveis para navegar ao detalhe
+
+**Arquivo 4 — `PipelineContentCard.tsx`**
+- Adicionar prop `onClick` para navegação
+- Adicionar `draggable` + handlers de drag
+
+**Arquivo 5 — `src/types/marketing.ts`**
+- Padronizar cores do `CONTENT_ITEM_STAGES` para paleta do sistema
+
+**Arquivo 6 — `ContentDetailPage.tsx`**
+- Corrigir cor do badge "Publicado" (emerald → primary)
 
