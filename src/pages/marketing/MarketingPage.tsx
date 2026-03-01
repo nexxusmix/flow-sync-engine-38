@@ -111,7 +111,7 @@ export default function MarketingPage() {
 
   const handleItemClick = (item: any) => {
     setSelectedItem(item);
-    navigate(`/marketing/item/${item.id}`);
+    navigate(`/marketing/content/${item.id}`);
   };
 
   return (

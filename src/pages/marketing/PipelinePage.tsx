@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useMarketingStore } from "@/stores/marketingStore";
-import { ContentItem, ContentItemStatus, CONTENT_ITEM_STAGES, CONTENT_CHANNELS, CONTENT_FORMATS } from "@/types/marketing";
+import { ContentItem, ContentItemStatus, CONTENT_ITEM_STAGES, CONTENT_CHANNELS, CONTENT_FORMATS, CONTENT_PILLARS } from "@/types/marketing";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Plus, Search, MoreHorizontal, Calendar, AlertTriangle,
-  Link as LinkIcon, ExternalLink, LayoutTemplate, Sparkles
+  Link as LinkIcon, ExternalLink, LayoutTemplate, Sparkles, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,10 +40,12 @@ function ContentCard({
   item, 
   onMove,
   onClick,
+  onDelete,
 }: { 
   item: ContentItem;
   onMove: (status: ContentItemStatus) => void;
   onClick: () => void;
+  onDelete: () => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const isOverdue = item.due_at && new Date(item.due_at) < new Date() && !['published', 'archived'].includes(item.status);
@@ -94,6 +96,16 @@ function ContentCard({
                 Mover para {stage.name}
               </DropdownMenuItem>
             ))}
+            <DropdownMenuItem 
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -158,11 +170,13 @@ function KanbanColumn({
   items,
   onMove,
   onClick,
+  onDelete,
 }: { 
   stage: typeof CONTENT_ITEM_STAGES[0];
   items: ContentItem[];
   onMove: (itemId: string, status: ContentItemStatus) => void;
   onClick: (item: ContentItem) => void;
+  onDelete: (itemId: string) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -214,6 +228,7 @@ function KanbanColumn({
             item={item}
             onMove={(status) => onMove(item.id, status)}
             onClick={() => onClick(item)}
+            onDelete={() => onDelete(item.id)}
           />
         ))}
 
@@ -238,6 +253,7 @@ export default function PipelinePage() {
     fetchCampaigns,
     createContentItem,
     updateContentStatus,
+    deleteContentItem,
     getContentByStatus,
     setSelectedItem,
     contentFilters,
@@ -380,7 +396,7 @@ export default function PipelinePage() {
 
   const handleItemClick = (item: ContentItem) => {
     setSelectedItem(item);
-    navigate(`/marketing/item/${item.id}`);
+    navigate(`/marketing/content/${item.id}`);
   };
 
   return (
@@ -411,6 +427,39 @@ export default function PipelinePage() {
           </div>
         </div>
 
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3">
+          <Select value={contentFilters.channel} onValueChange={(v: any) => setContentFilters({ channel: v })}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Canal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os canais</SelectItem>
+              {CONTENT_CHANNELS.map(c => <SelectItem key={c.type} value={c.type}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={contentFilters.pillar} onValueChange={(v: any) => setContentFilters({ pillar: v })}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Pilar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os pilares</SelectItem>
+              {CONTENT_PILLARS.map(p => <SelectItem key={p.type} value={p.type}>{p.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {campaigns.length > 0 && (
+            <Select value={contentFilters.campaign_id} onValueChange={(v) => setContentFilters({ campaign_id: v })}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Campanha" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas as campanhas</SelectItem>
+                {campaigns.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
         {/* Kanban Board */}
         <ScrollArea className="w-full pb-4">
           <div className="flex gap-4 min-w-max pb-4 px-1">
@@ -421,6 +470,7 @@ export default function PipelinePage() {
                 items={getContentByStatus(stage.type)}
                 onMove={handleMoveStatus}
                 onClick={handleItemClick}
+                onDelete={(id) => { deleteContentItem(id); toast.success("Conteúdo excluído"); }}
               />
             ))}
           </div>

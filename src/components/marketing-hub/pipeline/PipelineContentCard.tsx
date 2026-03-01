@@ -37,9 +37,13 @@ interface PipelineContentCardProps {
   onStatusChange: (id: string, status: ContentItemStatus) => void;
   onDelete: (id: string) => void;
   onRefresh: () => void;
+  onClick?: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
 }
 
-export function PipelineContentCard({ item, onStatusChange, onDelete, onRefresh }: PipelineContentCardProps) {
+export function PipelineContentCard({ item, onStatusChange, onDelete, onRefresh, onClick, draggable, onDragStart, onDragEnd }: PipelineContentCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [aiResult, setAiResult] = useState<AIGeneratedContent | null>(null);
@@ -79,7 +83,7 @@ export function PipelineContentCard({ item, onStatusChange, onDelete, onRefresh 
 
   return (
     <>
-      <MkCard hover className="flex flex-col gap-3 group">
+      <MkCard hover className="flex flex-col gap-3 group cursor-pointer" onClick={onClick} draggable={draggable} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         {/* Header: badge + actions */}
         <div className="flex items-center justify-between">
           <MkStatusBadge label={stage?.name || item.status} variant={stageVariant[item.status] || "slate"} />

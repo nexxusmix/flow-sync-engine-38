@@ -1,15 +1,16 @@
 /**
  * MkContentsPage — Pipeline de Conteúdos CONTENT_OS V4.0
- * Kanban holográfico com geração IA integrada
+ * Kanban holográfico com geração IA integrada + drag & drop
  */
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MkAppShell } from "@/components/marketing-hub/MkAppShell";
 import { MkStatusBadge, MkEmptyState } from "@/components/marketing-hub/mk-ui";
 import { PipelineContentCard } from "@/components/marketing-hub/pipeline";
 import { useMarketingStore } from "@/stores/marketingStore";
 import { ContentItemStatus, CONTENT_ITEM_STAGES, CONTENT_CHANNELS } from "@/types/marketing";
 import { motion } from "framer-motion";
-import { Plus, Search, List, LayoutGrid, Kanban } from "lucide-react";
+import { Plus, Search, List, LayoutGrid } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,12 +22,14 @@ const stageVariant: Record<string, "blue" | "amber" | "emerald" | "purple" | "re
 };
 
 export default function MkContentsPage() {
+  const navigate = useNavigate();
   const { contentItems, fetchContentItems, createContentItem, updateContentStatus, deleteContentItem, fetchCampaigns } = useMarketingStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [view, setView] = useState<"grid" | "kanban">("kanban");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ title: "", channel: "", format: "", status: "briefing" });
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
   useEffect(() => { fetchContentItems(); fetchCampaigns(); }, []);
 
@@ -44,7 +47,16 @@ export default function MkContentsPage() {
     setForm({ title: "", channel: "", format: "", status: "briefing" });
   };
 
-  // Stage counts for header stats
+  const handleDrop = (e: React.DragEvent, stageType: ContentItemStatus) => {
+    e.preventDefault();
+    setDragOverStage(null);
+    const itemId = e.dataTransfer.getData("contentItemId");
+    if (itemId) {
+      updateContentStatus(itemId, stageType);
+      toast.success(`Movido para ${CONTENT_ITEM_STAGES.find(s => s.type === stageType)?.name}`);
+    }
+  };
+
   const stageCounts = CONTENT_ITEM_STAGES.map(s => ({
     ...s,
     count: contentItems.filter(i => i.status === s.type).length,
@@ -54,7 +66,7 @@ export default function MkContentsPage() {
     <MkAppShell title="Pipeline Conteúdos" sectionCode="02" sectionLabel="Content_Pipeline">
       {/* Stats bar */}
       <div className="flex items-center gap-1.5 mb-6 overflow-x-auto pb-1 scrollbar-none">
-        {stageCounts.map((s, i) => (
+        {stageCounts.map((s) => (
           <button
             key={s.type}
             onClick={() => setStatusFilter(statusFilter === s.type ? "all" : s.type)}
@@ -124,8 +136,15 @@ export default function MkContentsPage() {
         <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-none">
           {CONTENT_ITEM_STAGES.map(stage => {
             const items = filtered.filter(i => i.status === stage.type);
+            const isOver = dragOverStage === stage.type;
             return (
-              <div key={stage.type} className="min-w-[260px] max-w-[280px] flex-shrink-0">
+              <div
+                key={stage.type}
+                className={`min-w-[260px] max-w-[280px] flex-shrink-0 transition-all ${isOver ? "ring-1 ring-[rgba(0,156,202,0.4)] rounded-lg" : ""}`}
+                onDragOver={(e) => { e.preventDefault(); setDragOverStage(stage.type); }}
+                onDragLeave={() => setDragOverStage(null)}
+                onDrop={(e) => handleDrop(e, stage.type)}
+              >
                 <div className="flex items-center gap-2 mb-3 px-1">
                   <MkStatusBadge label={stage.name} variant={stageVariant[stage.type] || "slate"} />
                   <span className="text-[10px] font-mono text-white/15">{items.length}</span>
@@ -138,11 +157,19 @@ export default function MkContentsPage() {
                       onStatusChange={updateContentStatus}
                       onDelete={deleteContentItem}
                       onRefresh={fetchContentItems}
+                      onClick={() => navigate(`/marketing/content/${item.id}`)}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("contentItemId", item.id);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
                     />
                   ))}
                   {items.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-white/[0.04] py-8 flex items-center justify-center">
-                      <span className="text-[10px] text-white/10">Vazio</span>
+                    <div className={`rounded-lg border border-dashed py-8 flex items-center justify-center transition-all ${
+                      isOver ? "border-[rgba(0,156,202,0.3)] bg-[rgba(0,156,202,0.05)]" : "border-white/[0.04]"
+                    }`}>
+                      <span className="text-[10px] text-white/10">{isOver ? "Solte aqui" : "Vazio"}</span>
                     </div>
                   )}
                 </div>
@@ -165,6 +192,7 @@ export default function MkContentsPage() {
                 onStatusChange={updateContentStatus}
                 onDelete={deleteContentItem}
                 onRefresh={fetchContentItems}
+                onClick={() => navigate(`/marketing/content/${item.id}`)}
               />
             </motion.div>
           ))}

@@ -211,7 +211,7 @@ export default function MarketingDashboard() {
             {nextScheduled.length > 0 ? (
               <div className="space-y-3">
                 {nextScheduled.map((item) => (
-                  <ScheduledItem key={item.id} item={item} onClick={() => navigate(`/marketing/item/${item.id}`)} />
+                  <ScheduledItem key={item.id} item={item} onClick={() => navigate(`/marketing/content/${item.id}`)} />
                 ))}
               </div>
             ) : (
@@ -291,7 +291,7 @@ export default function MarketingDashboard() {
                   <ContentPreview 
                     key={item.id} 
                     item={item} 
-                    onClick={() => navigate(`/marketing/item/${item.id}`)} 
+                    onClick={() => navigate(`/marketing/content/${item.id}`)} 
                   />
                 ))}
               </div>
@@ -315,7 +315,7 @@ export default function MarketingDashboard() {
                   <ContentPreview 
                     key={item.id} 
                     item={item} 
-                    onClick={() => navigate(`/marketing/item/${item.id}`)}
+                    onClick={() => navigate(`/marketing/content/${item.id}`)}
                     overdue 
                   />
                 ))}
@@ -337,7 +337,7 @@ export default function MarketingDashboard() {
                   <ContentPreview 
                     key={item.id} 
                     item={item} 
-                    onClick={() => navigate(`/marketing/item/${item.id}`)} 
+                    onClick={() => navigate(`/marketing/content/${item.id}`)} 
                   />
                 ))}
               </div>

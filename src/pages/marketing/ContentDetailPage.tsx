@@ -557,8 +557,8 @@ export default function ContentDetailPage() {
               </div>
 
               {item.published_at && (
-                <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="flex items-center gap-2 text-emerald-500">
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="flex items-center gap-2 text-primary">
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm font-medium">
                       Publicado em {new Date(item.published_at).toLocaleDateString('pt-BR')}

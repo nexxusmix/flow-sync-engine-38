@@ -155,7 +155,7 @@ export default function CalendarPage() {
 
   const handleItemClick = (item: ContentItem) => {
     setSelectedItem(item);
-    navigate(`/marketing/item/${item.id}`);
+    navigate(`/marketing/content/${item.id}`);
   };
 
   const isToday = (date: Date) => {

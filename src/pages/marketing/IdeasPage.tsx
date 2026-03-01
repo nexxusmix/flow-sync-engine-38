@@ -260,7 +260,7 @@ export default function IdeasPage() {
     const item = await promoteIdeaToContent(ideaId);
     if (item) {
       toast.success('Ideia promovida para produção!');
-      navigate(`/marketing/item/${item.id}`);
+      navigate(`/marketing/content/${item.id}`);
     }
   };
 
