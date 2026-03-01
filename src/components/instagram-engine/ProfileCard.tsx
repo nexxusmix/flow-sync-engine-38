@@ -81,11 +81,8 @@ export function ProfileCard({ config, snapshot, publishedCount, daysSincePost }:
   };
 
   return (
-    <Card className="glass-card border border-border/50 overflow-hidden">
-      {/* Instagram gradient header */}
-      <div className="h-1 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737]" />
-
-      <div className="p-5 md:p-6">
+    <div className="overflow-hidden">
+      <div>
         <div className="flex flex-col sm:flex-row gap-5 items-start">
           {/* Avatar */}
           <div className="relative group shrink-0">
@@ -178,7 +175,7 @@ export function ProfileCard({ config, snapshot, publishedCount, daysSincePost }:
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
