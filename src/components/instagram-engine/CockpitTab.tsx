@@ -14,7 +14,11 @@ import { ScheduledTimeline } from './ScheduledTimeline';
 import { InstagramFeedPreview } from './InstagramFeedPreview';
 import { toast } from 'sonner';
 
-export function CockpitTab() {
+interface CockpitTabProps {
+  onViewPost?: (post: any) => void;
+}
+
+export function CockpitTab({ onViewPost }: CockpitTabProps = {}) {
   const { data: posts, isLoading: loadingPosts } = useInstagramPosts();
   const { data: config } = useProfileConfig();
   const { data: snapshots } = useProfileSnapshots();
@@ -148,7 +152,7 @@ export function CockpitTab() {
                   <InstagramFeedPreview posts={allPosts} config={config || null} snapshot={latestSnapshot || null} />
                 </div>
               </div>
-              <PostsGrid posts={allPosts} />
+              <PostsGrid posts={allPosts} onViewPost={onViewPost} />
             </div>
 
             {/* Scheduled Timeline - 1/3 */}

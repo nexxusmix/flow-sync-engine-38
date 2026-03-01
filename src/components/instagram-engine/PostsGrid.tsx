@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale';
 
 interface PostsGridProps {
   posts: InstagramPost[];
+  onViewPost?: (post: InstagramPost) => void;
 }
 
 const FORMAT_ICONS: Record<string, React.ReactNode> = {
@@ -19,7 +20,7 @@ const FORMAT_ICONS: Record<string, React.ReactNode> = {
   story_sequence: <BookOpen className="w-3.5 h-3.5" />,
 };
 
-export function PostsGrid({ posts }: PostsGridProps) {
+export function PostsGrid({ posts, onViewPost }: PostsGridProps) {
   const [selectedPost, setSelectedPost] = useState<InstagramPost | null>(null);
 
   if (posts.length === 0) {

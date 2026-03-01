@@ -21,7 +21,8 @@ import { ProjectionsTab } from '@/components/instagram-engine/ProjectionsTab';
 import { ProfileHealthTab } from '@/components/instagram-engine/ProfileHealthTab';
 import { SnapshotsTab } from '@/components/instagram-engine/SnapshotsTab';
 import { LibraryTab } from '@/components/instagram-engine/LibraryTab';
-import { useInstagramAI, useCreatePost, useProfileConfig, useSaveProfileConfig, useSaveHooks } from '@/hooks/useInstagramEngine';
+import { PostResultView } from '@/components/instagram-engine/PostResultView';
+import { useInstagramAI, useCreatePost, useProfileConfig, useSaveProfileConfig, useSaveHooks, InstagramPost } from '@/hooks/useInstagramEngine';
 import { toast } from 'sonner';
 
 const TABS = [
@@ -75,6 +76,7 @@ const PILLARS_QUICK = [
 
 export default function InstagramEnginePage() {
   const [activeTab, setActiveTab] = useState('cockpit');
+  const [viewingPost, setViewingPost] = useState<InstagramPost | null>(null);
   const [showSetup, setShowSetup] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [setupForm, setSetupForm] = useState({
@@ -191,7 +193,7 @@ export default function InstagramEnginePage() {
       });
       if (result) {
         const scheduledDate = new Date(); scheduledDate.setDate(scheduledDate.getDate() + 1); scheduledDate.setHours(10, 0, 0, 0);
-        await createPost.mutateAsync({
+        const createdPost = await createPost.mutateAsync({
           title: result.title || genTopic, format: result.format || formatForAI, pillar: result.pillar || genPillar,
           objective: result.objective || 'authority', status: 'planned', scheduled_at: scheduledDate.toISOString(),
           hook: result.hook || null, script: result.script || null,
@@ -215,7 +217,10 @@ export default function InstagramEnginePage() {
         }
         setShowGenPost(false); setGenTopic(''); setGenInstruction('');
         toast.success(isFullPackage ? '🚀 Pacote completo criado!' : '🎬 Post criado com tendências 2026!');
-        setActiveTab('calendar');
+        // Open the result view with the created post
+        if (createdPost) {
+          setViewingPost(createdPost as InstagramPost);
+        }
       }
     } catch (e: any) { toast.error(e.message || 'Erro ao gerar post'); }
     finally { setGenLoading(false); }
@@ -229,66 +234,76 @@ export default function InstagramEnginePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {/* Header */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
-            </div>
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-                Instagram <span className="bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] bg-clip-text text-transparent">Engine</span>
-              </h1>
-              <p className="text-xs text-muted-foreground">Sistema operacional de crescimento e posicionamento • @squadfilme</p>
-            </div>
-            <Button
-              onClick={handleOpenSetup}
-              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-5 h-10 text-sm font-medium shadow-md"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">Configurar Perfil com IA</span>
-              <span className="sm:hidden">IA</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center w-full gap-1 overflow-x-auto flex-nowrap">
-            <TabsList className="flex-1 justify-start gap-0 bg-muted/30 border border-border/50 rounded-xl p-1 flex-nowrap">
-              {TABS.map((tab) => (
-                <TabsTrigger
-                  key={tab.key}
-                  value={tab.key}
-                  className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm whitespace-nowrap"
+        {viewingPost ? (
+          <PostResultView
+            post={viewingPost}
+            onBack={() => setViewingPost(null)}
+            onSchedule={() => { setViewingPost(null); setActiveTab('calendar'); }}
+          />
+        ) : (
+          <>
+            {/* Header */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+                    Instagram <span className="bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] bg-clip-text text-transparent">Engine</span>
+                  </h1>
+                  <p className="text-xs text-muted-foreground">Sistema operacional de crescimento e posicionamento • @squadfilme</p>
+                </div>
+                <Button
+                  onClick={handleOpenSetup}
+                  className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-5 h-10 text-sm font-medium shadow-md"
                 >
-                  <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <Button
-              onClick={() => setShowGenPost(true)}
-              className="gap-1.5 text-xs h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl whitespace-nowrap shrink-0"
-              disabled={genLoading}
-            >
-              {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              <Film className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Gerar Post</span>
-            </Button>
-          </div>
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">Configurar Perfil com IA</span>
+                  <span className="sm:hidden">IA</span>
+                </Button>
+              </div>
+            </div>
 
-          <TabsContent value="cockpit" className="mt-6"><CockpitTab /></TabsContent>
-          <TabsContent value="library" className="mt-6"><LibraryTab /></TabsContent>
-          <TabsContent value="insights" className="mt-6"><InsightsAnalyzerTab /></TabsContent>
-          <TabsContent value="calendar" className="mt-6"><CalendarTab /></TabsContent>
-          <TabsContent value="scripts" className="mt-6"><ScriptsTab onNavigateToCalendar={() => setActiveTab('calendar')} /></TabsContent>
-          <TabsContent value="create" className="mt-6"><CreateWithAITab /></TabsContent>
-          <TabsContent value="campaigns" className="mt-6"><CampaignsTab /></TabsContent>
-          <TabsContent value="snapshots" className="mt-6"><SnapshotsTab /></TabsContent>
-          <TabsContent value="projections" className="mt-6"><ProjectionsTab /></TabsContent>
-          <TabsContent value="health" className="mt-6"><ProfileHealthTab /></TabsContent>
-        </Tabs>
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <div className="flex items-center w-full gap-1 overflow-x-auto flex-nowrap">
+                <TabsList className="flex-1 justify-start gap-0 bg-muted/30 border border-border/50 rounded-xl p-1 flex-nowrap">
+                  {TABS.map((tab) => (
+                    <TabsTrigger
+                      key={tab.key}
+                      value={tab.key}
+                      className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm whitespace-nowrap"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <Button
+                  onClick={() => setShowGenPost(true)}
+                  className="gap-1.5 text-xs h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl whitespace-nowrap shrink-0"
+                  disabled={genLoading}
+                >
+                  {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  <Film className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Gerar Post</span>
+                </Button>
+              </div>
+
+              <TabsContent value="cockpit" className="mt-6"><CockpitTab onViewPost={(p) => setViewingPost(p)} /></TabsContent>
+              <TabsContent value="library" className="mt-6"><LibraryTab /></TabsContent>
+              <TabsContent value="insights" className="mt-6"><InsightsAnalyzerTab /></TabsContent>
+              <TabsContent value="calendar" className="mt-6"><CalendarTab /></TabsContent>
+              <TabsContent value="scripts" className="mt-6"><ScriptsTab onNavigateToCalendar={() => setActiveTab('calendar')} /></TabsContent>
+              <TabsContent value="create" className="mt-6"><CreateWithAITab /></TabsContent>
+              <TabsContent value="campaigns" className="mt-6"><CampaignsTab /></TabsContent>
+              <TabsContent value="snapshots" className="mt-6"><SnapshotsTab /></TabsContent>
+              <TabsContent value="projections" className="mt-6"><ProjectionsTab /></TabsContent>
+              <TabsContent value="health" className="mt-6"><ProfileHealthTab /></TabsContent>
+            </Tabs>
+          </>
+        )}
       </motion.div>
 
       {/* AI Profile Setup Dialog */}
