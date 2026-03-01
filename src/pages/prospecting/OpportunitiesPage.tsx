@@ -127,9 +127,9 @@ function OpportunityCard({
       {opportunity.fit_score && (
         <div className="mt-3 pt-3 border-t border-border/50">
           <span className={`text-[9px] px-2 py-0.5 rounded font-medium ${
-            opportunity.fit_score === 'high' ? 'bg-emerald-500/10 text-emerald-500' :
-            opportunity.fit_score === 'medium' ? 'bg-amber-500/10 text-amber-500' :
-            'bg-slate-500/10 text-slate-400'
+            opportunity.fit_score === 'high' ? 'bg-primary/10 text-primary' :
+            opportunity.fit_score === 'medium' ? 'bg-muted text-muted-foreground' :
+            'bg-muted text-muted-foreground/60'
           }`}>
             Fit {opportunity.fit_score === 'high' ? 'Alto' : opportunity.fit_score === 'medium' ? 'Médio' : 'Baixo'}
           </span>
@@ -334,22 +334,22 @@ export default function OpportunitiesPage() {
 
         {/* Won/Lost Summary */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="glass-card rounded-xl p-4 border-l-2 border-l-emerald-500">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-l-primary">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Ganhas</p>
-                <p className="text-xl font-medium text-emerald-500">
+                <p className="text-xl font-medium text-primary">
                   {getOpportunitiesByStage('won').length}
                 </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </div>
           </div>
-          <div className="glass-card rounded-xl p-4 border-l-2 border-l-red-500">
+          <div className="glass-card rounded-xl p-4 border-l-2 border-l-destructive">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Perdidas</p>
-                <p className="text-xl font-medium text-red-500">
+                <p className="text-xl font-medium text-destructive">
                   {getOpportunitiesByStage('lost').length}
                 </p>
               </div>
@@ -415,6 +415,97 @@ export default function OpportunitiesPage() {
               <Button variant="outline" onClick={() => setIsNewOppOpen(false)}>Cancelar</Button>
               <Button onClick={handleCreateOpportunity}>Criar Oportunidade</Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Opportunity Dialog */}
+        <Dialog open={!!editingOpp} onOpenChange={(open) => { if (!open) setEditingOpp(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Oportunidade</DialogTitle>
+            </DialogHeader>
+            {editingOpp && (
+              <>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label>Título</Label>
+                    <Input
+                      value={editingOpp.title}
+                      onChange={(e) => setEditingOpp({ ...editingOpp, title: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Valor Estimado</Label>
+                      <Input
+                        type="number"
+                        value={editingOpp.estimated_value || ''}
+                        onChange={(e) => setEditingOpp({ ...editingOpp, estimated_value: Number(e.target.value) || 0 })}
+                        placeholder="R$ 0"
+                      />
+                    </div>
+                    <div>
+                      <Label>Probabilidade (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editingOpp.probability || ''}
+                        onChange={(e) => setEditingOpp({ ...editingOpp, probability: Number(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Fit Score</Label>
+                    <Select
+                      value={editingOpp.fit_score || ''}
+                      onValueChange={(v: any) => setEditingOpp({ ...editingOpp, fit_score: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">Alto</SelectItem>
+                        <SelectItem value="medium">Médio</SelectItem>
+                        <SelectItem value="low">Baixo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Próxima Ação</Label>
+                    <Input
+                      type="date"
+                      value={editingOpp.next_action_at ? new Date(editingOpp.next_action_at).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setEditingOpp({ ...editingOpp, next_action_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Resumo da Conversa</Label>
+                    <Textarea
+                      value={editingOpp.conversation_summary || ''}
+                      onChange={(e) => setEditingOpp({ ...editingOpp, conversation_summary: e.target.value })}
+                      placeholder="Contexto da negociação..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditingOpp(null)}>Cancelar</Button>
+                  <Button onClick={async () => {
+                    await updateOpportunity(editingOpp.id, {
+                      title: editingOpp.title,
+                      estimated_value: editingOpp.estimated_value,
+                      probability: editingOpp.probability,
+                      fit_score: editingOpp.fit_score,
+                      next_action_at: editingOpp.next_action_at,
+                      conversation_summary: editingOpp.conversation_summary,
+                    });
+                    setEditingOpp(null);
+                    toast.success('Oportunidade atualizada');
+                  }}>Salvar</Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>

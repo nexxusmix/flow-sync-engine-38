@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useProspectingStore } from "@/stores/prospectingStore";
 import { Cadence, CadenceStep, CHANNELS } from "@/types/prospecting";
+import { useProspectAI } from "@/hooks/useProspectAI";
 import { 
   Plus, Trash2, GripVertical, Play, Pause, 
-  MessageSquare, Sparkles, ChevronDown, ChevronRight
+  MessageSquare, Sparkles, ChevronDown, ChevronRight, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,7 +73,6 @@ function CadenceCard({
 
   return (
     <div className="glass-card rounded-2xl overflow-hidden">
-      {/* Header */}
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -86,7 +86,7 @@ function CadenceCard({
               <div className="flex items-center gap-3">
                 <h3 className="text-base font-medium text-foreground truncate">{cadence.name}</h3>
                 <span className={`text-[9px] px-2 py-0.5 rounded font-medium ${
-                  cadence.is_active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-400'
+                  cadence.is_active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                 }`}>
                   {cadence.is_active ? 'Ativa' : 'Inativa'}
                 </span>
@@ -108,7 +108,6 @@ function CadenceCard({
           </div>
         </div>
 
-        {/* Steps */}
         <CollapsibleContent>
           <div className="px-6 pb-6 space-y-4">
             <div className="border-t border-border pt-4">
@@ -144,7 +143,7 @@ function CadenceCard({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                           onClick={() => onDeleteStep(step.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -158,7 +157,6 @@ function CadenceCard({
                 </p>
               )}
 
-              {/* Add Step */}
               {isAddingStep ? (
                 <div className="mt-4 p-4 rounded-xl bg-muted/30 border border-primary/20 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -236,7 +234,10 @@ export default function CadencesPage() {
     deleteCadenceStep,
   } = useProspectingStore();
 
+  const { planCampaign, isGenerating } = useProspectAI();
+
   const [isNewCadenceOpen, setIsNewCadenceOpen] = useState(false);
+  const [editingCadence, setEditingCadence] = useState<Cadence | null>(null);
   const [newCadence, setNewCadence] = useState({
     name: '',
     description: '',
@@ -266,6 +267,23 @@ export default function CadencesPage() {
     toast.success('Cadência criada');
   };
 
+  const handleEditCadence = async () => {
+    if (!editingCadence || !editingCadence.name) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
+
+    await updateCadence(editingCadence.id, {
+      name: editingCadence.name,
+      description: editingCadence.description,
+      target_niche: editingCadence.target_niche,
+      daily_limit: editingCadence.daily_limit,
+    });
+
+    setEditingCadence(null);
+    toast.success('Cadência atualizada');
+  };
+
   const handleToggleActive = async (cadence: Cadence) => {
     await updateCadence(cadence.id, { is_active: !cadence.is_active });
     toast.success(cadence.is_active ? 'Cadência desativada' : 'Cadência ativada');
@@ -281,6 +299,34 @@ export default function CadencesPage() {
     toast.success('Passo removido');
   };
 
+  const handleGenerateWithAI = async () => {
+    toast.info('Gerando cadência com IA...');
+    const result = await planCampaign(undefined, { goal: 'prospecting' });
+    
+    if (!result) return;
+
+    // Create cadence from AI result
+    const newCad = await createCadence({
+      name: result.objective || 'Cadência IA',
+      description: result.notes || `Canal: ${result.best_channel} • Horário: ${result.best_time}`,
+      target_niche: '',
+      daily_limit: 20,
+    });
+
+    if (newCad && result.cadence_steps) {
+      for (const step of result.cadence_steps) {
+        await addCadenceStep(newCad.id, {
+          step_order: step.day_offset + 1,
+          day_offset: step.day_offset,
+          channel: step.channel as any,
+          template: step.template_hint || step.action,
+        });
+      }
+    }
+
+    toast.success('Cadência gerada com IA!');
+  };
+
   return (
     <DashboardLayout title="Cadências">
       <div className="space-y-6">
@@ -293,8 +339,8 @@ export default function CadencesPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
-              <Sparkles className="w-4 h-4 mr-2" />
+            <Button variant="outline" onClick={handleGenerateWithAI} disabled={isGenerating}>
+              {isGenerating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
               Gerar com IA
             </Button>
             <Button onClick={() => setIsNewCadenceOpen(true)}>
@@ -322,7 +368,7 @@ export default function CadencesPage() {
                 onToggleActive={() => handleToggleActive(cadence)}
                 onAddStep={(step) => handleAddStep(cadence.id, step)}
                 onDeleteStep={handleDeleteStep}
-                onEdit={() => {}}
+                onEdit={() => setEditingCadence(cadence)}
               />
             ))
           )}
@@ -375,6 +421,57 @@ export default function CadencesPage() {
               <Button variant="outline" onClick={() => setIsNewCadenceOpen(false)}>Cancelar</Button>
               <Button onClick={handleCreateCadence}>Criar Cadência</Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Cadence Dialog */}
+        <Dialog open={!!editingCadence} onOpenChange={(open) => { if (!open) setEditingCadence(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Cadência</DialogTitle>
+            </DialogHeader>
+            {editingCadence && (
+              <>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label>Nome *</Label>
+                    <Input
+                      value={editingCadence.name}
+                      onChange={(e) => setEditingCadence({ ...editingCadence, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Nicho Alvo</Label>
+                    <Input
+                      value={editingCadence.target_niche || ''}
+                      onChange={(e) => setEditingCadence({ ...editingCadence, target_niche: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Limite Diário</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={editingCadence.daily_limit || 20}
+                      onChange={(e) => setEditingCadence({ ...editingCadence, daily_limit: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Descrição</Label>
+                    <Textarea
+                      value={editingCadence.description || ''}
+                      onChange={(e) => setEditingCadence({ ...editingCadence, description: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditingCadence(null)}>Cancelar</Button>
+                  <Button onClick={handleEditCadence}>Salvar</Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>

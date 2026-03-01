@@ -15,12 +15,12 @@ import { useScoutPipeline, ScoutOpportunity, ScoutMessage, ScoutAudioAsset } fro
 // ─── Status config ──────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   NEW: { label: 'Nova', color: 'bg-muted text-muted-foreground', icon: Clock },
-  COPY_READY: { label: 'Copy Pronta', color: 'bg-blue-500/20 text-blue-400', icon: Edit3 },
-  AUDIO_READY: { label: 'Áudio Pronto', color: 'bg-purple-500/20 text-purple-400', icon: Volume2 },
-  PENDING_APPROVAL: { label: 'Aguardando Aprovação', color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
-  SENDING: { label: 'Enviando...', color: 'bg-orange-500/20 text-orange-400', icon: Loader2 },
-  SENT: { label: 'Enviado', color: 'bg-green-500/20 text-green-400', icon: CheckCircle },
-  FAILED: { label: 'Falhou', color: 'bg-red-500/20 text-red-400', icon: AlertTriangle },
+  COPY_READY: { label: 'Copy Pronta', color: 'bg-primary/10 text-primary', icon: Edit3 },
+  AUDIO_READY: { label: 'Áudio Pronto', color: 'bg-accent text-accent-foreground', icon: Volume2 },
+  PENDING_APPROVAL: { label: 'Aguardando Aprovação', color: 'bg-muted text-foreground', icon: Clock },
+  SENDING: { label: 'Enviando...', color: 'bg-primary/10 text-primary', icon: Loader2 },
+  SENT: { label: 'Enviado', color: 'bg-primary/10 text-primary', icon: CheckCircle },
+  FAILED: { label: 'Falhou', color: 'bg-destructive/10 text-destructive', icon: AlertTriangle },
   ARCHIVED: { label: 'Arquivado', color: 'bg-muted text-muted-foreground', icon: Clock },
 };
 
@@ -308,7 +308,7 @@ function ScoutCard({ opportunity }: { opportunity: ScoutOpportunity }) {
               {/* Approve and Send button */}
               {['COPY_READY', 'AUDIO_READY', 'PENDING_APPROVAL', 'FAILED'].includes(opportunity.status) && (
                 <Button
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full gap-2"
                   disabled={sending || !opportunity.contact_phone_e164}
                   onClick={() => approveSend({
                     oppId: opportunity.id,
@@ -326,16 +326,16 @@ function ScoutCard({ opportunity }: { opportunity: ScoutOpportunity }) {
               )}
 
               {!opportunity.contact_phone_e164 && ['COPY_READY', 'AUDIO_READY', 'PENDING_APPROVAL'].includes(opportunity.status) && (
-                <p className="text-xs text-yellow-500 flex items-center gap-1">
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   Adicione um telefone para habilitar o envio
                 </p>
               )}
 
               {opportunity.status === 'SENT' && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-sm text-green-400 font-medium">Mensagem enviada com sucesso!</span>
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                  <CheckCircle className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-primary font-medium">Mensagem enviada com sucesso!</span>
                 </div>
               )}
             </div>
@@ -374,9 +374,9 @@ export function ScoutDashboard() {
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Total', value: stats.total, color: 'text-foreground' },
-          { label: 'Pendentes', value: stats.pending, color: 'text-yellow-400' },
-          { label: 'Enviados', value: stats.sent, color: 'text-green-400' },
-          { label: 'Falhas', value: stats.failed, color: 'text-red-400' },
+          { label: 'Pendentes', value: stats.pending, color: 'text-muted-foreground' },
+          { label: 'Enviados', value: stats.sent, color: 'text-primary' },
+          { label: 'Falhas', value: stats.failed, color: 'text-destructive' },
         ].map(s => (
           <div key={s.label} className="glass-card rounded-xl p-3 text-center">
             <p className={`text-xl font-medium ${s.color}`}>{s.value}</p>

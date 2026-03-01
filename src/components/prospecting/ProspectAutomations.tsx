@@ -289,8 +289,8 @@ export function ProspectAutomations() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-            <Settings className="w-5 h-5 text-amber-400" />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h3 className="text-sm font-medium text-foreground">Automações IA</h3>
@@ -308,8 +308,8 @@ export function ProspectAutomations() {
               className="relative h-8 w-8 p-0"
               onClick={() => setShowNotifications(!showNotifications)}
             >
-              <Bell className="w-4 h-4 text-amber-400" />
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-amber-500 text-[8px] text-white font-bold flex items-center justify-center">
+              <Bell className="w-4 h-4 text-primary" />
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-[8px] text-primary-foreground font-bold flex items-center justify-center">
                 {pendingSuggestions.length}
               </span>
             </Button>
@@ -331,8 +331,8 @@ export function ProspectAutomations() {
 
       {/* Pending Suggestions / Notifications */}
       {showNotifications && pendingSuggestions.length > 0 && (
-        <div className="space-y-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-          <p className="text-[10px] text-amber-400 uppercase tracking-wider font-medium">
+        <div className="space-y-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
+          <p className="text-[10px] text-primary uppercase tracking-wider font-medium">
             Ações Pendentes ({pendingSuggestions.length})
           </p>
           {pendingSuggestions.slice(0, 5).map((suggestion) => (
@@ -436,7 +436,7 @@ export function ProspectAutomations() {
             <Button
               variant="outline"
               size="sm"
-              className={`h-6 text-[10px] gap-1.5 ${allRulesActive ? 'border-destructive/30 text-destructive hover:bg-destructive/10' : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'}`}
+              className={`h-6 text-[10px] gap-1.5 ${allRulesActive ? 'border-destructive/30 text-destructive hover:bg-destructive/10' : 'border-primary/30 text-primary hover:bg-primary/10'}`}
               onClick={toggleAllRules}
             >
               {allRulesActive ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
@@ -464,7 +464,7 @@ export function ProspectAutomations() {
                   </div>
                   <div className="flex items-center gap-2">
                     {activeRules[rule.id] && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                     )}
                     <Switch
                       checked={activeRules[rule.id] || false}

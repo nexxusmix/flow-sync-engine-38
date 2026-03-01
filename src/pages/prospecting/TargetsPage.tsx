@@ -454,6 +454,162 @@ export default function TargetsPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Edit Prospect Dialog */}
+        <Dialog open={!!editingProspect} onOpenChange={(open) => { if (!open) setEditingProspect(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Editar Target</DialogTitle>
+            </DialogHeader>
+            {editingProspect && (
+              <>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <Label>Empresa *</Label>
+                      <Input
+                        value={editingProspect.company_name || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, company_name: e.target.value })}
+                        placeholder="Nome da empresa"
+                      />
+                    </div>
+                    <div>
+                      <Label>Nicho</Label>
+                      <Input
+                        value={editingProspect.niche || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, niche: e.target.value })}
+                        placeholder="Ex: Incorporadora"
+                      />
+                    </div>
+                    <div>
+                      <Label>Cidade</Label>
+                      <Input
+                        value={editingProspect.city || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, city: e.target.value })}
+                        placeholder="Ex: São Paulo"
+                      />
+                    </div>
+                    <div>
+                      <Label>Instagram</Label>
+                      <Input
+                        value={editingProspect.instagram || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, instagram: e.target.value })}
+                        placeholder="@empresa"
+                      />
+                    </div>
+                    <div>
+                      <Label>Website</Label>
+                      <Input
+                        value={editingProspect.website || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, website: e.target.value })}
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <Label>E-mail</Label>
+                      <Input
+                        type="email"
+                        value={editingProspect.email || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, email: e.target.value })}
+                        placeholder="contato@empresa.com"
+                      />
+                    </div>
+                    <div>
+                      <Label>Telefone</Label>
+                      <Input
+                        value={editingProspect.phone || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, phone: e.target.value })}
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                    <div>
+                      <Label>Decisor</Label>
+                      <Input
+                        value={editingProspect.decision_maker_name || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, decision_maker_name: e.target.value })}
+                        placeholder="Nome do decisor"
+                      />
+                    </div>
+                    <div>
+                      <Label>Cargo do Decisor</Label>
+                      <Input
+                        value={editingProspect.decision_maker_role || ''}
+                        onChange={(e) => setEditingProspect({ ...editingProspect, decision_maker_role: e.target.value })}
+                        placeholder="CEO, Diretor..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Prioridade</Label>
+                      <Select
+                        value={editingProspect.priority}
+                        onValueChange={(v: any) => setEditingProspect({ ...editingProspect, priority: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">Alta</SelectItem>
+                          <SelectItem value="medium">Média</SelectItem>
+                          <SelectItem value="low">Baixa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Lista</Label>
+                      <Select
+                        value={editingProspect.list_id || ''}
+                        onValueChange={(v) => setEditingProspect({ ...editingProspect, list_id: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar lista" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {lists.map((list) => (
+                            <SelectItem key={list.id} value={list.id}>{list.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Notas</Label>
+                    <Textarea
+                      value={editingProspect.notes || ''}
+                      onChange={(e) => setEditingProspect({ ...editingProspect, notes: e.target.value })}
+                      placeholder="Observações sobre o target..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditingProspect(null)}>Cancelar</Button>
+                  <Button onClick={async () => {
+                    if (!editingProspect.company_name) {
+                      toast.error('Nome da empresa é obrigatório');
+                      return;
+                    }
+                    await updateProspect(editingProspect.id, {
+                      company_name: editingProspect.company_name,
+                      niche: editingProspect.niche,
+                      city: editingProspect.city,
+                      instagram: editingProspect.instagram,
+                      website: editingProspect.website,
+                      email: editingProspect.email,
+                      phone: editingProspect.phone,
+                      decision_maker_name: editingProspect.decision_maker_name,
+                      decision_maker_role: editingProspect.decision_maker_role,
+                      priority: editingProspect.priority,
+                      list_id: editingProspect.list_id,
+                      notes: editingProspect.notes,
+                    });
+                    setEditingProspect(null);
+                    toast.success('Target atualizado');
+                  }}>Salvar</Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* New List Dialog */}
         <Dialog open={isNewListOpen} onOpenChange={setIsNewListOpen}>
           <DialogContent>
