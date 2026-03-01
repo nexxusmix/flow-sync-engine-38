@@ -50,11 +50,11 @@ function getEventIcon(eventType: string) {
     case 'file_uploaded':
       return <FileUp className="w-4 h-4 text-muted-foreground" />;
     case 'approval':
-      return <Star className="w-4 h-4 text-yellow-500" />;
+      return <Star className="w-4 h-4 text-primary" />;
     case 'revision_requested':
-      return <AlertTriangle className="w-4 h-4 text-orange-500" />;
+      return <AlertTriangle className="w-4 h-4 text-muted-foreground" />;
     case 'deliverable_added':
-      return <PlayCircle className="w-4 h-4 text-purple-500" />;
+      return <PlayCircle className="w-4 h-4 text-primary" />;
     default:
       return <Activity className="w-4 h-4 text-muted-foreground" />;
   }

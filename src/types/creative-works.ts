@@ -229,15 +229,15 @@ export const BLOCK_TYPES: BlockTypeInfo[] = [
 
 export const WORK_STATUS_LABELS: Record<CreativeWorkStatus, { label: string; color: string }> = {
   draft: { label: 'Rascunho', color: 'bg-muted text-muted-foreground' },
-  in_production: { label: 'Em Produção', color: 'bg-blue-500/20 text-blue-600' },
-  review: { label: 'Em Revisão', color: 'bg-amber-500/20 text-amber-600' },
-  approved: { label: 'Aprovado', color: 'bg-green-500/20 text-green-600' },
-  archived: { label: 'Arquivado', color: 'bg-gray-500/20 text-gray-600' },
+  in_production: { label: 'Em Produção', color: 'bg-primary/20 text-primary' },
+  review: { label: 'Em Revisão', color: 'bg-primary/10 text-primary/70' },
+  approved: { label: 'Aprovado', color: 'bg-primary/20 text-primary' },
+  archived: { label: 'Arquivado', color: 'bg-muted text-muted-foreground' },
 };
 
 export const BLOCK_STATUS_LABELS: Record<CreativeBlockStatus, { label: string; color: string }> = {
   empty: { label: 'Vazio', color: 'bg-muted text-muted-foreground' },
-  draft: { label: 'Rascunho', color: 'bg-amber-500/20 text-amber-600' },
-  ready: { label: 'Pronto', color: 'bg-green-500/20 text-green-600' },
+  draft: { label: 'Rascunho', color: 'bg-primary/10 text-primary/70' },
+  ready: { label: 'Pronto', color: 'bg-primary/20 text-primary' },
   approved: { label: 'Aprovado', color: 'bg-primary/20 text-primary' },
 };

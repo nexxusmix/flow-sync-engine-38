@@ -10,10 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const INTEGRATIONS_CONFIG = [
-  { provider: 'instagram', name: 'Instagram', icon: Instagram, description: 'Feed e stories preview', color: 'text-pink-500' },
-  { provider: 'whatsapp', name: 'WhatsApp Business', icon: MessageCircle, description: 'API oficial (placeholder)', color: 'text-emerald-500' },
-  { provider: 'gemini', name: 'IA Gemini', icon: Brain, description: 'Geração de conteúdo', color: 'text-blue-500' },
-  { provider: 'stripe', name: 'Stripe', icon: CreditCard, description: 'Pagamentos (placeholder)', color: 'text-violet-500' },
+  { provider: 'instagram', name: 'Instagram', icon: Instagram, description: 'Feed e stories preview', color: 'text-primary' },
+  { provider: 'whatsapp', name: 'WhatsApp Business', icon: MessageCircle, description: 'API oficial (placeholder)', color: 'text-primary' },
+  { provider: 'gemini', name: 'IA Gemini', icon: Brain, description: 'Geração de conteúdo', color: 'text-primary' },
+  { provider: 'stripe', name: 'Stripe', icon: CreditCard, description: 'Pagamentos (placeholder)', color: 'text-primary' },
 ];
 
 export default function IntegrationsSettingsPage() {
@@ -261,7 +261,7 @@ export default function IntegrationsSettingsPage() {
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 ) : isCalendarConnected ? (
                   <>
-                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
+                     <Badge className="bg-primary/10 text-primary border-primary/30">
                       <Check className="w-3 h-3 mr-1" />
                       Conectado
                     </Badge>
@@ -311,7 +311,7 @@ export default function IntegrationsSettingsPage() {
                     <div className="flex items-center gap-3">
                       {isConnected ? (
                         <>
-                          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
+                          <Badge className="bg-primary/10 text-primary border-primary/30">
                             <Check className="w-3 h-3 mr-1" />
                             Conectado
                           </Badge>

@@ -63,8 +63,8 @@ export function ScriptsTab() {
   };
 
   const scoreColor = (score: number) => {
-    if (score >= 85) return 'text-emerald-400';
-    if (score >= 60) return 'text-amber-400';
+    if (score >= 85) return 'text-primary';
+    if (score >= 60) return 'text-primary/60';
     return 'text-muted-foreground';
   };
 
@@ -149,7 +149,7 @@ export function ScriptsTab() {
                   className="opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => copyHook(h.id, h.hook_text)}
                 >
-                  {copiedId === h.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copiedId === h.id ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
             </Card>

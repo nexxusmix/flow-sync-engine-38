@@ -19,9 +19,9 @@ interface Props {
 }
 
 const RISK_CONFIG = {
-  low: { label: 'Baixo', color: 'text-emerald-400 bg-emerald-500/10', icon: CheckCircle },
-  medium: { label: 'Médio', color: 'text-amber-400 bg-amber-500/10', icon: AlertTriangle },
-  high: { label: 'Alto', color: 'text-red-400 bg-red-500/10', icon: AlertTriangle },
+  low: { label: 'Baixo', color: 'text-primary bg-primary/10', icon: CheckCircle },
+  medium: { label: 'Médio', color: 'text-muted-foreground bg-muted', icon: AlertTriangle },
+  high: { label: 'Alto', color: 'text-destructive bg-destructive/10', icon: AlertTriangle },
 };
 
 const CHANNEL_ICONS: Record<string, string> = {

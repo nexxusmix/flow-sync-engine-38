@@ -40,28 +40,28 @@ interface ParsedSection {
 const SECTION_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
   'entregas': { 
     icon: <Package className="w-4 h-4" />, 
-    color: 'text-emerald-400', 
-    bgColor: 'bg-emerald-500/10 border-emerald-500/20' 
+    color: 'text-primary', 
+    bgColor: 'bg-primary/10 border-primary/20' 
   },
   'condições financeiras': { 
     icon: <DollarSign className="w-4 h-4" />, 
-    color: 'text-amber-400', 
-    bgColor: 'bg-amber-500/10 border-amber-500/20' 
+    color: 'text-primary/70', 
+    bgColor: 'bg-primary/10 border-primary/20' 
   },
   'observações': { 
     icon: <AlertCircle className="w-4 h-4" />, 
-    color: 'text-blue-400', 
-    bgColor: 'bg-blue-500/10 border-blue-500/20' 
+    color: 'text-primary/60', 
+    bgColor: 'bg-primary/10 border-primary/20' 
   },
   'configurações': { 
     icon: <Settings className="w-4 h-4" />, 
-    color: 'text-purple-400', 
-    bgColor: 'bg-purple-500/10 border-purple-500/20' 
+    color: 'text-primary/50', 
+    bgColor: 'bg-primary/10 border-primary/20' 
   },
   'escopo detalhado': { 
     icon: <FileText className="w-4 h-4" />, 
-    color: 'text-cyan-400', 
-    bgColor: 'bg-cyan-500/10 border-cyan-500/20' 
+    color: 'text-primary', 
+    bgColor: 'bg-primary/10 border-primary/20' 
   },
   'resumo executivo': { 
     icon: <Eye className="w-4 h-4" />, 
@@ -70,8 +70,8 @@ const SECTION_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgC
   },
   'obrigações': { 
     icon: <Scale className="w-4 h-4" />, 
-    color: 'text-rose-400', 
-    bgColor: 'bg-rose-500/10 border-rose-500/20' 
+    color: 'text-primary/70', 
+    bgColor: 'bg-primary/10 border-primary/20' 
   },
 };
 
@@ -230,9 +230,9 @@ function PaymentCard({ items }: { items: string[] }) {
     <div className="space-y-4">
       {/* Payment method info */}
       {regularItems.length > 0 && (
-        <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <CreditCard className="w-4 h-4 text-amber-400" />
+            <CreditCard className="w-4 h-4 text-primary/70" />
             <span className="text-sm font-medium text-foreground">Forma de Pagamento</span>
           </div>
           {regularItems.map((item, i) => (

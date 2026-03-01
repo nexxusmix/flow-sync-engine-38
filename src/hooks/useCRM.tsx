@@ -49,14 +49,14 @@ export interface Contact {
 
 // Legacy export for backward compatibility - now with full type support
 export const CRM_STAGES: CRMStage[] = [
-  { id: 'lead', key: 'lead', title: 'Lead', color: 'bg-zinc-500', order_index: 1 },
-  { id: 'qualificacao', key: 'qualificacao', title: 'Qualificação', color: 'bg-amber-500', order_index: 2 },
-  { id: 'diagnostico', key: 'diagnostico', title: 'Diagnóstico', color: 'bg-purple-500', order_index: 3 },
-  { id: 'proposta', key: 'proposta', title: 'Proposta', color: 'bg-blue-500', order_index: 4 },
-  { id: 'negociacao', key: 'negociacao', title: 'Negociação', color: 'bg-pink-500', order_index: 5 },
-  { id: 'fechado', key: 'fechado', title: 'Fechado', color: 'bg-emerald-500', order_index: 6 },
-  { id: 'onboarding', key: 'onboarding', title: 'Onboarding', color: 'bg-cyan-500', order_index: 7 },
-  { id: 'pos_venda', key: 'pos_venda', title: 'Pós-Venda', color: 'bg-green-500', order_index: 8 },
+  { id: 'lead', key: 'lead', title: 'Lead', color: 'bg-muted-foreground', order_index: 1 },
+  { id: 'qualificacao', key: 'qualificacao', title: 'Qualificação', color: 'bg-primary/40', order_index: 2 },
+  { id: 'diagnostico', key: 'diagnostico', title: 'Diagnóstico', color: 'bg-primary/55', order_index: 3 },
+  { id: 'proposta', key: 'proposta', title: 'Proposta', color: 'bg-primary/70', order_index: 4 },
+  { id: 'negociacao', key: 'negociacao', title: 'Negociação', color: 'bg-primary/85', order_index: 5 },
+  { id: 'fechado', key: 'fechado', title: 'Fechado', color: 'bg-primary', order_index: 6 },
+  { id: 'onboarding', key: 'onboarding', title: 'Onboarding', color: 'bg-primary/70', order_index: 7 },
+  { id: 'pos_venda', key: 'pos_venda', title: 'Pós-Venda', color: 'bg-primary/50', order_index: 8 },
 ];
 
 export function useCRM() {

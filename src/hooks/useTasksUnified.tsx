@@ -39,15 +39,15 @@ export interface TaskColumn {
 
 export const TASK_COLUMNS: TaskColumn[] = [
   { key: 'backlog', title: 'Backlog', color: 'bg-muted' },
-  { key: 'week', title: 'Esta Semana', color: 'bg-blue-500/10' },
-  { key: 'today', title: 'Hoje', color: 'bg-yellow-500/10' },
-  { key: 'done', title: 'Concluído', color: 'bg-green-500/10' },
+  { key: 'week', title: 'Esta Semana', color: 'bg-primary/10' },
+  { key: 'today', title: 'Hoje', color: 'bg-primary/15' },
+  { key: 'done', title: 'Concluído', color: 'bg-primary/5' },
 ];
 
 export const TASK_CATEGORIES = [
-  { key: 'operacao' as const, label: 'Operação', color: 'bg-blue-500' },
-  { key: 'pessoal' as const, label: 'Pessoal', color: 'bg-purple-500' },
-  { key: 'projeto' as const, label: 'Projeto', color: 'bg-orange-500' },
+  { key: 'operacao' as const, label: 'Operação', color: 'bg-primary' },
+  { key: 'pessoal' as const, label: 'Pessoal', color: 'bg-primary/70' },
+  { key: 'projeto' as const, label: 'Projeto', color: 'bg-primary/50' },
 ] as const;
 
 // ─── Fetch ──────────────────────────────────────────────
