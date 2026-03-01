@@ -1,16 +1,131 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { chatCompletion } from "../_shared/ai-client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Helper: get Supabase client with user auth
+function getSupabase(authHeader?: string) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, serviceKey, {
+    global: { headers: authHeader ? { Authorization: authHeader } : {} },
+  });
+}
+
+// Helper: fetch recent AI memory for context enrichment
+async function fetchMemoryContext(supabase: any, opts: { category?: string; format?: string; limit?: number }) {
+  const limit = opts.limit || 20;
+  let query = supabase
+    .from("instagram_ai_memory")
+    .select("memory_type, category, format, topic, output_data, original_text, edited_text, field_name, was_accepted, style_tags, tone, engagement_score, trend_data")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (opts.category) query = query.eq("category", opts.category);
+  if (opts.format) query = query.eq("format", opts.format);
+
+  const { data } = await query;
+  return data || [];
+}
+
+// Helper: build memory context string for prompts
+function buildMemoryBlock(memories: any[]): string {
+  if (!memories.length) return "";
+
+  const feedbackEntries = memories.filter((m: any) => m.memory_type === "feedback" && m.edited_text);
+  const styleEntries = memories.filter((m: any) => m.memory_type === "style_pref");
+  const trendEntries = memories.filter((m: any) => m.memory_type === "trend");
+  const perfEntries = memories.filter((m: any) => m.memory_type === "performance" && m.engagement_score);
+  const genEntries = memories.filter((m: any) => m.memory_type === "generation");
+
+  let block = "\n\n===== MEMÓRIA PERSISTENTE (use para personalizar e melhorar) =====\n";
+
+  if (feedbackEntries.length) {
+    block += "\n📝 FEEDBACK DO USUÁRIO (textos que o usuário editou após geração IA):\n";
+    feedbackEntries.slice(0, 5).forEach((f: any) => {
+      block += `- Campo "${f.field_name}": IA gerou "${(f.original_text || "").substring(0, 80)}..." → Usuário mudou para "${(f.edited_text || "").substring(0, 80)}..."\n`;
+    });
+    block += "→ APLIQUE essas correções de estilo nas novas gerações.\n";
+  }
+
+  if (styleEntries.length) {
+    block += "\n🎨 PREFERÊNCIAS DE ESTILO:\n";
+    styleEntries.slice(0, 3).forEach((s: any) => {
+      block += `- Tags: ${(s.style_tags || []).join(", ")} | Tom: ${s.tone || "N/A"}\n`;
+    });
+  }
+
+  if (trendEntries.length) {
+    block += "\n📊 TENDÊNCIAS ANALISADAS:\n";
+    trendEntries.slice(0, 3).forEach((t: any) => {
+      const td = t.trend_data || {};
+      block += `- ${t.topic || "Análise"}: ${JSON.stringify(td).substring(0, 200)}\n`;
+    });
+  }
+
+  if (perfEntries.length) {
+    block += "\n⭐ PERFORMANCE (posts com maior engajamento):\n";
+    perfEntries.sort((a: any, b: any) => (b.engagement_score || 0) - (a.engagement_score || 0));
+    perfEntries.slice(0, 5).forEach((p: any) => {
+      const out = p.output_data || {};
+      block += `- "${out.hook || out.title || p.topic}" (${p.format}) → Score: ${p.engagement_score} | Pilar: ${p.category}\n`;
+    });
+    block += "→ Priorize formatos e estilos semelhantes aos de maior performance.\n";
+  }
+
+  if (genEntries.length) {
+    block += `\n📚 Já foram gerados ${genEntries.length} conteúdos anteriormente. Evite repetir hooks e títulos.\n`;
+    const recentHooks = genEntries.slice(0, 5).map((g: any) => g.output_data?.hook).filter(Boolean);
+    if (recentHooks.length) {
+      block += `Hooks recentes (NÃO repita): ${recentHooks.map((h: string) => `"${h.substring(0, 50)}"`).join(", ")}\n`;
+    }
+  }
+
+  block += "===== FIM DA MEMÓRIA =====\n";
+  return block;
+}
+
+// Helper: save memory entry
+async function saveMemory(supabase: any, userId: string, entry: any) {
+  try {
+    await supabase.from("instagram_ai_memory").insert({
+      user_id: userId,
+      ...entry,
+    });
+  } catch (e) {
+    console.error("[instagram-ai] Failed to save memory:", e);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { action, data } = await req.json();
+    const authHeader = req.headers.get("Authorization") || "";
+    const supabase = getSupabase(authHeader);
+
+    // Get user ID
+    let userId = "anonymous";
+    try {
+      const token = authHeader.replace("Bearer ", "");
+      if (token && token !== Deno.env.get("SUPABASE_ANON_KEY")) {
+        const serviceClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { data: userData } = await serviceClient.auth.getUser(token);
+        if (userData?.user) userId = userData.user.id;
+      }
+    } catch {}
+
+    // Fetch memory context for AI enrichment
+    const memoryOpts: any = {};
+    if (data?.pillar) memoryOpts.category = data.pillar;
+    if (data?.format) memoryOpts.format = data.format;
+    const memories = await fetchMemoryContext(supabase, memoryOpts);
+    const memoryBlock = buildMemoryBlock(memories);
 
     let systemPrompt = "";
     let userPrompt = "";
@@ -24,7 +139,7 @@ Estilo da marca: cinematográfico, aspiracional, técnico mas acessível. Tipogr
 
 Equipamento principal: Sony FX3. Pós-produção com color grading cinematográfico.
 
-Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
+Gere SEMPRE em português do Brasil. Seja direto e impactante.${memoryBlock}`;
 
         userPrompt = `Gere um pacote completo de conteúdo Instagram para a SQUAD Film:
 
@@ -53,7 +168,7 @@ Retorne um JSON com a estrutura exata (sem markdown, só JSON puro):
 
       case "generate_hooks": {
         const { category, count } = data;
-        systemPrompt = `Você é um copywriter especialista em hooks virais para Instagram no nicho audiovisual premium e imobiliário de luxo. Gere hooks em português do Brasil.`;
+        systemPrompt = `Você é um copywriter especialista em hooks virais para Instagram no nicho audiovisual premium e imobiliário de luxo. Gere hooks em português do Brasil.${memoryBlock}`;
         userPrompt = `Gere ${count || 5} hooks de alto impacto para Reels da SQUAD Film.
 Categoria: ${category || 'autoridade'}
 
@@ -66,7 +181,7 @@ Retorne JSON puro (sem markdown):
 
       case "analyze_profile": {
         const { handle, bio, followers, posts_count, avg_engagement } = data;
-        systemPrompt = `Você é um consultor de posicionamento digital premium. Analise perfis de Instagram de produtoras audiovisuais de luxo.`;
+        systemPrompt = `Você é um consultor de posicionamento digital premium. Analise perfis de Instagram de produtoras audiovisuais de luxo.${memoryBlock}`;
         userPrompt = `Analise o perfil Instagram da SQUAD Film:
 Handle: @${handle || 'squadfilme'}
 Bio atual: ${bio || 'Ei! Somos a SQUAD Film. Uma produtora de fotos e vídeos com sede no DF/GO'}
@@ -99,7 +214,7 @@ Retorne JSON puro (sem markdown):
 
       case "generate_calendar": {
         const { pillars, posts_per_week, projects, weeks } = data;
-        systemPrompt = `Você é um estrategista de conteúdo Instagram para produtoras audiovisuais premium. Crie calendários editoriais estratégicos.`;
+        systemPrompt = `Você é um estrategista de conteúdo Instagram para produtoras audiovisuais premium. Crie calendários editoriais estratégicos.${memoryBlock}`;
         userPrompt = `Gere um calendário editorial de ${weeks || 4} semanas para a SQUAD Film.
 
 Posts por semana: ${posts_per_week || 3}
@@ -125,7 +240,7 @@ Retorne JSON puro (sem markdown):
 
       case "generate_projections": {
         const { current_frequency, avg_engagement: eng, followers: foll, ticket_medio } = data;
-        systemPrompt = `Você é um analista de growth marketing para Instagram. Faça projeções realistas baseadas em benchmarks do nicho audiovisual premium.`;
+        systemPrompt = `Você é um analista de growth marketing para Instagram. Faça projeções realistas baseadas em benchmarks do nicho audiovisual premium.${memoryBlock}`;
         userPrompt = `Faça projeções de crescimento para a SQUAD Film no Instagram:
 
 Frequência atual: ${current_frequency || 1} posts/semana
@@ -163,7 +278,7 @@ Estilo da marca: cinematográfico, aspiracional, técnico mas acessível. Tipogr
 
 Equipamento principal: Sony FX3. Pós-produção com color grading cinematográfico.
 
-Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
+Gere SEMPRE em português do Brasil. Seja direto e impactante.${memoryBlock}`;
 
         let contextBlock = "";
         if (command) contextBlock += `\nINSTRUÇÃO DO USUÁRIO: ${command}`;
@@ -171,7 +286,6 @@ Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
         if (file_content) contextBlock += `\nCONTEÚDO DE ARQUIVO ENVIADO:\n${file_content.substring(0, 4000)}`;
 
         if (field) {
-          // Single field regeneration
           const fieldMap: Record<string, string> = {
             hook: "hook (frase impactante dos primeiros 3 segundos)",
             script: "roteiro completo com marcações de tempo",
@@ -220,7 +334,7 @@ Retorne um JSON com a estrutura exata (sem markdown, só JSON puro):
 
       case "setup_profile": {
         const { handle, niche, sub_niche, target_audience, brand_voice, command, reference_url, file_content } = data;
-        systemPrompt = `Você é um consultor estratégico de Instagram para produtoras audiovisuais premium. Gere configurações completas de perfil com base no nicho e posicionamento fornecido. Sempre em português do Brasil.`;
+        systemPrompt = `Você é um consultor estratégico de Instagram para produtoras audiovisuais premium. Gere configurações completas de perfil com base no nicho e posicionamento fornecido. Sempre em português do Brasil.${memoryBlock}`;
 
         let contextBlock = "";
         if (command) contextBlock += `\nINSTRUÇÃO DO USUÁRIO: ${command}`;
@@ -269,7 +383,7 @@ Retorne JSON puro (sem markdown):
 
       case "analyze_insights": {
         const { text_input, file_content: fc, command: cmd, profile_context } = data;
-        systemPrompt = `Você é um analista de dados e estrategista de Instagram de alto nível. Analise dados de Insights do Instagram fornecidos (textos, dados numéricos, prints, relatórios) e gere um relatório estratégico completo. Sempre em português do Brasil. Seja extremamente detalhado e acionável.`;
+        systemPrompt = `Você é um analista de dados e estrategista de Instagram de alto nível. Analise dados de Insights do Instagram fornecidos (textos, dados numéricos, prints, relatórios) e gere um relatório estratégico completo. Sempre em português do Brasil. Seja extremamente detalhado e acionável.${memoryBlock}`;
 
         let insightsContext = "";
         if (cmd) insightsContext += `\nCOMANDO DO USUÁRIO: ${cmd}`;
@@ -351,15 +465,15 @@ TENDÊNCIAS INSTAGRAM 2026 que você DEVE incorporar:
 - Collage/mixed media — combinar foto, vídeo, texturas e tipografia
 - Autenticidade produzida — parecer espontâneo mas com direção de arte impecável
 
-Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
+Gere SEMPRE em português do Brasil. Seja direto e impactante.${memoryBlock}`;
 
         let trendContext = "";
         if (trend_style === 'cinematic_reel') trendContext = "Estilo: Reel ultra-cinematográfico com cortes rápidos, slow motion e color grading marcante. Referência visual: film look com aspect ratio 2.39:1.";
-        else if (trend_style === 'documentary') trendContext = "Estilo: Mini-documentário conceitual. Depoimento + imagens de cobertura. Tom íntimo e autêntico. Referência: VIVÊNCIA / DEPOIMENTO CONCEITO.";
-        else if (trend_style === 'collage_art') trendContext = "Estilo: Collage/mixed media art. Combinar foto original com texturas de papel rasgado, sobreposições, tipografia experimental. Referência: estética editorial de galeria.";
-        else if (trend_style === 'series_episode') trendContext = "Estilo: Episódio de série (SERIES 01, FILM PROJECT). Post que faz parte de uma narrativa maior. Com identidade visual consistente e numeração.";
-        else if (trend_style === 'brand_manifesto') trendContext = "Estilo: Manifesto de marca. Texto bold provocativo + imagem cinematográfica. Ex: 'O mercado imobiliário não precisa de mais vídeos. Precisa de FILMES.'";
-        else if (trend_style === 'mood_grid') trendContext = "Estilo: Grid de mood/atmosfera. Composição de várias imagens em mosaico com textos poéticos curtos. Paleta coesa e editorial.";
+        else if (trend_style === 'documentary') trendContext = "Estilo: Mini-documentário conceitual. Depoimento + imagens de cobertura. Tom íntimo e autêntico.";
+        else if (trend_style === 'collage_art') trendContext = "Estilo: Collage/mixed media art. Combinar foto original com texturas de papel rasgado, sobreposições, tipografia experimental.";
+        else if (trend_style === 'series_episode') trendContext = "Estilo: Episódio de série (SERIES 01, FILM PROJECT). Post que faz parte de uma narrativa maior.";
+        else if (trend_style === 'brand_manifesto') trendContext = "Estilo: Manifesto de marca. Texto bold provocativo + imagem cinematográfica.";
+        else if (trend_style === 'mood_grid') trendContext = "Estilo: Grid de mood/atmosfera. Composição de várias imagens em mosaico com textos poéticos curtos.";
         else trendContext = "Escolha o estilo mais adequado ao tema entre: cinematográfico, documental, collage, séries, manifesto ou mood grid.";
 
         userPrompt = `Gere um post Instagram COMPLETO seguindo as tendências 2026 para a SQUAD Film:
@@ -386,7 +500,7 @@ Retorne JSON puro (sem markdown):
   "cta": "chamada para ação",
   "pinned_comment": "comentário fixado sugerido",
   "hashtags": ["hashtag1", "hashtag2", "...até 15 hashtags estratégicas"],
-  "cover_suggestion": "descrição detalhada da capa/thumbnail com estilo tipográfico (inspirado no portfólio SQUAD Film)",
+  "cover_suggestion": "descrição detalhada da capa/thumbnail",
   "carousel_slides": [{"title": "título slide", "body": "corpo slide"}],
   "story_sequence": [{"text": "texto", "media_type": "foto/video/boomerang", "interactive": "enquete/pergunta/quiz/null"}],
   "checklist": [
@@ -412,7 +526,7 @@ Retorne JSON puro (sem markdown):
 Estilo da marca: cinematográfico, aspiracional, técnico mas acessível.
 
 Crie um pacote autopilot MEGA COMPLETO: campanha + hooks + posts completos com roteiros + stories + checklists + agendamento + projeções.
-Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
+Gere SEMPRE em português do Brasil. Seja direto e impactante.${memoryBlock}`;
 
         const pillarList = ap?.length ? ap : ['autoridade', 'portfolio', 'bastidores', 'social_proof', 'educacao'];
         const profileInfo = apCtx ? `\nContexto do perfil:\n- Handle: @${apCtx.handle || 'squadfilme'}\n- Nicho: ${apCtx.niche || 'produção audiovisual premium'}\n- Público: ${apCtx.target_audience || 'incorporadoras e marcas de luxo'}\n- Seguidores: ${apCtx.followers || 'N/A'}\n- Engajamento: ${apCtx.avg_engagement || 'N/A'}%` : '';
@@ -427,7 +541,7 @@ Agende nos melhores horários (10h, 12h, 18h, 21h) distribuídos ao longo da sem
 Para CADA post, gere TUDO completo incluindo:
 - Hook, roteiro, 3 variações de legenda, hashtags, CTA, comentário fixado
 - Sequência de stories complementar (3-5 stories com interativos: enquete, pergunta, quiz)
-- Checklist de produção (ex: gravar vídeo, editar, legendar, criar capa, agendar, publicar)
+- Checklist de produção
 
 TAMBÉM gere:
 - Uma campanha temática que agrupe todos os posts
@@ -488,6 +602,68 @@ Retorne JSON puro (sem markdown):
         break;
       }
 
+      // Save feedback (user edited AI content)
+      case "save_feedback": {
+        const { post_id, field_name, original_text, edited_text, category, format } = data;
+        await saveMemory(supabase, userId, {
+          memory_type: "feedback",
+          category,
+          format,
+          field_name,
+          original_text,
+          edited_text,
+          was_accepted: original_text !== edited_text,
+          post_id,
+        });
+        return new Response(JSON.stringify({ result: { saved: true } }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Save performance data
+      case "save_performance": {
+        const { post_id, engagement_score, category: perfCat, format: perfFmt, topic: perfTopic, output_data } = data;
+        await saveMemory(supabase, userId, {
+          memory_type: "performance",
+          category: perfCat,
+          format: perfFmt,
+          topic: perfTopic,
+          engagement_score,
+          post_id,
+          output_data,
+        });
+        return new Response(JSON.stringify({ result: { saved: true } }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Save style preference
+      case "save_style_pref": {
+        const { style_tags, tone, category: styleCat } = data;
+        await saveMemory(supabase, userId, {
+          memory_type: "style_pref",
+          category: styleCat,
+          style_tags,
+          tone,
+        });
+        return new Response(JSON.stringify({ result: { saved: true } }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Save trend analysis
+      case "save_trend": {
+        const { topic: trendTopic, trend_data } = data;
+        await saveMemory(supabase, userId, {
+          memory_type: "trend",
+          topic: trendTopic,
+          trend_data,
+        });
+        return new Response(JSON.stringify({ result: { saved: true } }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
@@ -515,6 +691,16 @@ Retorne JSON puro (sem markdown):
     } catch {
       parsed = { raw: content };
     }
+
+    // Auto-save generation to memory
+    await saveMemory(supabase, userId, {
+      memory_type: "generation",
+      category: data?.pillar || data?.category || null,
+      format: data?.format || null,
+      topic: data?.topic || null,
+      input_data: { action, ...data },
+      output_data: parsed,
+    });
 
     return new Response(JSON.stringify({ result: parsed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

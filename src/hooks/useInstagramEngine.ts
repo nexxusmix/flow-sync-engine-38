@@ -441,3 +441,59 @@ export function usePublishToInstagram() {
     onError: (e: any) => toast.error(e.message || 'Erro ao publicar'),
   });
 }
+
+// AI Memory: save feedback when user edits AI-generated content
+export function useSaveAIFeedback() {
+  return useMutation({
+    mutationFn: async (feedback: {
+      post_id?: string;
+      field_name: string;
+      original_text: string;
+      edited_text: string;
+      category?: string;
+      format?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('instagram-ai', {
+        body: { action: 'save_feedback', data: feedback },
+      });
+      if (error) console.warn('Feedback save failed:', error);
+      return data;
+    },
+  });
+}
+
+// AI Memory: save performance data
+export function useSaveAIPerformance() {
+  return useMutation({
+    mutationFn: async (perf: {
+      post_id: string;
+      engagement_score: number;
+      category?: string;
+      format?: string;
+      topic?: string;
+      output_data?: any;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('instagram-ai', {
+        body: { action: 'save_performance', data: perf },
+      });
+      if (error) console.warn('Performance save failed:', error);
+      return data;
+    },
+  });
+}
+
+// AI Memory: query memory entries
+export function useAIMemory() {
+  return useQuery({
+    queryKey: ['instagram-ai-memory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_ai_memory' as any)
+        .select('id, memory_type, category, format, topic, field_name, was_accepted, engagement_score, style_tags, tone, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+}
