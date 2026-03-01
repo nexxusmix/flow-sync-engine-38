@@ -331,6 +331,58 @@ Retorne JSON puro (sem markdown) com a estrutura exata:
         break;
       }
 
+      case "autopilot_full": {
+        const { pillars: ap, posts_count: apc, profile_context: apCtx } = data;
+        const totalPosts = apc || 5;
+        systemPrompt = `Você é o diretor de conteúdo da SQUAD Film, uma produtora audiovisual premium de Brasília/DF especializada em imóveis de luxo, cavalos e veículos premium.
+
+Estilo da marca: cinematográfico, aspiracional, técnico mas acessível.
+
+Crie um pacote autopilot COMPLETO: hooks + roteiros + legendas + agendamento.
+Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
+
+        const pillarList = ap?.length ? ap : ['autoridade', 'portfolio', 'bastidores', 'social_proof', 'educacao'];
+        const profileInfo = apCtx ? `\nContexto do perfil:\n- Handle: @${apCtx.handle || 'squadfilme'}\n- Nicho: ${apCtx.niche || 'produção audiovisual premium'}\n- Público: ${apCtx.target_audience || 'incorporadoras e marcas de luxo'}` : '';
+
+        userPrompt = `Gere um pacote AUTOPILOT COMPLETO com ${totalPosts} posts para a próxima semana da SQUAD Film.
+${profileInfo}
+
+Distribua entre os pilares: ${pillarList.join(', ')}
+Alterne formatos: reel, carousel, single, story_sequence
+Agende nos melhores horários (10h, 12h, 18h, 21h) distribuídos ao longo da semana.
+
+Para CADA post, gere TUDO completo (hook, roteiro, legendas, hashtags, CTA, etc).
+
+Retorne JSON puro (sem markdown):
+{
+  "hooks": [
+    {"hook_text": "...", "hook_score": 85, "score_breakdown": {"clarity": 22, "specificity": 20, "emotion": 23, "promise": 20}, "category": "pilar", "format": "reel"}
+  ],
+  "posts": [
+    {
+      "title": "título do post",
+      "format": "reel/carousel/single/story_sequence",
+      "pillar": "pilar",
+      "objective": "awareness/authority/engagement/leads",
+      "scheduled_day_offset": 1,
+      "scheduled_time": "10:00",
+      "hook": "hook dos primeiros 3 segundos",
+      "script": "roteiro completo",
+      "caption_short": "legenda curta",
+      "caption_medium": "legenda média",
+      "caption_long": "legenda longa com CTA",
+      "cta": "chamada para ação",
+      "pinned_comment": "comentário fixado",
+      "hashtags": ["hashtag1", "hashtag2"],
+      "cover_suggestion": "descrição da capa",
+      "carousel_slides": [{"title": "...", "body": "..."}],
+      "story_sequence": [{"text": "...", "media_type": "foto", "interactive": null}]
+    }
+  ]
+}`;
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
