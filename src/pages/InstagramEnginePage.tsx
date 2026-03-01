@@ -20,11 +20,13 @@ import { CampaignsTab } from '@/components/instagram-engine/CampaignsTab';
 import { ProjectionsTab } from '@/components/instagram-engine/ProjectionsTab';
 import { ProfileHealthTab } from '@/components/instagram-engine/ProfileHealthTab';
 import { SnapshotsTab } from '@/components/instagram-engine/SnapshotsTab';
+import { LibraryTab } from '@/components/instagram-engine/LibraryTab';
 import { useInstagramAI, useCreatePost, useProfileConfig, useSaveProfileConfig, useSaveHooks } from '@/hooks/useInstagramEngine';
 import { toast } from 'sonner';
 
 const TABS = [
   { key: 'cockpit', label: 'Cockpit', icon: 'rocket_launch' },
+  { key: 'library', label: 'Library', icon: 'folder_open' },
   { key: 'insights', label: 'Insights IA', icon: 'analytics' },
   { key: 'calendar', label: 'Calendário', icon: 'calendar_month' },
   { key: 'scripts', label: 'Roteiros', icon: 'description' },
@@ -277,6 +279,7 @@ export default function InstagramEnginePage() {
           </div>
 
           <TabsContent value="cockpit" className="mt-6"><CockpitTab /></TabsContent>
+          <TabsContent value="library" className="mt-6"><LibraryTab /></TabsContent>
           <TabsContent value="insights" className="mt-6"><InsightsAnalyzerTab /></TabsContent>
           <TabsContent value="calendar" className="mt-6"><CalendarTab /></TabsContent>
           <TabsContent value="scripts" className="mt-6"><ScriptsTab onNavigateToCalendar={() => setActiveTab('calendar')} /></TabsContent>
