@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,8 +11,6 @@ serve(async (req) => {
 
   try {
     const { action, data } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     let systemPrompt = "";
     let userPrompt = "";
@@ -339,56 +338,21 @@ Retorne JSON puro (sem markdown) com a estrutura exata:
         });
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
+    const aiResult = await chatCompletion({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      model: "google/gemini-2.5-flash",
+      includeLovableFallback: true,
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({
-          error: "Limite de requisições atingido. Tente novamente em alguns segundos.",
-          code: "RATE_LIMITED",
-        }), {
-          // Keep 200 so frontend can handle gracefully without generic non-2xx runtime errors
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({
-          error: "Créditos insuficientes. Adicione créditos ao workspace.",
-          code: "INSUFFICIENT_CREDITS",
-        }), {
-          // Keep 200 so frontend shows a friendly message instead of edge non-2xx error
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA", code: "AI_GATEWAY_ERROR" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiData = await response.json();
-    const content = aiData.choices?.[0]?.message?.content || "";
+    const content = aiResult.choices?.[0]?.message?.content || "";
+    console.log(`[instagram-ai] AI responded via ${aiResult.provider}`);
 
     // Try to parse as JSON
     let parsed: any = null;
     try {
-      // Remove markdown code blocks if present
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
