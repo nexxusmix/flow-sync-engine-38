@@ -62,6 +62,7 @@ export interface ProfileConfig {
   profile_analysis: any;
   strategic_briefing: any;
   autopilot_enabled: boolean;
+  avatar_url: string | null;
 }
 
 export interface ProfileSnapshot {

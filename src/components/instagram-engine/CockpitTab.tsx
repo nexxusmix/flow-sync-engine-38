@@ -11,6 +11,9 @@ import { formatDistanceToNow, differenceInDays, addDays, format, isAfter, isBefo
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { InstagramMetaConnect } from './InstagramMetaConnect';
+import { ProfileCard } from './ProfileCard';
+import { PostsGrid } from './PostsGrid';
+import { ScheduledTimeline } from './ScheduledTimeline';
 import { toast } from 'sonner';
 
 export function CockpitTab() {
@@ -90,10 +93,6 @@ export function CockpitTab() {
   const healthLabel = { green: 'Saudável', yellow: 'Atenção', red: 'Crítico' }[healthStatus];
   const healthColor = { green: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', yellow: 'text-amber-400 bg-amber-500/10 border-amber-500/20', red: 'text-destructive bg-destructive/10 border-destructive/20' }[healthStatus];
 
-  // Next scheduled
-  const scheduledPosts = allPosts.filter(p => p.scheduled_at && isAfter(new Date(p.scheduled_at), today)).sort((a, b) => new Date(a.scheduled_at!).getTime() - new Date(b.scheduled_at!).getTime());
-  const nextScheduled = scheduledPosts[0];
-
   // Pipeline counts
   const statusCounts = POST_STATUSES.map(s => ({
     ...s,
@@ -118,6 +117,14 @@ export function CockpitTab() {
     <div className="space-y-6">
       {/* Instagram Connection */}
       <InstagramMetaConnect />
+
+      {/* ===== NEW: Instagram Profile Card ===== */}
+      <ProfileCard
+        config={config || null}
+        snapshot={latestSnapshot || null}
+        publishedCount={publishedPosts.length}
+        daysSincePost={daysSincePost}
+      />
 
       {/* Editable Real Profile Data */}
       <Card className="glass-card p-5 border border-border/50">
@@ -166,92 +173,6 @@ export function CockpitTab() {
         )}
       </Card>
 
-      {/* AI Profile Summary */}
-      {config && (config.bio_current || config.content_pillars?.length > 0 || config.strategic_briefing) && (
-        <Card className="glass-card p-5 border border-primary/20">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="material-symbols-outlined text-primary text-lg">auto_awesome</span>
-            <h3 className="text-sm font-medium text-foreground">Perfil IA Configurado</h3>
-            {config.profile_name && (
-              <Badge variant="secondary" className="text-[10px] ml-auto">{config.profile_name}</Badge>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Bio */}
-            {config.bio_current && (
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Bio Otimizada</p>
-                <p className="text-xs text-foreground whitespace-pre-line leading-relaxed bg-muted/30 rounded-lg p-3">{config.bio_current}</p>
-              </div>
-            )}
-
-            {/* Posting Frequency */}
-            {config.posting_frequency && typeof config.posting_frequency === 'object' && (config.posting_frequency as any).posts_per_week && (
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Frequência Ideal</p>
-                <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
-                  <p className="text-xs text-foreground"><span className="font-medium">{(config.posting_frequency as any).posts_per_week}x</span> por semana</p>
-                  {(config.posting_frequency as any).best_days && (
-                    <p className="text-[10px] text-muted-foreground">📅 {(config.posting_frequency as any).best_days.join(', ')}</p>
-                  )}
-                  {(config.posting_frequency as any).best_times && (
-                    <p className="text-[10px] text-muted-foreground">🕐 {(config.posting_frequency as any).best_times.join(', ')}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Strategic Briefing */}
-            {config.strategic_briefing && typeof config.strategic_briefing === 'object' && (config.strategic_briefing as any).positioning && (
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Posicionamento</p>
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <p className="text-xs text-foreground italic leading-relaxed">"{(config.strategic_briefing as any).positioning}"</p>
-                  {(config.strategic_briefing as any).differentials && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {((config.strategic_briefing as any).differentials as string[]).slice(0, 3).map((d: string, i: number) => (
-                        <Badge key={i} variant="outline" className="text-[9px]">{d}</Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Content Pillars from AI */}
-          {config.content_pillars && Array.isArray(config.content_pillars) && config.content_pillars.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border/30">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Pilares de Conteúdo IA</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {(config.content_pillars as any[]).map((p: any, i: number) => (
-                  <div key={i} className="bg-muted/30 rounded-lg p-2.5">
-                    <p className="text-xs font-medium text-foreground">{p.label || p.key}</p>
-                    {p.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{p.description}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Bio Suggestions */}
-          {config.bio_suggestions && Array.isArray(config.bio_suggestions) && config.bio_suggestions.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border/30">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Sugestões de Bio</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {(config.bio_suggestions as any[]).map((b: any, i: number) => (
-                  <div key={i} className="bg-muted/30 rounded-lg p-2.5">
-                    <p className="text-[10px] text-primary font-medium mb-0.5">{b.focus}</p>
-                    <p className="text-[10px] text-muted-foreground whitespace-pre-line">{b.text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Card>
-      )}
-
       {/* Profile Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatCard label="Seguidores" value={latestSnapshot?.followers?.toLocaleString() || '—'} icon="group" />
@@ -261,8 +182,8 @@ export function CockpitTab() {
         <StatCard label="Melhor Horário" value={latestSnapshot?.best_posting_time || '—'} icon="schedule" />
       </div>
 
-      {/* Health Alert + Next Post */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Health Alert + Scheduled Timeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className={`glass-card p-5 border ${healthColor}`}>
           <div className="flex items-center gap-3 mb-3">
             {healthStatus === 'green' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
@@ -283,26 +204,17 @@ export function CockpitTab() {
           )}
         </Card>
 
-        <Card className="glass-card p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-primary text-lg">event</span>
-            <p className="text-sm font-medium text-foreground">Próximo Post</p>
-          </div>
-          {nextScheduled ? (
-            <div>
-              <p className="text-sm text-foreground font-medium">{nextScheduled.title}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {format(new Date(nextScheduled.scheduled_at!), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-              </p>
-              <Badge variant="secondary" className="mt-2 text-[10px]">{nextScheduled.format}</Badge>
-            </div>
-          ) : (
-            <div>
-              <p className="text-xs text-muted-foreground">Nenhum post agendado nos próximos 7 dias.</p>
-              <p className="text-xs text-destructive mt-1">⚠️ Risco de queda de alcance.</p>
-            </div>
-          )}
-        </Card>
+        <ScheduledTimeline posts={allPosts} />
+      </div>
+
+      {/* ===== NEW: Posts Grid (Instagram-style) ===== */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="material-symbols-outlined text-primary text-lg">grid_view</span>
+          <h3 className="text-sm font-medium text-foreground">Feed Preview</h3>
+          <Badge variant="secondary" className="text-[9px] ml-auto">{allPosts.length} posts</Badge>
+        </div>
+        <PostsGrid posts={allPosts} />
       </div>
 
       {/* Pipeline Status */}
