@@ -249,13 +249,13 @@ export interface InstagramReference {
 
 // Content Item Stages for Pipeline
 export const CONTENT_ITEM_STAGES: { type: ContentItemStatus; name: string; color: string }[] = [
-  { type: 'briefing', name: 'Briefing', color: 'bg-slate-500' },
-  { type: 'writing', name: 'Copy/Roteiro', color: 'bg-blue-500' },
-  { type: 'recording', name: 'Gravação', color: 'bg-purple-500' },
-  { type: 'editing', name: 'Edição', color: 'bg-orange-500' },
-  { type: 'review', name: 'Revisão', color: 'bg-amber-500' },
-  { type: 'approved', name: 'Aprovado', color: 'bg-emerald-500' },
-  { type: 'scheduled', name: 'Agendado', color: 'bg-cyan-500' },
+  { type: 'briefing', name: 'Briefing', color: 'bg-muted-foreground' },
+  { type: 'writing', name: 'Copy/Roteiro', color: 'bg-primary' },
+  { type: 'recording', name: 'Gravação', color: 'bg-primary/70' },
+  { type: 'editing', name: 'Edição', color: 'bg-primary/50' },
+  { type: 'review', name: 'Revisão', color: 'bg-accent-foreground' },
+  { type: 'approved', name: 'Aprovado', color: 'bg-primary' },
+  { type: 'scheduled', name: 'Agendado', color: 'bg-primary/80' },
   { type: 'published', name: 'Publicado', color: 'bg-primary' },
 ];
 
