@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { useInstagramConnection, useConnectInstagramManual, useDisconnectInstagram } from '@/hooks/useInstagramAPI';
+import { useInstagramConnection, useConnectInstagramManual, useDisconnectInstagram, useScrapeInstagramProfile } from '@/hooks/useInstagramAPI';
 import { useProfileSnapshots } from '@/hooks/useInstagramEngine';
-import { Loader2, Link2, Unlink, Instagram, Save } from 'lucide-react';
+import { Loader2, Link2, Unlink, Instagram, Save, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +17,7 @@ export function InstagramMetaConnect() {
   const { data: connection, isLoading: loadingConn } = useInstagramConnection();
   const connectMutation = useConnectInstagramManual();
   const disconnectMutation = useDisconnectInstagram();
+  const scrapeMutation = useScrapeInstagramProfile();
   const { data: snapshots } = useProfileSnapshots();
   const [username, setUsername] = useState('');
   const [followers, setFollowers] = useState('');
@@ -116,19 +117,35 @@ export function InstagramMetaConnect() {
               <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px]">Conectado</Badge>
             </div>
             <p className="text-[10px] text-muted-foreground">
+              <a href={`https://instagram.com/${connection.ig_username}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                https://www.instagram.com/{connection.ig_username}/
+              </a>
+              {' · '}
               {connection.connected_at && formatDistanceToNow(new Date(connection.connected_at), { addSuffix: true, locale: ptBR })}
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => disconnectMutation.mutate(connection.id)}
-          disabled={disconnectMutation.isPending}
-          className="text-xs text-muted-foreground hover:text-destructive"
-        >
-          {disconnectMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlink className="w-3 h-3" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => scrapeMutation.mutate(connection.ig_username)}
+            disabled={scrapeMutation.isPending}
+            className="text-xs text-muted-foreground hover:text-primary"
+            title="Tentar coletar dados automaticamente"
+          >
+            {scrapeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => disconnectMutation.mutate(connection.id)}
+            disabled={disconnectMutation.isPending}
+            className="text-xs text-muted-foreground hover:text-destructive"
+          >
+            {disconnectMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlink className="w-3 h-3" />}
+          </Button>
+        </div>
       </div>
 
       {latestSnapshot && (
@@ -149,7 +166,11 @@ export function InstagramMetaConnect() {
       )}
 
       <div className="mt-3 border-t border-border/40 pt-3">
-        <p className="text-[10px] text-muted-foreground mb-2">Atualizar métricas manualmente</p>
+        <p className="text-[10px] text-muted-foreground mb-2">
+          {!latestSnapshot 
+            ? '⚠️ Nenhum snapshot salvo. Insira as métricas atuais do perfil:' 
+            : 'Atualizar métricas manualmente'}
+        </p>
         <div className="grid grid-cols-3 gap-2">
           <Input
             type="number"
