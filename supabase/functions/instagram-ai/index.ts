@@ -331,6 +331,79 @@ Retorne JSON puro (sem markdown) com a estrutura exata:
         break;
       }
 
+      case "generate_post_trending": {
+        const { topic, format: gpFmt, pillar: gpPillar, trend_style, reference_style, custom_instruction } = data;
+        systemPrompt = `Você é o diretor de conteúdo da SQUAD Film, uma produtora audiovisual premium de Brasília/DF especializada em imóveis de luxo, cavalos e veículos premium.
+
+Estilo da marca: cinematográfico, aspiracional, técnico mas acessível. Tipografia bold, paleta escura com acentos em azul ciano (#009CCA). Equipamento: Sony FX3 com color grading cinematográfico.
+
+TENDÊNCIAS INSTAGRAM 2026 que você DEVE incorporar:
+- Vídeos curtos ultra-cinematográficos (3-15s com cortes rápidos e transições de câmera)
+- Tipografia cinética com texto integrado ao movimento
+- Estética "raw luxury" — imperfeição intencional com acabamento premium
+- Narrativas em primeira pessoa com tom documental
+- Sound design como elemento principal (não apenas trilha de fundo)
+- Formatos híbridos: reel com capas de carrossel, story-series com arco narrativo
+- "Behind the process" — mostrar o craft, não só o resultado
+- Paletas dessaturadas com pontos de cor (accent color strategy)
+- Slow motion alternado com speed ramps
+- Conteúdo "episódico" com continuidade entre posts (Series 01, 02...)
+- Collage/mixed media — combinar foto, vídeo, texturas e tipografia
+- Autenticidade produzida — parecer espontâneo mas com direção de arte impecável
+
+Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
+
+        let trendContext = "";
+        if (trend_style === 'cinematic_reel') trendContext = "Estilo: Reel ultra-cinematográfico com cortes rápidos, slow motion e color grading marcante. Referência visual: film look com aspect ratio 2.39:1.";
+        else if (trend_style === 'documentary') trendContext = "Estilo: Mini-documentário conceitual. Depoimento + imagens de cobertura. Tom íntimo e autêntico. Referência: VIVÊNCIA / DEPOIMENTO CONCEITO.";
+        else if (trend_style === 'collage_art') trendContext = "Estilo: Collage/mixed media art. Combinar foto original com texturas de papel rasgado, sobreposições, tipografia experimental. Referência: estética editorial de galeria.";
+        else if (trend_style === 'series_episode') trendContext = "Estilo: Episódio de série (SERIES 01, FILM PROJECT). Post que faz parte de uma narrativa maior. Com identidade visual consistente e numeração.";
+        else if (trend_style === 'brand_manifesto') trendContext = "Estilo: Manifesto de marca. Texto bold provocativo + imagem cinematográfica. Ex: 'O mercado imobiliário não precisa de mais vídeos. Precisa de FILMES.'";
+        else if (trend_style === 'mood_grid') trendContext = "Estilo: Grid de mood/atmosfera. Composição de várias imagens em mosaico com textos poéticos curtos. Paleta coesa e editorial.";
+        else trendContext = "Escolha o estilo mais adequado ao tema entre: cinematográfico, documental, collage, séries, manifesto ou mood grid.";
+
+        userPrompt = `Gere um post Instagram COMPLETO seguindo as tendências 2026 para a SQUAD Film:
+
+Tema: ${topic || 'conteúdo audiovisual premium'}
+Formato: ${gpFmt || 'reel'}
+Pilar: ${gpPillar || 'autoridade'}
+${trendContext}
+${reference_style ? `Referência visual: ${reference_style}` : ''}
+${custom_instruction ? `Instrução adicional: ${custom_instruction}` : ''}
+
+Retorne JSON puro (sem markdown):
+{
+  "title": "título editorial do post (estilo SQUAD Film)",
+  "format": "reel/carousel/single",
+  "pillar": "${gpPillar || 'autoridade'}",
+  "objective": "awareness/authority/engagement/leads",
+  "trend_style": "estilo visual escolhido",
+  "hook": "hook dos primeiros 3 segundos — impactante e cinematográfico",
+  "script": "roteiro completo com marcações de tempo, indicações de câmera, trilha e transições",
+  "caption_short": "legenda curta até 3 linhas — tom poético/provocativo",
+  "caption_medium": "legenda média com storytelling 1 parágrafo",
+  "caption_long": "legenda longa com narrativa completa e CTA",
+  "cta": "chamada para ação",
+  "pinned_comment": "comentário fixado sugerido",
+  "hashtags": ["hashtag1", "hashtag2", "...até 15 hashtags estratégicas"],
+  "cover_suggestion": "descrição detalhada da capa/thumbnail com estilo tipográfico (inspirado no portfólio SQUAD Film)",
+  "carousel_slides": [{"title": "título slide", "body": "corpo slide"}],
+  "story_sequence": [{"text": "texto", "media_type": "foto/video/boomerang", "interactive": "enquete/pergunta/quiz/null"}],
+  "checklist": [
+    {"task": "tarefa de produção", "category": "captação/edição/design/copy/publicação"}
+  ],
+  "visual_direction": {
+    "camera": "indicações de câmera e lente",
+    "lighting": "esquema de iluminação",
+    "color_grade": "direção de cor",
+    "typography": "estilo tipográfico para capa/textos",
+    "sound_design": "indicações de áudio e trilha",
+    "editing_pace": "ritmo de edição"
+  }
+}`;
+        break;
+      }
+
       case "autopilot_full": {
         const { pillars: ap, posts_count: apc, profile_context: apCtx } = data;
         const totalPosts = apc || 5;
