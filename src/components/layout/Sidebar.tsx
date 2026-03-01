@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import squadHubLogo from "@/assets/squad-hub-logo.png";
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface MenuItem {
   name: string;
@@ -292,6 +295,18 @@ function SidebarMenuItem({
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { primaryRole } = useUserRole();
+
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "Usuário";
+  const initials = displayName
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+  const roleLabel = primaryRole === "admin" ? "Admin" : primaryRole.charAt(0).toUpperCase() + primaryRole.slice(1);
 
   return (
     <motion.aside
@@ -418,7 +433,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           )}
         >
           <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center text-primary text-body-sm font-light flex-shrink-0">
-            RS
+            {initials}
           </div>
           <AnimatePresence mode="wait">
             {!collapsed && (
@@ -429,8 +444,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.15 }}
               >
-                <p className="text-body-sm text-foreground/90 font-light uppercase truncate tracking-wider">Rodrigo S.</p>
-                <p className="text-mono text-muted-foreground/60 font-light uppercase tracking-wider">Admin Root</p>
+                <p className="text-body-sm text-foreground/90 font-light uppercase truncate tracking-wider">{displayName}</p>
+                <p className="text-mono text-muted-foreground/60 font-light uppercase tracking-wider">{roleLabel}</p>
               </motion.div>
             )}
           </AnimatePresence>
