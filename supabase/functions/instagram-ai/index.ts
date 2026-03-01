@@ -219,6 +219,48 @@ Retorne um JSON com a estrutura exata (sem markdown, só JSON puro):
         break;
       }
 
+      case "setup_profile": {
+        const { handle, niche, sub_niche, target_audience, brand_voice } = data;
+        systemPrompt = `Você é um consultor estratégico de Instagram para produtoras audiovisuais premium. Gere configurações completas de perfil com base no nicho e posicionamento fornecido. Sempre em português do Brasil.`;
+        userPrompt = `Configure o perfil Instagram de uma produtora audiovisual premium com base nos dados:
+
+Handle: @${handle || 'squadfilme'}
+Nicho: ${niche || 'produção audiovisual premium'}
+Sub-nicho: ${sub_niche || 'imóveis de luxo, cavalos, veículos premium'}
+Público-alvo: ${target_audience || 'incorporadoras, haras, concessionárias de luxo em Brasília/DF e GO'}
+Tom de voz: ${brand_voice || 'cinematográfico, aspiracional, técnico mas acessível'}
+
+Retorne JSON puro (sem markdown):
+{
+  "profile_name": "nome de exibição do perfil",
+  "niche": "nicho principal",
+  "sub_niche": "sub-nicho específico",
+  "target_audience": "descrição detalhada do público-alvo",
+  "brand_voice": "tom de voz detalhado da marca",
+  "bio_current": "bio otimizada para o perfil (máx 150 chars)",
+  "bio_suggestions": [
+    {"focus": "autoridade técnica", "text": "bio alternativa 1"},
+    {"focus": "resultado para cliente", "text": "bio alternativa 2"},
+    {"focus": "identidade de marca", "text": "bio alternativa 3"}
+  ],
+  "content_pillars": [
+    {"key": "autoridade", "label": "Autoridade", "description": "o que postar nesse pilar"},
+    {"key": "portfolio", "label": "Portfólio", "description": "o que postar nesse pilar"},
+    {"key": "bastidores", "label": "Bastidores", "description": "o que postar nesse pilar"},
+    {"key": "social_proof", "label": "Prova Social", "description": "o que postar nesse pilar"}
+  ],
+  "posting_frequency": {"posts_per_week": 4, "best_days": ["segunda", "quarta", "sexta"], "best_times": ["10:00", "18:00"]},
+  "competitors": [{"handle": "@concorrente1", "note": "o que fazem bem"}, {"handle": "@concorrente2", "note": "o que fazem bem"}],
+  "strategic_briefing": {
+    "positioning": "frase de posicionamento",
+    "differentials": ["diferencial 1", "diferencial 2"],
+    "content_strategy": "resumo da estratégia de conteúdo",
+    "growth_levers": ["alavanca 1", "alavanca 2"]
+  }
+}`;
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
