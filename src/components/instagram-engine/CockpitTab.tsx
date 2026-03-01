@@ -2,14 +2,11 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useInstagramPosts, useProfileConfig, useProfileSnapshots, useSaveProfileConfig, useSaveSnapshot, PILLARS, POST_STATUSES } from '@/hooks/useInstagramEngine';
-import { Loader2, AlertTriangle, CheckCircle2, Clock, TrendingUp, Zap, Save, Pencil } from 'lucide-react';
-import { formatDistanceToNow, differenceInDays, addDays, format, isAfter, isBefore } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
+import { Loader2, AlertTriangle, CheckCircle2, Clock, Zap, Save, Pencil } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 import { InstagramMetaConnect } from './InstagramMetaConnect';
 import { ProfileCard } from './ProfileCard';
 import { PostsGrid } from './PostsGrid';
@@ -23,7 +20,6 @@ export function CockpitTab() {
   const { data: snapshots } = useProfileSnapshots();
   const saveConfig = useSaveProfileConfig();
   const saveSnapshotMut = useSaveSnapshot();
-  const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -86,7 +82,6 @@ export function CockpitTab() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // Health status
   const publishedPosts = allPosts.filter(p => p.status === 'published' && p.published_at);
   const lastPublished = publishedPosts.sort((a, b) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime())[0];
   const daysSincePost = lastPublished ? differenceInDays(today, new Date(lastPublished.published_at!)) : 999;
@@ -94,20 +89,17 @@ export function CockpitTab() {
   const healthLabel = { green: 'Saudável', yellow: 'Atenção', red: 'Crítico' }[healthStatus];
   const healthColor = { green: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', yellow: 'text-amber-400 bg-amber-500/10 border-amber-500/20', red: 'text-destructive bg-destructive/10 border-destructive/20' }[healthStatus];
 
-  // Pipeline counts
   const statusCounts = POST_STATUSES.map(s => ({
     ...s,
     count: allPosts.filter(p => p.status === s.key).length,
   }));
 
-  // Pillar distribution
   const pillarCounts = PILLARS.map(p => ({
     ...p,
     count: allPosts.filter(post => post.pillar === p.key).length,
   }));
   const totalPillar = Math.max(pillarCounts.reduce((s, p) => s + p.count, 0), 1);
 
-  // Action queue
   const actionQueue = [
     ...allPosts.filter(p => p.status === 'in_production').map(p => ({ type: 'production', label: `Finalizar produção: ${p.title}`, post: p })),
     ...allPosts.filter(p => p.status === 'ready').map(p => ({ type: 'schedule', label: `Agendar: ${p.title}`, post: p })),
@@ -119,13 +111,64 @@ export function CockpitTab() {
       {/* Instagram Connection */}
       <InstagramMetaConnect />
 
-      {/* ===== NEW: Instagram Profile Card ===== */}
-      <ProfileCard
-        config={config || null}
-        snapshot={latestSnapshot || null}
-        publishedCount={publishedPosts.length}
-        daysSincePost={daysSincePost}
-      />
+      {/* ===== HERO: Instagram Profile Hub ===== */}
+      <Card className="glass-card border border-border/50 overflow-hidden">
+        {/* Instagram gradient top bar */}
+        <div className="h-1.5 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737]" />
+
+        <div className="p-5 md:p-6">
+          {/* Profile Card embedded */}
+          <ProfileCard
+            config={config || null}
+            snapshot={latestSnapshot || null}
+            publishedCount={publishedPosts.length}
+            daysSincePost={daysSincePost}
+          />
+
+          {/* Health badge inline */}
+          <div className={`mt-4 flex items-center gap-2 px-3 py-2 rounded-lg border ${healthColor}`}>
+            {healthStatus === 'green' ? <CheckCircle2 className="w-4 h-4" /> :
+             healthStatus === 'yellow' ? <Clock className="w-4 h-4" /> :
+             <AlertTriangle className="w-4 h-4" />}
+            <span className="text-xs font-medium">{healthLabel}</span>
+            <span className="text-[10px] text-muted-foreground ml-1">
+              {daysSincePost < 999 ? `Último post há ${daysSincePost}d` : 'Sem posts publicados'}
+            </span>
+          </div>
+
+          {/* Tab-style sections: Grid + Agendados side by side */}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Feed Grid - 2/3 */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-primary text-base">grid_view</span>
+                <h3 className="text-sm font-medium text-foreground">Feed</h3>
+                <Badge variant="secondary" className="text-[9px]">{allPosts.length}</Badge>
+                <div className="ml-auto">
+                  <InstagramFeedPreview posts={allPosts} config={config || null} snapshot={latestSnapshot || null} />
+                </div>
+              </div>
+              <PostsGrid posts={allPosts} />
+            </div>
+
+            {/* Scheduled Timeline - 1/3 */}
+            <div className="space-y-4">
+              <ScheduledTimeline posts={allPosts} />
+
+              {/* Quick Stats mini */}
+              <Card className="glass-card p-4 border border-border/50">
+                <h4 className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Métricas Rápidas</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <MiniStat label="Seguidores" value={latestSnapshot?.followers?.toLocaleString('pt-BR') || '—'} />
+                  <MiniStat label="Engajamento" value={latestSnapshot ? `${latestSnapshot.avg_engagement}%` : '—'} />
+                  <MiniStat label="Alcance" value={latestSnapshot?.avg_reach?.toLocaleString('pt-BR') || '—'} />
+                  <MiniStat label="Melhor Hora" value={latestSnapshot?.best_posting_time || '—'} />
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Editable Real Profile Data */}
       <Card className="glass-card p-5 border border-border/50">
@@ -173,53 +216,6 @@ export function CockpitTab() {
           </div>
         )}
       </Card>
-
-      {/* Profile Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatCard label="Seguidores" value={latestSnapshot?.followers?.toLocaleString() || '—'} icon="group" />
-        <StatCard label="Posts" value={latestSnapshot?.posts_count?.toString() || String(publishedPosts.length)} icon="grid_view" />
-        <StatCard label="Engajamento" value={latestSnapshot ? `${latestSnapshot.avg_engagement}%` : '—'} icon="favorite" />
-        <StatCard label="Alcance Médio" value={latestSnapshot?.avg_reach?.toLocaleString() || '—'} icon="visibility" />
-        <StatCard label="Melhor Horário" value={latestSnapshot?.best_posting_time || '—'} icon="schedule" />
-      </div>
-
-      {/* Health Alert + Scheduled Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className={`glass-card p-5 border ${healthColor}`}>
-          <div className="flex items-center gap-3 mb-3">
-            {healthStatus === 'green' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
-             healthStatus === 'yellow' ? <Clock className="w-5 h-5 text-amber-400" /> :
-             <AlertTriangle className="w-5 h-5 text-destructive" />}
-            <div>
-              <p className="text-sm font-medium text-foreground">Saúde do Perfil: {healthLabel}</p>
-              <p className="text-xs text-muted-foreground">
-                {daysSincePost < 999 ? `Último post há ${daysSincePost} dia${daysSincePost !== 1 ? 's' : ''}` : 'Nenhum post publicado ainda'}
-              </p>
-            </div>
-          </div>
-          {healthStatus === 'red' && (
-            <p className="text-xs text-destructive/80">⚠️ Mais de 7 dias sem postar. O algoritmo está penalizando seu alcance.</p>
-          )}
-          {healthStatus === 'yellow' && (
-            <p className="text-xs text-amber-400/80">⚡ Considere postar nos próximos 2 dias para manter o ritmo.</p>
-          )}
-        </Card>
-
-        <ScheduledTimeline posts={allPosts} />
-      </div>
-
-      {/* ===== NEW: Posts Grid (Instagram-style) ===== */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="material-symbols-outlined text-primary text-lg">grid_view</span>
-          <h3 className="text-sm font-medium text-foreground">Feed Preview</h3>
-          <Badge variant="secondary" className="text-[9px]">{allPosts.length} posts</Badge>
-          <div className="ml-auto">
-            <InstagramFeedPreview posts={allPosts} config={config || null} snapshot={latestSnapshot || null} />
-          </div>
-        </div>
-        <PostsGrid posts={allPosts} />
-      </div>
 
       {/* Pipeline Status */}
       <Card className="glass-card p-5">
@@ -278,13 +274,12 @@ export function CockpitTab() {
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: string }) {
+function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="glass-card p-4 text-center">
-      <span className="material-symbols-outlined text-primary text-xl mb-1">{icon}</span>
-      <p className="text-lg font-bold text-foreground">{value}</p>
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-    </Card>
+    <div>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-sm font-bold text-foreground mt-0.5">{value}</p>
+    </div>
   );
 }
 
