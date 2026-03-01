@@ -13,6 +13,7 @@ import { CockpitTab } from '@/components/instagram-engine/CockpitTab';
 import { CalendarTab } from '@/components/instagram-engine/CalendarTab';
 import { ScriptsTab } from '@/components/instagram-engine/ScriptsTab';
 import { CreateWithAITab } from '@/components/instagram-engine/CreateWithAITab';
+import { InsightsAnalyzerTab } from '@/components/instagram-engine/InsightsAnalyzerTab';
 import { CampaignsTab } from '@/components/instagram-engine/CampaignsTab';
 import { ProjectionsTab } from '@/components/instagram-engine/ProjectionsTab';
 import { ProfileHealthTab } from '@/components/instagram-engine/ProfileHealthTab';
@@ -22,6 +23,7 @@ import { toast } from 'sonner';
 
 const TABS = [
   { key: 'cockpit', label: 'Cockpit', icon: 'rocket_launch' },
+  { key: 'insights', label: 'Insights IA', icon: 'analytics' },
   { key: 'calendar', label: 'Calendário', icon: 'calendar_month' },
   { key: 'scripts', label: 'Roteiros', icon: 'description' },
   { key: 'create', label: 'Criar com IA', icon: 'auto_awesome' },
@@ -163,6 +165,7 @@ export default function InstagramEnginePage() {
           </TabsList>
 
           <TabsContent value="cockpit" className="mt-6"><CockpitTab /></TabsContent>
+          <TabsContent value="insights" className="mt-6"><InsightsAnalyzerTab /></TabsContent>
           <TabsContent value="calendar" className="mt-6"><CalendarTab /></TabsContent>
           <TabsContent value="scripts" className="mt-6"><ScriptsTab /></TabsContent>
           <TabsContent value="create" className="mt-6"><CreateWithAITab /></TabsContent>

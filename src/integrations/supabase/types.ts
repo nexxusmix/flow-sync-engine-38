@@ -3695,6 +3695,42 @@ export type Database = {
           },
         ]
       }
+      instagram_insights_reports: {
+        Row: {
+          command: string | null
+          created_at: string
+          id: string
+          input_files: Json | null
+          input_text: string | null
+          report_json: Json
+          report_type: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          command?: string | null
+          created_at?: string
+          id?: string
+          input_files?: Json | null
+          input_text?: string | null
+          report_json?: Json
+          report_type?: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          command?: string | null
+          created_at?: string
+          id?: string
+          input_files?: Json | null
+          input_text?: string | null
+          report_json?: Json
+          report_type?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       instagram_post_metrics: {
         Row: {
           collected_at: string | null

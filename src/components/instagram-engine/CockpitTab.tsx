@@ -1,19 +1,77 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useInstagramPosts, useProfileConfig, useProfileSnapshots, PILLARS, POST_STATUSES } from '@/hooks/useInstagramEngine';
-import { Loader2, AlertTriangle, CheckCircle2, Clock, TrendingUp, Zap } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useInstagramPosts, useProfileConfig, useProfileSnapshots, useSaveProfileConfig, useSaveSnapshot, PILLARS, POST_STATUSES } from '@/hooks/useInstagramEngine';
+import { Loader2, AlertTriangle, CheckCircle2, Clock, TrendingUp, Zap, Save, Pencil } from 'lucide-react';
 import { formatDistanceToNow, differenceInDays, addDays, format, isAfter, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { InstagramMetaConnect } from './InstagramMetaConnect';
+import { toast } from 'sonner';
 
 export function CockpitTab() {
   const { data: posts, isLoading: loadingPosts } = useInstagramPosts();
   const { data: config } = useProfileConfig();
   const { data: snapshots } = useProfileSnapshots();
+  const saveConfig = useSaveProfileConfig();
+  const saveSnapshotMut = useSaveSnapshot();
   const navigate = useNavigate();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    handle: '', niche: '', sub_niche: '', target_audience: '', brand_voice: '',
+    followers: 0, posts_count: 0, avg_engagement: 0, avg_reach: 0, best_posting_time: '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleStartEdit = () => {
+    const latestSnapshot = snapshots?.[0];
+    setEditData({
+      handle: config?.profile_handle || '',
+      niche: config?.niche || '',
+      sub_niche: config?.sub_niche || '',
+      target_audience: config?.target_audience || '',
+      brand_voice: config?.brand_voice || '',
+      followers: latestSnapshot?.followers || 0,
+      posts_count: latestSnapshot?.posts_count || 0,
+      avg_engagement: latestSnapshot?.avg_engagement || 0,
+      avg_reach: latestSnapshot?.avg_reach || 0,
+      best_posting_time: latestSnapshot?.best_posting_time || '',
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setIsSaving(true);
+    try {
+      await saveConfig.mutateAsync({
+        profile_handle: editData.handle,
+        niche: editData.niche,
+        sub_niche: editData.sub_niche,
+        target_audience: editData.target_audience,
+        brand_voice: editData.brand_voice,
+      });
+      await saveSnapshotMut.mutateAsync({
+        followers: editData.followers,
+        following: 0,
+        posts_count: editData.posts_count,
+        avg_engagement: editData.avg_engagement,
+        avg_reach: editData.avg_reach,
+        best_posting_time: editData.best_posting_time,
+        snapshot_date: new Date().toISOString().split('T')[0],
+      });
+      setIsEditing(false);
+      toast.success('Dados do perfil atualizados!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (loadingPosts) {
     return <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -60,6 +118,53 @@ export function CockpitTab() {
     <div className="space-y-6">
       {/* Instagram Connection */}
       <InstagramMetaConnect />
+
+      {/* Editable Real Profile Data */}
+      <Card className="glass-card p-5 border border-border/50">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">person</span>
+            <h3 className="text-sm font-medium text-foreground">Dados Reais do Perfil</h3>
+          </div>
+          {!isEditing ? (
+            <Button variant="outline" size="sm" onClick={handleStartEdit} className="gap-1.5 text-xs h-8">
+              <Pencil className="w-3 h-3" /> Editar
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="text-xs h-8">Cancelar</Button>
+              <Button size="sm" onClick={handleSaveEdit} disabled={isSaving} className="gap-1.5 text-xs h-8 bg-primary hover:bg-primary/90">
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Salvar
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {isEditing ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <EditField label="@ Handle" value={editData.handle} onChange={v => setEditData(d => ({ ...d, handle: v }))} />
+            <EditField label="Nicho" value={editData.niche} onChange={v => setEditData(d => ({ ...d, niche: v }))} />
+            <EditField label="Sub-nicho" value={editData.sub_niche} onChange={v => setEditData(d => ({ ...d, sub_niche: v }))} />
+            <EditField label="Tom de Voz" value={editData.brand_voice} onChange={v => setEditData(d => ({ ...d, brand_voice: v }))} />
+            <EditField label="Seguidores" value={String(editData.followers)} onChange={v => setEditData(d => ({ ...d, followers: Number(v) || 0 }))} type="number" />
+            <EditField label="Posts" value={String(editData.posts_count)} onChange={v => setEditData(d => ({ ...d, posts_count: Number(v) || 0 }))} type="number" />
+            <EditField label="Engajamento %" value={String(editData.avg_engagement)} onChange={v => setEditData(d => ({ ...d, avg_engagement: Number(v) || 0 }))} type="number" />
+            <EditField label="Alcance Médio" value={String(editData.avg_reach)} onChange={v => setEditData(d => ({ ...d, avg_reach: Number(v) || 0 }))} type="number" />
+            <div className="col-span-2 md:col-span-4">
+              <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Público-alvo</label>
+              <Textarea value={editData.target_audience} onChange={e => setEditData(d => ({ ...d, target_audience: e.target.value }))} className="mt-1 min-h-[50px] text-xs" />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <DataField label="Handle" value={config?.profile_handle ? `@${config.profile_handle}` : '—'} />
+            <DataField label="Nicho" value={config?.niche || '—'} />
+            <DataField label="Sub-nicho" value={config?.sub_niche || '—'} />
+            <DataField label="Tom de Voz" value={config?.brand_voice || '—'} truncate />
+            <DataField label="Público-alvo" value={config?.target_audience || '—'} truncate />
+          </div>
+        )}
+      </Card>
 
       {/* AI Profile Summary */}
       {config && (config.bio_current || config.content_pillars?.length > 0 || config.strategic_briefing) && (
@@ -264,5 +369,23 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
       <p className="text-lg font-bold text-foreground">{value}</p>
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
     </Card>
+  );
+}
+
+function EditField({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  return (
+    <div>
+      <label className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</label>
+      <Input value={value} onChange={e => onChange(e.target.value)} type={type} className="mt-1 h-8 text-xs" />
+    </div>
+  );
+}
+
+function DataField({ label, value, truncate }: { label: string; value: string; truncate?: boolean }) {
+  return (
+    <div>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className={`text-xs text-foreground mt-0.5 ${truncate ? 'line-clamp-2' : ''}`}>{value}</p>
+    </div>
   );
 }
