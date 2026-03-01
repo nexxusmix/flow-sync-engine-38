@@ -18,8 +18,8 @@ import {
 } from "recharts";
 
 const COLORS = [
-  'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))', 'hsl(var(--chart-5))'
+  'hsl(195 100% 40%)', 'hsl(195 80% 50%)', 'hsl(195 60% 60%)',
+  'hsl(195 40% 45%)', 'hsl(200 70% 35%)'
 ];
 
 const STAGE_LABELS: Record<string, string> = {
@@ -203,8 +203,8 @@ export default function CRMReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.wonDeals || 0}</p>
@@ -217,8 +217,8 @@ export default function CRMReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-amber-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.avgLeadScore || 0}</p>
@@ -231,8 +231,8 @@ export default function CRMReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold text-foreground">{metrics?.staleDeals || 0}</p>
@@ -245,8 +245,8 @@ export default function CRMReport() {
           <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-blue-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Target className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-foreground">{formatCurrency(metrics?.totalValue || 0)}</p>
@@ -258,11 +258,11 @@ export default function CRMReport() {
         </div>
 
         {/* Won value card */}
-        <Card className="glass-card p-6 bg-gradient-to-r from-emerald-500/5 to-emerald-500/10">
+        <Card className="glass-card p-6 bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Valor Total Ganho</p>
-              <p className="text-4xl font-light tracking-tight text-emerald-500">
+              <p className="text-4xl font-light tracking-tight text-primary">
                 {formatCurrency(metrics?.wonValue || 0)}
               </p>
             </div>
@@ -316,7 +316,7 @@ export default function CRMReport() {
           <Card className="glass-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
+                <Zap className="w-4 h-4 text-primary" />
                 Distribuição de Lead Score
               </CardTitle>
             </CardHeader>
@@ -374,9 +374,9 @@ export default function CRMReport() {
                         nameKey="name"
                         label={({ name, count }) => `${name}: ${count}`}
                       >
-                        <Cell fill="hsl(0, 72%, 51%)" />
-                        <Cell fill="hsl(38, 92%, 50%)" />
-                        <Cell fill="hsl(210, 79%, 46%)" />
+                        <Cell fill="hsl(195, 100%, 40%)" />
+                        <Cell fill="hsl(195, 60%, 55%)" />
+                        <Cell fill="hsl(195, 30%, 65%)" />
                       </Pie>
                       <Tooltip
                         contentStyle={{

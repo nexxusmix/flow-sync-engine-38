@@ -8,14 +8,14 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(210 80% 60%)',
-  'hsl(160 60% 50%)',
-  'hsl(45 90% 55%)',
-  'hsl(0 70% 55%)',
-  'hsl(280 60% 55%)',
-  'hsl(200 70% 50%)',
-  'hsl(120 50% 45%)',
+  'hsl(195 100% 40%)',
+  'hsl(195 80% 50%)',
+  'hsl(195 60% 60%)',
+  'hsl(195 40% 45%)',
+  'hsl(200 70% 35%)',
+  'hsl(195 90% 30%)',
+  'hsl(200 50% 55%)',
+  'hsl(195 30% 65%)',
 ];
 
 export function PipelineChart() {

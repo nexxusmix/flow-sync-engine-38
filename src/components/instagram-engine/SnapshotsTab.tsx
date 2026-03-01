@@ -205,7 +205,7 @@ export function SnapshotsTab() {
                       labelStyle={{ color: 'hsl(var(--foreground))' }}
                       formatter={(val: number) => [`${val.toFixed(2)}%`, 'Engajamento']}
                     />
-                    <Line type="monotone" dataKey="engagement" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 3 }} name="Engajamento" />
+                    <Line type="monotone" dataKey="engagement" stroke="hsl(195, 60%, 55%)" strokeWidth={2} dot={{ r: 3 }} name="Engajamento" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -223,8 +223,8 @@ export function SnapshotsTab() {
                   <AreaChart data={snapshotData}>
                     <defs>
                       <linearGradient id="reachGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0} />
+                        <stop offset="5%" stopColor="hsl(195, 40%, 50%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(195, 40%, 50%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -234,7 +234,7 @@ export function SnapshotsTab() {
                       contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
                       labelStyle={{ color: 'hsl(var(--foreground))' }}
                     />
-                    <Area type="monotone" dataKey="reach" stroke="hsl(var(--chart-3))" fill="url(#reachGrad)" strokeWidth={2} name="Alcance" />
+                    <Area type="monotone" dataKey="reach" stroke="hsl(195, 40%, 50%)" fill="url(#reachGrad)" strokeWidth={2} name="Alcance" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

@@ -227,12 +227,12 @@ export default function MkReportsPage() {
                       <AreaChart data={weeklyData}>
                         <defs>
                           <linearGradient id="reachGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(210,100%,55%)" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="hsl(210,100%,55%)" stopOpacity={0} />
+                            <stop offset="5%" stopColor="hsl(195,100%,40%)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(195,100%,40%)" stopOpacity={0} />
                           </linearGradient>
                           <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(170,70%,50%)" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="hsl(170,70%,50%)" stopOpacity={0} />
+                            <stop offset="5%" stopColor="hsl(195,60%,55%)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(195,60%,55%)" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -240,8 +240,8 @@ export default function MkReportsPage() {
                         <YAxis tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 10 }} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }} />
-                        <Area type="monotone" dataKey="reach" name="Alcance" stroke="hsl(210,100%,55%)" fillOpacity={1} fill="url(#reachGrad)" />
-                        <Area type="monotone" dataKey="views" name="Views" stroke="hsl(170,70%,50%)" fillOpacity={1} fill="url(#viewsGrad)" />
+                        <Area type="monotone" dataKey="reach" name="Alcance" stroke="hsl(195,100%,40%)" fillOpacity={1} fill="url(#reachGrad)" />
+                        <Area type="monotone" dataKey="views" name="Views" stroke="hsl(195,60%,55%)" fillOpacity={1} fill="url(#viewsGrad)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -264,9 +264,9 @@ export default function MkReportsPage() {
                         <YAxis tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 10 }} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }} />
-                        <Bar dataKey="likes" name="Curtidas" fill="hsl(0,70%,55%)" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="comments" name="Comentários" fill="hsl(40,90%,55%)" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="shares" name="Shares" fill="hsl(280,70%,55%)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="likes" name="Curtidas" fill="hsl(195,100%,40%)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="comments" name="Comentários" fill="hsl(195,60%,55%)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="shares" name="Shares" fill="hsl(195,30%,65%)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -289,8 +289,8 @@ export default function MkReportsPage() {
                         <YAxis dataKey="channel" type="category" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} width={80} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }} />
-                        <Bar dataKey="reach" name="Alcance" fill="hsl(210,100%,55%)" radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="likes" name="Curtidas" fill="hsl(170,70%,50%)" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="reach" name="Alcance" fill="hsl(195,100%,40%)" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="likes" name="Curtidas" fill="hsl(195,60%,55%)" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

@@ -16,7 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const COLORS = ['hsl(195 100% 40%)', 'hsl(195 80% 50%)', 'hsl(195 60% 60%)', 'hsl(195 40% 45%)', 'hsl(200 70% 35%)'];
 
 export default function MarketingReport() {
   const navigate = useNavigate();

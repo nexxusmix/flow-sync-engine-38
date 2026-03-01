@@ -65,9 +65,9 @@ export default function ProjectsReport() {
   };
 
   const statusColors = {
-    ok: 'text-emerald-500 bg-emerald-500/10',
-    attention: 'text-amber-500 bg-amber-500/10',
-    blocked: 'text-red-500 bg-red-500/10',
+    ok: 'text-primary bg-primary/10',
+    attention: 'text-muted-foreground bg-muted',
+    blocked: 'text-destructive bg-destructive/10',
   };
 
   const statusLabels = {
@@ -117,7 +117,7 @@ export default function ProjectsReport() {
           </Card>
           <Card className="glass-card">
             <CardContent className="p-4 text-center">
-              <p className="text-3xl font-semibold text-amber-500">
+              <p className="text-3xl font-semibold text-muted-foreground">
                 {projects.filter(p => p.financialStatus === 'attention').length}
               </p>
               <p className="text-xs text-muted-foreground">Atenção</p>
@@ -125,7 +125,7 @@ export default function ProjectsReport() {
           </Card>
           <Card className="glass-card">
             <CardContent className="p-4 text-center">
-              <p className="text-3xl font-semibold text-red-500">
+              <p className="text-3xl font-semibold text-destructive">
                 {projects.filter(p => p.financialStatus === 'blocked').length}
               </p>
               <p className="text-xs text-muted-foreground">Bloqueados</p>
@@ -173,7 +173,7 @@ export default function ProjectsReport() {
                     </TableCell>
                     <TableCell>
                       {project.daysDelayed > 0 ? (
-                        <span className="text-red-500 font-medium flex items-center gap-1">
+                        <span className="text-destructive font-medium flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {project.daysDelayed}d
                         </span>
@@ -183,7 +183,7 @@ export default function ProjectsReport() {
                     </TableCell>
                     <TableCell>
                       {project.hasBlocks ? (
-                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                        <AlertTriangle className="w-4 h-4 text-muted-foreground" />
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
