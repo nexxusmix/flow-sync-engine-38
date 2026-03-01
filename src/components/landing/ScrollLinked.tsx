@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, useSpring, MotionValue } from "framer-
 interface ScrollLinkedProps {
   children: ReactNode;
   className?: string;
+  id?: string;
   /** vertical offset in px at entry */
   yIn?: number;
   /** vertical offset in px at exit */
@@ -24,6 +25,7 @@ const springConfig = { stiffness: 120, damping: 30, mass: 0.5 };
 export function ScrollLinked({
   children,
   className = "",
+  id,
   yIn = 60,
   yOut = -30,
   scaleIn = 0.97,
@@ -48,6 +50,7 @@ export function ScrollLinked({
   return (
     <motion.div
       ref={ref}
+      id={id}
       className={className}
       style={{ opacity, y, scale, x }}
     >
