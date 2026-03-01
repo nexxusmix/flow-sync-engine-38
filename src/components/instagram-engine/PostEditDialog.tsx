@@ -40,7 +40,10 @@ export function PostEditDialog({ post, open, onOpenChange }: PostEditDialogProps
   const [fileContent, setFileContent] = useState('');
   const [fileName, setFileName] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadingThumb, setUploadingThumb] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [generatingField, setGeneratingField] = useState<string | null>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (post) {
@@ -52,6 +55,7 @@ export function PostEditDialog({ post, open, onOpenChange }: PostEditDialogProps
       setReferenceUrl('');
       setFileContent('');
       setFileName('');
+      setThumbnailUrl(post.thumbnail_url || null);
     }
   }, [post]);
 
@@ -61,6 +65,7 @@ export function PostEditDialog({ post, open, onOpenChange }: PostEditDialogProps
     const updates: any = { id: post.id };
     FIELDS.forEach(({ key }) => { updates[key] = fields[key] || null; });
     updates.hashtags = hashtags.split(',').map(h => h.trim().replace(/^#/, '')).filter(Boolean);
+    updates.thumbnail_url = thumbnailUrl;
     await updatePost.mutateAsync(updates);
     toast.success('Post atualizado');
     onOpenChange(false);
@@ -191,6 +196,71 @@ export function PostEditDialog({ post, open, onOpenChange }: PostEditDialogProps
                     <><Sparkles className="w-4 h-4" /> ✨ Gerar Tudo com IA</>
                   )}
                 </Button>
+
+                {/* Thumbnail Upload */}
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">Capa / Thumbnail</label>
+                  <div className="flex items-start gap-3">
+                    {thumbnailUrl ? (
+                      <div className="relative group w-20 h-20 rounded-lg overflow-hidden bg-muted shrink-0">
+                        <img src={thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => setThumbnailUrl(null)}
+                          className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition-all"
+                        >
+                          <X className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => thumbInputRef.current?.click()}
+                        disabled={uploadingThumb}
+                        className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 transition-colors shrink-0"
+                      >
+                        {uploadingThumb ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-[8px] text-muted-foreground">Upload</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <div className="flex-1 text-[10px] text-muted-foreground pt-1">
+                      <p>Imagem de capa do post. Aparecerá no grid do perfil.</p>
+                      {thumbnailUrl && (
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] mt-1" onClick={() => thumbInputRef.current?.click()}>
+                          <Upload className="w-3 h-3 mr-1" /> Trocar imagem
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    ref={thumbInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingThumb(true);
+                      try {
+                        const ext = file.name.split('.').pop();
+                        const path = `post-thumbnails/${post.id}-${Date.now()}.${ext}`;
+                        const { error } = await supabase.storage.from('marketing-assets').upload(path, file, { upsert: true });
+                        if (error) throw error;
+                        const { data: urlData } = supabase.storage.from('marketing-assets').getPublicUrl(path);
+                        setThumbnailUrl(urlData.publicUrl);
+                        toast.success('Thumbnail enviada!');
+                      } catch (err: any) {
+                        toast.error(err.message || 'Erro no upload');
+                      } finally {
+                        setUploadingThumb(false);
+                      }
+                    }}
+                  />
+                </div>
 
                 {/* Editable Fields */}
                 {FIELDS.map(({ key, label, rows }) => (
