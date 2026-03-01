@@ -1,72 +1,49 @@
 
 
-## Plano: Landing Page com Efeitos de Scroll Contínuos + Correção "Uma Plataforma"
+## Plano: Refinar Paleta de Cores para Azul, Branco e Preto
 
-### Dois problemas identificados
+### Problema
+A plataforma usa muitas cores diferentes (verde/emerald, amarelo/amber, roxo/purple, vermelho/red, laranja/orange, rosa/pink) espalhadas por ~280 arquivos, criando poluição visual que dificulta a experiência do usuário.
 
-**1. Animações atuais são "once: true"** — aparecem uma vez e param. O usuário quer efeitos que reagem ao scroll em tempo real (ida e volta).
+### Abordagem
+Consolidar a paleta em variações de **azul (#009CCA)**, **branco** e **preto**, mantendo apenas vermelho para estados destrutivos/erro (necessário para acessibilidade). Status como "sucesso" e "aviso" passarão a usar tons de azul e cinza ao invés de verde e amarelo.
 
-**2. Texto menciona "duas plataformas"** — o hero diz "Duas plataformas · Um ecossistema", a solution mostra dois cards separados (Produtora / Marketing). Precisa refletir que é UMA plataforma com múltiplos módulos.
+### Mudanças
 
----
+**1. Tokens CSS (`src/index.css`)**
+- `--success` → tom de azul claro (ex: `195 80% 45%`) ao invés de verde
+- `--warning` → tom neutro/cinza quente (ex: `200 10% 55%`) ao invés de amarelo/amber
+- `--info` → mesmo azul primário (já está correto no dark mode)
+- Manter `--destructive` em vermelho (necessário para UX de erros)
+- Light mode: mesmas mudanças
 
-### Mudanças planejadas
+**2. Componentes com cores hardcoded (~280 arquivos)**
+Substituições em massa nos componentes mais usados:
+- `text-emerald-*` / `text-green-*` → `text-primary` ou `text-primary/70`
+- `bg-emerald-*` / `bg-green-*` → `bg-primary/10`
+- `text-amber-*` / `text-yellow-*` → `text-muted-foreground`
+- `bg-amber-*` / `bg-yellow-*` → `bg-muted`
+- `text-purple-*` / `bg-purple-*` → `text-primary` / `bg-primary/10`
+- `text-orange-*` / `bg-orange-*` → `text-muted-foreground`
+- `text-pink-*` / `bg-pink-*` → `text-primary`
 
-#### A. Efeitos de Scroll Contínuos (scroll-linked)
+Arquivos prioritários (mais impacto visual):
+- `ExecutiveDashboardPage.tsx` — KPIs, trends, online users
+- `TasksDashboardBI.tsx` — status badges do kanban
+- `ReportsDashboard.tsx` — ícones de relatórios
+- `ProposalDetailPage.tsx` — alertas amber
+- `ReportMetricsBar.tsx` — health score
+- Todos os badges em `index.css` (`.badge-success`, `.badge-warning`)
+- Charts/Recharts: cores de gráficos nas configs
 
-Usar `useScroll` + `useTransform` do Framer Motion para criar animações vinculadas à posição do scroll, não ao viewport entry. Os elementos animam conforme o usuário scrolla — e revertem ao voltar.
+**3. CSS auxiliares**
+- `squad-holo.css` — badges active/warning já usam verde/amarelo → azul/cinza
+- `mk-holographic.css` — já usa azul, minimal changes
 
-**Componentes afetados:**
-- **LandingHero**: Parallax no vídeo, fade-out do texto conforme scrolla para baixo
-- **LandingProblem**: Pain points entram com translateY + opacity vinculados ao scroll progress da seção
-- **LandingSolution**: Cards com scale + opacity scroll-driven (crescem conforme se aproximam do centro)
-- **LandingDifferentials**: Grid items com stagger baseado em scroll progress
-- **LandingPricing**: Cards com parallax vertical sutil (velocidades diferentes)
-- **LandingPriceJustification**: Números de preço com scale animado pelo scroll
-- **LandingProof**: Comparativos deslizam dos lados (esquerda/direita) baseado no scroll
-- **LandingCTA**: Scale up dramático conforme scrolla até lá
+**4. Recharts / Gráficos**
+- Substituir paletas multicoloridas por gradientes de azul + cinza
+- Cores de fill/stroke em componentes de chart
 
-**Implementação técnica:**
-- Criar um wrapper `ScrollLinked` que usa `useScroll({ target, offset })` + `useTransform` para mapear `scrollYProgress` em `opacity`, `y`, `scale`, `x`
-- Remover todos os `once: true` das seções
-- Substituir `whileInView` por `style={{ opacity, y, scale }}` com valores derivados do scroll
-- Manter o `useSmoothScroll` (lerp) existente para o feel suave
-
-#### B. Correção de Messaging — Uma Plataforma
-
-**LandingHero:**
-- Badge: "Duas plataformas · Um ecossistema" → "Uma plataforma · Todos os módulos"
-- Sub-texto: remover a separação Produtora/Marketing como entidades distintas, apresentar como módulos integrados
-- Manter os ícones Clapperboard e Palette mas como "módulos" de uma plataforma
-
-**LandingSolution:**
-- Manter os dois cards (Produtora / Marketing) mas apresentar como "módulos" da mesma plataforma
-- Título: "O HUB nasceu para centralizar tudo" (manter) + subtítulo: "Módulos integrados em uma única plataforma"
-
-**LandingPricing:**
-- O card "Hub Completo" já está correto, mas ajustar texto do feature "Acesso às duas plataformas" → "Todos os módulos inclusos"
-
-**LandingFooter:**
-- "Produtora + Marketing" → "Hub Criativo Completo"
-
----
-
-### Detalhes Técnicos
-
-```text
-Scroll-linked animation flow:
-
-  scrollYProgress: 0 ──────────────────── 1
-                   │                      │
-  Section enters   │   Center of viewport │   Section exits
-  (opacity: 0)     │   (opacity: 1)       │   (opacity: 0)
-  (y: 60px)        │   (y: 0)             │   (y: -30px)
-  (scale: 0.95)    │   (scale: 1)         │   (scale: 0.98)
-```
-
-- `useScroll({ target: ref, offset: ["start end", "end start"] })` para cada seção
-- `useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [...values])` para fade-in e fade-out
-- `useSpring` para suavizar os valores transformados
-- Hero terá parallax negativo no vídeo (speed -0.3)
-- Nav terá `backdropFilter` que intensifica com scroll
+### Resultado
+Paleta limpa: azul primário para positivo/ativo, cinza para neutro/aviso, vermelho apenas para erro/destruição. Visual coeso e premium alinhado com a estética Sonance/Apple.
 
