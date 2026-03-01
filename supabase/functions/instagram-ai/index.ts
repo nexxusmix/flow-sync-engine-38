@@ -338,23 +338,37 @@ Retorne JSON puro (sem markdown) com a estrutura exata:
 
 Estilo da marca: cinematográfico, aspiracional, técnico mas acessível.
 
-Crie um pacote autopilot COMPLETO: hooks + roteiros + legendas + agendamento.
+Crie um pacote autopilot MEGA COMPLETO: campanha + hooks + posts completos com roteiros + stories + checklists + agendamento + projeções.
 Gere SEMPRE em português do Brasil. Seja direto e impactante.`;
 
         const pillarList = ap?.length ? ap : ['autoridade', 'portfolio', 'bastidores', 'social_proof', 'educacao'];
-        const profileInfo = apCtx ? `\nContexto do perfil:\n- Handle: @${apCtx.handle || 'squadfilme'}\n- Nicho: ${apCtx.niche || 'produção audiovisual premium'}\n- Público: ${apCtx.target_audience || 'incorporadoras e marcas de luxo'}` : '';
+        const profileInfo = apCtx ? `\nContexto do perfil:\n- Handle: @${apCtx.handle || 'squadfilme'}\n- Nicho: ${apCtx.niche || 'produção audiovisual premium'}\n- Público: ${apCtx.target_audience || 'incorporadoras e marcas de luxo'}\n- Seguidores: ${apCtx.followers || 'N/A'}\n- Engajamento: ${apCtx.avg_engagement || 'N/A'}%` : '';
 
-        userPrompt = `Gere um pacote AUTOPILOT COMPLETO com ${totalPosts} posts para a próxima semana da SQUAD Film.
+        userPrompt = `Gere um pacote AUTOPILOT MEGA COMPLETO com ${totalPosts} posts para a SQUAD Film.
 ${profileInfo}
 
 Distribua entre os pilares: ${pillarList.join(', ')}
 Alterne formatos: reel, carousel, single, story_sequence
 Agende nos melhores horários (10h, 12h, 18h, 21h) distribuídos ao longo da semana.
 
-Para CADA post, gere TUDO completo (hook, roteiro, legendas, hashtags, CTA, etc).
+Para CADA post, gere TUDO completo incluindo:
+- Hook, roteiro, 3 variações de legenda, hashtags, CTA, comentário fixado
+- Sequência de stories complementar (3-5 stories com interativos: enquete, pergunta, quiz)
+- Checklist de produção (ex: gravar vídeo, editar, legendar, criar capa, agendar, publicar)
+
+TAMBÉM gere:
+- Uma campanha temática que agrupe todos os posts
+- Projeções de crescimento baseadas nessa frequência
 
 Retorne JSON puro (sem markdown):
 {
+  "campaign": {
+    "name": "nome da campanha semanal",
+    "objective": "objetivo estratégico",
+    "target_audience": "público-alvo específico",
+    "key_messages": ["mensagem-chave 1", "mensagem-chave 2"],
+    "kpis": {"reach_target": 0, "engagement_target": 0, "leads_target": 0}
+  },
   "hooks": [
     {"hook_text": "...", "hook_score": 85, "score_breakdown": {"clarity": 22, "specificity": 20, "emotion": 23, "promise": 20}, "category": "pilar", "format": "reel"}
   ],
@@ -367,7 +381,7 @@ Retorne JSON puro (sem markdown):
       "scheduled_day_offset": 1,
       "scheduled_time": "10:00",
       "hook": "hook dos primeiros 3 segundos",
-      "script": "roteiro completo",
+      "script": "roteiro completo com marcações de tempo",
       "caption_short": "legenda curta",
       "caption_medium": "legenda média",
       "caption_long": "legenda longa com CTA",
@@ -376,9 +390,27 @@ Retorne JSON puro (sem markdown):
       "hashtags": ["hashtag1", "hashtag2"],
       "cover_suggestion": "descrição da capa",
       "carousel_slides": [{"title": "...", "body": "..."}],
-      "story_sequence": [{"text": "...", "media_type": "foto", "interactive": null}]
+      "story_sequence": [{"text": "...", "media_type": "foto/video/boomerang", "interactive": "enquete/pergunta/quiz/null", "sticker_text": "texto do sticker"}],
+      "checklist": [
+        {"task": "Gravar vídeo principal", "category": "captação"},
+        {"task": "Editar e color grading", "category": "edição"},
+        {"task": "Criar capa/thumbnail", "category": "design"},
+        {"task": "Escrever legenda final", "category": "copy"},
+        {"task": "Agendar publicação", "category": "publicação"},
+        {"task": "Preparar stories complementares", "category": "stories"}
+      ]
     }
-  ]
+  ],
+  "projections": {
+    "current_frequency": "${totalPosts} posts/semana",
+    "projected_followers_30d": 0,
+    "projected_followers_90d": 0,
+    "engagement_trend": "descrição",
+    "growth_rate_monthly": "X%",
+    "estimated_reach_per_post": 0,
+    "revenue_potential_90d": "R$ X",
+    "recommendations": ["recomendação 1", "recomendação 2"]
+  }
 }`;
         break;
       }
