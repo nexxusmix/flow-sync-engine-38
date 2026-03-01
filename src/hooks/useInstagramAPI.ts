@@ -56,12 +56,27 @@ export function useInstagramConnection() {
   });
 }
 
+function extractInstagramUsername(input: string): string {
+  let cleaned = input.trim().replace(/^@/, '');
+  // Handle full URLs like https://www.instagram.com/squadfilme/ or instagram.com/squadfilme
+  const urlMatch = cleaned.match(/(?:instagram\.com\/)([a-zA-Z0-9._]+)/i);
+  if (urlMatch) {
+    cleaned = urlMatch[1];
+  }
+  // Remove trailing slashes or query params
+  cleaned = cleaned.replace(/[/?#].*$/, '').trim();
+  return cleaned;
+}
+
 export function useConnectInstagramManual() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (username: string) => {
-      // First check if connection already exists
+    mutationFn: async (rawInput: string) => {
+      const username = extractInstagramUsername(rawInput);
+      if (!username) throw new Error('Username inválido');
+
+      // Check if connection already exists
       const { data: existing } = await supabase
         .from('instagram_connections')
         .select('id')
@@ -70,7 +85,6 @@ export function useConnectInstagramManual() {
         .maybeSingle();
 
       if (existing) {
-        // Update existing
         const { data, error } = await supabase
           .from('instagram_connections')
           .update({
@@ -84,7 +98,6 @@ export function useConnectInstagramManual() {
         return data;
       }
 
-      // Insert new
       const { data, error } = await supabase
         .from('instagram_connections')
         .insert({
@@ -97,11 +110,55 @@ export function useConnectInstagramManual() {
         })
         .select()
         .single();
-
       if (error) throw error;
-      return data;
 
-      if (error) throw error;
+      // Auto-sync profile_handle in config
+      const { data: existingConfig } = await supabase
+        .from('instagram_profile_config')
+        .select('id, profile_handle')
+        .limit(1)
+        .maybeSingle();
+
+      if (existingConfig) {
+        if (!existingConfig.profile_handle || existingConfig.profile_handle !== username) {
+          await supabase
+            .from('instagram_profile_config')
+            .update({ profile_handle: username } as any)
+            .eq('id', existingConfig.id);
+        }
+      } else {
+        await supabase
+          .from('instagram_profile_config')
+          .insert({ profile_handle: username, profile_name: username } as any);
+      }
+
+      // Try auto-scrape for initial metrics
+      try {
+        const { data: scrapeData } = await supabase.functions.invoke('scrape-instagram-profile', {
+          body: { username },
+        });
+        if (scrapeData?.success && scrapeData.data) {
+          const d = scrapeData.data;
+          if ((d.followers || 0) > 0 || (d.posts_count || 0) > 0) {
+            await supabase
+              .from('instagram_profile_snapshots')
+              .insert({
+                followers: d.followers || 0,
+                following: d.following || 0,
+                posts_count: d.posts_count || 0,
+                avg_engagement: 0,
+                avg_reach: 0,
+                snapshot_date: new Date().toISOString().split('T')[0],
+              } as any);
+          }
+        }
+      } catch {
+        // Scraping is optional - manual entry fallback
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['instagram-profile-config'] });
+      queryClient.invalidateQueries({ queryKey: ['instagram-profile-snapshots'] });
+
       return data;
     },
     onSuccess: (data) => {
