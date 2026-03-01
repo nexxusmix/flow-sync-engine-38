@@ -13,7 +13,7 @@ import {
   useProfileConfig, useInstagramCampaigns, PILLARS
 } from '@/hooks/useInstagramEngine';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Sparkles, Search, Star, Copy, Check, Rocket, CalendarPlus, ArrowRight, Zap, Target, ListChecks, TrendingUp } from 'lucide-react';
+import { Loader2, Sparkles, Search, Star, Copy, Check, Rocket, CalendarPlus, ArrowRight, Zap, Target, ListChecks, TrendingUp, Film, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addDays, setHours, setMinutes } from 'date-fns';
@@ -32,6 +32,16 @@ const VOLUME_PRESETS = [
   { key: 'aggressive', label: '7/semana', posts: 7, desc: '1 post/dia — máximo impacto' },
   { key: 'month', label: 'Mês inteiro', posts: 20, desc: '~20 posts para 4 semanas' },
   { key: 'custom', label: 'Personalizado', posts: 0, desc: 'Escolha a quantidade' },
+];
+
+const TREND_STYLES = [
+  { key: 'cinematic_reel', label: '🎬 Reel Cinematográfico', desc: 'Cortes rápidos, slow-mo, color grading marcante' },
+  { key: 'documentary', label: '🎙️ Documentário Conceitual', desc: 'Depoimento + cobertura. Tom íntimo e autêntico' },
+  { key: 'collage_art', label: '🎨 Collage / Mixed Media', desc: 'Texturas, papel rasgado, tipografia experimental' },
+  { key: 'series_episode', label: '📺 Episódio de Série', desc: 'SERIES 01 — narrativa contínua entre posts' },
+  { key: 'brand_manifesto', label: '✊ Manifesto de Marca', desc: 'Texto bold provocativo + imagem cinematográfica' },
+  { key: 'mood_grid', label: '🖤 Mood / Atmosfera', desc: 'Mosaico de imagens com textos poéticos' },
+  { key: 'auto', label: '✨ IA Decide', desc: 'A IA escolhe o melhor estilo pro tema' },
 ];
 
 interface ScriptsTabProps {
@@ -60,6 +70,15 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
   const [autopilotStats, setAutopilotStats] = useState<{
     hooks: number; posts: number; campaign: string; stories: number; checklists: number;
   } | null>(null);
+
+  // Generate Post state
+  const [showGeneratePost, setShowGeneratePost] = useState(false);
+  const [postTopic, setPostTopic] = useState('');
+  const [postTrendStyle, setPostTrendStyle] = useState('auto');
+  const [postFormat, setPostFormat] = useState('reel');
+  const [postPillar, setPostPillar] = useState('autoridade');
+  const [postCustomInstruction, setPostCustomInstruction] = useState('');
+  const [generatingPost, setGeneratingPost] = useState(false);
 
   const filteredHooks = (hooks || []).filter(h => {
     if (search && !h.hook_text.toLowerCase().includes(search.toLowerCase())) return false;
@@ -94,6 +113,79 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
       toast.error(e.message || 'Erro ao gerar hooks');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleGeneratePost = async () => {
+    if (!postTopic.trim()) {
+      toast.error('Informe o tema do post');
+      return;
+    }
+    setGeneratingPost(true);
+    try {
+      const result = await aiMutation.mutateAsync({
+        action: 'generate_post_trending',
+        data: {
+          topic: postTopic,
+          format: postFormat,
+          pillar: postPillar,
+          trend_style: postTrendStyle,
+          custom_instruction: postCustomInstruction || undefined,
+        },
+      });
+
+      if (result) {
+        const now = new Date();
+        const scheduledDate = addDays(now, 1);
+        scheduledDate.setHours(10, 0, 0, 0);
+
+        await createPost.mutateAsync({
+          title: result.title || postTopic,
+          format: result.format || postFormat,
+          pillar: result.pillar || postPillar,
+          objective: result.objective || 'authority',
+          status: 'planned',
+          scheduled_at: scheduledDate.toISOString(),
+          hook: result.hook || null,
+          script: result.script || null,
+          caption_short: result.caption_short || null,
+          caption_medium: result.caption_medium || null,
+          caption_long: result.caption_long || null,
+          cta: result.cta || null,
+          pinned_comment: result.pinned_comment || null,
+          hashtags: result.hashtags || [],
+          cover_suggestion: result.cover_suggestion || null,
+          carousel_slides: result.carousel_slides || [],
+          story_sequence: result.story_sequence || [],
+          checklist: result.checklist || [],
+          ai_generated: true,
+          position: 0,
+        } as any);
+
+        if (result.hook) {
+          await saveHooks.mutateAsync([{
+            hook_text: result.hook,
+            category: result.pillar || postPillar,
+            format: result.format || postFormat,
+            hook_score: 85,
+            score_breakdown: null,
+            ai_generated: true,
+          }]);
+        }
+
+        setShowGeneratePost(false);
+        setPostTopic('');
+        setPostCustomInstruction('');
+        toast.success('🎬 Post criado com tendências 2026!');
+
+        if (onNavigateToCalendar) {
+          setTimeout(() => onNavigateToCalendar(), 1000);
+        }
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao gerar post');
+    } finally {
+      setGeneratingPost(false);
     }
   };
 
@@ -326,6 +418,16 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
           <Button
             size="sm"
             variant="outline"
+            className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+            onClick={() => setShowGeneratePost(true)}
+            disabled={generatingPost || autopilotRunning}
+          >
+            {generatingPost ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
+            Gerar Post
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             className="gap-1.5 text-xs"
             onClick={() => handleGenerate(filterCategory === 'all' ? 'autoridade' : filterCategory)}
             disabled={generating || autopilotRunning}
@@ -488,6 +590,131 @@ export function ScriptsTab({ onNavigateToCalendar }: ScriptsTabProps) {
             <Button size="sm" className="gap-1.5" onClick={handleAutopilot}>
               <Rocket className="w-4 h-4" />
               Executar Autopilot ({getPostCount()} posts)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Post Dialog */}
+      <Dialog open={showGeneratePost} onOpenChange={setShowGeneratePost}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Film className="w-5 h-5 text-primary" />
+              Gerar Post — Tendências 2026
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Crie um post completo seguindo o estilo SQUAD Film com tendências atuais.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Topic */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Tema do post *</Label>
+              <Input
+                placeholder="Ex: Making of do projeto Fazenda da Matta..."
+                value={postTopic}
+                onChange={e => setPostTopic(e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
+            {/* Trend Style */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Estilo / Tendência</Label>
+              <div className="grid grid-cols-1 gap-1.5 max-h-[200px] overflow-y-auto pr-1">
+                {TREND_STYLES.map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => setPostTrendStyle(t.key)}
+                    className={`text-left px-3 py-2 rounded-lg border text-sm transition-all ${
+                      postTrendStyle === t.key
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border/50 text-muted-foreground hover:border-primary/30'
+                    }`}
+                  >
+                    <span className="font-medium">{t.label}</span>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Format + Pillar */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Formato</Label>
+                <Select value={postFormat} onValueChange={setPostFormat}>
+                  <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="reel">Reel</SelectItem>
+                    <SelectItem value="carousel">Carrossel</SelectItem>
+                    <SelectItem value="single">Imagem</SelectItem>
+                    <SelectItem value="story_sequence">Stories</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Pilar</Label>
+                <Select value={postPillar} onValueChange={setPostPillar}>
+                  <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {HOOK_CATEGORIES.map(c => (
+                      <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Custom instruction */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Instrução adicional (opcional)</Label>
+              <Input
+                placeholder="Ex: Usar referência do vídeo de cavalos, focar em emotion..."
+                value={postCustomInstruction}
+                onChange={e => setPostCustomInstruction(e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
+            {/* What will be generated */}
+            <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">O que será gerado:</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  'Hook cinematográfico',
+                  'Roteiro com direção de câmera',
+                  '3 variações de legenda',
+                  'CTA + comentário fixado',
+                  'Hashtags estratégicas',
+                  'Direção visual completa',
+                  'Sugestão de capa/thumbnail',
+                  'Stories complementares',
+                  'Checklist de produção',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-[11px] text-foreground/80">
+                    <Check className="w-3 h-3 text-primary/60" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" size="sm" onClick={() => setShowGeneratePost(false)}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={handleGeneratePost}
+              disabled={generatingPost || !postTopic.trim()}
+            >
+              {generatingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Film className="w-4 h-4" />}
+              {generatingPost ? 'Gerando...' : 'Gerar Post'}
             </Button>
           </DialogFooter>
         </DialogContent>
