@@ -327,6 +327,62 @@ export function useInstagramAI() {
   });
 }
 
+// AI-powered post update
+export function useUpdatePostWithAI() {
+  const qc = useQueryClient();
+  const ai = useInstagramAI();
+  const update = useUpdatePost();
+
+  const generateAndUpdate = async ({
+    postId,
+    topic,
+    format,
+    pillar,
+    command,
+    reference_url,
+    file_content,
+    field,
+  }: {
+    postId: string;
+    topic?: string;
+    format?: string;
+    pillar?: string;
+    command?: string;
+    reference_url?: string;
+    file_content?: string;
+    field?: string;
+  }) => {
+    const result = await ai.mutateAsync({
+      action: 'generate_from_context',
+      data: { topic, format, pillar, command, reference_url, file_content, field },
+    });
+
+    if (!result) throw new Error('IA não retornou resultado');
+
+    const updates: Record<string, any> = { id: postId };
+    if (result.hook !== undefined) updates.hook = result.hook;
+    if (result.script !== undefined) updates.script = result.script;
+    if (result.caption_short !== undefined) updates.caption_short = result.caption_short;
+    if (result.caption_medium !== undefined) updates.caption_medium = result.caption_medium;
+    if (result.caption_long !== undefined) updates.caption_long = result.caption_long;
+    if (result.cta !== undefined) updates.cta = result.cta;
+    if (result.pinned_comment !== undefined) updates.pinned_comment = result.pinned_comment;
+    if (result.hashtags !== undefined) updates.hashtags = result.hashtags;
+    if (result.cover_suggestion !== undefined) updates.cover_suggestion = result.cover_suggestion;
+    if (result.carousel_slides !== undefined) updates.carousel_slides = result.carousel_slides;
+    if (result.story_sequence !== undefined) updates.story_sequence = result.story_sequence;
+    updates.ai_generated = true;
+
+    await update.mutateAsync(updates as any);
+    return result;
+  };
+
+  return {
+    generateAndUpdate,
+    isPending: ai.isPending || update.isPending,
+  };
+}
+
 // Publish to Instagram
 export function usePublishToInstagram() {
   const qc = useQueryClient();
