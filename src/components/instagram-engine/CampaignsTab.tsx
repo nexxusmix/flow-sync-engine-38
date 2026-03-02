@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,6 +36,10 @@ import { CampaignFinalReport } from './CampaignFinalReport';
 import { CampaignABComparison } from './CampaignABComparison';
 import { CampaignGanttTimeline } from './CampaignGanttTimeline';
 import { CampaignFeedPreview } from './CampaignFeedPreview';
+import { CampaignAnalyticsAdvanced } from './CampaignAnalyticsAdvanced';
+import { CampaignPublishQueue } from './CampaignPublishQueue';
+import { CampaignSmartAlerts } from './CampaignSmartAlerts';
+import { CampaignCollaboration } from './CampaignCollaboration';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -59,7 +63,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -250,9 +254,13 @@ export function CampaignsTab() {
             { key: 'approval' as const, label: 'Aprovação', icon: <CheckSquare className="w-3.5 h-3.5" /> },
             { key: 'goals' as const, label: 'Metas', icon: <Target className="w-3.5 h-3.5" /> },
             { key: 'roi' as const, label: 'ROI', icon: <DollarSign className="w-3.5 h-3.5" /> },
+            { key: 'analytics' as const, label: 'Analytics', icon: <Flame className="w-3.5 h-3.5" /> },
+            { key: 'queue' as const, label: 'Publicação', icon: <Send className="w-3.5 h-3.5" /> },
+            { key: 'smart_alerts' as const, label: 'Alertas IA', icon: <Bell className="w-3.5 h-3.5" /> },
+            { key: 'collab' as const, label: 'Colaboração', icon: <MessageSquare className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
-            { key: 'alerts' as const, label: 'Alertas', icon: <Bell className="w-3.5 h-3.5" /> },
+            { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
             { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
             { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
           ]).map(v => (
@@ -311,6 +319,22 @@ export function CampaignsTab() {
 
         {detailView === 'roi' && (
           <CampaignROIDashboard campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'analytics' && (
+          <CampaignAnalyticsAdvanced campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'queue' && (
+          <CampaignPublishQueue campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'smart_alerts' && (
+          <CampaignSmartAlerts campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'collab' && (
+          <CampaignCollaboration campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
