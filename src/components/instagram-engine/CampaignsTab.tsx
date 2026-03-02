@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route, CalendarPlus, MessageCircle, Presentation, ShieldAlert, CalendarHeart, KanbanSquare, Search, Layers } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route, CalendarPlus, MessageCircle, Presentation, ShieldAlert, CalendarHeart, KanbanSquare, Search, Layers, ArrowDown, Clock, Gauge, UserCheck } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -72,6 +72,10 @@ import { CampaignHolidayCalendar } from './CampaignHolidayCalendar';
 import { CampaignCollaborationBoard } from './CampaignCollaborationBoard';
 import { CampaignContentGapAnalyzer } from './CampaignContentGapAnalyzer';
 import { CampaignCloner } from './CampaignCloner';
+import { CampaignContentFunnel } from './CampaignContentFunnel';
+import { CampaignTimingOptimizer } from './CampaignTimingOptimizer';
+import { CampaignVelocityTracker } from './CampaignVelocityTracker';
+import { CampaignClientReview } from './CampaignClientReview';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -95,7 +99,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score' | 'holidays' | 'collab_board' | 'content_gap' | 'cloner'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score' | 'holidays' | 'collab_board' | 'content_gap' | 'cloner' | 'content_funnel' | 'timing' | 'velocity' | 'client_review'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -322,6 +326,10 @@ export function CampaignsTab() {
             { key: 'collab_board' as const, label: 'Tarefas', icon: <KanbanSquare className="w-3.5 h-3.5" /> },
             { key: 'content_gap' as const, label: 'Gap Analysis', icon: <Search className="w-3.5 h-3.5" /> },
             { key: 'cloner' as const, label: 'Clonar', icon: <Layers className="w-3.5 h-3.5" /> },
+            { key: 'content_funnel' as const, label: 'Funil', icon: <ArrowDown className="w-3.5 h-3.5" /> },
+            { key: 'timing' as const, label: 'Timing', icon: <Clock className="w-3.5 h-3.5" /> },
+            { key: 'velocity' as const, label: 'Velocity', icon: <Gauge className="w-3.5 h-3.5" /> },
+            { key: 'client_review' as const, label: 'Revisão', icon: <UserCheck className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
@@ -527,6 +535,22 @@ export function CampaignsTab() {
 
         {detailView === 'cloner' && (
           <CampaignCloner campaigns={campaigns || []} posts={posts || []} />
+        )}
+
+        {detailView === 'content_funnel' && (
+          <CampaignContentFunnel campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'timing' && (
+          <CampaignTimingOptimizer campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'velocity' && (
+          <CampaignVelocityTracker campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'client_review' && (
+          <CampaignClientReview campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
