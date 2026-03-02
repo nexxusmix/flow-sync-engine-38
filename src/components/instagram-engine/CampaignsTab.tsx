@@ -10,7 +10,8 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, ChevronDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, BarChart3, ArrowLeft, Sparkles } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, ChevronDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, BarChart3, ArrowLeft, Sparkles, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ export function CampaignsTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [showAiGen, setShowAiGen] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiProgress, setAiProgress] = useState({ step: 0, label: '', detail: '' });
   const [aiForm, setAiForm] = useState({ theme: '', duration_weeks: '2', budget: '' });
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
@@ -61,8 +63,26 @@ export function CampaignsTab() {
     }
   };
 
+  const AI_STEPS = [
+    { label: 'Pesquisando tendências do nicho...', detail: 'Analisando mercado e concorrência' },
+    { label: 'Analisando perfil e referências...', detail: 'Cruzando dados do seu histórico' },
+    { label: 'Gerando estratégia e conteúdo...', detail: 'Criando roteiros, legendas e hashtags' },
+    { label: 'Montando calendário editorial...', detail: 'Distribuindo posts com datas reais' },
+    { label: 'Criando posts no calendário...', detail: 'Inserindo posts completos' },
+  ];
+
   const handleAiGenerate = async () => {
     setAiGenerating(true);
+    setAiProgress({ step: 0, label: AI_STEPS[0].label, detail: AI_STEPS[0].detail });
+
+    // Simulate progress steps during AI call
+    const progressInterval = setInterval(() => {
+      setAiProgress(prev => {
+        const next = Math.min(prev.step + 1, 2); // up to step 2 while waiting for AI
+        return { step: next, label: AI_STEPS[next].label, detail: AI_STEPS[next].detail };
+      });
+    }, 4000);
+
     try {
       const { data: result, error } = await supabase.functions.invoke('instagram-ai', {
         body: {
@@ -74,13 +94,19 @@ export function CampaignsTab() {
           },
         },
       });
+
+      clearInterval(progressInterval);
+
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
 
       const campaign = result?.result;
       if (!campaign?.name) throw new Error('IA não retornou campanha válida');
 
-      // Save to database
+      // Step 3: Mounting calendar
+      setAiProgress({ step: 3, label: AI_STEPS[3].label, detail: AI_STEPS[3].detail });
+
+      // Save campaign to database
       const { data: inserted, error: insertError } = await supabase.from('instagram_campaigns').insert({
         name: campaign.name,
         objective: campaign.objective || null,
@@ -96,16 +122,87 @@ export function CampaignsTab() {
 
       if (insertError) throw insertError;
 
+      // Step 4: Create posts
+      setAiProgress({ step: 4, label: AI_STEPS[4].label, detail: AI_STEPS[4].detail });
+
+      const contentPlan = campaign.content_plan || [];
+      let postsCreated = 0;
+      const formatCounts: Record<string, number> = {};
+
+      if (contentPlan.length > 0 && inserted) {
+        const postsToInsert = contentPlan.map((post: any, idx: number) => {
+          const fmt = post.format || 'reel';
+          formatCounts[fmt] = (formatCounts[fmt] || 0) + 1;
+
+          // Build scheduled_at from date + time
+          let scheduledAt: string | null = null;
+          if (post.scheduled_date) {
+            const time = post.suggested_time || '10:00';
+            scheduledAt = `${post.scheduled_date}T${time}:00`;
+          }
+
+          return {
+            title: post.title || `Post ${idx + 1}`,
+            format: fmt,
+            pillar: post.pillar || null,
+            objective: post.objective || null,
+            status: 'planned',
+            scheduled_at: scheduledAt,
+            hook: post.hook || null,
+            script: post.script || null,
+            caption_short: post.caption_short || null,
+            caption_medium: post.caption_medium || null,
+            caption_long: post.caption_long || null,
+            cta: post.cta || null,
+            pinned_comment: post.pinned_comment || null,
+            hashtags: post.hashtags || [],
+            cover_suggestion: post.cover_suggestion || null,
+            carousel_slides: post.carousel_slides || [],
+            story_sequence: post.story_sequence || [],
+            checklist: post.checklist || [],
+            ai_generated: true,
+            campaign_id: inserted.id,
+            position: idx,
+          };
+        });
+
+        const { error: postsError } = await supabase
+          .from('instagram_posts')
+          .insert(postsToInsert as any);
+
+        if (postsError) {
+          console.error('Posts insert error:', postsError);
+          toast.error('Campanha criada, mas houve erro ao criar posts: ' + postsError.message);
+        } else {
+          postsCreated = postsToInsert.length;
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ['instagram-campaigns'] });
-      toast.success('Campanha gerada com IA!');
+      qc.invalidateQueries({ queryKey: ['instagram-posts'] });
+
+      // Build summary
+      const formatSummary = Object.entries(formatCounts)
+        .map(([k, v]) => `${v} ${k === 'reel' ? 'Reels' : k === 'carousel' ? 'Carrosséis' : k === 'single' ? 'Fotos' : k === 'story_sequence' ? 'Séries Stories' : k}`)
+        .join(', ');
+
+      toast.success(
+        postsCreated > 0
+          ? `Campanha criada com ${postsCreated} posts completos! (${formatSummary})`
+          : 'Campanha criada com IA!',
+        { duration: 6000 }
+      );
+
       setShowAiGen(false);
       setAiForm({ theme: '', duration_weeks: '2', budget: '' });
       if (inserted) setSelectedCampaign(inserted.id);
     } catch (e: any) {
+      clearInterval(progressInterval);
       console.error('AI campaign generation error:', e);
       toast.error(e.message || 'Erro ao gerar campanha');
     } finally {
       setAiGenerating(false);
+      setAiProgress({ step: 0, label: '', detail: '' });
     }
   };
 
@@ -481,13 +578,19 @@ export function CampaignsTab() {
               </div>
             </div>
             {aiGenerating && (
-              <Card className="p-4 border-primary/20 bg-primary/5">
+              <Card className="p-4 border-primary/20 bg-primary/5 space-y-3">
                 <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Analisando dados e gerando campanha...</p>
-                    <p className="text-[10px] text-muted-foreground">Pesquisando tendências, analisando perfil, referências e histórico</p>
+                  <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{aiProgress.label || 'Iniciando...'}</p>
+                    <p className="text-[10px] text-muted-foreground">{aiProgress.detail}</p>
                   </div>
+                </div>
+                <Progress value={((aiProgress.step + 1) / AI_STEPS.length) * 100} className="h-1.5" />
+                <div className="flex gap-1">
+                  {AI_STEPS.map((_, i) => (
+                    <div key={i} className={`flex-1 h-1 rounded-full transition-colors ${i <= aiProgress.step ? 'bg-primary' : 'bg-muted/30'}`} />
+                  ))}
                 </div>
               </Card>
             )}
