@@ -284,11 +284,19 @@ export async function exportFocusPDF(
   );
 }
 
+export async function exportInstagramCampaignPDF(campaignId: string, options?: ExportOptions): Promise<ExportResult> {
+  return invokeAndDownload(
+    "export-instagram-campaign-pdf",
+    { campaign_id: campaignId },
+    "campaign", "INSTAGRAM", "Documento completo da campanha pronto!", options
+  );
+}
+
 // Default export
 const pdfExportService = {
   exportProjectPDF, exportReport360PDF, exportTasksPDF, exportFinancePDF,
   exportOverviewPDF, exportPortalPDF, exportCreativePDF, exportCampaignPDF,
-  exportContentPDF, exportFocusPDF,
+  exportContentPDF, exportFocusPDF, exportInstagramCampaignPDF,
 };
 
 export default pdfExportService;
