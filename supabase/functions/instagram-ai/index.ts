@@ -664,9 +664,70 @@ Retorne JSON puro (sem markdown):
         });
       }
 
+      // Campaign wizard: generate contextual suggestions per step
+      case "campaign_wizard_suggestions": {
+        const { step: wizardStep, wizard_data, profile_niche, profile_audience, profile_pillars, profile_voice } = data;
+
+        const contextParts: string[] = [];
+        if (profile_niche) contextParts.push(`Nicho: ${profile_niche}`);
+        if (profile_audience) contextParts.push(`Público: ${profile_audience}`);
+        if (profile_pillars) contextParts.push(`Pilares: ${JSON.stringify(profile_pillars)}`);
+        if (profile_voice) contextParts.push(`Voz: ${profile_voice}`);
+        if (wizard_data?.objective) contextParts.push(`Objetivo escolhido: ${wizard_data.objective}`);
+        if (wizard_data?.theme) contextParts.push(`Tema: ${wizard_data.theme}`);
+        if (wizard_data?.target_audience) contextParts.push(`Público definido: ${wizard_data.target_audience}`);
+        if (wizard_data?.tone) contextParts.push(`Tom: ${wizard_data.tone}`);
+        if (wizard_data?.formats?.length) contextParts.push(`Formatos: ${wizard_data.formats.join(', ')}`);
+
+        const profileBlock = contextParts.length > 0 ? `\n\nCONTEXTO DO PERFIL E WIZARD:\n${contextParts.join('\n')}` : '';
+
+        const stepPrompts: Record<number, string> = {
+          0: `Baseado no perfil, sugira:
+- 3-4 temas de campanha criativos e específicos para o nicho (array "themes")
+Retorne JSON: {"themes": ["tema1", "tema2", "tema3"]}`,
+          1: `Baseado no objetivo "${wizard_data?.objective || ''}" e tema "${wizard_data?.theme || ''}", sugira:
+- 2-3 descrições de público-alvo específicas (array "audiences")
+- 4-5 mensagens-chave estratégicas (array "messages")
+Retorne JSON: {"audiences": ["pub1", "pub2"], "messages": ["msg1", "msg2"]}`,
+          2: `Baseado no objetivo "${wizard_data?.objective || ''}" e público "${wizard_data?.target_audience || ''}", sugira:
+- Quais formatos usar e por quê (array "formats" com objects {key, label, reason})
+- 2-3 estilos visuais diferenciados (array "styles")
+Retorne JSON: {"formats": [{"key": "reel", "label": "Reels", "reason": "razão"}], "styles": ["estilo1"]}`,
+          3: `Baseado em toda a configuração, sugira ajustes finais. Retorne JSON: {}`,
+        };
+
+        systemPrompt = `Você é um consultor de marketing digital sênior. Gere sugestões inteligentes e PERSONALIZADAS para a etapa ${wizardStep} de criação de campanha de Instagram. Considere tendências 2026, melhores práticas e o contexto do perfil. RETORNE APENAS JSON VÁLIDO.${profileBlock}${memoryBlock}`;
+        userPrompt = stepPrompts[wizardStep as number] || 'Retorne JSON: {}';
+
+        // Use a fast model for suggestions
+        const sugResult = await chatCompletion({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          model: "google/gemini-2.5-flash-lite",
+        });
+
+        const sugContent = sugResult.choices?.[0]?.message?.content || "{}";
+        let sugParsed: any = {};
+        try {
+          const cleaned = sugContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          sugParsed = JSON.parse(cleaned);
+        } catch {
+          try {
+            const m = sugContent.match(/\{[\s\S]*\}/);
+            if (m) sugParsed = JSON.parse(m[0]);
+          } catch { /* ignore */ }
+        }
+
+        return new Response(JSON.stringify({ result: sugParsed }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Generate campaign with AI based on research, analysis and data
       case "generate_campaign": {
-        const { theme, duration_weeks, budget } = data;
+        const { theme, duration_weeks, budget, wizard_context } = data;
 
         // Fetch profile config for context
         let profileContext = "";
@@ -810,12 +871,35 @@ REGRAS IMPORTANTES:
 - Checklist de produção deve ter 4-6 itens relevantes ao formato
 - TODOS os campos de texto devem ser preenchidos — NENHUM campo vazio`;
 
+        // Build wizard context block if available
+        let wizardBlock = "";
+        if (wizard_context) {
+          wizardBlock = `\n\n===== BRIEFING DO WIZARD (preferências do usuário) =====\n`;
+          if (wizard_context.objective) wizardBlock += `Objetivo: ${wizard_context.objective}\n`;
+          if (wizard_context.target_audience) wizardBlock += `Público-alvo: ${wizard_context.target_audience}\n`;
+          if (wizard_context.key_messages?.length) wizardBlock += `Mensagens-chave: ${wizard_context.key_messages.join(' | ')}\n`;
+          if (wizard_context.tone) wizardBlock += `Tom de voz: ${wizard_context.tone}\n`;
+          if (wizard_context.formats?.length) wizardBlock += `Formatos preferidos: ${wizard_context.formats.join(', ')}\n`;
+          if (wizard_context.pillars?.length) wizardBlock += `Pilares preferidos: ${wizard_context.pillars.join(', ')}\n`;
+          if (wizard_context.style) wizardBlock += `Estilo visual: ${wizard_context.style}\n`;
+          if (wizard_context.posts_per_week) wizardBlock += `Posts por semana: ${wizard_context.posts_per_week}\n`;
+          if (wizard_context.start_date) wizardBlock += `Data início desejada: ${wizard_context.start_date}\n`;
+          wizardBlock += `===== FIM BRIEFING =====\n`;
+        }
+
+        const totalPosts = wizard_context?.posts_per_week
+          ? wizard_context.posts_per_week * durationWeeks
+          : Math.max(durationWeeks * 3, 6);
+
         userPrompt = `Crie uma campanha COMPLETÍSSIMA de Instagram com TODOS os posts prontos para publicação:
 
 ${theme ? `Tema/Foco: ${theme}` : 'Tema: livre (baseie-se no perfil e referências)'}
 Duração: ${durationWeeks} semanas (${startDate} a ${endDate})
 ${budget ? `Orçamento: R$ ${budget}` : 'Sem orçamento definido'}
 Datas disponíveis: ${scheduledDates.join(', ')}
+${wizardBlock}
+
+IMPORTANTE: Siga RIGOROSAMENTE as preferências do briefing do wizard acima (formatos, pilares, tom, estilo, público).
 
 Gere:
 1. Nome criativo e objetivo estratégico detalhado
@@ -823,7 +907,7 @@ Gere:
 3. 3-5 mensagens-chave da campanha
 4. KPIs projetados realistas
 5. Notas de estratégia com pesquisa de mercado e tendências
-6. Plano de conteúdo com ${Math.max(durationWeeks * 3, 6)}-${durationWeeks * 5} posts COMPLETOS — cada um com:
+6. Plano de conteúdo com ${totalPosts} posts COMPLETOS — cada um com:
    - Título, hook, roteiro/script completo
    - 3 variações de legenda (curta, média, longa)
    - CTA, hashtags, comentário fixado
