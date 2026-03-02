@@ -34,6 +34,8 @@ serve(async (req) => {
 
     const { prompt, briefId, sceneId, purpose, aspectRatio = '16:9', brandKit } = await req.json() as GenerateImageRequest;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
@@ -57,36 +59,43 @@ serve(async (req) => {
 
     console.log("Generating image with prompt:", enhancedPrompt);
 
-    // Try Lovable gateway first, then fallback to direct Gemini API
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    // Try multiple providers in sequence for resilience
+    const failureReasons: string[] = [];
     let imageData: string | undefined;
 
     // Attempt 1: Lovable gateway
-    try {
-      console.log("[generate-image] Trying Lovable gateway...");
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-pro-image-preview",
-          messages: [{ role: "user", content: enhancedPrompt }],
-          modalities: ["image", "text"]
-        }),
-      });
+    if (LOVABLE_API_KEY) {
+      try {
+        console.log("[generate-image] Trying Lovable gateway...");
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-pro-image-preview",
+            messages: [{ role: "user", content: enhancedPrompt }],
+            modalities: ["image", "text"]
+          }),
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        if (imageData) console.log("[generate-image] ✓ Success via Lovable gateway");
-      } else {
-        const errText = await response.text();
-        console.warn(`[generate-image] Lovable gateway failed (${response.status}): ${errText.substring(0, 200)}`);
+        if (response.ok) {
+          const data = await response.json();
+          imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+          if (imageData) console.log("[generate-image] ✓ Success via Lovable gateway");
+          else failureReasons.push("lovable:200-no-image");
+        } else {
+          const errText = await response.text();
+          failureReasons.push(`lovable:${response.status}`);
+          console.warn(`[generate-image] Lovable gateway failed (${response.status}): ${errText.substring(0, 200)}`);
+        }
+      } catch (e) {
+        failureReasons.push("lovable:exception");
+        console.warn("[generate-image] Lovable gateway error:", e);
       }
-    } catch (e) {
-      console.warn("[generate-image] Lovable gateway error:", e);
+    } else {
+      failureReasons.push("lovable:key-missing");
     }
 
     // Attempt 2: Direct Gemini API fallback
@@ -117,17 +126,64 @@ serve(async (req) => {
               break;
             }
           }
+          if (!imageData) failureReasons.push("gemini:200-no-image");
         } else {
           const errText = await geminiRes.text();
+          failureReasons.push(`gemini:${geminiRes.status}`);
           console.warn(`[generate-image] Gemini API failed (${geminiRes.status}): ${errText.substring(0, 200)}`);
         }
       } catch (e) {
+        failureReasons.push("gemini:exception");
         console.warn("[generate-image] Gemini API error:", e);
       }
     }
-    
+
+    // Attempt 3: OpenAI Images API fallback
+    if (!imageData && OPENAI_API_KEY) {
+      const openAiSize = aspectRatio === "9:16" ? "1024x1792" : aspectRatio === "16:9" ? "1792x1024" : "1024x1024";
+      for (const openAiModel of ["gpt-image-1", "dall-e-3"]) {
+        try {
+          console.log(`[generate-image] Trying OpenAI image API (${openAiModel})...`);
+          const openAiRes = await fetch("https://api.openai.com/v1/images/generations", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${OPENAI_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: openAiModel,
+              prompt: enhancedPrompt,
+              n: 1,
+              size: openAiSize,
+            }),
+          });
+
+          if (openAiRes.ok) {
+            const openAiData = await openAiRes.json();
+            const b64 = openAiData?.data?.[0]?.b64_json;
+            const url = openAiData?.data?.[0]?.url;
+            if (b64) imageData = `data:image/png;base64,${b64}`;
+            else if (url) imageData = url;
+
+            if (imageData) {
+              console.log(`[generate-image] ✓ Success via OpenAI (${openAiModel})`);
+              break;
+            }
+            failureReasons.push(`openai-${openAiModel}:200-no-image`);
+          } else {
+            const errText = await openAiRes.text();
+            failureReasons.push(`openai-${openAiModel}:${openAiRes.status}`);
+            console.warn(`[generate-image] OpenAI ${openAiModel} failed (${openAiRes.status}): ${errText.substring(0, 200)}`);
+          }
+        } catch (e) {
+          failureReasons.push(`openai-${openAiModel}:exception`);
+          console.warn(`[generate-image] OpenAI ${openAiModel} exception:`, e);
+        }
+      }
+    }
+
     if (!imageData) {
-      throw new Error("No image generated");
+      throw new Error(`No image generated (providers failed: ${failureReasons.join(", ")})`);
     }
 
     // Upload to Supabase Storage
@@ -138,26 +194,37 @@ serve(async (req) => {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         
-        // Convert base64 to blob
-        const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-        const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+        // Convert data URL or remote URL to binary
+        let binaryData: Uint8Array | null = null;
+        if (imageData.startsWith("data:image/")) {
+          const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+          binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+        } else if (imageData.startsWith("http://") || imageData.startsWith("https://")) {
+          const remoteImageRes = await fetch(imageData);
+          if (remoteImageRes.ok) {
+            const arr = await remoteImageRes.arrayBuffer();
+            binaryData = new Uint8Array(arr);
+          }
+        }
         
         const fileName = `generated/${Date.now()}-${purpose}.png`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('marketing-assets')
-          .upload(fileName, binaryData, {
-            contentType: 'image/png',
-            upsert: false
-          });
-
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage
+        if (binaryData) {
+          const { error: uploadError } = await supabase.storage
             .from('marketing-assets')
-            .getPublicUrl(fileName);
-          
-          publicUrl = urlData.publicUrl;
-          storagePath = fileName;
+            .upload(fileName, binaryData, {
+              contentType: 'image/png',
+              upsert: false
+            });
+
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage
+              .from('marketing-assets')
+              .getPublicUrl(fileName);
+            
+            publicUrl = urlData.publicUrl;
+            storagePath = fileName;
+          }
         }
 
         // Save to generated_images table
