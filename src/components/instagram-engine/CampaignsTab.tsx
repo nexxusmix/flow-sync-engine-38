@@ -9,7 +9,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +17,9 @@ import { toast } from 'sonner';
 import { AIButton } from '@/components/squad-ui/AIButton';
 import { CampaignTimeline } from './CampaignTimeline';
 import { CampaignWizard } from './CampaignWizard';
+import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
+import { CampaignAITools } from './CampaignAITools';
+import { CampaignAutomation } from './CampaignAutomation';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -34,6 +37,8 @@ export function CampaignsTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [showAiGen, setShowAiGen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [showAITools, setShowAITools] = useState(false);
+  const [showAutomation, setShowAutomation] = useState(false);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
   const [saving, setSaving] = useState(false);
 
@@ -61,8 +66,6 @@ export function CampaignsTab() {
     }
   };
 
-  // AI generation is now handled by CampaignWizard
-
   // Posts grouped by campaign
   const campaignPostsMap = useMemo(() => {
     const map: Record<string, InstagramPost[]> = {};
@@ -77,21 +80,15 @@ export function CampaignsTab() {
 
   // Campaign aggregate metrics
   const campaignMetrics = useMemo(() => {
-    const map: Record<string, { published: number; scheduled: number; inProgress: number; total: number; statusBreakdown: Record<string, number>; formatBreakdown: Record<string, number>; pillarBreakdown: Record<string, number> }> = {};
+    const map: Record<string, { published: number; scheduled: number; inProgress: number; total: number }> = {};
     for (const [cId, cPosts] of Object.entries(campaignPostsMap)) {
-      const statusBreakdown: Record<string, number> = {};
-      const formatBreakdown: Record<string, number> = {};
-      const pillarBreakdown: Record<string, number> = {};
       let published = 0, scheduled = 0, inProgress = 0;
       for (const p of cPosts) {
-        statusBreakdown[p.status] = (statusBreakdown[p.status] || 0) + 1;
-        formatBreakdown[p.format] = (formatBreakdown[p.format] || 0) + 1;
-        if (p.pillar) pillarBreakdown[p.pillar] = (pillarBreakdown[p.pillar] || 0) + 1;
         if (p.status === 'published') published++;
         else if (p.status === 'scheduled') scheduled++;
         else if (p.status === 'in_production') inProgress++;
       }
-      map[cId] = { published, scheduled, inProgress, total: cPosts.length, statusBreakdown, formatBreakdown, pillarBreakdown };
+      map[cId] = { published, scheduled, inProgress, total: cPosts.length };
     }
     return map;
   }, [campaignPostsMap]);
@@ -105,9 +102,6 @@ export function CampaignsTab() {
   // Detail view
   if (activeCampaign && selectedCampaign) {
     const status = STATUS_MAP[activeCampaign.status] || STATUS_MAP.planning;
-    const completionRate = activeMetrics && activeMetrics.total > 0
-      ? Math.round((activeMetrics.published / activeMetrics.total) * 100)
-      : 0;
 
     return (
       <div className="space-y-5">
@@ -125,24 +119,17 @@ export function CampaignsTab() {
               <p className="text-xs text-muted-foreground mt-0.5">{activeCampaign.objective}</p>
             )}
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5"
-            onClick={() => exportInstagramCampaignPDF(selectedCampaign!)}
-          >
-            <Download className="w-4 h-4" />
-            Exportar PDF Completo
-          </Button>
-        </div>
-
-        {/* Campaign KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <KpiCard label="Total Posts" value={activeMetrics?.total || 0} icon={<FileText className="w-4 h-4" />} />
-          <KpiCard label="Publicados" value={activeMetrics?.published || 0} icon={<TrendingUp className="w-4 h-4" />} highlight />
-          <KpiCard label="Agendados" value={activeMetrics?.scheduled || 0} icon={<Calendar className="w-4 h-4" />} />
-          <KpiCard label="Em Produção" value={activeMetrics?.inProgress || 0} icon={<BarChart3 className="w-4 h-4" />} />
-          <KpiCard label="Conclusão" value={`${completionRate}%`} icon={<Target className="w-4 h-4" />} highlight={completionRate >= 80} />
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowAutomation(true)}>
+              <Zap className="w-3.5 h-3.5" /> Automações
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowAITools(true)}>
+              <Sparkles className="w-3.5 h-3.5" /> IA Avançada
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => exportInstagramCampaignPDF(selectedCampaign!)}>
+              <Download className="w-3.5 h-3.5" /> PDF
+            </Button>
+          </div>
         </div>
 
         {/* Campaign Info Row */}
@@ -161,84 +148,8 @@ export function CampaignsTab() {
           )}
         </div>
 
-        {/* Breakdowns */}
-        {activeMetrics && activeMetrics.total > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Status breakdown */}
-            <Card className="glass-card p-4">
-              <h5 className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Por Status</h5>
-              <div className="space-y-2">
-                {Object.entries(activeMetrics.statusBreakdown).map(([key, count]) => {
-                  const s = POST_STATUSES.find(st => st.key === key);
-                  const pct = Math.round((count / activeMetrics.total) * 100);
-                  return (
-                    <div key={key} className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <div className="flex justify-between text-[11px] mb-0.5">
-                          <span className="text-foreground">{s?.label || key}</span>
-                          <span className="text-muted-foreground">{count} ({pct}%)</span>
-                        </div>
-                        <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${s?.color?.split(' ')[0] || 'bg-primary'}`} style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-
-            {/* Format breakdown */}
-            <Card className="glass-card p-4">
-              <h5 className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Por Formato</h5>
-              <div className="space-y-2">
-                {Object.entries(activeMetrics.formatBreakdown).map(([key, count]) => {
-                  const f = FORMATS.find(fm => fm.key === key);
-                  const pct = Math.round((count / activeMetrics.total) * 100);
-                  return (
-                    <div key={key} className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-[14px]">{f?.icon || 'image'}</span>
-                      <div className="flex-1">
-                        <div className="flex justify-between text-[11px] mb-0.5">
-                          <span className="text-foreground">{f?.label || key}</span>
-                          <span className="text-muted-foreground">{count}</span>
-                        </div>
-                        <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-
-            {/* Pillar breakdown */}
-            <Card className="glass-card p-4">
-              <h5 className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Por Pilar</h5>
-              <div className="space-y-2">
-                {Object.entries(activeMetrics.pillarBreakdown).map(([key, count]) => {
-                  const pl = PILLARS.find(p => p.key === key);
-                  const pct = Math.round((count / activeMetrics.total) * 100);
-                  return (
-                    <div key={key} className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pl?.color || 'hsl(var(--primary))' }} />
-                      <div className="flex-1">
-                        <div className="flex justify-between text-[11px] mb-0.5">
-                          <span className="text-foreground">{pl?.label || key}</span>
-                          <span className="text-muted-foreground">{count}</span>
-                        </div>
-                        <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ backgroundColor: pl?.color || 'hsl(var(--primary))' , width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          </div>
-        )}
+        {/* Performance Dashboard */}
+        <CampaignPerformanceDashboard campaign={activeCampaign} posts={activePosts} />
 
         {/* Timeline / Roadmap */}
         <div>
@@ -249,6 +160,22 @@ export function CampaignsTab() {
             endDate={activeCampaign.end_date}
           />
         </div>
+
+        {/* AI Tools Dialog */}
+        <CampaignAITools
+          campaign={activeCampaign}
+          posts={activePosts}
+          open={showAITools}
+          onOpenChange={setShowAITools}
+        />
+
+        {/* Automation Dialog */}
+        <CampaignAutomation
+          campaign={activeCampaign}
+          posts={activePosts}
+          open={showAutomation}
+          onOpenChange={setShowAutomation}
+        />
       </div>
     );
   }
@@ -301,7 +228,6 @@ export function CampaignsTab() {
                 </div>
                 {c.objective && <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{c.objective}</p>}
 
-                {/* Mini progress bar */}
                 {postCount > 0 && (
                   <div className="mb-3">
                     <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
@@ -315,19 +241,10 @@ export function CampaignsTab() {
                 )}
 
                 <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    {postCount} posts
-                  </span>
-                  {c.target_audience && (
-                    <span className="flex items-center gap-1"><Users className="w-3 h-3" />{c.target_audience}</span>
-                  )}
-                  {c.start_date && (
-                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(c.start_date), 'dd/MM')} — {c.end_date ? format(new Date(c.end_date), 'dd/MM') : '...'}</span>
-                  )}
-                  {c.budget && (
-                    <span className="flex items-center gap-1"><Target className="w-3 h-3" />R$ {Number(c.budget).toLocaleString()}</span>
-                  )}
+                  <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{postCount} posts</span>
+                  {c.target_audience && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{c.target_audience}</span>}
+                  {c.start_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(c.start_date), 'dd/MM')} — {c.end_date ? format(new Date(c.end_date), 'dd/MM') : '...'}</span>}
+                  {c.budget && <span className="flex items-center gap-1"><Target className="w-3 h-3" />R$ {Number(c.budget).toLocaleString()}</span>}
                 </div>
               </Card>
             );
@@ -357,7 +274,6 @@ export function CampaignsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* AI Campaign Wizard */}
       <CampaignWizard
         open={showAiGen}
         onOpenChange={setShowAiGen}
