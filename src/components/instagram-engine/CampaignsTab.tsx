@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route, CalendarPlus, MessageCircle, Presentation, ShieldAlert } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route, CalendarPlus, MessageCircle, Presentation, ShieldAlert, CalendarHeart, KanbanSquare, Search, Layers } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -68,6 +68,10 @@ import { CampaignAutoPlanner } from './CampaignAutoPlanner';
 import { CampaignSentimentAnalysis } from './CampaignSentimentAnalysis';
 import { CampaignPitchDeck } from './CampaignPitchDeck';
 import { CampaignRiskScore } from './CampaignRiskScore';
+import { CampaignHolidayCalendar } from './CampaignHolidayCalendar';
+import { CampaignCollaborationBoard } from './CampaignCollaborationBoard';
+import { CampaignContentGapAnalyzer } from './CampaignContentGapAnalyzer';
+import { CampaignCloner } from './CampaignCloner';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -91,7 +95,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score' | 'holidays' | 'collab_board' | 'content_gap' | 'cloner'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -314,6 +318,10 @@ export function CampaignsTab() {
             { key: 'sentiment' as const, label: 'Sentimento', icon: <MessageCircle className="w-3.5 h-3.5" /> },
             { key: 'pitch_deck' as const, label: 'Pitch Deck', icon: <Presentation className="w-3.5 h-3.5" /> },
             { key: 'risk_score' as const, label: 'Risk Score', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
+            { key: 'holidays' as const, label: 'Feriados', icon: <CalendarHeart className="w-3.5 h-3.5" /> },
+            { key: 'collab_board' as const, label: 'Tarefas', icon: <KanbanSquare className="w-3.5 h-3.5" /> },
+            { key: 'content_gap' as const, label: 'Gap Analysis', icon: <Search className="w-3.5 h-3.5" /> },
+            { key: 'cloner' as const, label: 'Clonar', icon: <Layers className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
@@ -503,6 +511,22 @@ export function CampaignsTab() {
 
         {detailView === 'risk_score' && (
           <CampaignRiskScore campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'holidays' && (
+          <CampaignHolidayCalendar campaigns={campaigns || []} />
+        )}
+
+        {detailView === 'collab_board' && (
+          <CampaignCollaborationBoard campaign={activeCampaign} />
+        )}
+
+        {detailView === 'content_gap' && (
+          <CampaignContentGapAnalyzer campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'cloner' && (
+          <CampaignCloner campaigns={campaigns || []} posts={posts || []} />
         )}
 
         {detailView === 'gantt' && (
