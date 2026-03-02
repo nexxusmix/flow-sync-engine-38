@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { InstagramPost, useUpdatePost, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
-import { Copy, Check, Download, CalendarPlus, ArrowLeft, Sparkles, Hash, Play, Layers, Image, BookOpen, FileText, Eye, Clock, ExternalLink } from 'lucide-react';
+import { Copy, Check, Download, CalendarPlus, ArrowLeft, Sparkles, Hash, Play, Layers, Image, BookOpen, FileText, Eye, Clock, ExternalLink, Package, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PostResultViewProps {
   post: InstagramPost;
@@ -66,6 +64,7 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
   const [scheduleDate, setScheduleDate] = useState(
     post.scheduled_at ? format(new Date(post.scheduled_at), "yyyy-MM-dd'T'HH:mm") : ''
   );
+  const [exporting, setExporting] = useState(false);
 
   const pillar = PILLARS.find(p => p.key === post.pillar);
   const formatInfo = FORMATS.find(f => f.key === post.format);
@@ -99,39 +98,57 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
     }
   };
 
+  const handleDownloadPNG = () => {
+    if (!post.thumbnail_url) {
+      toast.error('Nenhuma imagem disponível para download');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = post.thumbnail_url;
+    a.download = `${post.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'post'}.png`;
+    a.target = '_blank';
+    a.click();
+    toast.success('Download PNG iniciado! 📥');
+  };
+
+  const handleExportZIP = async () => {
+    setExporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('export-instagram-post', {
+        body: { post_id: post.id },
+      });
+
+      if (error) throw new Error(error.message || 'Erro ao exportar');
+      if (!data?.zip_url) throw new Error('URL do ZIP não gerada');
+
+      // Download ZIP
+      const a = document.createElement('a');
+      a.href = data.zip_url;
+      a.download = `${post.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'post'}-export.zip`;
+      a.click();
+      toast.success('ZIP completo exportado! 📦');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao exportar ZIP');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleExportTxt = () => {
     const sections = [
       `# ${post.title}`,
       `Formato: ${formatInfo?.label || post.format}`,
       `Pilar: ${pillar?.label || post.pillar || '—'}`,
       post.scheduled_at ? `Agendado: ${format(new Date(post.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}` : '',
-      '',
-      '## Hook',
-      post.hook || '—',
-      '',
-      '## Roteiro',
-      post.script || '—',
-      '',
-      '## Legenda Curta',
-      post.caption_short || '—',
-      '',
-      '## Legenda Média',
-      post.caption_medium || '—',
-      '',
-      '## Legenda Longa',
-      post.caption_long || '—',
-      '',
-      '## CTA',
-      post.cta || '—',
-      '',
-      '## Comentário Fixado',
-      post.pinned_comment || '—',
-      '',
-      '## Hashtags',
-      hashtagsText || '—',
-      '',
-      '## Sugestão de Capa',
-      post.cover_suggestion || '—',
+      '', '## Hook', post.hook || '—',
+      '', '## Roteiro', post.script || '—',
+      '', '## Legenda Curta', post.caption_short || '—',
+      '', '## Legenda Média', post.caption_medium || '—',
+      '', '## Legenda Longa', post.caption_long || '—',
+      '', '## CTA', post.cta || '—',
+      '', '## Comentário Fixado', post.pinned_comment || '—',
+      '', '## Hashtags', hashtagsText || '—',
+      '', '## Sugestão de Capa', post.cover_suggestion || '—',
     ].filter(l => l !== undefined).join('\n');
 
     const blob = new Blob([sections], { type: 'text/plain;charset=utf-8' });
@@ -147,16 +164,25 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
   return (
     <div className="space-y-5">
       {/* Top bar */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 text-xs">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {post.thumbnail_url && (
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-1.5 text-xs h-8">
+              <Image className="w-3.5 h-3.5" /> Download PNG
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleExportZIP} disabled={exporting} className="gap-1.5 text-xs h-8">
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+            Exportar ZIP
+          </Button>
           <Button variant="outline" size="sm" onClick={handleExportTxt} className="gap-1.5 text-xs h-8">
-            <Download className="w-3.5 h-3.5" /> Exportar TXT
+            <Download className="w-3.5 h-3.5" /> TXT
           </Button>
           <Button variant="outline" size="sm" onClick={handleCopyAll} className="gap-1.5 text-xs h-8">
-            <Copy className="w-3.5 h-3.5" /> Copiar Legenda + Hashtags
+            <Copy className="w-3.5 h-3.5" /> Legenda + Hashtags
           </Button>
           <Button size="sm" onClick={() => setShowSchedule(true)} className="gap-1.5 text-xs h-8 bg-primary hover:bg-primary/90 text-primary-foreground">
             <CalendarPlus className="w-3.5 h-3.5" /> Agendar
@@ -169,7 +195,6 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
         <div className="h-1.5 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737]" />
         <div className="p-5 md:p-6">
           <div className="flex items-start gap-4">
-            {/* Thumbnail */}
             {post.thumbnail_url ? (
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden bg-muted shrink-0">
                 <img src={post.thumbnail_url} alt={post.title} className="w-full h-full object-cover" />
@@ -180,8 +205,6 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
                 {FORMAT_ICONS[post.format] || <Image className="w-8 h-8 text-muted-foreground/40" />}
               </div>
             )}
-
-            {/* Info */}
             <div className="flex-1 min-w-0 space-y-2">
               <h2 className="text-lg md:text-xl font-bold text-foreground leading-tight">{post.title}</h2>
               <div className="flex flex-wrap gap-1.5">
@@ -223,9 +246,7 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
           <h3 className="text-sm font-medium text-foreground">Preview do Post</h3>
         </div>
         <div className="max-w-sm mx-auto">
-          {/* Mini Instagram post preview */}
           <div className="border border-border/50 rounded-xl overflow-hidden bg-background">
-            {/* Header */}
             <div className="flex items-center gap-2 p-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] p-[2px]">
                 <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
@@ -234,7 +255,6 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
               </div>
               <span className="text-xs font-semibold">squadfilme</span>
             </div>
-            {/* Image */}
             <div className="aspect-square bg-muted/30 flex items-center justify-center" style={{ background: pillar ? `linear-gradient(135deg, ${pillar.color}11, ${pillar.color}22)` : undefined }}>
               {post.thumbnail_url ? (
                 <img src={post.thumbnail_url} alt="" className="w-full h-full object-cover" />
@@ -245,7 +265,6 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
                 </div>
               )}
             </div>
-            {/* Caption preview */}
             <div className="p-3 space-y-1">
               <p className="text-[11px] text-foreground leading-relaxed">
                 <span className="font-semibold">squadfilme </span>
@@ -363,13 +382,19 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
       )}
 
       {/* Bottom Actions */}
-      <div className="flex items-center justify-between gap-3 pt-2 pb-6">
+      <div className="flex items-center justify-between gap-3 pt-2 pb-6 flex-wrap">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 text-xs">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportTxt} className="gap-1.5 text-xs">
-            <Download className="w-3.5 h-3.5" /> Exportar
+        <div className="flex gap-2 flex-wrap">
+          {post.thumbnail_url && (
+            <Button variant="outline" size="sm" onClick={handleDownloadPNG} className="gap-1.5 text-xs">
+              <Image className="w-3.5 h-3.5" /> Download PNG
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleExportZIP} disabled={exporting} className="gap-1.5 text-xs">
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+            Exportar ZIP
           </Button>
           <Button variant="outline" size="sm" onClick={handleCopyAll} className="gap-1.5 text-xs">
             <Copy className="w-3.5 h-3.5" /> Copiar Tudo

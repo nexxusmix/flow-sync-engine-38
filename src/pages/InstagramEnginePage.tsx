@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -193,6 +194,39 @@ export default function InstagramEnginePage() {
       });
       if (result) {
         const scheduledDate = new Date(); scheduledDate.setDate(scheduledDate.getDate() + 1); scheduledDate.setHours(10, 0, 0, 0);
+        
+        // Generate visual image using AI
+        let thumbnailUrl: string | null = null;
+        try {
+          toast.info('Gerando imagem visual do post... 🎨');
+          const imagePrompt = [
+            result.title || genTopic,
+            result.cover_suggestion || '',
+            `Style: ${genTrend !== 'auto' ? genTrend : 'cinematic, professional'}`,
+            `Category: ${genPillar}`,
+          ].filter(Boolean).join('. ');
+          
+          const aspectMap: Record<string, '1:1' | '9:16' | '16:9'> = {
+            '1:1': '1:1', '4:5': '1:1', '9:16': '9:16', '16:9': '16:9', 'auto': genPostType === 'reel' || genPostType === 'story' || genPostType === 'story_sequence' ? '9:16' : '1:1',
+          };
+          
+          const { data: imgData, error: imgError } = await supabase.functions.invoke('generate-image', {
+            body: {
+              prompt: imagePrompt,
+              purpose: 'key_visual',
+              aspectRatio: aspectMap[genAspectRatio] || '1:1',
+            },
+          });
+          
+          if (!imgError && imgData?.imageUrl) {
+            thumbnailUrl = imgData.imageUrl;
+          } else {
+            console.warn('Image generation failed, continuing without thumbnail:', imgError);
+          }
+        } catch (imgErr) {
+          console.warn('Image generation error:', imgErr);
+        }
+        
         const createdPost = await createPost.mutateAsync({
           title: result.title || genTopic, format: result.format || formatForAI, pillar: result.pillar || genPillar,
           objective: result.objective || 'authority', status: 'planned', scheduled_at: scheduledDate.toISOString(),
@@ -201,6 +235,7 @@ export default function InstagramEnginePage() {
           cta: result.cta || null, pinned_comment: result.pinned_comment || null, hashtags: result.hashtags || [],
           cover_suggestion: result.cover_suggestion || null, carousel_slides: result.carousel_slides || [],
           story_sequence: result.story_sequence || [], checklist: result.checklist || [], ai_generated: true, position: 0,
+          thumbnail_url: thumbnailUrl,
         } as any);
         if (isFullPackage && result.story_sequence?.length > 0) {
           const storyDate = new Date(scheduledDate); storyDate.setHours(18, 0, 0, 0);

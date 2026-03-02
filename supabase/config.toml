@@ -226,3 +226,5 @@ verify_jwt = false
 [functions.classify-file]
 verify_jwt = false
 
+[functions.export-instagram-post]
+verify_jwt = false
