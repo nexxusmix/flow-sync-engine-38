@@ -1,27 +1,66 @@
 
-## Problema
 
-Os cards de objetivo e os chips de sugestão da IA no **CampaignWizard** estão sendo cortados visualmente. Isso acontece porque:
+## Refinamento de Layout, Design e Cores -- Campanhas Instagram
 
-1. O `DialogContent` tem `overflow-y-auto` que corta sombras/glows dos cards selecionados
-2. Os chips de sugestão da IA têm texto longo que é truncado pelo container
-3. O padding interno não dá espaço suficiente para as sombras dos cards selecionados
+### Problemas Identificados
 
-## Correções
+1. **Navegacao catastrofica**: 60+ botoes planos espalhados em 4 linhas sem categorias. Impossivel encontrar algo rapido.
+2. **Header sobrecarregado**: 7 botoes de acao (Relatorio Final, Relatorio, Automacoes, IA Avancada, Duplicar, Template, PDF) todos amontoados.
+3. **Ausencia de hierarquia visual**: Todos os botoes tem o mesmo peso visual -- nao ha distincao entre funcoes primarias (Dashboard, Kanban, Calendario) e funcoes avancadas (DNA, Autopsia, Shadow).
+4. **Cards da lista de campanhas**: Funcionais mas sem a estetica premium do resto da plataforma (sem Tilt3D, sem glow).
+5. **Cores inconsistentes**: Badges usam vermelho/emerald enquanto o padrao Sonance e azul/branco/cinza.
 
-### 1. Ajustar overflow no container dos cards
-- Adicionar `overflow-visible` no grid de objetivos e wraps de sugestões, com padding extra para acomodar sombras/glows
-- Usar um wrapper interno com `overflow-visible` e padding para que as sombras não sejam cortadas pelo scroll container
+---
 
-### 2. Chips de sugestão — permitir texto multi-linha
-- Remover qualquer truncamento implícito nos `SuggestionChip` e usar `text-left` + `whitespace-normal` para que textos longos não sejam cortados
-- Ajustar o layout dos chips de sugestão de `flex-wrap` para um stack vertical (`flex-col`) quando o conteúdo for longo (sugestões de temas costumam ser frases completas)
+### Solucao: Mega-Menu Categorizado + Header Premium
 
-### 3. Cards de objetivo — espaço para glow
-- Adicionar `p-1` no wrapper do grid para que o `shadow-[0_0_15px...]` do card selecionado não seja clipado
+#### 1. Navegacao Categorizada (substituir os 60+ botoes)
 
-### Arquivo editado
-- `src/components/instagram-engine/CampaignWizard.tsx`
-  - Linha ~419: Wrapper do grid de objetivos recebe padding extra (`p-1 -m-1`) para acomodar sombras
-  - Linha ~458: Container de sugestões da IA muda de `flex flex-wrap gap-1.5` para `flex flex-col gap-2` (chips viram blocos completos sem truncamento)
-  - Linha ~346-358: `SuggestionChip` recebe `whitespace-normal text-left` para permitir texto quebrando em múltiplas linhas
+Agrupar os 60+ botoes em 8 categorias com um sistema de dropdown/popover:
+
+```text
+[Dashboard] [Producao v] [Calendario v] [Analytics v] [Estrategia v] [IA Tools v] [Colaboracao v] [Exportar v]
+```
+
+**Categorias:**
+- **Producao**: Kanban, Aprovacao, Workflow, Publicacao, Feed, Timeline
+- **Calendario**: Calendario, Cal. Unificado, Gantt, Timing, Feriados, Sazonal
+- **Analytics**: Analytics, ROI, Heatmap, Health, Velocity, Sentimento, Mood Tracker
+- **Estrategia**: Metas, Funil, Content Funnel, Content Map, Personas, Jornada, Story Arc, DNA
+- **IA Tools**: Alertas IA, Simulador, Auto-Planner, Briefing, Ads Copy, Spin, Hashtags, Hashtag Intel, A/B Test, A/B Framework, Risk Score, Gap Analysis, Pitch Deck, Budget
+- **Colaboracao**: Colaboracao, Tarefas, Revisao, War Room, Audiencia
+- **Exportar**: Relatorio, PDF Report, Comparar, Cross-Compare, Post-Mortem, Autopsia, Cloner, Swipe Files, Repost, Reciclagem, Repurpose, Concorrentes, Shadow, Blitz 24h, Mood Board
+
+#### 2. Header Refinado
+
+- Mover acoes secundarias (Duplicar, Template, PDF) para um menu "..." (DropdownMenu)
+- Manter apenas 2-3 acoes primarias visiveis (IA Avancada, Automacoes)
+- Adicionar indicadores visuais de progresso (ring animado) no header
+
+#### 3. Cards da Lista de Campanhas
+
+- Aplicar `glass-card` com borda sutil animada no hover
+- Adicionar micro-sparkline de progresso
+- Usar paleta monocromatica azul nos badges de status (em vez de vermelho/emerald)
+- Ring de progresso circular em vez de barra horizontal
+
+#### 4. Padrao de Cores Sonance
+
+- Status badges: azul claro (planning), azul medio (active), cinza (completed), cinza claro (paused) -- sem vermelho/emerald
+- Accent glow azul nos elementos interativos
+- Progress bars em escala monocromatica de azul
+
+---
+
+### Arquivos Afetados
+
+- `src/components/instagram-engine/CampaignsTab.tsx` -- Refatoracao completa da navegacao (mega-menu categorizado), header simplificado, cards premium, paleta de cores
+
+### Detalhes Tecnicos
+
+- Usar `DropdownMenu` do Radix para as categorias de navegacao
+- Cada categoria sera um `DropdownMenuTrigger` com `DropdownMenuContent` listando os sub-itens
+- O botao "Dashboard" permanece como botao direto (sem dropdown)
+- Acoes secundarias do header movidas para `DropdownMenu` com icone `MoreHorizontal`
+- Cards usam `hover:border-primary/20` + `transition-all duration-300` para efeito premium
+
