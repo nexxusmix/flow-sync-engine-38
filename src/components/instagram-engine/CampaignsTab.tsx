@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route, CalendarPlus, MessageCircle, Presentation, ShieldAlert } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -64,6 +64,10 @@ import { CampaignCrossComparator } from './CampaignCrossComparator';
 import { CampaignHashtagIntelligence } from './CampaignHashtagIntelligence';
 import { CampaignContentRecycling } from './CampaignContentRecycling';
 import { CampaignABTestFramework } from './CampaignABTestFramework';
+import { CampaignAutoPlanner } from './CampaignAutoPlanner';
+import { CampaignSentimentAnalysis } from './CampaignSentimentAnalysis';
+import { CampaignPitchDeck } from './CampaignPitchDeck';
+import { CampaignRiskScore } from './CampaignRiskScore';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -87,7 +91,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -306,11 +310,13 @@ export function CampaignsTab() {
             { key: 'hashtag_intel' as const, label: 'Hashtag Intel', icon: <Hash className="w-3.5 h-3.5" /> },
             { key: 'recycle' as const, label: 'Reciclagem', icon: <RefreshCw className="w-3.5 h-3.5" /> },
             { key: 'ab_framework' as const, label: 'A/B Test', icon: <GitCompare className="w-3.5 h-3.5" /> },
+            { key: 'auto_planner' as const, label: 'Auto-Planner', icon: <CalendarPlus className="w-3.5 h-3.5" /> },
+            { key: 'sentiment' as const, label: 'Sentimento', icon: <MessageCircle className="w-3.5 h-3.5" /> },
+            { key: 'pitch_deck' as const, label: 'Pitch Deck', icon: <Presentation className="w-3.5 h-3.5" /> },
+            { key: 'risk_score' as const, label: 'Risk Score', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
-            { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
-            { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
             { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
           ]).map(v => (
@@ -481,6 +487,22 @@ export function CampaignsTab() {
 
         {detailView === 'ab_framework' && (
           <CampaignABTestFramework campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'auto_planner' && (
+          <CampaignAutoPlanner campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'sentiment' && (
+          <CampaignSentimentAnalysis campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'pitch_deck' && (
+          <CampaignPitchDeck campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'risk_score' && (
+          <CampaignRiskScore campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
