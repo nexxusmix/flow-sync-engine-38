@@ -320,20 +320,82 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
       {/* Carousel Slides */}
       {post.carousel_slides?.length > 0 && (
         <Card className="glass-card border border-border/50 p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-primary" />
-            <h4 className="text-xs font-medium text-foreground">Slides do Carrossel</h4>
-            <Badge variant="secondary" className="text-[8px]">{post.carousel_slides.length} slides</Badge>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-primary" />
+              <h4 className="text-xs font-medium text-foreground">Slides do Carrossel</h4>
+              <Badge variant="secondary" className="text-[8px]">{post.carousel_slides.length} slides</Badge>
+            </div>
+            {post.carousel_slides.some((s: any) => s.image_url) && (
+              <Button variant="outline" size="sm" className="gap-1.5 text-[10px] h-7" onClick={() => {
+                post.carousel_slides.forEach((slide: any, i: number) => {
+                  if (slide.image_url) {
+                    const a = document.createElement('a');
+                    a.href = slide.image_url;
+                    a.download = `slide-${i + 1}.png`;
+                    a.target = '_blank';
+                    a.click();
+                  }
+                });
+                toast.success('Download dos slides iniciado! 📥');
+              }}>
+                <Download className="w-3 h-3" /> Baixar Todos
+              </Button>
+            )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {post.carousel_slides.map((slide: any, i: number) => (
-              <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1">
-                <p className="text-[10px] text-muted-foreground">Slide {i + 1}</p>
-                <p className="text-xs font-medium text-foreground">{slide.title}</p>
-                <p className="text-[11px] text-muted-foreground">{slide.body}</p>
-              </div>
-            ))}
-          </div>
+          {/* Visual carousel preview */}
+          {post.carousel_slides.some((s: any) => s.image_url) && (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {post.carousel_slides.map((slide: any, i: number) => (
+                <div key={i} className="min-w-[200px] max-w-[220px] shrink-0 rounded-xl overflow-hidden border border-border/30 bg-muted/20">
+                  {slide.image_url ? (
+                    <div className="aspect-square relative group">
+                      <img src={slide.image_url} alt={`Slide ${i + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-white h-8 gap-1"
+                          onClick={() => {
+                            const a = document.createElement('a');
+                            a.href = slide.image_url;
+                            a.download = `slide-${i + 1}.png`;
+                            a.target = '_blank';
+                            a.click();
+                          }}
+                        >
+                          <Download className="w-3.5 h-3.5" /> PNG
+                        </Button>
+                      </div>
+                      <div className="absolute top-2 left-2">
+                        <Badge className="bg-black/60 text-white text-[9px] border-0">{i + 1}/{post.carousel_slides.length}</Badge>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="aspect-square flex items-center justify-center bg-muted/30">
+                      <Image className="w-8 h-8 text-muted-foreground/20" />
+                    </div>
+                  )}
+                  <div className="p-2.5 space-y-0.5">
+                    <p className="text-xs font-medium text-foreground leading-tight">{slide.title}</p>
+                    <p className="text-[10px] text-muted-foreground leading-tight line-clamp-2">{slide.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Text-only fallback for slides without images */}
+          {!post.carousel_slides.some((s: any) => s.image_url) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {post.carousel_slides.map((slide: any, i: number) => (
+                <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border/30 space-y-1">
+                  <p className="text-[10px] text-muted-foreground">Slide {i + 1}</p>
+                  <p className="text-xs font-medium text-foreground">{slide.title}</p>
+                  <p className="text-[11px] text-muted-foreground">{slide.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       )}
 
