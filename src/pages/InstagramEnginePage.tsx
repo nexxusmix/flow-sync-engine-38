@@ -616,6 +616,8 @@ export default function InstagramEnginePage() {
                 onSelect={(l) => setGenLayout(l?.key || null)}
                 selectedReference={genReference}
                 onSelectReference={setGenReference}
+                previewTitle={genTopic}
+                previewHook={genInstruction || undefined}
                 compact
               />
             </div>
