@@ -1,45 +1,44 @@
 
 
-## Plano: Regenerar Post + 30 Opções de Layout Baseadas em Referências
+## Plano: Gerar Campanha com IA baseada em Pesquisa, Analise e Dados
 
-### O que será feito
+### Objetivo
+Adicionar um botão "Gerar Campanha com IA" na aba Campanhas que pesquisa tendencias do nicho, analisa dados do perfil/historico e gera automaticamente uma campanha completa com objetivo, publico, mensagens-chave, KPIs e plano de conteudo pre-populado.
 
-**1. Botão "Regenerar Post"** na `PostResultView` — permite gerar novamente todo o conteúdo (texto + imagem) do post atual sem criar um novo, mantendo o mesmo ID.
+### Fluxo do Usuario
+1. Clica em "Gerar Campanha com IA" na tela de campanhas
+2. Abre dialog com campos opcionais: tema/foco da campanha, duracao (1-4 semanas), budget
+3. A IA recebe como contexto: perfil configurado, referencias salvas, memoria de performance, posts anteriores
+4. Retorna campanha completa que e salva automaticamente na tabela `instagram_campaigns` com `key_messages`, `content_plan` e `kpis` preenchidos
+5. Apos salvar, mostra a campanha criada com os detalhes
 
-**2. Seletor de Layout com 30 opções** — um painel visual no diálogo de geração e na PostResultView que exibe 30 templates de layout inspirados em estilos comuns do Instagram (minimalista, bold text, gradient, split, etc). As referências já salvas em `instagram_references` serão consultadas para enriquecer o prompt de geração visual.
+### Implementacao
 
-### Implementação
+**A. Nova action `generate_campaign` no Edge Function `instagram-ai/index.ts`**
+- Recebe: `theme`, `duration_weeks`, `budget`, contexto automatico (perfil, referencias, memoria)
+- Busca dados do `instagram_profile_config` e `instagram_references` para enriquecer o prompt
+- Prompt instruido a fazer pesquisa de mercado, analisar tendencias do nicho e gerar:
+  - Nome, objetivo, publico-alvo, periodo
+  - Mensagens-chave (array)
+  - KPIs projetados
+  - Plano de conteudo com posts sugeridos (titulos, formatos, pilares, hooks)
+- Retorna JSON estruturado
 
-**A. PostResultView.tsx — Botão Regenerar**
-- Adicionar botão "Regenerar" na barra de ações (ao lado de Download PNG / Export ZIP)
-- Ao clicar, abre mini-dialog com opção de escolher layout
-- Chama a mesma lógica de `handleGeneratePost` (AI text + generate-image) mas faz UPDATE no post existente ao invés de INSERT
+**B. Componente `AiCampaignGenerator` em `CampaignsTab.tsx`**
+- Botao "Gerar com IA" ao lado de "Nova Campanha"
+- Dialog com inputs: tema (opcional), duracao, budget
+- Estado de loading com mensagem "Analisando dados e gerando campanha..."
+- Ao receber resultado: INSERT na `instagram_campaigns` com todos os campos preenchidos
+- Toast de sucesso + navegar para a campanha criada
 
-**B. Novo componente: `LayoutPicker.tsx`**
-- Grid visual com 30 opções de layout, cada uma com:
-  - Mini thumbnail (CSS-only ou SVG placeholder representando o estilo)
-  - Nome do layout (ex: "Bold Central", "Gradient Overlay", "Split Text/Image", "Cinematic Bars", etc.)
-  - Prompt modifier que será injetado na geração de imagem
-- 30 layouts pré-definidos cobrindo estilos como:
-  - Tipografia bold central, minimalista, gradient, duotone, editorial, magazine, storytelling, quote card, data-driven, comparison, before/after, polaroid, film grain, neon glow, pastel soft, dark moody, high contrast, retro vintage, futuristic, organic/nature, geometric, collage, frame-in-frame, spotlight, diagonal split, horizontal bars, vertical bars, mosaic grid, watercolor, glitch art
+**C. Editar `CampaignsTab.tsx`**
+- Adicionar botao com icone Sparkles na barra de acoes
+- Integrar o dialog de geracao
 
-**C. Integração com Referências existentes**
-- No `LayoutPicker`, buscar `instagram_references` do usuário
-- Mostrar seção "Baseado nas suas referências" no topo com thumbs das referências
-- Ao selecionar uma referência, seu estilo visual (tags, media_type, note) é injetado como contexto extra no prompt de geração de imagem
+### Arquivos
 
-**D. Diálogo de Geração (InstagramEnginePage.tsx)**
-- Adicionar `LayoutPicker` ao diálogo de geração existente
-- O layout selecionado adiciona um `layout_style` ao prompt enviado ao `generate-image`
-
-**E. Edge Function `generate-image/index.ts`**
-- Nenhuma mudança estrutural — o layout style será injetado via prompt text (já suportado)
-
-### Arquivos a criar/editar
-
-| Arquivo | Ação |
+| Arquivo | Acao |
 |---|---|
-| `src/components/instagram-engine/LayoutPicker.tsx` | **Criar** — 30 layouts + referências |
-| `src/components/instagram-engine/PostResultView.tsx` | **Editar** — botão Regenerar + integração LayoutPicker |
-| `src/pages/InstagramEnginePage.tsx` | **Editar** — LayoutPicker no diálogo + layout no prompt |
+| `supabase/functions/instagram-ai/index.ts` | Adicionar case `generate_campaign` |
+| `src/components/instagram-engine/CampaignsTab.tsx` | Adicionar botao + dialog de geracao IA |
 
