@@ -80,6 +80,10 @@ import { CampaignMoodBoard } from './CampaignMoodBoard';
 import { CampaignMicroBlitz } from './CampaignMicroBlitz';
 import { CampaignAudienceHeatmap } from './CampaignAudienceHeatmap';
 import { CampaignAutopsy } from './CampaignAutopsy';
+import { CampaignDNA } from './CampaignDNA';
+import { CampaignStoryArc } from './CampaignStoryArc';
+import { CampaignBudgetAllocator } from './CampaignBudgetAllocator';
+import { CampaignWarRoom } from './CampaignWarRoom';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -103,7 +107,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score' | 'holidays' | 'collab_board' | 'content_gap' | 'cloner' | 'content_funnel' | 'timing' | 'velocity' | 'client_review' | 'mood_board' | 'micro_blitz' | 'audience_heatmap' | 'autopsy'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score' | 'holidays' | 'collab_board' | 'content_gap' | 'cloner' | 'content_funnel' | 'timing' | 'velocity' | 'client_review' | 'mood_board' | 'micro_blitz' | 'audience_heatmap' | 'autopsy' | 'dna' | 'story_arc' | 'budget_allocator' | 'war_room'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -338,6 +342,10 @@ export function CampaignsTab() {
             { key: 'micro_blitz' as const, label: 'Blitz 24h', icon: <Zap className="w-3.5 h-3.5" /> },
             { key: 'audience_heatmap' as const, label: 'Audiência', icon: <Users className="w-3.5 h-3.5" /> },
             { key: 'autopsy' as const, label: 'Autopsia', icon: <BookOpen className="w-3.5 h-3.5" /> },
+            { key: 'dna' as const, label: 'DNA', icon: <Copy className="w-3.5 h-3.5" /> },
+            { key: 'story_arc' as const, label: 'Arco', icon: <FileText className="w-3.5 h-3.5" /> },
+            { key: 'budget_allocator' as const, label: 'Budget', icon: <DollarSign className="w-3.5 h-3.5" /> },
+            { key: 'war_room' as const, label: 'War Room', icon: <Shield className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
@@ -575,6 +583,22 @@ export function CampaignsTab() {
 
         {detailView === 'autopsy' && (
           <CampaignAutopsy campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'dna' && (
+          <CampaignDNA campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'story_arc' && (
+          <CampaignStoryArc campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'budget_allocator' && (
+          <CampaignBudgetAllocator campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'war_room' && (
+          <CampaignWarRoom campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
