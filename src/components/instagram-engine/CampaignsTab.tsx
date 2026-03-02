@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,6 +31,9 @@ import { CampaignTemplateLibrary, SaveCampaignAsTemplateButton } from './Campaig
 import { CampaignCreativeBriefing } from './CampaignCreativeBriefing';
 import { CampaignAlerts } from './CampaignAlerts';
 import { CampaignChangelog } from './CampaignChangelog';
+import { CampaignROIDashboard } from './CampaignROIDashboard';
+import { CampaignFinalReport } from './CampaignFinalReport';
+import { CampaignABComparison } from './CampaignABComparison';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -52,7 +55,9 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi'>('dashboard');
+  const [showFinalReport, setShowFinalReport] = useState(false);
+  const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [briefingPost, setBriefingPost] = useState<InstagramPost | null>(null);
@@ -194,6 +199,9 @@ export function CampaignsTab() {
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
+            <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => setShowFinalReport(true)}>
+              <FileBarChart className="w-3.5 h-3.5" /> Relatório Final
+            </Button>
             <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => setShowReport(true)}>
               <FileBarChart className="w-3.5 h-3.5" /> Relatório
             </Button>
@@ -237,6 +245,7 @@ export function CampaignsTab() {
             { key: 'calendar' as const, label: 'Calendário', icon: <CalendarDays className="w-3.5 h-3.5" /> },
             { key: 'approval' as const, label: 'Aprovação', icon: <CheckSquare className="w-3.5 h-3.5" /> },
             { key: 'goals' as const, label: 'Metas', icon: <Target className="w-3.5 h-3.5" /> },
+            { key: 'roi' as const, label: 'ROI', icon: <DollarSign className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Alertas', icon: <Bell className="w-3.5 h-3.5" /> },
             { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
             { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
@@ -294,6 +303,10 @@ export function CampaignsTab() {
           <CampaignGoals campaignId={selectedCampaign} />
         )}
 
+        {detailView === 'roi' && (
+          <CampaignROIDashboard campaign={activeCampaign} posts={activePosts} />
+        )}
+
         {detailView === 'alerts' && (
           <div>
             <h4 className="text-sm font-medium text-foreground mb-3">Notificações & Lembretes</h4>
@@ -320,6 +333,7 @@ export function CampaignsTab() {
         <CampaignAITools campaign={activeCampaign} posts={activePosts} open={showAITools} onOpenChange={setShowAITools} />
         <CampaignAutomation campaign={activeCampaign} posts={activePosts} open={showAutomation} onOpenChange={setShowAutomation} />
         <CampaignPostReport campaign={activeCampaign} posts={activePosts} open={showReport} onOpenChange={setShowReport} />
+        <CampaignFinalReport campaign={activeCampaign} posts={activePosts} open={showFinalReport} onOpenChange={setShowFinalReport} />
         {briefingPost && (
           <CampaignCreativeBriefing post={briefingPost} open={!!briefingPost} onOpenChange={o => !o && setBriefingPost(null)} />
         )}
@@ -340,7 +354,7 @@ export function CampaignsTab() {
             <BookTemplate className="w-3.5 h-3.5" /> Templates
           </Button>
           {(campaigns?.length || 0) >= 2 && (
-            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowComparison(true)}>
+            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowABComparison(true)}>
               <GitCompare className="w-3.5 h-3.5" /> Comparar
             </Button>
           )}
@@ -431,6 +445,7 @@ export function CampaignsTab() {
 
       <CampaignWizard open={showAiGen} onOpenChange={setShowAiGen} onCampaignCreated={(id) => setSelectedCampaign(id)} />
       <CampaignComparison open={showComparison} onOpenChange={setShowComparison} />
+      <CampaignABComparison open={showABComparison} onOpenChange={setShowABComparison} />
       <CampaignTemplateLibrary open={showTemplates} onOpenChange={setShowTemplates} onApplyTemplate={(id) => setSelectedCampaign(id)} />
     </div>
   );
