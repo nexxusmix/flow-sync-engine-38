@@ -60,6 +60,10 @@ import { CampaignHealthScore } from './CampaignHealthScore';
 import { CampaignPostMortem } from './CampaignPostMortem';
 import { CampaignPersonaMap } from './CampaignPersonaMap';
 import { CampaignCustomerJourney } from './CampaignCustomerJourney';
+import { CampaignCrossComparator } from './CampaignCrossComparator';
+import { CampaignHashtagIntelligence } from './CampaignHashtagIntelligence';
+import { CampaignContentRecycling } from './CampaignContentRecycling';
+import { CampaignABTestFramework } from './CampaignABTestFramework';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -83,7 +87,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -298,9 +302,15 @@ export function CampaignsTab() {
             { key: 'postmortem' as const, label: 'Post-Mortem', icon: <BookOpen className="w-3.5 h-3.5" /> },
             { key: 'personas' as const, label: 'Personas', icon: <UserCircle className="w-3.5 h-3.5" /> },
             { key: 'journey' as const, label: 'Jornada', icon: <Route className="w-3.5 h-3.5" /> },
+            { key: 'cross_compare' as const, label: 'Cross-Compare', icon: <Scale className="w-3.5 h-3.5" /> },
+            { key: 'hashtag_intel' as const, label: 'Hashtag Intel', icon: <Hash className="w-3.5 h-3.5" /> },
+            { key: 'recycle' as const, label: 'Reciclagem', icon: <RefreshCw className="w-3.5 h-3.5" /> },
+            { key: 'ab_framework' as const, label: 'A/B Test', icon: <GitCompare className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
+            { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
+            { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
             { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
           ]).map(v => (
@@ -455,6 +465,22 @@ export function CampaignsTab() {
 
         {detailView === 'journey' && (
           <CampaignCustomerJourney campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'cross_compare' && (
+          <CampaignCrossComparator />
+        )}
+
+        {detailView === 'hashtag_intel' && (
+          <CampaignHashtagIntelligence campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'recycle' && (
+          <CampaignContentRecycling campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'ab_framework' && (
+          <CampaignABTestFramework campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
