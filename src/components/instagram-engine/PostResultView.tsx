@@ -628,6 +628,8 @@ export function PostResultView({ post, onBack, onSchedule, onPostUpdated }: Post
             onSelect={(l) => setRegenLayout(l?.key || null)}
             selectedReference={regenRef}
             onSelectReference={setRegenRef}
+            previewTitle={post.title}
+            previewHook={post.hook || undefined}
           />
           <DialogFooter>
             <Button variant="ghost" size="sm" onClick={() => setShowRegenerate(false)}>Cancelar</Button>
