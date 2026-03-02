@@ -101,8 +101,20 @@ export function CampaignsTab() {
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
 
-      const campaign = result?.result;
-      if (!campaign?.name) throw new Error('IA não retornou campanha válida');
+      let campaign = result?.result;
+      
+      // Handle case where AI returned raw text that needs re-parsing
+      if (campaign?.raw && !campaign?.name) {
+        try {
+          const jsonMatch = campaign.raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) campaign = JSON.parse(jsonMatch[0]);
+        } catch { /* ignore */ }
+      }
+      
+      if (!campaign?.name) {
+        console.error('AI campaign result:', JSON.stringify(result).substring(0, 500));
+        throw new Error('IA não retornou campanha válida. Tente novamente.');
+      }
 
       // Step 3: Mounting calendar
       setAiProgress({ step: 3, label: AI_STEPS[3].label, detail: AI_STEPS[3].detail });

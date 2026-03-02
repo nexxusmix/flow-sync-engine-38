@@ -856,13 +856,28 @@ Baseie-se nos dados do perfil, referências salvas, histórico de posts e memór
     const content = aiResult.choices?.[0]?.message?.content || "";
     console.log(`[instagram-ai] AI responded via ${aiResult.provider}`);
 
-    // Try to parse as JSON
+    // Try to parse as JSON - robust extraction
     let parsed: any = null;
     try {
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
-      parsed = { raw: content };
+      // Try to find JSON object in content
+      try {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          const arrMatch = content.match(/\[[\s\S]*\]/);
+          if (arrMatch) {
+            parsed = JSON.parse(arrMatch[0]);
+          } else {
+            parsed = { raw: content };
+          }
+        }
+      } catch {
+        parsed = { raw: content };
+      }
     }
 
     // Auto-save generation to memory
