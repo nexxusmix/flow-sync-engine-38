@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -48,6 +48,10 @@ import { CampaignContentMap } from './CampaignContentMap';
 import { CampaignCompare } from './CampaignCompare';
 import { CampaignBriefingGenerator } from './CampaignBriefingGenerator';
 import { CampaignRepostAutomation } from './CampaignRepostAutomation';
+import { CampaignResultsSimulator } from './CampaignResultsSimulator';
+import { CampaignSwipeFiles } from './CampaignSwipeFiles';
+import { CampaignAdsCopyGenerator } from './CampaignAdsCopyGenerator';
+import { CampaignUnifiedCalendar } from './CampaignUnifiedCalendar';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -71,7 +75,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -274,6 +278,10 @@ export function CampaignsTab() {
             { key: 'compare' as const, label: 'Comparar', icon: <Scale className="w-3.5 h-3.5" /> },
             { key: 'briefing' as const, label: 'Briefing', icon: <FileSpreadsheet className="w-3.5 h-3.5" /> },
             { key: 'repost' as const, label: 'Repost', icon: <RefreshCw className="w-3.5 h-3.5" /> },
+            { key: 'simulator' as const, label: 'Simulador', icon: <Calculator className="w-3.5 h-3.5" /> },
+            { key: 'swipe_files' as const, label: 'Swipe Files', icon: <BookMarked className="w-3.5 h-3.5" /> },
+            { key: 'ads_copy' as const, label: 'Ads Copy', icon: <Megaphone className="w-3.5 h-3.5" /> },
+            { key: 'unified_calendar' as const, label: 'Cal. Unificado', icon: <CalendarDays className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
@@ -383,6 +391,22 @@ export function CampaignsTab() {
 
         {detailView === 'repost' && (
           <CampaignRepostAutomation campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'simulator' && (
+          <CampaignResultsSimulator campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'swipe_files' && (
+          <CampaignSwipeFiles campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'ads_copy' && (
+          <CampaignAdsCopyGenerator campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'unified_calendar' && (
+          <CampaignUnifiedCalendar campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
