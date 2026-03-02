@@ -40,9 +40,9 @@ export function KanbanCard({ deal, onDelete, onOpen }: KanbanCardProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const getScoreColor = (score: number) => {
-    if (score > 80) return { text: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/20' };
-    if (score > 50) return { text: 'text-amber-400', bg: 'bg-amber-400/10 border-amber-400/20' };
-    return { text: 'text-red-400', bg: 'bg-red-400/10 border-red-400/20' };
+    if (score > 80) return { text: 'text-primary', bg: 'bg-primary/10 border-primary/20' };
+    if (score > 50) return { text: 'text-muted-foreground', bg: 'bg-muted border-border' };
+    return { text: 'text-destructive', bg: 'bg-destructive/10 border-destructive/20' };
   };
 
   const scoreStyle = getScoreColor(deal.score);

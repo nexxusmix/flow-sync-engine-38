@@ -95,20 +95,20 @@ export interface InstagramCampaign {
 
 export const POST_STATUSES = [
   { key: 'idea', label: 'Ideia', color: 'bg-muted text-muted-foreground' },
-  { key: 'planned', label: 'Planejado', color: 'bg-blue-500/15 text-blue-400' },
-  { key: 'in_production', label: 'Em Produção', color: 'bg-amber-500/15 text-amber-400' },
-  { key: 'ready', label: 'Pronto', color: 'bg-emerald-500/15 text-emerald-400' },
-  { key: 'scheduled', label: 'Agendado', color: 'bg-cyan-500/15 text-cyan-400' },
+  { key: 'planned', label: 'Planejado', color: 'bg-primary/15 text-primary' },
+  { key: 'in_production', label: 'Em Produção', color: 'bg-primary/10 text-primary/70' },
+  { key: 'ready', label: 'Pronto', color: 'bg-primary/20 text-primary' },
+  { key: 'scheduled', label: 'Agendado', color: 'bg-primary/15 text-primary/80' },
   { key: 'published', label: 'Publicado', color: 'bg-primary/15 text-primary' },
 ];
 
 export const PILLARS = [
-  { key: 'autoridade', label: 'Autoridade', color: 'hsl(210, 80%, 50%)' },
-  { key: 'portfolio', label: 'Portfólio', color: 'hsl(280, 60%, 50%)' },
-  { key: 'bastidores', label: 'Bastidores', color: 'hsl(30, 80%, 50%)' },
-  { key: 'social_proof', label: 'Social Proof', color: 'hsl(140, 60%, 40%)' },
-  { key: 'educacao', label: 'Educação', color: 'hsl(350, 60%, 50%)' },
-  { key: 'venda', label: 'Venda', color: 'hsl(45, 90%, 50%)' },
+  { key: 'autoridade', label: 'Autoridade', color: 'hsl(195, 100%, 40%)' },
+  { key: 'portfolio', label: 'Portfólio', color: 'hsl(195, 100%, 35%)' },
+  { key: 'bastidores', label: 'Bastidores', color: 'hsl(195, 80%, 45%)' },
+  { key: 'social_proof', label: 'Social Proof', color: 'hsl(195, 70%, 50%)' },
+  { key: 'educacao', label: 'Educação', color: 'hsl(195, 60%, 55%)' },
+  { key: 'venda', label: 'Venda', color: 'hsl(195, 50%, 60%)' },
 ];
 
 export const FORMATS = [

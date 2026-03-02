@@ -24,7 +24,7 @@ interface Goal {
   unit: string;
 }
 
-const COLORS = ['hsl(210,80%,50%)', 'hsl(142,60%,45%)', 'hsl(280,60%,50%)', 'hsl(30,80%,50%)', 'hsl(350,60%,50%)', 'hsl(45,90%,50%)'];
+const COLORS = ['hsl(195,100%,40%)', 'hsl(195,80%,50%)', 'hsl(195,60%,55%)', 'hsl(195,50%,60%)', 'hsl(195,40%,65%)', 'hsl(195,30%,70%)'];
 
 // Animated counter component
 function AnimatedCounter({ value, suffix = '', prefix = '', duration = 1.2 }: { value: number; suffix?: string; prefix?: string; duration?: number }) {
