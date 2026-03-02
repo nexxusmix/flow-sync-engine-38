@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -106,7 +107,53 @@ import { CampaignCompetitorShadow } from './CampaignCompetitorShadow';
 import { CampaignMoodTracker } from './CampaignMoodTracker';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
-// --- Sonance palette: monocromático azul/branco/cinza ---
+// --- Tilt3D Card com entrada escalonada e hover 3D ---
+function Tilt3DCard({ children, index, onClick }: { children: React.ReactNode; index: number; onClick: () => void }) {
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const [glarePos, setGlarePos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setRotateX((y - 0.5) * -8);
+    setRotateY((x - 0.5) * 8);
+    setGlarePos({ x: x * 100, y: y * 100 });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setRotateX(0);
+    setRotateY(0);
+    setGlarePos({ x: 50, y: 50 });
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+      className="glass-card p-5 rounded-lg cursor-pointer group relative overflow-hidden"
+      style={{
+        transform: `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+        transition: 'transform 0.15s ease-out',
+      }}
+    >
+      {/* Glare overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, hsl(var(--primary) / 0.08) 0%, transparent 60%)`,
+        }}
+      />
+      {children}
+    </motion.div>
+  );
+}
+
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-primary/10 text-primary/70 border border-primary/20' },
   active: { label: 'Ativa', color: 'bg-primary/15 text-primary border border-primary/30' },
@@ -657,7 +704,7 @@ export function CampaignsTab() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {campaigns.map(c => {
+          {campaigns.map((c, idx) => {
             const status = STATUS_MAP[c.status] || STATUS_MAP.planning;
             const metrics = campaignMetrics[c.id];
             const postCount = metrics?.total || 0;
@@ -665,11 +712,7 @@ export function CampaignsTab() {
             const completionRate = postCount > 0 ? Math.round((publishedCount / postCount) * 100) : 0;
 
             return (
-              <Card
-                key={c.id}
-                className="glass-card p-5 hover:border-primary/20 transition-all duration-300 cursor-pointer group relative overflow-hidden"
-                onClick={() => setSelectedCampaign(c.id)}
-              >
+              <Tilt3DCard key={c.id} index={idx} onClick={() => setSelectedCampaign(c.id)}>
                 {/* Glow sutil no hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
 
@@ -712,7 +755,7 @@ export function CampaignsTab() {
                     </div>
                   </div>
                 </div>
-              </Card>
+              </Tilt3DCard>
             );
           })}
         </div>
