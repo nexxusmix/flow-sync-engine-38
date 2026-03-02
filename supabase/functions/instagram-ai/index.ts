@@ -664,6 +664,129 @@ Retorne JSON puro (sem markdown):
         });
       }
 
+      // Generate campaign with AI based on research, analysis and data
+      case "generate_campaign": {
+        const { theme, duration_weeks, budget } = data;
+
+        // Fetch profile config for context
+        let profileContext = "";
+        try {
+          const { data: profileData } = await supabase
+            .from("instagram_profile_config")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (profileData) {
+            profileContext = `\n\n===== PERFIL DO INSTAGRAM =====\n`;
+            if (profileData.username) profileContext += `Username: @${profileData.username}\n`;
+            if (profileData.niche) profileContext += `Nicho: ${profileData.niche}\n`;
+            if (profileData.brand_voice) profileContext += `Voz da marca: ${profileData.brand_voice}\n`;
+            if (profileData.target_audience) profileContext += `Público-alvo: ${profileData.target_audience}\n`;
+            if (profileData.content_pillars) profileContext += `Pilares: ${JSON.stringify(profileData.content_pillars)}\n`;
+            if (profileData.bio) profileContext += `Bio: ${profileData.bio}\n`;
+            profileContext += `===== FIM PERFIL =====\n`;
+          }
+        } catch (e) { console.error("[instagram-ai] profile fetch error:", e); }
+
+        // Fetch saved references for inspiration
+        let referencesContext = "";
+        try {
+          const { data: refs } = await supabase
+            .from("instagram_references")
+            .select("title, source_url, notes, category, tags")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(15);
+          if (refs && refs.length > 0) {
+            referencesContext = `\n\n===== REFERÊNCIAS SALVAS (${refs.length}) =====\n`;
+            refs.forEach((r: any) => {
+              referencesContext += `- "${r.title}" [${r.category || 'geral'}]${r.notes ? ` — ${r.notes}` : ''}${r.tags?.length ? ` (tags: ${r.tags.join(', ')})` : ''}\n`;
+            });
+            referencesContext += `===== FIM REFERÊNCIAS =====\n`;
+          }
+        } catch (e) { console.error("[instagram-ai] refs fetch error:", e); }
+
+        // Fetch recent posts for context
+        let postsContext = "";
+        try {
+          const { data: recentPosts } = await supabase
+            .from("instagram_posts")
+            .select("title, format, pillar, status, hook")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(20);
+          if (recentPosts && recentPosts.length > 0) {
+            postsContext = `\n\n===== POSTS RECENTES (${recentPosts.length}) =====\n`;
+            recentPosts.forEach((p: any) => {
+              postsContext += `- "${p.title}" [${p.format}, ${p.pillar || '-'}, ${p.status}]${p.hook ? ` hook: "${p.hook.substring(0, 60)}"` : ''}\n`;
+            });
+            postsContext += `===== FIM POSTS =====\n`;
+          }
+        } catch (e) { console.error("[instagram-ai] posts fetch error:", e); }
+
+        const durationWeeks = duration_weeks || 2;
+        const today = new Date();
+        const startDate = today.toISOString().split('T')[0];
+        const endDate = new Date(today.getTime() + durationWeeks * 7 * 86400000).toISOString().split('T')[0];
+
+        systemPrompt = `Você é um estrategista de marketing digital e social media sênior. Sua função é criar campanhas completas de Instagram baseadas em pesquisa de mercado, análise de tendências do nicho e dados do perfil do cliente.
+
+Você deve agir como se tivesse feito uma pesquisa profunda de mercado e tendências antes de gerar a campanha. Considere:
+- Tendências atuais do nicho e do Instagram
+- Melhores práticas de engajamento e crescimento
+- Formatos que estão performando melhor (Reels, Carrosséis, Stories)
+- Horários e frequência ideais de postagem
+- Estratégias de hashtags e distribuição
+
+${profileContext}${referencesContext}${postsContext}${memoryBlock}
+
+RETORNE APENAS JSON VÁLIDO (sem markdown, sem \`\`\`). O JSON deve seguir EXATAMENTE esta estrutura:
+{
+  "name": "Nome criativo da campanha",
+  "objective": "Objetivo estratégico detalhado",
+  "target_audience": "Público-alvo específico",
+  "start_date": "${startDate}",
+  "end_date": "${endDate}",
+  "budget": ${budget || 0},
+  "key_messages": ["mensagem 1", "mensagem 2", "mensagem 3"],
+  "kpis": {
+    "target_reach": number,
+    "target_engagement_rate": number,
+    "target_followers_growth": number,
+    "target_saves": number,
+    "target_shares": number
+  },
+  "content_plan": [
+    {
+      "title": "Título do post",
+      "format": "reel|carousel|static|story",
+      "pillar": "autoridade|educativo|bastidores|social_proof|entretenimento",
+      "hook": "Frase de abertura impactante",
+      "suggested_day": "dia da semana",
+      "notes": "Breve descrição/angle"
+    }
+  ],
+  "strategy_notes": "Resumo da estratégia e racional por trás das escolhas"
+}`;
+
+        userPrompt = `Crie uma campanha completa de Instagram com as seguintes diretrizes:
+
+${theme ? `Tema/Foco: ${theme}` : 'Tema: livre (baseie-se no perfil e referências)'}
+Duração: ${durationWeeks} semanas (${startDate} a ${endDate})
+${budget ? `Orçamento: R$ ${budget}` : 'Sem orçamento definido'}
+
+Gere:
+1. Nome criativo e objetivo estratégico
+2. Público-alvo detalhado
+3. 3-5 mensagens-chave da campanha
+4. KPIs projetados realistas
+5. Plano de conteúdo com ${durationWeeks * 4}-${durationWeeks * 5} posts sugeridos (distribuídos pela duração)
+6. Notas de estratégia explicando o racional
+
+Baseie-se nos dados do perfil, referências salvas, histórico de posts e memória de performance para personalizar ao máximo.`;
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
