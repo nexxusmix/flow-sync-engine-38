@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,6 +44,10 @@ import { CampaignABTesting } from './CampaignABTesting';
 import { CampaignHashtagPlanner } from './CampaignHashtagPlanner';
 import { CampaignApprovalPipeline } from './CampaignApprovalPipeline';
 import { CampaignPDFReport } from './CampaignPDFReport';
+import { CampaignContentMap } from './CampaignContentMap';
+import { CampaignCompare } from './CampaignCompare';
+import { CampaignBriefingGenerator } from './CampaignBriefingGenerator';
+import { CampaignRepostAutomation } from './CampaignRepostAutomation';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -67,7 +71,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -266,6 +270,10 @@ export function CampaignsTab() {
             { key: 'hashtags' as const, label: 'Hashtags', icon: <Hash className="w-3.5 h-3.5" /> },
             { key: 'approval_pipeline' as const, label: 'Workflow', icon: <Shield className="w-3.5 h-3.5" /> },
             { key: 'pdf_report' as const, label: 'Relatório', icon: <FileDown className="w-3.5 h-3.5" /> },
+            { key: 'content_map' as const, label: 'Mapa', icon: <Map className="w-3.5 h-3.5" /> },
+            { key: 'compare' as const, label: 'Comparar', icon: <Scale className="w-3.5 h-3.5" /> },
+            { key: 'briefing' as const, label: 'Briefing', icon: <FileSpreadsheet className="w-3.5 h-3.5" /> },
+            { key: 'repost' as const, label: 'Repost', icon: <RefreshCw className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
@@ -359,6 +367,22 @@ export function CampaignsTab() {
 
         {detailView === 'pdf_report' && (
           <CampaignPDFReport campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'content_map' && (
+          <CampaignContentMap campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'compare' && (
+          <CampaignCompare campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'briefing' && (
+          <CampaignBriefingGenerator campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'repost' && (
+          <CampaignRepostAutomation campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
