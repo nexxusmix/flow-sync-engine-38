@@ -25,6 +25,7 @@ import { LibraryTab } from '@/components/instagram-engine/LibraryTab';
 import { PostResultView } from '@/components/instagram-engine/PostResultView';
 import { useInstagramAI, useCreatePost, useProfileConfig, useSaveProfileConfig, useSaveHooks, InstagramPost } from '@/hooks/useInstagramEngine';
 import { toast } from 'sonner';
+import { LayoutPicker, LAYOUT_OPTIONS, type ReferenceItem } from '@/components/instagram-engine/LayoutPicker';
 
 const TABS = [
   { key: 'cockpit', label: 'Cockpit', icon: 'rocket_launch' },
@@ -99,6 +100,8 @@ export default function InstagramEnginePage() {
   const [genPillar, setGenPillar] = useState('autoridade');
   const [genTopic, setGenTopic] = useState('');
   const [genInstruction, setGenInstruction] = useState('');
+  const [genLayout, setGenLayout] = useState<string | null>(null);
+  const [genReference, setGenReference] = useState<ReferenceItem | null>(null);
   const [genLoading, setGenLoading] = useState(false);
 
   const { data: config } = useProfileConfig();
@@ -204,6 +207,8 @@ export default function InstagramEnginePage() {
         };
         const selectedAspect = aspectMap[genAspectRatio] || '1:1';
         const styleHint = genTrend !== 'auto' ? genTrend : 'cinematic, professional';
+        const layoutMod = genLayout ? LAYOUT_OPTIONS.find(l => l.key === genLayout)?.promptModifier || '' : '';
+        const refContext = genReference ? [genReference.note, genReference.tags?.join(', ')].filter(Boolean).join('. ') : '';
 
         try {
           // For carousels: generate one image per slide
@@ -216,6 +221,8 @@ export default function InstagramEnginePage() {
                 slide.body ? `Subtitle: "${slide.body.substring(0, 80)}"` : '',
                 result.title || genTopic,
                 `Style: ${styleHint}. Category: ${genPillar}.`,
+                layoutMod,
+                refContext ? `Reference style: ${refContext}` : '',
                 'Include bold readable text overlay on the image. Modern social media design.',
               ].filter(Boolean).join('. ');
               
@@ -242,6 +249,8 @@ export default function InstagramEnginePage() {
               result.cover_suggestion || '',
               `Style: ${styleHint}`,
               `Category: ${genPillar}`,
+              layoutMod,
+              refContext ? `Reference style: ${refContext}` : '',
             ].filter(Boolean).join('. ');
             
             const { data: imgData, error: imgError } = await supabase.functions.invoke('generate-image', {
@@ -305,6 +314,7 @@ export default function InstagramEnginePage() {
             post={viewingPost}
             onBack={() => setViewingPost(null)}
             onSchedule={() => { setViewingPost(null); setActiveTab('calendar'); }}
+            onPostUpdated={(updatedPost) => setViewingPost(updatedPost)}
           />
         ) : (
           <>
@@ -596,6 +606,18 @@ export default function InstagramEnginePage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Layout Picker */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Layout Visual</Label>
+              <LayoutPicker
+                selected={genLayout}
+                onSelect={(l) => setGenLayout(l?.key || null)}
+                selectedReference={genReference}
+                onSelectReference={setGenReference}
+                compact
+              />
             </div>
 
             {/* Custom instruction */}

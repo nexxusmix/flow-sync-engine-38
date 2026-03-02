@@ -4,17 +4,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { InstagramPost, useUpdatePost, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
-import { Copy, Check, Download, CalendarPlus, ArrowLeft, Sparkles, Hash, Play, Layers, Image, BookOpen, FileText, Eye, Clock, ExternalLink, Package, Loader2 } from 'lucide-react';
+import { InstagramPost, useUpdatePost, useInstagramAI, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
+import { Copy, Check, Download, CalendarPlus, ArrowLeft, Sparkles, Hash, Play, Layers, Image, BookOpen, FileText, Eye, Clock, ExternalLink, Package, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { LayoutPicker, LAYOUT_OPTIONS, type LayoutOption, type ReferenceItem } from './LayoutPicker';
 
 interface PostResultViewProps {
   post: InstagramPost;
   onBack: () => void;
   onSchedule?: (postId: string) => void;
+  onPostUpdated?: (post: InstagramPost) => void;
 }
 
 const FORMAT_ICONS: Record<string, React.ReactNode> = {
@@ -58,9 +60,14 @@ function ContentSection({ title, icon, content, badge }: { title: string; icon: 
   );
 }
 
-export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps) {
+export function PostResultView({ post, onBack, onSchedule, onPostUpdated }: PostResultViewProps) {
   const updatePost = useUpdatePost();
+  const aiMutation = useInstagramAI();
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showRegenerate, setShowRegenerate] = useState(false);
+  const [regenLayout, setRegenLayout] = useState<string | null>(null);
+  const [regenRef, setRegenRef] = useState<ReferenceItem | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(
     post.scheduled_at ? format(new Date(post.scheduled_at), "yyyy-MM-dd'T'HH:mm") : ''
   );
@@ -161,6 +168,96 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
     toast.success('Post exportado como TXT!');
   };
 
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      // Regenerate text content
+      const result = await aiMutation.mutateAsync({
+        action: 'generate_post_trending',
+        data: {
+          topic: post.title,
+          format: post.format,
+          pillar: post.pillar || 'autoridade',
+          trend_style: 'cinematic_reel',
+          custom_instruction: 'Regenerar conteúdo completo com abordagem diferente, mantendo o mesmo tema.',
+        },
+      });
+
+      if (!result) throw new Error('IA não retornou resultado');
+
+      // Regenerate image
+      let thumbnailUrl: string | null = null;
+      const layoutMod = regenLayout ? LAYOUT_OPTIONS.find(l => l.key === regenLayout)?.promptModifier || '' : '';
+      const refContext = regenRef ? [regenRef.note, regenRef.tags?.join(', ')].filter(Boolean).join('. ') : '';
+
+      try {
+        toast.info('Regenerando imagem... 🎨');
+        const imagePrompt = [
+          result.title || post.title,
+          result.cover_suggestion || '',
+          layoutMod,
+          refContext ? `Reference style: ${refContext}` : '',
+          'Modern social media design, professional Instagram post',
+        ].filter(Boolean).join('. ');
+
+        const { data: imgData, error: imgError } = await supabase.functions.invoke('generate-image', {
+          body: { prompt: imagePrompt, purpose: 'key_visual', aspectRatio: '1:1' },
+        });
+
+        if (!imgError && imgData?.imageUrl) {
+          thumbnailUrl = imgData.imageUrl;
+        }
+      } catch (imgErr) {
+        console.warn('Image regen failed:', imgErr);
+      }
+
+      // Update existing post
+      await updatePost.mutateAsync({
+        id: post.id,
+        title: result.title || post.title,
+        hook: result.hook || null,
+        script: result.script || null,
+        caption_short: result.caption_short || null,
+        caption_medium: result.caption_medium || null,
+        caption_long: result.caption_long || null,
+        cta: result.cta || null,
+        pinned_comment: result.pinned_comment || null,
+        hashtags: result.hashtags || [],
+        cover_suggestion: result.cover_suggestion || null,
+        carousel_slides: result.carousel_slides || post.carousel_slides || [],
+        story_sequence: result.story_sequence || post.story_sequence || [],
+        ...(thumbnailUrl ? { thumbnail_url: thumbnailUrl } : {}),
+        ai_generated: true,
+      } as any);
+
+      toast.success('Post regenerado com sucesso! 🔄');
+      setShowRegenerate(false);
+
+      // Notify parent to refresh
+      if (onPostUpdated) {
+        onPostUpdated({
+          ...post,
+          title: result.title || post.title,
+          hook: result.hook || null,
+          script: result.script || null,
+          caption_short: result.caption_short || null,
+          caption_medium: result.caption_medium || null,
+          caption_long: result.caption_long || null,
+          cta: result.cta || null,
+          pinned_comment: result.pinned_comment || null,
+          hashtags: result.hashtags || [],
+          cover_suggestion: result.cover_suggestion || null,
+          ...(thumbnailUrl ? { thumbnail_url: thumbnailUrl } : {}),
+          ai_generated: true,
+        });
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao regenerar');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Top bar */}
@@ -183,6 +280,10 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
           </Button>
           <Button variant="outline" size="sm" onClick={handleCopyAll} className="gap-1.5 text-xs h-8">
             <Copy className="w-3.5 h-3.5" /> Legenda + Hashtags
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowRegenerate(true)} disabled={regenerating} className="gap-1.5 text-xs h-8">
+            {regenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Regenerar
           </Button>
           <Button size="sm" onClick={() => setShowSchedule(true)} className="gap-1.5 text-xs h-8 bg-primary hover:bg-primary/90 text-primary-foreground">
             <CalendarPlus className="w-3.5 h-3.5" /> Agendar
@@ -506,6 +607,33 @@ export function PostResultView({ post, onBack, onSchedule }: PostResultViewProps
             <Button variant="ghost" size="sm" onClick={() => setShowSchedule(false)}>Cancelar</Button>
             <Button size="sm" onClick={handleSchedule} className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
               <CalendarPlus className="w-3.5 h-3.5" /> Agendar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Regenerate Dialog */}
+      <Dialog open={showRegenerate} onOpenChange={setShowRegenerate}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-primary" /> Regenerar Post
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Escolha um layout e/ou referência. O conteúdo será regenerado mantendo o mesmo post.
+            </p>
+          </DialogHeader>
+          <LayoutPicker
+            selected={regenLayout}
+            onSelect={(l) => setRegenLayout(l?.key || null)}
+            selectedReference={regenRef}
+            onSelectReference={setRegenRef}
+          />
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setShowRegenerate(false)}>Cancelar</Button>
+            <Button size="sm" onClick={handleRegenerate} disabled={regenerating} className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+              {regenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              {regenerating ? 'Regenerando...' : 'Regenerar Agora'}
             </Button>
           </DialogFooter>
         </DialogContent>
