@@ -57,41 +57,74 @@ serve(async (req) => {
 
     console.log("Generating image with prompt:", enhancedPrompt);
 
-    // Call Nano Banana Pro (Gemini image model)
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-pro-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: enhancedPrompt
-          }
-        ],
-        modalities: ["image", "text"]
-      }),
-    });
+    // Try Lovable gateway first, then fallback to direct Gemini API
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    let imageData: string | undefined;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Image generation error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a few seconds." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    // Attempt 1: Lovable gateway
+    try {
+      console.log("[generate-image] Trying Lovable gateway...");
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-pro-image-preview",
+          messages: [{ role: "user", content: enhancedPrompt }],
+          modalities: ["image", "text"]
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        if (imageData) console.log("[generate-image] ✓ Success via Lovable gateway");
+      } else {
+        const errText = await response.text();
+        console.warn(`[generate-image] Lovable gateway failed (${response.status}): ${errText.substring(0, 200)}`);
       }
-      
-      throw new Error(`Image generation error: ${response.status}`);
+    } catch (e) {
+      console.warn("[generate-image] Lovable gateway error:", e);
     }
 
-    const data = await response.json();
-    const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    // Attempt 2: Direct Gemini API fallback
+    if (!imageData && GEMINI_API_KEY) {
+      try {
+        console.log("[generate-image] Trying direct Gemini API...");
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: enhancedPrompt }] }],
+              generationConfig: {
+                responseModalities: ["TEXT", "IMAGE"],
+              },
+            }),
+          }
+        );
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          const parts = geminiData.candidates?.[0]?.content?.parts || [];
+          for (const part of parts) {
+            if (part.inlineData?.mimeType?.startsWith("image/")) {
+              imageData = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+              console.log("[generate-image] ✓ Success via direct Gemini API");
+              break;
+            }
+          }
+        } else {
+          const errText = await geminiRes.text();
+          console.warn(`[generate-image] Gemini API failed (${geminiRes.status}): ${errText.substring(0, 200)}`);
+        }
+      } catch (e) {
+        console.warn("[generate-image] Gemini API error:", e);
+      }
+    }
     
     if (!imageData) {
       throw new Error("No image generated");
