@@ -78,12 +78,12 @@ const FORMAT_OPTIONS = [
 ];
 
 const PILLAR_OPTIONS = [
-  { key: 'autoridade', label: 'Autoridade', color: 'hsl(210, 80%, 50%)' },
-  { key: 'portfolio', label: 'Portfólio', color: 'hsl(280, 60%, 50%)' },
-  { key: 'bastidores', label: 'Bastidores', color: 'hsl(30, 80%, 50%)' },
-  { key: 'social_proof', label: 'Social Proof', color: 'hsl(140, 60%, 40%)' },
-  { key: 'educacao', label: 'Educação', color: 'hsl(350, 60%, 50%)' },
-  { key: 'venda', label: 'Venda', color: 'hsl(45, 90%, 50%)' },
+  { key: 'autoridade', label: 'Autoridade', color: 'hsl(195, 100%, 40%)' },
+  { key: 'portfolio', label: 'Portfólio', color: 'hsl(195, 100%, 35%)' },
+  { key: 'bastidores', label: 'Bastidores', color: 'hsl(195, 80%, 45%)' },
+  { key: 'social_proof', label: 'Social Proof', color: 'hsl(195, 70%, 50%)' },
+  { key: 'educacao', label: 'Educação', color: 'hsl(195, 60%, 55%)' },
+  { key: 'venda', label: 'Venda', color: 'hsl(195, 50%, 60%)' },
 ];
 
 const STYLE_PRESETS = [

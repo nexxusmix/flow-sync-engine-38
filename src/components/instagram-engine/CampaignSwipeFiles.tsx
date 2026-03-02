@@ -176,7 +176,7 @@ export function CampaignSwipeFiles({ campaign, posts }: Props) {
                     </div>
                     <div className="flex items-center gap-1">
                       <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => toggleFavorite(entry.id)}>
-                        {isFav ? <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> : <StarOff className="w-3 h-3 text-muted-foreground" />}
+                        {isFav ? <Star className="w-3 h-3 text-primary fill-primary" /> : <StarOff className="w-3 h-3 text-muted-foreground" />}
                       </Button>
                       <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => copyToClipboard(entry.text)}>
                         <Copy className="w-3 h-3 text-muted-foreground" />

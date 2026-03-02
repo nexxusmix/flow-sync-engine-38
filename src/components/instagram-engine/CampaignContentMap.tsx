@@ -29,9 +29,9 @@ export function CampaignContentMap({ campaign, posts }: Props) {
   const [hoveredPost, setHoveredPost] = useState<string | null>(null);
 
   const FUNNEL_STAGES = [
-    { key: 'topo', label: 'Topo (Descoberta)', color: '#3b82f6', pillars: ['educativo', 'entretenimento', 'tendencia'] },
-    { key: 'meio', label: 'Meio (Consideração)', color: '#f59e0b', pillars: ['autoridade', 'bastidores', 'comunidade'] },
-    { key: 'fundo', label: 'Fundo (Conversão)', color: '#10b981', pillars: ['vendas', 'prova_social', 'oferta'] },
+    { key: 'topo', label: 'Topo (Descoberta)', color: 'hsl(195, 100%, 40%)', pillars: ['educativo', 'entretenimento', 'tendencia'] },
+    { key: 'meio', label: 'Meio (Consideração)', color: 'hsl(195, 80%, 50%)', pillars: ['autoridade', 'bastidores', 'comunidade'] },
+    { key: 'fundo', label: 'Fundo (Conversão)', color: 'hsl(195, 60%, 60%)', pillars: ['vendas', 'prova_social', 'oferta'] },
   ];
 
   const nodes = useMemo(() => {

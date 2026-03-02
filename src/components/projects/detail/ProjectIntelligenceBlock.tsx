@@ -9,30 +9,30 @@ interface Props {
 }
 
 function getRiskColor(value: number) {
-  if (value <= 25) return "text-emerald-500";
-  if (value <= 50) return "text-yellow-500";
-  if (value <= 75) return "text-orange-500";
+  if (value <= 25) return "text-primary";
+  if (value <= 50) return "text-muted-foreground";
+  if (value <= 75) return "text-muted-foreground";
   return "text-destructive";
 }
 
 function getRiskBg(value: number) {
-  if (value <= 25) return "bg-emerald-500/10";
-  if (value <= 50) return "bg-yellow-500/10";
-  if (value <= 75) return "bg-orange-500/10";
+  if (value <= 25) return "bg-primary/10";
+  if (value <= 50) return "bg-muted";
+  if (value <= 75) return "bg-muted";
   return "bg-destructive/10";
 }
 
 function getHealthColor(value: number) {
-  if (value >= 75) return "text-emerald-500";
-  if (value >= 50) return "text-yellow-500";
-  if (value >= 25) return "text-orange-500";
+  if (value >= 75) return "text-primary";
+  if (value >= 50) return "text-muted-foreground";
+  if (value >= 25) return "text-muted-foreground";
   return "text-destructive";
 }
 
 function getHealthBg(value: number) {
-  if (value >= 75) return "bg-emerald-500/10";
-  if (value >= 50) return "bg-yellow-500/10";
-  if (value >= 25) return "bg-orange-500/10";
+  if (value >= 75) return "bg-primary/10";
+  if (value >= 50) return "bg-muted";
+  if (value >= 25) return "bg-muted";
   return "bg-destructive/10";
 }
 
@@ -52,8 +52,8 @@ export function ProjectIntelligenceBlock({ intelligence }: Props) {
         ? format(intelligence.predictedCompletionDate, "dd MMM yyyy", { locale: ptBR })
         : "—",
       icon: Calendar,
-      colorClass: intelligence.deadlineAlert ? "text-destructive" : "text-emerald-500",
-      bgClass: intelligence.deadlineAlert ? "bg-destructive/10" : "bg-emerald-500/10",
+      colorClass: intelligence.deadlineAlert ? "text-destructive" : "text-primary",
+      bgClass: intelligence.deadlineAlert ? "bg-destructive/10" : "bg-primary/10",
       sub: `${intelligence.tasksPending} pendentes · ${intelligence.tasksCompleted} concluídas`,
     },
     {
