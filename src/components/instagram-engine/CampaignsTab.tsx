@@ -2,21 +2,20 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLARS, InstagramPost } from '@/hooks/useInstagramEngine';
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Progress } from '@/components/ui/progress';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, ChevronDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, BarChart3, ArrowLeft, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { AIButton } from '@/components/squad-ui/AIButton';
 import { CampaignTimeline } from './CampaignTimeline';
+import { CampaignWizard } from './CampaignWizard';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -33,9 +32,6 @@ export function CampaignsTab() {
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [showAiGen, setShowAiGen] = useState(false);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiProgress, setAiProgress] = useState({ step: 0, label: '', detail: '' });
-  const [aiForm, setAiForm] = useState({ theme: '', duration_weeks: '2', budget: '' });
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
   const [saving, setSaving] = useState(false);
@@ -64,160 +60,7 @@ export function CampaignsTab() {
     }
   };
 
-  const AI_STEPS = [
-    { label: 'Pesquisando tendências do nicho...', detail: 'Analisando mercado e concorrência' },
-    { label: 'Analisando perfil e referências...', detail: 'Cruzando dados do seu histórico' },
-    { label: 'Gerando estratégia e conteúdo...', detail: 'Criando roteiros, legendas e hashtags' },
-    { label: 'Montando calendário editorial...', detail: 'Distribuindo posts com datas reais' },
-    { label: 'Criando posts no calendário...', detail: 'Inserindo posts completos' },
-  ];
-
-  const handleAiGenerate = async () => {
-    setAiGenerating(true);
-    setAiProgress({ step: 0, label: AI_STEPS[0].label, detail: AI_STEPS[0].detail });
-
-    // Simulate progress steps during AI call
-    const progressInterval = setInterval(() => {
-      setAiProgress(prev => {
-        const next = Math.min(prev.step + 1, 2); // up to step 2 while waiting for AI
-        return { step: next, label: AI_STEPS[next].label, detail: AI_STEPS[next].detail };
-      });
-    }, 4000);
-
-    try {
-      const { data: result, error } = await supabase.functions.invoke('instagram-ai', {
-        body: {
-          action: 'generate_campaign',
-          data: {
-            theme: aiForm.theme || undefined,
-            duration_weeks: parseInt(aiForm.duration_weeks) || 2,
-            budget: aiForm.budget ? parseFloat(aiForm.budget) : undefined,
-          },
-        },
-      });
-
-      clearInterval(progressInterval);
-
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
-
-      let campaign = result?.result;
-      
-      // Handle case where AI returned raw text that needs re-parsing
-      if (campaign?.raw && !campaign?.name) {
-        try {
-          const jsonMatch = campaign.raw.match(/\{[\s\S]*\}/);
-          if (jsonMatch) campaign = JSON.parse(jsonMatch[0]);
-        } catch { /* ignore */ }
-      }
-      
-      if (!campaign?.name) {
-        console.error('AI campaign result:', JSON.stringify(result).substring(0, 500));
-        throw new Error('IA não retornou campanha válida. Tente novamente.');
-      }
-
-      // Step 3: Mounting calendar
-      setAiProgress({ step: 3, label: AI_STEPS[3].label, detail: AI_STEPS[3].detail });
-
-      // Save campaign to database
-      const { data: inserted, error: insertError } = await supabase.from('instagram_campaigns').insert({
-        name: campaign.name,
-        objective: campaign.objective || null,
-        target_audience: campaign.target_audience || null,
-        start_date: campaign.start_date || null,
-        end_date: campaign.end_date || null,
-        budget: campaign.budget || null,
-        key_messages: campaign.key_messages || [],
-        content_plan: campaign.content_plan || [],
-        kpis: { ...(campaign.kpis || {}), strategy_notes: campaign.strategy_notes || null },
-        status: 'planning',
-      } as any).select().single();
-
-      if (insertError) throw insertError;
-
-      // Step 4: Create posts
-      setAiProgress({ step: 4, label: AI_STEPS[4].label, detail: AI_STEPS[4].detail });
-
-      const contentPlan = campaign.content_plan || [];
-      let postsCreated = 0;
-      const formatCounts: Record<string, number> = {};
-
-      if (contentPlan.length > 0 && inserted) {
-        const postsToInsert = contentPlan.map((post: any, idx: number) => {
-          const fmt = post.format || 'reel';
-          formatCounts[fmt] = (formatCounts[fmt] || 0) + 1;
-
-          // Build scheduled_at from date + time
-          let scheduledAt: string | null = null;
-          if (post.scheduled_date) {
-            const time = post.suggested_time || '10:00';
-            scheduledAt = `${post.scheduled_date}T${time}:00`;
-          }
-
-          return {
-            title: post.title || `Post ${idx + 1}`,
-            format: fmt,
-            pillar: post.pillar || null,
-            objective: post.objective || null,
-            status: 'planned',
-            scheduled_at: scheduledAt,
-            hook: post.hook || null,
-            script: post.script || null,
-            caption_short: post.caption_short || null,
-            caption_medium: post.caption_medium || null,
-            caption_long: post.caption_long || null,
-            cta: post.cta || null,
-            pinned_comment: post.pinned_comment || null,
-            hashtags: post.hashtags || [],
-            cover_suggestion: post.cover_suggestion || null,
-            carousel_slides: post.carousel_slides || [],
-            story_sequence: post.story_sequence || [],
-            checklist: post.checklist || [],
-            ai_generated: true,
-            campaign_id: inserted.id,
-            position: idx,
-          };
-        });
-
-        const { error: postsError } = await supabase
-          .from('instagram_posts')
-          .insert(postsToInsert as any);
-
-        if (postsError) {
-          console.error('Posts insert error:', postsError);
-          toast.error('Campanha criada, mas houve erro ao criar posts: ' + postsError.message);
-        } else {
-          postsCreated = postsToInsert.length;
-        }
-      }
-
-      qc.invalidateQueries({ queryKey: ['instagram-campaigns'] });
-      qc.invalidateQueries({ queryKey: ['instagram-posts'] });
-
-      // Build summary
-      const formatSummary = Object.entries(formatCounts)
-        .map(([k, v]) => `${v} ${k === 'reel' ? 'Reels' : k === 'carousel' ? 'Carrosséis' : k === 'single' ? 'Fotos' : k === 'story_sequence' ? 'Séries Stories' : k}`)
-        .join(', ');
-
-      toast.success(
-        postsCreated > 0
-          ? `Campanha criada com ${postsCreated} posts completos! (${formatSummary})`
-          : 'Campanha criada com IA!',
-        { duration: 6000 }
-      );
-
-      setShowAiGen(false);
-      setAiForm({ theme: '', duration_weeks: '2', budget: '' });
-      if (inserted) setSelectedCampaign(inserted.id);
-    } catch (e: any) {
-      clearInterval(progressInterval);
-      console.error('AI campaign generation error:', e);
-      toast.error(e.message || 'Erro ao gerar campanha');
-    } finally {
-      setAiGenerating(false);
-      setAiProgress({ step: 0, label: '', detail: '' });
-    }
-  };
+  // AI generation is now handled by CampaignWizard
 
   // Posts grouped by campaign
   const campaignPostsMap = useMemo(() => {
@@ -504,79 +347,12 @@ export function CampaignsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* AI Campaign Generator Dialog */}
-      <Dialog open={showAiGen} onOpenChange={v => { if (!aiGenerating) setShowAiGen(v); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              Gerar Campanha com IA
-            </DialogTitle>
-            <DialogDescription>
-              A IA vai pesquisar tendências, analisar seu perfil e referências, e criar uma campanha completa.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Tema / Foco (opcional)</label>
-              <Input
-                placeholder="Ex: Lançamento imobiliário, Black Friday, Crescimento orgânico..."
-                value={aiForm.theme}
-                onChange={e => setAiForm(f => ({ ...f, theme: e.target.value }))}
-                disabled={aiGenerating}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Duração</label>
-                <Select value={aiForm.duration_weeks} onValueChange={v => setAiForm(f => ({ ...f, duration_weeks: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 semana</SelectItem>
-                    <SelectItem value="2">2 semanas</SelectItem>
-                    <SelectItem value="3">3 semanas</SelectItem>
-                    <SelectItem value="4">4 semanas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Orçamento (R$)</label>
-                <Input
-                  type="number"
-                  placeholder="Opcional"
-                  value={aiForm.budget}
-                  onChange={e => setAiForm(f => ({ ...f, budget: e.target.value }))}
-                  disabled={aiGenerating}
-                />
-              </div>
-            </div>
-            {aiGenerating && (
-              <Card className="p-4 border-primary/20 bg-primary/5 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{aiProgress.label || 'Iniciando...'}</p>
-                    <p className="text-[10px] text-muted-foreground">{aiProgress.detail}</p>
-                  </div>
-                </div>
-                <Progress value={((aiProgress.step + 1) / AI_STEPS.length) * 100} className="h-1.5" />
-                <div className="flex gap-1">
-                  {AI_STEPS.map((_, i) => (
-                    <div key={i} className={`flex-1 h-1 rounded-full transition-colors ${i <= aiProgress.step ? 'bg-primary' : 'bg-muted/30'}`} />
-                  ))}
-                </div>
-              </Card>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowAiGen(false)} disabled={aiGenerating}>Cancelar</Button>
-            <Button onClick={handleAiGenerate} disabled={aiGenerating} className="gap-1.5">
-              {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {aiGenerating ? 'Gerando...' : 'Gerar Campanha'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* AI Campaign Wizard */}
+      <CampaignWizard
+        open={showAiGen}
+        onOpenChange={setShowAiGen}
+        onCampaignCreated={(id) => setSelectedCampaign(id)}
+      />
     </div>
   );
 }
