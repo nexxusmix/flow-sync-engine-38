@@ -1071,6 +1071,49 @@ Retorne um JSON com:
 }`;
             break;
 
+          case 'post_report':
+            userPrompt = `Gere um relatório pós-campanha completo e profissional.
+
+${campaignCtx}
+
+Taxa de conclusão: ${campaign?.completion_rate || 0}%
+Posts gerados por IA: ${campaign?.ai_generated_posts || 0}
+Distribuição de formatos: ${JSON.stringify(campaign?.formats || {})}
+Distribuição de pilares: ${JSON.stringify(campaign?.pillars || {})}
+Hooks utilizados: ${(campaign?.post_hooks || []).slice(0, 5).join(' | ')}
+
+Retorne um JSON com:
+{
+  "resumo_executivo": "Resumo geral da performance da campanha em 3-4 frases",
+  "metricas_chave": {
+    "total_posts": number,
+    "publicados": number,
+    "taxa_conclusao": "X%",
+    "taxa_conteudo_ia": "X%",
+    "investimento_total": "R$ X",
+    "custo_por_post": "R$ X"
+  },
+  "analise_performance": {
+    "pontos_fortes": ["o que funcionou bem"],
+    "pontos_fracos": ["o que pode melhorar"],
+    "surpresas": ["resultados inesperados"]
+  },
+  "analise_formatos": "qual formato teve melhor desempenho e por quê",
+  "analise_pilares": "qual pilar gerou mais engajamento",
+  "aprendizados_chave": ["5 aprendizados principais extraídos desta campanha"],
+  "recomendacoes_proxima_campanha": {
+    "frequencia_ideal": "X posts/semana",
+    "formatos_priorizar": ["formatos recomendados"],
+    "pilares_reforcar": ["pilares para focar"],
+    "tom_ajustar": "ajustes de tom de voz sugeridos",
+    "horarios_otimos": ["melhores horários identificados"],
+    "orcamento_sugerido": "R$ X (justificativa)"
+  },
+  "plano_acao_imediato": ["3-5 ações concretas para implementar na próxima campanha"],
+  "nota_final": "Avaliação geral de 0-10 com justificativa"
+}`;
+            break;
+
           default:
             return new Response(JSON.stringify({ error: `Unknown campaign tool: ${tool}` }), {
               status: 400,

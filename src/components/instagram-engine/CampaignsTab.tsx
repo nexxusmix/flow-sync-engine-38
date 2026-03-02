@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,6 +21,9 @@ import { CampaignWizard } from './CampaignWizard';
 import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
 import { CampaignAITools } from './CampaignAITools';
 import { CampaignAutomation } from './CampaignAutomation';
+import { CampaignPostReport } from './CampaignPostReport';
+import { CampaignComparison } from './CampaignComparison';
+import { CampaignKanban } from './CampaignKanban';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -39,6 +43,10 @@ export function CampaignsTab() {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [showAITools, setShowAITools] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline'>('dashboard');
+  const [duplicating, setDuplicating] = useState(false);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
   const [saving, setSaving] = useState(false);
 
@@ -63,6 +71,64 @@ export function CampaignsTab() {
       toast.error(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDuplicate = async (campaignId: string) => {
+    const campaign = campaigns?.find(c => c.id === campaignId);
+    if (!campaign) return;
+    setDuplicating(true);
+    try {
+      // Create new campaign
+      const { data: newCampaign, error: cErr } = await supabase.from('instagram_campaigns').insert({
+        name: `${campaign.name} (Cópia)`,
+        objective: campaign.objective,
+        target_audience: campaign.target_audience,
+        budget: campaign.budget,
+        status: 'planning',
+        key_messages: campaign.key_messages,
+        content_plan: campaign.content_plan,
+        kpis: campaign.kpis,
+      } as any).select().single();
+      if (cErr) throw cErr;
+
+      // Clone posts
+      const campaignPosts = (posts || []).filter(p => p.campaign_id === campaignId);
+      if (campaignPosts.length > 0) {
+        const clonedPosts = campaignPosts.map(p => ({
+          title: p.title,
+          format: p.format,
+          pillar: p.pillar,
+          objective: p.objective,
+          status: 'idea',
+          hook: p.hook,
+          script: p.script,
+          caption_short: p.caption_short,
+          caption_medium: p.caption_medium,
+          caption_long: p.caption_long,
+          cta: p.cta,
+          pinned_comment: p.pinned_comment,
+          hashtags: p.hashtags,
+          cover_suggestion: p.cover_suggestion,
+          carousel_slides: p.carousel_slides,
+          story_sequence: p.story_sequence,
+          checklist: p.checklist,
+          ai_generated: p.ai_generated,
+          campaign_id: (newCampaign as any).id,
+          position: p.position,
+        }));
+        const { error: pErr } = await supabase.from('instagram_posts').insert(clonedPosts as any);
+        if (pErr) throw pErr;
+      }
+
+      qc.invalidateQueries({ queryKey: ['instagram-campaigns'] });
+      qc.invalidateQueries({ queryKey: ['instagram-posts'] });
+      toast.success(`Campanha duplicada com ${campaignPosts.length} posts!`);
+      setSelectedCampaign((newCampaign as any).id);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setDuplicating(false);
     }
   };
 
@@ -95,7 +161,6 @@ export function CampaignsTab() {
 
   const activeCampaign = campaigns?.find(c => c.id === selectedCampaign);
   const activePosts = selectedCampaign ? (campaignPostsMap[selectedCampaign] || []) : [];
-  const activeMetrics = selectedCampaign ? campaignMetrics[selectedCampaign] : null;
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
@@ -106,27 +171,33 @@ export function CampaignsTab() {
     return (
       <div className="space-y-5">
         {/* Back + Header */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => setSelectedCampaign(null)}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-foreground">{activeCampaign.name}</h3>
+              <h3 className="text-lg font-semibold text-foreground truncate">{activeCampaign.name}</h3>
               <Badge className={`${status.color} text-[9px]`}>{status.label}</Badge>
             </div>
             {activeCampaign.objective && (
-              <p className="text-xs text-muted-foreground mt-0.5">{activeCampaign.objective}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">{activeCampaign.objective}</p>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowAutomation(true)}>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => setShowReport(true)}>
+              <FileBarChart className="w-3.5 h-3.5" /> Relatório
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => setShowAutomation(true)}>
               <Zap className="w-3.5 h-3.5" /> Automações
             </Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowAITools(true)}>
+            <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => setShowAITools(true)}>
               <Sparkles className="w-3.5 h-3.5" /> IA Avançada
             </Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => exportInstagramCampaignPDF(selectedCampaign!)}>
+            <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => handleDuplicate(selectedCampaign)} disabled={duplicating}>
+              {duplicating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />} Duplicar
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => exportInstagramCampaignPDF(selectedCampaign!)}>
               <Download className="w-3.5 h-3.5" /> PDF
             </Button>
           </div>
@@ -148,34 +219,52 @@ export function CampaignsTab() {
           )}
         </div>
 
-        {/* Performance Dashboard */}
-        <CampaignPerformanceDashboard campaign={activeCampaign} posts={activePosts} />
-
-        {/* Timeline / Roadmap */}
-        <div>
-          <h4 className="text-sm font-medium text-foreground mb-3">Calendário Editorial ({activePosts.length} posts)</h4>
-          <CampaignTimeline
-            posts={activePosts}
-            startDate={activeCampaign.start_date}
-            endDate={activeCampaign.end_date}
-          />
+        {/* View toggle */}
+        <div className="flex items-center gap-1 bg-muted/20 rounded-lg p-0.5 w-fit">
+          {([
+            { key: 'dashboard' as const, label: 'Dashboard', icon: <BarChart3 className="w-3.5 h-3.5" /> },
+            { key: 'kanban' as const, label: 'Kanban', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+            { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
+          ]).map(v => (
+            <Button
+              key={v.key}
+              size="sm"
+              variant={detailView === v.key ? 'default' : 'ghost'}
+              className="gap-1 text-[10px] h-7"
+              onClick={() => setDetailView(v.key)}
+            >
+              {v.icon} {v.label}
+            </Button>
+          ))}
         </div>
 
-        {/* AI Tools Dialog */}
-        <CampaignAITools
-          campaign={activeCampaign}
-          posts={activePosts}
-          open={showAITools}
-          onOpenChange={setShowAITools}
-        />
+        {/* Content views */}
+        {detailView === 'dashboard' && (
+          <CampaignPerformanceDashboard campaign={activeCampaign} posts={activePosts} />
+        )}
 
-        {/* Automation Dialog */}
-        <CampaignAutomation
-          campaign={activeCampaign}
-          posts={activePosts}
-          open={showAutomation}
-          onOpenChange={setShowAutomation}
-        />
+        {detailView === 'kanban' && (
+          <div>
+            <h4 className="text-sm font-medium text-foreground mb-3">Produção ({activePosts.length} posts)</h4>
+            <CampaignKanban posts={activePosts} />
+          </div>
+        )}
+
+        {detailView === 'timeline' && (
+          <div>
+            <h4 className="text-sm font-medium text-foreground mb-3">Calendário Editorial ({activePosts.length} posts)</h4>
+            <CampaignTimeline
+              posts={activePosts}
+              startDate={activeCampaign.start_date}
+              endDate={activeCampaign.end_date}
+            />
+          </div>
+        )}
+
+        {/* Dialogs */}
+        <CampaignAITools campaign={activeCampaign} posts={activePosts} open={showAITools} onOpenChange={setShowAITools} />
+        <CampaignAutomation campaign={activeCampaign} posts={activePosts} open={showAutomation} onOpenChange={setShowAutomation} />
+        <CampaignPostReport campaign={activeCampaign} posts={activePosts} open={showReport} onOpenChange={setShowReport} />
       </div>
     );
   }
@@ -189,6 +278,11 @@ export function CampaignsTab() {
           <p className="text-xs text-muted-foreground">{campaigns?.length || 0} campanhas</p>
         </div>
         <div className="flex items-center gap-2">
+          {(campaigns?.length || 0) >= 2 && (
+            <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowComparison(true)}>
+              <GitCompare className="w-3.5 h-3.5" /> Comparar
+            </Button>
+          )}
           <AIButton label="Gerar com IA" onClick={() => setShowAiGen(true)} size="sm" />
           <Button size="sm" className="gap-1.5" onClick={() => setShowCreate(true)}>
             <Plus className="w-4 h-4" /> Nova Campanha
@@ -274,25 +368,8 @@ export function CampaignsTab() {
         </DialogContent>
       </Dialog>
 
-      <CampaignWizard
-        open={showAiGen}
-        onOpenChange={setShowAiGen}
-        onCampaignCreated={(id) => setSelectedCampaign(id)}
-      />
+      <CampaignWizard open={showAiGen} onOpenChange={setShowAiGen} onCampaignCreated={(id) => setSelectedCampaign(id)} />
+      <CampaignComparison open={showComparison} onOpenChange={setShowComparison} />
     </div>
-  );
-}
-
-function KpiCard({ label, value, icon, highlight }: { label: string; value: number | string; icon: React.ReactNode; highlight?: boolean }) {
-  return (
-    <Card className="glass-card p-3">
-      <div className="flex items-center gap-2 mb-1">
-        <span className={highlight ? 'text-emerald-400' : 'text-primary'}>{icon}</span>
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</span>
-      </div>
-      <p className={`text-lg font-bold ${highlight ? 'text-emerald-400' : 'text-foreground'}`}>
-        {typeof value === 'number' ? value.toLocaleString() : value}
-      </p>
-    </Card>
   );
 }
