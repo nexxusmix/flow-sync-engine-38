@@ -1,44 +1,46 @@
 
 
-## Plano: Gerar Campanha com IA baseada em Pesquisa, Analise e Dados
+## Plano: Campanha Completíssima com IA — Geração Total
 
-### Objetivo
-Adicionar um botão "Gerar Campanha com IA" na aba Campanhas que pesquisa tendencias do nicho, analisa dados do perfil/historico e gera automaticamente uma campanha completa com objetivo, publico, mensagens-chave, KPIs e plano de conteudo pre-populado.
+### Problema Atual
+O gerador de campanhas atual cria apenas o registro da campanha com um `content_plan` em JSON, mas **não gera os posts reais** na tabela `instagram_posts`. O usuário precisa criar cada post manualmente depois.
 
-### Fluxo do Usuario
-1. Clica em "Gerar Campanha com IA" na tela de campanhas
-2. Abre dialog com campos opcionais: tema/foco da campanha, duracao (1-4 semanas), budget
-3. A IA recebe como contexto: perfil configurado, referencias salvas, memoria de performance, posts anteriores
-4. Retorna campanha completa que e salva automaticamente na tabela `instagram_campaigns` com `key_messages`, `content_plan` e `kpis` preenchidos
-5. Apos salvar, mostra a campanha criada com os detalhes
+### O Que Será Feito
+Transformar o gerador em um **motor de campanha completa** que, em um único clique, cria:
 
-### Implementacao
+1. **Campanha** — nome, objetivo, público, KPIs, mensagens-chave, estratégia
+2. **Posts completos** — inseridos na `instagram_posts` com todos os campos preenchidos:
+   - Título, hook, script/roteiro, caption_short, caption_medium, caption_long
+   - CTA, hashtags, pinned_comment, cover_suggestion
+   - carousel_slides (para carrosséis), story_sequence (para stories)
+   - Formato, pilar, objetivo, data agendada (`scheduled_at`)
+   - Vinculados à campanha via `campaign_id`
+   - Checklist de produção pré-populado
+3. **Calendário distribuído** — posts com datas reais distribuídas ao longo das semanas
+4. **Ads sugeridos** — posts marcados como anúncio no plano
 
-**A. Nova action `generate_campaign` no Edge Function `instagram-ai/index.ts`**
-- Recebe: `theme`, `duration_weeks`, `budget`, contexto automatico (perfil, referencias, memoria)
-- Busca dados do `instagram_profile_config` e `instagram_references` para enriquecer o prompt
-- Prompt instruido a fazer pesquisa de mercado, analisar tendencias do nicho e gerar:
-  - Nome, objetivo, publico-alvo, periodo
-  - Mensagens-chave (array)
-  - KPIs projetados
-  - Plano de conteudo com posts sugeridos (titulos, formatos, pilares, hooks)
-- Retorna JSON estruturado
+### Implementação
 
-**B. Componente `AiCampaignGenerator` em `CampaignsTab.tsx`**
-- Botao "Gerar com IA" ao lado de "Nova Campanha"
-- Dialog com inputs: tema (opcional), duracao, budget
-- Estado de loading com mensagem "Analisando dados e gerando campanha..."
-- Ao receber resultado: INSERT na `instagram_campaigns` com todos os campos preenchidos
-- Toast de sucesso + navegar para a campanha criada
+**A. Edge Function `instagram-ai/index.ts` — Expandir `generate_campaign`**
 
-**C. Editar `CampaignsTab.tsx`**
-- Adicionar botao com icone Sparkles na barra de acoes
-- Integrar o dialog de geracao
+Alterar o prompt para gerar JSON muito mais rico:
+- Cada item do `content_plan` vira um post completo com TODOS os campos (`hook`, `script`, `caption_short`, `caption_medium`, `caption_long`, `cta`, `hashtags`, `pinned_comment`, `cover_suggestion`, `carousel_slides`, `story_sequence`, `checklist`)
+- Incluir `scheduled_date` real (YYYY-MM-DD) distribuído nas semanas
+- Incluir `suggested_time` para horário ideal
+- Incluir posts tipo `ad` para anúncios
+
+**B. Frontend `CampaignsTab.tsx` — Auto-criar posts após campanha**
+
+Após receber o resultado da IA e salvar a campanha:
+1. Iterar sobre `content_plan` 
+2. Para cada item, fazer `INSERT` em `instagram_posts` com todos os campos + `campaign_id` + `scheduled_at` (combinando date + time)
+3. Mostrar resumo: "Campanha criada com X posts, Y reels, Z carrosséis"
+4. Adicionar estado de progresso multi-etapa no loading ("Pesquisando tendências...", "Criando roteiros...", "Montando calendário...")
 
 ### Arquivos
 
-| Arquivo | Acao |
+| Arquivo | Ação |
 |---|---|
-| `supabase/functions/instagram-ai/index.ts` | Adicionar case `generate_campaign` |
-| `src/components/instagram-engine/CampaignsTab.tsx` | Adicionar botao + dialog de geracao IA |
+| `supabase/functions/instagram-ai/index.ts` | Expandir prompt do `generate_campaign` para gerar posts completos |
+| `src/components/instagram-engine/CampaignsTab.tsx` | Auto-inserir posts na `instagram_posts` após geração |
 
