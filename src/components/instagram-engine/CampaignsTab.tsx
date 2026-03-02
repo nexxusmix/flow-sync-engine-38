@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -40,6 +40,10 @@ import { CampaignAnalyticsAdvanced } from './CampaignAnalyticsAdvanced';
 import { CampaignPublishQueue } from './CampaignPublishQueue';
 import { CampaignSmartAlerts } from './CampaignSmartAlerts';
 import { CampaignCollaboration } from './CampaignCollaboration';
+import { CampaignABTesting } from './CampaignABTesting';
+import { CampaignHashtagPlanner } from './CampaignHashtagPlanner';
+import { CampaignApprovalPipeline } from './CampaignApprovalPipeline';
+import { CampaignPDFReport } from './CampaignPDFReport';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -63,7 +67,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -258,6 +262,10 @@ export function CampaignsTab() {
             { key: 'queue' as const, label: 'Publicação', icon: <Send className="w-3.5 h-3.5" /> },
             { key: 'smart_alerts' as const, label: 'Alertas IA', icon: <Bell className="w-3.5 h-3.5" /> },
             { key: 'collab' as const, label: 'Colaboração', icon: <MessageSquare className="w-3.5 h-3.5" /> },
+            { key: 'ab_test' as const, label: 'Teste A/B', icon: <GitCompare className="w-3.5 h-3.5" /> },
+            { key: 'hashtags' as const, label: 'Hashtags', icon: <Hash className="w-3.5 h-3.5" /> },
+            { key: 'approval_pipeline' as const, label: 'Workflow', icon: <Shield className="w-3.5 h-3.5" /> },
+            { key: 'pdf_report' as const, label: 'Relatório', icon: <FileDown className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
@@ -335,6 +343,22 @@ export function CampaignsTab() {
 
         {detailView === 'collab' && (
           <CampaignCollaboration campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'ab_test' && (
+          <CampaignABTesting campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'hashtags' && (
+          <CampaignHashtagPlanner campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'approval_pipeline' && (
+          <CampaignApprovalPipeline campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'pdf_report' && (
+          <CampaignPDFReport campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
