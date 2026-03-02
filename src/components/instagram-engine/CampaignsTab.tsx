@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route, CalendarPlus, MessageCircle, Presentation, ShieldAlert, CalendarHeart, KanbanSquare, Search, Layers, ArrowDown, Clock, Gauge, UserCheck } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart, Flame, Send, MessageSquare, Hash, Shield, FileDown, Map, Scale, FileSpreadsheet, RefreshCw, Calculator, BookMarked, Repeat2, HeartPulse, BookOpen, UserCircle, Route, CalendarPlus, MessageCircle, Presentation, ShieldAlert, CalendarHeart, KanbanSquare, Search, Layers, ArrowDown, Clock, Gauge, UserCheck, Brush, BoltIcon } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -76,6 +76,10 @@ import { CampaignContentFunnel } from './CampaignContentFunnel';
 import { CampaignTimingOptimizer } from './CampaignTimingOptimizer';
 import { CampaignVelocityTracker } from './CampaignVelocityTracker';
 import { CampaignClientReview } from './CampaignClientReview';
+import { CampaignMoodBoard } from './CampaignMoodBoard';
+import { CampaignMicroBlitz } from './CampaignMicroBlitz';
+import { CampaignAudienceHeatmap } from './CampaignAudienceHeatmap';
+import { CampaignAutopsy } from './CampaignAutopsy';
 import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -99,7 +103,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score' | 'holidays' | 'collab_board' | 'content_gap' | 'cloner' | 'content_funnel' | 'timing' | 'velocity' | 'client_review'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed' | 'analytics' | 'queue' | 'smart_alerts' | 'collab' | 'ab_test' | 'hashtags' | 'approval_pipeline' | 'pdf_report' | 'content_map' | 'compare' | 'briefing' | 'repost' | 'simulator' | 'swipe_files' | 'ads_copy' | 'unified_calendar' | 'funnel' | 'spin' | 'heatmap' | 'competitors' | 'health' | 'postmortem' | 'personas' | 'journey' | 'cross_compare' | 'hashtag_intel' | 'recycle' | 'ab_framework' | 'auto_planner' | 'sentiment' | 'pitch_deck' | 'risk_score' | 'holidays' | 'collab_board' | 'content_gap' | 'cloner' | 'content_funnel' | 'timing' | 'velocity' | 'client_review' | 'mood_board' | 'micro_blitz' | 'audience_heatmap' | 'autopsy'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -330,6 +334,10 @@ export function CampaignsTab() {
             { key: 'timing' as const, label: 'Timing', icon: <Clock className="w-3.5 h-3.5" /> },
             { key: 'velocity' as const, label: 'Velocity', icon: <Gauge className="w-3.5 h-3.5" /> },
             { key: 'client_review' as const, label: 'Revisão', icon: <UserCheck className="w-3.5 h-3.5" /> },
+            { key: 'mood_board' as const, label: 'Mood Board', icon: <Palette className="w-3.5 h-3.5" /> },
+            { key: 'micro_blitz' as const, label: 'Blitz 24h', icon: <Zap className="w-3.5 h-3.5" /> },
+            { key: 'audience_heatmap' as const, label: 'Audiência', icon: <Users className="w-3.5 h-3.5" /> },
+            { key: 'autopsy' as const, label: 'Autopsia', icon: <BookOpen className="w-3.5 h-3.5" /> },
             { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
             { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Lembretes', icon: <Bell className="w-3.5 h-3.5" /> },
@@ -551,6 +559,22 @@ export function CampaignsTab() {
 
         {detailView === 'client_review' && (
           <CampaignClientReview campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'mood_board' && (
+          <CampaignMoodBoard campaign={activeCampaign} />
+        )}
+
+        {detailView === 'micro_blitz' && (
+          <CampaignMicroBlitz campaign={activeCampaign} />
+        )}
+
+        {detailView === 'audience_heatmap' && (
+          <CampaignAudienceHeatmap campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'autopsy' && (
+          <CampaignAutopsy campaign={activeCampaign} posts={activePosts} />
         )}
 
         {detailView === 'gantt' && (
