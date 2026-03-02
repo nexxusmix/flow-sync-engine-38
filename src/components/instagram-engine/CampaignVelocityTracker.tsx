@@ -70,9 +70,9 @@ export function CampaignVelocityTracker({ campaign, posts }: Props) {
       <div className="flex items-center gap-2">
         <Gauge className="w-5 h-5 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Velocity Tracker & Burn-Down</h3>
-        {stats.isAhead && <Badge className="bg-emerald-400/10 text-emerald-400 text-[9px]">Adiantado 🚀</Badge>}
-        {stats.isBehind && <Badge className="bg-red-400/10 text-red-400 text-[9px]">Atrasado ⚠️</Badge>}
-        {stats.isOnTrack && !stats.isAhead && !stats.isBehind && <Badge className="bg-blue-400/10 text-blue-400 text-[9px]">No prazo ✅</Badge>}
+        {stats.isAhead && <Badge className="bg-primary/10 text-primary text-[9px]">Adiantado 🚀</Badge>}
+        {stats.isBehind && <Badge className="bg-destructive/10 text-destructive text-[9px]">Atrasado ⚠️</Badge>}
+        {stats.isOnTrack && !stats.isAhead && !stats.isBehind && <Badge className="bg-primary/10 text-primary text-[9px]">No prazo ✅</Badge>}
       </div>
 
       {/* KPIs */}
@@ -116,7 +116,7 @@ export function CampaignVelocityTracker({ campaign, posts }: Props) {
               <span className="text-[10px] font-medium text-foreground">{stats.timePct.toFixed(0)}%</span>
             </div>
             <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
-              <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${stats.timePct}%` }} />
+              <div className="h-full bg-muted-foreground rounded-full transition-all" style={{ width: `${stats.timePct}%` }} />
             </div>
           </div>
           {stats.requiredVelocity !== null && (
@@ -125,9 +125,9 @@ export function CampaignVelocityTracker({ campaign, posts }: Props) {
                 Velocidade necessária: <span className="font-semibold text-foreground">{stats.requiredVelocity.toFixed(1)} posts/dia</span>
               </div>
               {stats.velocity >= (stats.requiredVelocity * 0.8) ? (
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <CheckCircle className="w-3.5 h-3.5 text-primary" />
               ) : (
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
               )}
             </div>
           )}

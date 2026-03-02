@@ -46,10 +46,10 @@ const SEASONAL_DATES: SeasonalDate[] = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  comercial: 'bg-amber-400/10 text-amber-400',
-  social: 'bg-blue-400/10 text-blue-400',
-  nicho: 'bg-purple-400/10 text-purple-400',
-  viral: 'bg-pink-400/10 text-pink-400',
+  comercial: 'bg-muted text-muted-foreground',
+  social: 'bg-primary/10 text-primary',
+  nicho: 'bg-primary/10 text-primary/70',
+  viral: 'bg-primary/10 text-primary/50',
 };
 
 export function CampaignHolidayCalendar({ campaigns }: Props) {
@@ -119,14 +119,14 @@ Retorne JSON com:
 
       {/* Urgency alerts */}
       {upcomingDates.filter(d => d.daysUntil <= 14 && d.relevance === 'alta').length > 0 && (
-        <Card className="p-3 bg-amber-400/5 border-amber-400/20">
+        <Card className="p-3 bg-muted/10 border-border">
           <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-semibold text-amber-400">Datas Próximas — Ação Urgente</span>
+            <AlertCircle className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground">Datas Próximas — Ação Urgente</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {upcomingDates.filter(d => d.daysUntil <= 14 && d.relevance === 'alta').map(d => (
-              <Badge key={d.name} className="bg-amber-400/10 text-amber-400 text-[10px]">
+              <Badge key={d.name} className="bg-muted text-muted-foreground text-[10px]">
                 {d.emoji} {d.name} — {d.daysUntil}d
               </Badge>
             ))}
@@ -153,8 +153,8 @@ Retorne JSON com:
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-foreground">{sd.name}</span>
                     <Badge variant="outline" className={`text-[9px] ${CATEGORY_COLORS[sd.category]}`}>{sd.category}</Badge>
-                    {sd.relevance === 'alta' && <Star className="w-3 h-3 text-amber-400" />}
-                    {hasCampaign && <Badge className="bg-emerald-400/10 text-emerald-400 text-[9px]">Campanha ativa</Badge>}
+                    {sd.relevance === 'alta' && <Star className="w-3 h-3 text-primary" />}
+                    {hasCampaign && <Badge className="bg-primary/10 text-primary text-[9px]">Campanha ativa</Badge>}
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-0.5">
                     {format(sd.dateObj, "EEEE, dd 'de' MMMM", { locale: ptBR })}
@@ -202,7 +202,7 @@ Retorne JSON com:
                     </div>
                   )}
                   {suggestion.urgency_tip && (
-                    <p className="text-[10px] text-amber-400/80">⏰ {suggestion.urgency_tip}</p>
+                    <p className="text-[10px] text-muted-foreground">⏰ {suggestion.urgency_tip}</p>
                   )}
                 </div>
               )}

@@ -111,8 +111,8 @@ Retorne JSON com:
       {/* Sentiment Overview */}
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-3 bg-card/50 border-border/30 text-center">
-          <SmilePlus className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
-          <div className="text-lg font-bold text-emerald-400">{sentimentCounts.positive}</div>
+          <SmilePlus className="w-5 h-5 text-primary mx-auto mb-1" />
+          <div className="text-lg font-bold text-primary">{sentimentCounts.positive}</div>
           <div className="text-[10px] text-muted-foreground">Positivo</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
@@ -121,8 +121,8 @@ Retorne JSON com:
           <div className="text-[10px] text-muted-foreground">Neutro</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
-          <Frown className="w-5 h-5 text-red-400 mx-auto mb-1" />
-          <div className="text-lg font-bold text-red-400">{sentimentCounts.negative}</div>
+          <Frown className="w-5 h-5 text-destructive mx-auto mb-1" />
+          <div className="text-lg font-bold text-destructive">{sentimentCounts.negative}</div>
           <div className="text-[10px] text-muted-foreground">Negativo</div>
         </Card>
       </div>
@@ -159,9 +159,9 @@ Retorne JSON com:
           <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
             {postSentiments.slice(0, 15).map(ps => (
               <div key={ps.post.id} className="flex items-center gap-2">
-                {ps.sentiment === 'positive' && <SmilePlus className="w-3 h-3 text-emerald-400 shrink-0" />}
+                {ps.sentiment === 'positive' && <SmilePlus className="w-3 h-3 text-primary shrink-0" />}
                 {ps.sentiment === 'neutral' && <Meh className="w-3 h-3 text-muted-foreground shrink-0" />}
-                {ps.sentiment === 'negative' && <Frown className="w-3 h-3 text-red-400 shrink-0" />}
+                {ps.sentiment === 'negative' && <Frown className="w-3 h-3 text-destructive shrink-0" />}
                 <span className="text-xs text-foreground truncate flex-1">{ps.post.title}</span>
                 <span className="text-[10px] text-muted-foreground">{ps.score > 0 ? '+' : ''}{ps.score}</span>
               </div>
@@ -211,7 +211,7 @@ Retorne JSON com:
           <Card className="p-4 bg-card/50 border-border/30">
             {Array.isArray(aiAnalysis.strengths) && aiAnalysis.strengths.length > 0 && (
               <div className="mb-3">
-                <h4 className="text-xs font-semibold text-emerald-400 mb-1.5">✅ Pontos Fortes</h4>
+                <h4 className="text-xs font-semibold text-primary mb-1.5">✅ Pontos Fortes</h4>
                 <ul className="space-y-1">
                   {aiAnalysis.strengths.map((s: string, i: number) => (
                     <li key={i} className="text-xs text-muted-foreground">• {s}</li>
@@ -221,7 +221,7 @@ Retorne JSON com:
             )}
             {Array.isArray(aiAnalysis.recommendations) && aiAnalysis.recommendations.length > 0 && (
               <div>
-                <h4 className="text-xs font-semibold text-amber-400 mb-1.5">💡 Recomendações</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground mb-1.5">💡 Recomendações</h4>
                 <ul className="space-y-1">
                   {aiAnalysis.recommendations.map((r: string, i: number) => (
                     <li key={i} className="text-xs text-muted-foreground">• {r}</li>

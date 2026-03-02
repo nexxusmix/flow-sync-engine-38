@@ -263,7 +263,7 @@ export function CampaignAnalyticsAdvanced({ campaign, posts }: Props) {
                     <RTooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} />
                     <Area type="monotone" dataKey="cumulative" name="Acumulado" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.1} strokeWidth={2} animationDuration={1500} />
                     <Area type="monotone" dataKey="created" name="Criados" stroke="hsl(210,80%,50%)" fill="hsl(210,80%,50%)" fillOpacity={0.15} animationDuration={1200} />
-                    <Area type="monotone" dataKey="published" name="Publicados" stroke="hsl(142,60%,45%)" fill="hsl(142,60%,45%)" fillOpacity={0.15} animationDuration={1200} animationBegin={300} />
+                    <Area type="monotone" dataKey="published" name="Publicados" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.08} animationDuration={1200} animationBegin={300} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -284,9 +284,9 @@ export function CampaignAnalyticsAdvanced({ campaign, posts }: Props) {
                     <PolarGrid stroke="hsl(var(--border))" opacity={0.3} />
                     <PolarAngleAxis dataKey="format" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                     <PolarRadiusAxis tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} />
-                    <Radar name="Conclusão %" dataKey="completion" stroke="hsl(142,60%,45%)" fill="hsl(142,60%,45%)" fillOpacity={0.2} animationDuration={1500} />
+                    <Radar name="Conclusão %" dataKey="completion" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} animationDuration={1500} />
                     <Radar name="Hook %" dataKey="hookRate" stroke="hsl(210,80%,50%)" fill="hsl(210,80%,50%)" fillOpacity={0.15} animationDuration={1500} animationBegin={300} />
-                    <Radar name="IA %" dataKey="aiRate" stroke="hsl(280,60%,50%)" fill="hsl(280,60%,50%)" fillOpacity={0.1} animationDuration={1500} animationBegin={600} />
+                    <Radar name="IA %" dataKey="aiRate" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.1} animationDuration={1500} animationBegin={600} />
                     <RTooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -314,14 +314,14 @@ export function CampaignAnalyticsAdvanced({ campaign, posts }: Props) {
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${isAbove ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${isAbove ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
                           {b.icon}
                         </span>
                         <span className="text-[11px] font-medium text-foreground">{b.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-bold text-foreground">{b.value}%</span>
-                        <span className={`text-[9px] font-medium ${isAbove ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        <span className={`text-[9px] font-medium ${isAbove ? 'text-primary' : 'text-muted-foreground'}`}>
                           {isAbove ? '+' : ''}{diff}%
                         </span>
                         <span className="text-[9px] text-muted-foreground">meta: {b.benchmark}%</span>
@@ -334,7 +334,7 @@ export function CampaignAnalyticsAdvanced({ campaign, posts }: Props) {
                         style={{ left: `${b.benchmark}%` }}
                       />
                       <motion.div
-                        className={`h-full rounded-full ${isAbove ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                        className={`h-full rounded-full ${isAbove ? 'bg-primary' : 'bg-muted-foreground'}`}
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(b.value, 100)}%` }}
                         transition={{ duration: 1, delay: 0.2 + i * 0.06 }}

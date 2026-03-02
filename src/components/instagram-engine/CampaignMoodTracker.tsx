@@ -68,12 +68,12 @@ Retorne JSON com:
   };
 
   const sentimentColors: Record<string, string> = {
-    positive: 'bg-emerald-400',
-    negative: 'bg-red-400',
+    positive: 'bg-primary',
+    negative: 'bg-destructive',
     neutral: 'bg-muted-foreground',
-    urgent: 'bg-amber-400',
-    inspirational: 'bg-purple-400',
-    educational: 'bg-blue-400',
+    urgent: 'bg-muted-foreground',
+    inspirational: 'bg-primary/70',
+    educational: 'bg-primary/50',
   };
 
   return (
@@ -106,7 +106,7 @@ Retorne JSON com:
                 <p className="text-[9px] text-muted-foreground mt-0.5">Consistência: {analysis.consistency_score}/100</p>
               </div>
               <div className="text-right">
-                <div className={`text-2xl font-bold ${(analysis.mood_score || 5) >= 7 ? 'text-emerald-400' : (analysis.mood_score || 5) >= 4 ? 'text-amber-400' : 'text-red-400'}`}>
+                <div className={`text-2xl font-bold ${(analysis.mood_score || 5) >= 7 ? 'text-primary' : (analysis.mood_score || 5) >= 4 ? 'text-muted-foreground' : 'text-destructive'}`}>
                   {analysis.mood_score}/10
                 </div>
                 <div className="text-[8px] text-muted-foreground">mood score</div>
@@ -152,9 +152,9 @@ Retorne JSON com:
                 {/* Bars */}
                 {analysis.timeline.map((t: any, i: number) => {
                   const height = (t.intensity / 10) * 100;
-                  const color = t.sentiment === 'positive' ? 'hsl(142, 71%, 45%)' :
-                    t.sentiment === 'negative' ? 'hsl(0, 84%, 60%)' :
-                    t.sentiment === 'urgent' ? 'hsl(38, 92%, 50%)' :
+                  const color = t.sentiment === 'positive' ? 'hsl(var(--primary))' :
+                    t.sentiment === 'negative' ? 'hsl(var(--destructive))' :
+                    t.sentiment === 'urgent' ? 'hsl(var(--muted-foreground))' :
                     'hsl(var(--primary))';
                   return (
                     <g key={i}>
@@ -203,8 +203,8 @@ Retorne JSON com:
           {Array.isArray(analysis.monotony_alerts) && analysis.monotony_alerts.length > 0 && (
             <Card className="p-4 bg-card/50 border-border/30">
               <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <h4 className="text-xs font-semibold text-amber-400">Alertas de Monotonia</h4>
+                <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+                <h4 className="text-xs font-semibold text-muted-foreground">Alertas de Monotonia</h4>
               </div>
               <div className="space-y-1">
                 {analysis.monotony_alerts.map((a: any, i: number) => (

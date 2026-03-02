@@ -112,10 +112,10 @@ export function CampaignHealthScore({ campaign, posts }: Props) {
   }, [posts]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-emerald-400';
-    if (score >= 60) return 'text-amber-400';
-    if (score >= 40) return 'text-orange-400';
-    return 'text-rose-400';
+    if (score >= 80) return 'text-primary';
+    if (score >= 60) return 'text-primary/70';
+    if (score >= 40) return 'text-muted-foreground';
+    return 'text-destructive';
   };
 
   const getScoreLabel = (score: number) => {
@@ -128,8 +128,8 @@ export function CampaignHealthScore({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-          <HeartPulse className="w-4 h-4 text-emerald-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <HeartPulse className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Saúde da Campanha</h4>
@@ -159,7 +159,7 @@ export function CampaignHealthScore({ campaign, posts }: Props) {
               <span className="text-[8px] text-muted-foreground">/100</span>
             </div>
           </div>
-          <Badge className={`${health.totalScore >= 60 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'} text-[9px]`}>
+          <Badge className={`${health.totalScore >= 60 ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'} text-[9px]`}>
             {getScoreLabel(health.totalScore)}
           </Badge>
           <p className="text-[9px] text-muted-foreground mt-1">{health.last7} posts nos últimos 7 dias</p>
@@ -180,7 +180,7 @@ export function CampaignHealthScore({ campaign, posts }: Props) {
                   </div>
                   <div className="h-1.5 bg-muted/10 rounded-full overflow-hidden">
                     <motion.div
-                      className={`h-full rounded-full ${m.score / m.maxScore >= 0.7 ? 'bg-emerald-500' : m.score / m.maxScore >= 0.4 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                      className={`h-full rounded-full ${m.score / m.maxScore >= 0.7 ? 'bg-primary' : m.score / m.maxScore >= 0.4 ? 'bg-muted-foreground' : 'bg-destructive'}`}
                       initial={{ width: 0 }}
                       animate={{ width: `${(m.score / m.maxScore) * 100}%` }}
                       transition={{ duration: 0.6, delay: i * 0.1 }}
@@ -196,10 +196,10 @@ export function CampaignHealthScore({ campaign, posts }: Props) {
 
       {/* Alerts */}
       {health.alerts.length > 0 && (
-        <Card className="glass-card p-3 border-amber-500/20">
+        <Card className="glass-card p-3 border-border">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[10px] font-medium text-amber-400">Alertas</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-[10px] font-medium text-muted-foreground">Alertas</span>
           </div>
           {health.alerts.map((a, i) => (
             <p key={i} className="text-[9px] text-muted-foreground">⚠ {a}</p>

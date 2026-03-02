@@ -100,14 +100,14 @@ export function CampaignUnifiedCalendar({ campaign: currentCampaign }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-cyan-500/15 flex items-center justify-center">
-          <CalendarDays className="w-4 h-4 text-cyan-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <CalendarDays className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Calendário Unificado</h4>
           <p className="text-[10px] text-muted-foreground">
             {calendarPosts.length} posts de {(allCampaigns || []).length} campanhas
-            {conflicts.length > 0 && <span className="text-amber-400 ml-2">⚠ {conflicts.length} conflitos</span>}
+            {conflicts.length > 0 && <span className="text-muted-foreground ml-2">⚠ {conflicts.length} conflitos</span>}
           </p>
         </div>
       </div>
@@ -156,18 +156,18 @@ export function CampaignUnifiedCalendar({ campaign: currentCampaign }: Props) {
                 key={day.toISOString()}
                 className={`min-h-[60px] p-1 rounded-md cursor-pointer border transition-all ${
                   isSelected ? 'border-primary bg-primary/5' :
-                  isToday ? 'border-cyan-500/30 bg-cyan-500/5' :
-                  hasConflict ? 'border-amber-500/30 bg-amber-500/5' :
+                  isToday ? 'border-primary/30 bg-primary/5' :
+                  hasConflict ? 'border-border bg-muted/10' :
                   'border-transparent hover:bg-muted/10'
                 }`}
                 onClick={() => setSelectedDay(day)}
                 whileHover={{ scale: 1.02 }}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-[9px] ${isToday ? 'text-cyan-400 font-bold' : 'text-muted-foreground'}`}>
+                  <span className={`text-[9px] ${isToday ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
                     {format(day, 'd')}
                   </span>
-                  {hasConflict && <AlertTriangle className="w-2.5 h-2.5 text-amber-400" />}
+                  {hasConflict && <AlertTriangle className="w-2.5 h-2.5 text-muted-foreground" />}
                 </div>
                 <div className="space-y-0.5 mt-0.5">
                   {dayPosts.slice(0, 3).map(p => (

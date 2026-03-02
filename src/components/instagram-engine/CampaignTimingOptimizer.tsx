@@ -158,11 +158,11 @@ Retorne JSON com:
       {aiSuggestions && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="p-4 bg-card/50 border-border/30">
-            <h4 className="text-xs font-semibold text-emerald-400 mb-2">✅ Melhores Horários</h4>
+            <h4 className="text-xs font-semibold text-primary mb-2">✅ Melhores Horários</h4>
             {Array.isArray(aiSuggestions.best_days) && (
               <div className="flex flex-wrap gap-1 mb-2">
                 {aiSuggestions.best_days.map((d: string) => (
-                  <Badge key={d} className="bg-emerald-400/10 text-emerald-400 text-[9px]">{d}</Badge>
+                  <Badge key={d} className="bg-primary/10 text-primary text-[9px]">{d}</Badge>
                 ))}
               </div>
             )}
@@ -191,10 +191,10 @@ Retorne JSON com:
           <Card className="p-4 bg-card/50 border-border/30">
             {Array.isArray(aiSuggestions.avoid_times) && aiSuggestions.avoid_times.length > 0 && (
               <div className="mb-3">
-                <h4 className="text-xs font-semibold text-red-400 mb-1.5">🚫 Evitar</h4>
+                <h4 className="text-xs font-semibold text-destructive mb-1.5">🚫 Evitar</h4>
                 <div className="flex flex-wrap gap-1">
                   {aiSuggestions.avoid_times.map((t: string, i: number) => (
-                    <Badge key={i} className="bg-red-400/10 text-red-400 text-[9px]">{t}</Badge>
+                    <Badge key={i} className="bg-destructive/10 text-destructive text-[9px]">{t}</Badge>
                   ))}
                 </div>
               </div>
