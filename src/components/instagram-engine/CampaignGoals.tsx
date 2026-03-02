@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Target, TrendingUp, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { useProfileSnapshots } from '@/hooks/useInstagramEngine';
+import { Plus, Target, TrendingUp, Trash2, Edit2, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -39,9 +40,11 @@ const METRIC_PRESETS = [
 
 export function CampaignGoals({ campaignId }: Props) {
   const qc = useQueryClient();
+  const { data: snapshots } = useProfileSnapshots();
   const [showAdd, setShowAdd] = useState(false);
   const [editGoal, setEditGoal] = useState<Goal | null>(null);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [form, setForm] = useState({ title: '', metric_key: '', target_value: '', current_value: '', unit: '' });
 
   const { data: goals, isLoading } = useQuery({
@@ -138,6 +141,35 @@ export function CampaignGoals({ campaignId }: Props) {
     setShowAdd(true);
   };
 
+  // Sync goals with latest snapshot data
+  const handleSyncSnapshots = async () => {
+    if (!goals || !snapshots || snapshots.length === 0) {
+      toast.info('Nenhum snapshot disponível para sincronizar');
+      return;
+    }
+    setSyncing(true);
+    const latest = snapshots[0]; // Already sorted by date desc
+    let updated = 0;
+
+    for (const goal of goals) {
+      let newValue: number | null = null;
+      if (goal.metric_key === 'followers' && latest.followers) newValue = latest.followers;
+      else if (goal.metric_key === 'engagement' && latest.avg_engagement) newValue = latest.avg_engagement;
+      else if (goal.metric_key === 'reach' && latest.avg_reach) newValue = latest.avg_reach;
+
+      if (newValue !== null && newValue !== goal.current_value) {
+        await supabase.from('instagram_campaign_goals' as any)
+          .update({ current_value: newValue })
+          .eq('id', goal.id);
+        updated++;
+      }
+    }
+
+    qc.invalidateQueries({ queryKey: ['campaign-goals', campaignId] });
+    setSyncing(false);
+    toast.success(updated > 0 ? `${updated} meta(s) atualizada(s) com dados reais!` : 'Metas já estão atualizadas');
+  };
+
   if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>;
 
   const overallProgress = goals && goals.length > 0
@@ -155,13 +187,20 @@ export function CampaignGoals({ campaignId }: Props) {
             <Badge variant="outline" className="text-[9px]">{overallProgress}% geral</Badge>
           )}
         </div>
-        <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => {
-          setEditGoal(null);
-          setForm({ title: '', metric_key: '', target_value: '', current_value: '', unit: '' });
-          setShowAdd(true);
-        }}>
-          <Plus className="w-3 h-3" /> Nova Meta
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {goals && goals.length > 0 && snapshots && snapshots.length > 0 && (
+            <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={handleSyncSnapshots} disabled={syncing}>
+              {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Sincronizar Métricas
+            </Button>
+          )}
+          <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => {
+            setEditGoal(null);
+            setForm({ title: '', metric_key: '', target_value: '', current_value: '', unit: '' });
+            setShowAdd(true);
+          }}>
+            <Plus className="w-3 h-3" /> Nova Meta
+          </Button>
+        </div>
       </div>
 
       {/* Overall progress */}

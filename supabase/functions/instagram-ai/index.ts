@@ -1123,6 +1123,52 @@ Retorne um JSON com:
         break;
       }
 
+      case "generate_creative_briefing": {
+        const { title, format: bFmt, pillar: bPillar, hook, script, objective } = data;
+        systemPrompt = `Você é um diretor de arte e produtor audiovisual sênior da SQUAD Film, especializado em conteúdo premium para Instagram. Gere briefings criativos extremamente detalhados e visuais.${memoryBlock}`;
+        userPrompt = `Gere um BRIEFING CRIATIVO COMPLETO para o seguinte post Instagram da SQUAD Film:
+
+Título: ${title || 'Post sem título'}
+Formato: ${bFmt || 'reel'}
+Pilar: ${bPillar || 'autoridade'}
+${objective ? `Objetivo: ${objective}` : ''}
+${hook ? `Hook: ${hook}` : ''}
+${script ? `Roteiro: ${script.substring(0, 500)}` : ''}
+
+Retorne JSON puro (sem markdown):
+{
+  "conceito_visual": "descrição do conceito visual geral em 3-5 linhas",
+  "paleta_cores": [
+    {"nome": "nome da cor", "hex": "#XXXXXX", "uso": "onde/como usar esta cor"}
+  ],
+  "direcao_arte": {
+    "composicao": "regra de composição principal (terços, simetria, etc)",
+    "iluminacao": "tipo e direção da iluminação",
+    "angulos_camera": ["ângulo 1", "ângulo 2"],
+    "movimentos_camera": ["movimento 1", "movimento 2"]
+  },
+  "tipografia": {
+    "estilo": "família/estilo tipográfico",
+    "tamanho": "hierarquia de tamanhos",
+    "posicionamento": "onde posicionar textos"
+  },
+  "trilha_sonora": {
+    "genero": "gênero musical",
+    "mood": "atmosfera/mood",
+    "referencias": ["referência 1", "referência 2"]
+  },
+  "referencias_visuais": [
+    {"descricao": "descrição da referência visual", "estilo": "estilo da referência"}
+  ],
+  "shotlist": [
+    {"cena": 1, "descricao": "descrição da cena", "duracao": "Xs", "tipo_plano": "plano geral/médio/detalhe/etc"}
+  ],
+  "equipamento_sugerido": ["equipamento 1", "equipamento 2"],
+  "notas_edicao": ["nota de edição 1", "nota de edição 2"]
+}`;
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,

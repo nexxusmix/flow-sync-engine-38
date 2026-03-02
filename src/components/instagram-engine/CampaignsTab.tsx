@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,6 +28,9 @@ import { CampaignCalendar } from './CampaignCalendar';
 import { CampaignApprovalWorkflow } from './CampaignApprovalWorkflow';
 import { CampaignGoals } from './CampaignGoals';
 import { CampaignTemplateLibrary, SaveCampaignAsTemplateButton } from './CampaignTemplateLibrary';
+import { CampaignCreativeBriefing } from './CampaignCreativeBriefing';
+import { CampaignAlerts } from './CampaignAlerts';
+import { CampaignChangelog } from './CampaignChangelog';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -49,9 +52,10 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'calendar' | 'approval' | 'goals'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog'>('dashboard');
   const [duplicating, setDuplicating] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [briefingPost, setBriefingPost] = useState<InstagramPost | null>(null);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
   const [saving, setSaving] = useState(false);
 
@@ -233,6 +237,8 @@ export function CampaignsTab() {
             { key: 'calendar' as const, label: 'Calendário', icon: <CalendarDays className="w-3.5 h-3.5" /> },
             { key: 'approval' as const, label: 'Aprovação', icon: <CheckSquare className="w-3.5 h-3.5" /> },
             { key: 'goals' as const, label: 'Metas', icon: <Target className="w-3.5 h-3.5" /> },
+            { key: 'alerts' as const, label: 'Alertas', icon: <Bell className="w-3.5 h-3.5" /> },
+            { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
             { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
           ]).map(v => (
             <Button
@@ -254,7 +260,18 @@ export function CampaignsTab() {
 
         {detailView === 'kanban' && (
           <div>
-            <h4 className="text-sm font-medium text-foreground mb-3">Produção ({activePosts.length} posts)</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-foreground">Produção ({activePosts.length} posts)</h4>
+              {activePosts.length > 0 && (
+                <div className="flex gap-1">
+                  {activePosts.filter(p => p.status === 'in_production' || p.status === 'ready').slice(0, 3).map(p => (
+                    <Button key={p.id} size="sm" variant="ghost" className="gap-1 text-[9px] h-6" onClick={() => setBriefingPost(p)}>
+                      <Palette className="w-3 h-3" /> Briefing: {p.title.slice(0, 15)}...
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
             <CampaignKanban posts={activePosts} />
           </div>
         )}
@@ -277,6 +294,17 @@ export function CampaignsTab() {
           <CampaignGoals campaignId={selectedCampaign} />
         )}
 
+        {detailView === 'alerts' && (
+          <div>
+            <h4 className="text-sm font-medium text-foreground mb-3">Notificações & Lembretes</h4>
+            <CampaignAlerts campaign={activeCampaign} posts={activePosts} />
+          </div>
+        )}
+
+        {detailView === 'changelog' && (
+          <CampaignChangelog posts={activePosts} />
+        )}
+
         {detailView === 'timeline' && (
           <div>
             <h4 className="text-sm font-medium text-foreground mb-3">Calendário Editorial ({activePosts.length} posts)</h4>
@@ -292,6 +320,9 @@ export function CampaignsTab() {
         <CampaignAITools campaign={activeCampaign} posts={activePosts} open={showAITools} onOpenChange={setShowAITools} />
         <CampaignAutomation campaign={activeCampaign} posts={activePosts} open={showAutomation} onOpenChange={setShowAutomation} />
         <CampaignPostReport campaign={activeCampaign} posts={activePosts} open={showReport} onOpenChange={setShowReport} />
+        {briefingPost && (
+          <CampaignCreativeBriefing post={briefingPost} open={!!briefingPost} onOpenChange={o => !o && setBriefingPost(null)} />
+        )}
       </div>
     );
   }
