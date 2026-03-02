@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,10 +10,11 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, ChevronDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, BarChart3, ArrowLeft } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, ChevronDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, BarChart3, ArrowLeft, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { AIButton } from '@/components/squad-ui/AIButton';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -29,6 +30,9 @@ export function CampaignsTab() {
   const { data: insights } = useInstagramInsights(connection?.id);
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [showAiGen, setShowAiGen] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiForm, setAiForm] = useState({ theme: '', duration_weeks: '2', budget: '' });
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
   const [saving, setSaving] = useState(false);
@@ -54,6 +58,54 @@ export function CampaignsTab() {
       toast.error(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAiGenerate = async () => {
+    setAiGenerating(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('instagram-ai', {
+        body: {
+          action: 'generate_campaign',
+          data: {
+            theme: aiForm.theme || undefined,
+            duration_weeks: parseInt(aiForm.duration_weeks) || 2,
+            budget: aiForm.budget ? parseFloat(aiForm.budget) : undefined,
+          },
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+
+      const campaign = result?.result;
+      if (!campaign?.name) throw new Error('IA não retornou campanha válida');
+
+      // Save to database
+      const { data: inserted, error: insertError } = await supabase.from('instagram_campaigns').insert({
+        name: campaign.name,
+        objective: campaign.objective || null,
+        target_audience: campaign.target_audience || null,
+        start_date: campaign.start_date || null,
+        end_date: campaign.end_date || null,
+        budget: campaign.budget || null,
+        key_messages: campaign.key_messages || [],
+        content_plan: campaign.content_plan || [],
+        kpis: { ...(campaign.kpis || {}), strategy_notes: campaign.strategy_notes || null },
+        status: 'planning',
+      } as any).select().single();
+
+      if (insertError) throw insertError;
+
+      qc.invalidateQueries({ queryKey: ['instagram-campaigns'] });
+      toast.success('Campanha gerada com IA!');
+      setShowAiGen(false);
+      setAiForm({ theme: '', duration_weeks: '2', budget: '' });
+      if (inserted) setSelectedCampaign(inserted.id);
+    } catch (e: any) {
+      console.error('AI campaign generation error:', e);
+      toast.error(e.message || 'Erro ao gerar campanha');
+    } finally {
+      setAiGenerating(false);
     }
   };
 
@@ -286,9 +338,12 @@ export function CampaignsTab() {
           <h3 className="text-lg font-semibold text-foreground">Campanhas Instagram</h3>
           <p className="text-xs text-muted-foreground">{campaigns?.length || 0} campanhas</p>
         </div>
-        <Button size="sm" className="gap-1.5" onClick={() => setShowCreate(true)}>
-          <Plus className="w-4 h-4" /> Nova Campanha
-        </Button>
+        <div className="flex items-center gap-2">
+          <AIButton label="Gerar com IA" onClick={() => setShowAiGen(true)} size="sm" />
+          <Button size="sm" className="gap-1.5" onClick={() => setShowCreate(true)}>
+            <Plus className="w-4 h-4" /> Nova Campanha
+          </Button>
+        </div>
       </div>
 
       {(!campaigns || campaigns.length === 0) ? (
@@ -374,6 +429,74 @@ export function CampaignsTab() {
             <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Campaign Generator Dialog */}
+      <Dialog open={showAiGen} onOpenChange={v => { if (!aiGenerating) setShowAiGen(v); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Gerar Campanha com IA
+            </DialogTitle>
+            <DialogDescription>
+              A IA vai pesquisar tendências, analisar seu perfil e referências, e criar uma campanha completa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Tema / Foco (opcional)</label>
+              <Input
+                placeholder="Ex: Lançamento imobiliário, Black Friday, Crescimento orgânico..."
+                value={aiForm.theme}
+                onChange={e => setAiForm(f => ({ ...f, theme: e.target.value }))}
+                disabled={aiGenerating}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Duração</label>
+                <Select value={aiForm.duration_weeks} onValueChange={v => setAiForm(f => ({ ...f, duration_weeks: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 semana</SelectItem>
+                    <SelectItem value="2">2 semanas</SelectItem>
+                    <SelectItem value="3">3 semanas</SelectItem>
+                    <SelectItem value="4">4 semanas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Orçamento (R$)</label>
+                <Input
+                  type="number"
+                  placeholder="Opcional"
+                  value={aiForm.budget}
+                  onChange={e => setAiForm(f => ({ ...f, budget: e.target.value }))}
+                  disabled={aiGenerating}
+                />
+              </div>
+            </div>
+            {aiGenerating && (
+              <Card className="p-4 border-primary/20 bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Analisando dados e gerando campanha...</p>
+                    <p className="text-[10px] text-muted-foreground">Pesquisando tendências, analisando perfil, referências e histórico</p>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowAiGen(false)} disabled={aiGenerating}>Cancelar</Button>
+            <Button onClick={handleAiGenerate} disabled={aiGenerating} className="gap-1.5">
+              {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {aiGenerating ? 'Gerando...' : 'Gerar Campanha'}
             </Button>
           </DialogFooter>
         </DialogContent>
