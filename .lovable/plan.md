@@ -1,64 +1,45 @@
 
 
-## Plano: Geração de Imagem Visual + Exportação Completa (PNG + ZIP com PDF)
+## Plano: Regenerar Post + 30 Opções de Layout Baseadas em Referências
 
-### Problema Atual
-O sistema gera apenas **texto** (legenda, hook, script, hashtags). O preview mostra uma área vazia preta. O usuário quer que a IA gere a **imagem visual real do post** (PNG) e ofereça download completo em pacote ZIP (PNG + PDF com textos/agendamento).
+### O que será feito
 
-### Arquitetura da Solução
+**1. Botão "Regenerar Post"** na `PostResultView` — permite gerar novamente todo o conteúdo (texto + imagem) do post atual sem criar um novo, mantendo o mesmo ID.
 
-```text
-┌─────────────────────────────────────────────┐
-│  handleGeneratePost()                       │
-│  1. Gera textos via instagram-ai            │
-│  2. Gera imagem via generate-image          │  ← NOVO
-│  3. Salva post com thumbnail_url            │
-│  4. Abre PostResultView com imagem real     │
-└─────────────────────────────────────────────┘
+**2. Seletor de Layout com 30 opções** — um painel visual no diálogo de geração e na PostResultView que exibe 30 templates de layout inspirados em estilos comuns do Instagram (minimalista, bold text, gradient, split, etc). As referências já salvas em `instagram_references` serão consultadas para enriquecer o prompt de geração visual.
 
-┌─────────────────────────────────────────────┐
-│  PostResultView - Botões de Export          │
-│  • Download PNG (imagem direto)             │  ← NOVO
-│  • Exportar ZIP (PNG + PDF com textos)      │  ← NOVO
-│  • Copiar Legenda + Hashtags (existente)    │
-│  • Agendar no Calendário (existente)        │
-└─────────────────────────────────────────────┘
-```
+### Implementação
 
-### Tarefas de Implementação
+**A. PostResultView.tsx — Botão Regenerar**
+- Adicionar botão "Regenerar" na barra de ações (ao lado de Download PNG / Export ZIP)
+- Ao clicar, abre mini-dialog com opção de escolher layout
+- Chama a mesma lógica de `handleGeneratePost` (AI text + generate-image) mas faz UPDATE no post existente ao invés de INSERT
 
-**1. Gerar imagem visual no fluxo de criação de post**
-- Em `InstagramEnginePage.tsx`, após a IA retornar os textos, chamar a edge function `generate-image` passando o `cover_suggestion` como prompt
-- Usar o modelo `google/gemini-3-pro-image-preview` (já implementado em `generate-image/index.ts`)
-- Salvar a URL retornada como `thumbnail_url` no post criado
-- O prompt combina: título + cover_suggestion + pilar + aspect ratio para gerar a imagem ideal
+**B. Novo componente: `LayoutPicker.tsx`**
+- Grid visual com 30 opções de layout, cada uma com:
+  - Mini thumbnail (CSS-only ou SVG placeholder representando o estilo)
+  - Nome do layout (ex: "Bold Central", "Gradient Overlay", "Split Text/Image", "Cinematic Bars", etc.)
+  - Prompt modifier que será injetado na geração de imagem
+- 30 layouts pré-definidos cobrindo estilos como:
+  - Tipografia bold central, minimalista, gradient, duotone, editorial, magazine, storytelling, quote card, data-driven, comparison, before/after, polaroid, film grain, neon glow, pastel soft, dark moody, high contrast, retro vintage, futuristic, organic/nature, geometric, collage, frame-in-frame, spotlight, diagonal split, horizontal bars, vertical bars, mosaic grid, watercolor, glitch art
 
-**2. Criar edge function `export-instagram-post` para gerar PDF + ZIP**
-- Nova edge function que recebe `post_id`
-- Busca o post completo no banco
-- Gera um PDF via Gemini HTML (padrão SQUAD Swiss já existente) com:
-  - Imagem do post
-  - Legenda completa + hashtags
-  - Hook, script, CTA
-  - Data de agendamento
-  - Checklist de produção
-- Se o post tem thumbnail, baixa o PNG e empacota tudo em ZIP (PNG + PDF)
-- Retorna `{ zip_url, pdf_url, png_url }` com signed URLs do bucket `exports`
+**C. Integração com Referências existentes**
+- No `LayoutPicker`, buscar `instagram_references` do usuário
+- Mostrar seção "Baseado nas suas referências" no topo com thumbs das referências
+- Ao selecionar uma referência, seu estilo visual (tags, media_type, note) é injetado como contexto extra no prompt de geração de imagem
 
-**3. Atualizar PostResultView com novos botões de export**
-- **Download PNG**: botão direto que baixa `thumbnail_url` como arquivo PNG
-- **Exportar ZIP Completo**: chama a edge function `export-instagram-post`, baixa o ZIP com PNG + PDF
-- Preview agora mostra a imagem real gerada pela IA em vez da área vazia
-- Para carrossel: gerar uma imagem por slide (ou ao menos a capa)
+**D. Diálogo de Geração (InstagramEnginePage.tsx)**
+- Adicionar `LayoutPicker` ao diálogo de geração existente
+- O layout selecionado adiciona um `layout_style` ao prompt enviado ao `generate-image`
 
-**4. Atualizar o preview do post**
-- O mockup do Instagram no `PostResultView` agora exibe a imagem gerada
-- Adicionar indicador de loading durante geração da imagem (pode demorar ~5-10s)
+**E. Edge Function `generate-image/index.ts`**
+- Nenhuma mudança estrutural — o layout style será injetado via prompt text (já suportado)
 
-### Detalhes Técnicos
+### Arquivos a criar/editar
 
-- A imagem é gerada usando `supabase.functions.invoke('generate-image', { body: { prompt, purpose: 'key_visual', aspectRatio } })`
-- O ZIP é montado server-side usando a lib Deno `JSZip` (importada via esm.sh)
-- O PDF segue o padrão SQUAD Swiss (fundo preto #000, azul #009CCA, Space Grotesk) já utilizado em todos os outros exports
-- Arquivos salvos no bucket `exports` com signed URLs temporárias (1h)
+| Arquivo | Ação |
+|---|---|
+| `src/components/instagram-engine/LayoutPicker.tsx` | **Criar** — 30 layouts + referências |
+| `src/components/instagram-engine/PostResultView.tsx` | **Editar** — botão Regenerar + integração LayoutPicker |
+| `src/pages/InstagramEnginePage.tsx` | **Editar** — LayoutPicker no diálogo + layout no prompt |
 
