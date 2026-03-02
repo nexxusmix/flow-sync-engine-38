@@ -3591,6 +3591,110 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_campaign_goals: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          current_value: number
+          id: string
+          metric_key: string
+          target_value: number
+          title: string
+          unit: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          current_value?: number
+          id?: string
+          metric_key: string
+          target_value?: number
+          title: string
+          unit?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          current_value?: number
+          id?: string
+          metric_key?: string
+          target_value?: number
+          title?: string
+          unit?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_campaign_goals_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_campaign_templates: {
+        Row: {
+          budget: number | null
+          created_at: string
+          description: string | null
+          duration_days: number | null
+          formats: Json | null
+          id: string
+          name: string
+          objective: string | null
+          pillars: Json | null
+          post_templates: Json | null
+          target_audience: string | null
+          themes: Json | null
+          times_used: number | null
+          tone: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          formats?: Json | null
+          id?: string
+          name: string
+          objective?: string | null
+          pillars?: Json | null
+          post_templates?: Json | null
+          target_audience?: string | null
+          themes?: Json | null
+          times_used?: number | null
+          tone?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          formats?: Json | null
+          id?: string
+          name?: string
+          objective?: string | null
+          pillars?: Json | null
+          post_templates?: Json | null
+          target_audience?: string | null
+          themes?: Json | null
+          times_used?: number | null
+          tone?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       instagram_campaigns: {
         Row: {
           budget: number | null
@@ -3883,6 +3987,10 @@ export type Database = {
           post_url: string | null
           project_id: string | null
           published_at: string | null
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
           scheduled_at: string | null
           script: string | null
           status: string
@@ -3915,6 +4023,10 @@ export type Database = {
           post_url?: string | null
           project_id?: string | null
           published_at?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
           scheduled_at?: string | null
           script?: string | null
           status?: string
@@ -3947,6 +4059,10 @@ export type Database = {
           post_url?: string | null
           project_id?: string | null
           published_at?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
           scheduled_at?: string | null
           script?: string | null
           status?: string

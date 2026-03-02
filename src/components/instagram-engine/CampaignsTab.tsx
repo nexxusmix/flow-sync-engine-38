@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,6 +24,10 @@ import { CampaignAutomation } from './CampaignAutomation';
 import { CampaignPostReport } from './CampaignPostReport';
 import { CampaignComparison } from './CampaignComparison';
 import { CampaignKanban } from './CampaignKanban';
+import { CampaignCalendar } from './CampaignCalendar';
+import { CampaignApprovalWorkflow } from './CampaignApprovalWorkflow';
+import { CampaignGoals } from './CampaignGoals';
+import { CampaignTemplateLibrary, SaveCampaignAsTemplateButton } from './CampaignTemplateLibrary';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -45,8 +49,9 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'calendar' | 'approval' | 'goals'>('dashboard');
   const [duplicating, setDuplicating] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [form, setForm] = useState({ name: '', objective: '', target_audience: '', start_date: '', end_date: '', budget: '' });
   const [saving, setSaving] = useState(false);
 
@@ -197,6 +202,7 @@ export function CampaignsTab() {
             <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => handleDuplicate(selectedCampaign)} disabled={duplicating}>
               {duplicating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />} Duplicar
             </Button>
+            <SaveCampaignAsTemplateButton campaign={activeCampaign} postCount={activePosts.length} />
             <Button size="sm" variant="outline" className="gap-1 text-[10px] h-7" onClick={() => exportInstagramCampaignPDF(selectedCampaign!)}>
               <Download className="w-3.5 h-3.5" /> PDF
             </Button>
@@ -220,10 +226,13 @@ export function CampaignsTab() {
         </div>
 
         {/* View toggle */}
-        <div className="flex items-center gap-1 bg-muted/20 rounded-lg p-0.5 w-fit">
+        <div className="flex items-center gap-1 bg-muted/20 rounded-lg p-0.5 w-fit flex-wrap">
           {([
             { key: 'dashboard' as const, label: 'Dashboard', icon: <BarChart3 className="w-3.5 h-3.5" /> },
             { key: 'kanban' as const, label: 'Kanban', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+            { key: 'calendar' as const, label: 'Calendário', icon: <CalendarDays className="w-3.5 h-3.5" /> },
+            { key: 'approval' as const, label: 'Aprovação', icon: <CheckSquare className="w-3.5 h-3.5" /> },
+            { key: 'goals' as const, label: 'Metas', icon: <Target className="w-3.5 h-3.5" /> },
             { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
           ]).map(v => (
             <Button
@@ -248,6 +257,24 @@ export function CampaignsTab() {
             <h4 className="text-sm font-medium text-foreground mb-3">Produção ({activePosts.length} posts)</h4>
             <CampaignKanban posts={activePosts} />
           </div>
+        )}
+
+        {detailView === 'calendar' && (
+          <div>
+            <h4 className="text-sm font-medium text-foreground mb-3">Calendário da Campanha</h4>
+            <CampaignCalendar posts={activePosts} startDate={activeCampaign.start_date} endDate={activeCampaign.end_date} />
+          </div>
+        )}
+
+        {detailView === 'approval' && (
+          <div>
+            <h4 className="text-sm font-medium text-foreground mb-3">Workflow de Aprovação</h4>
+            <CampaignApprovalWorkflow posts={activePosts} />
+          </div>
+        )}
+
+        {detailView === 'goals' && (
+          <CampaignGoals campaignId={selectedCampaign} />
         )}
 
         {detailView === 'timeline' && (
@@ -278,6 +305,9 @@ export function CampaignsTab() {
           <p className="text-xs text-muted-foreground">{campaigns?.length || 0} campanhas</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowTemplates(true)}>
+            <BookTemplate className="w-3.5 h-3.5" /> Templates
+          </Button>
           {(campaigns?.length || 0) >= 2 && (
             <Button size="sm" variant="outline" className="gap-1.5 text-[11px]" onClick={() => setShowComparison(true)}>
               <GitCompare className="w-3.5 h-3.5" /> Comparar
@@ -370,6 +400,7 @@ export function CampaignsTab() {
 
       <CampaignWizard open={showAiGen} onOpenChange={setShowAiGen} onCampaignCreated={(id) => setSelectedCampaign(id)} />
       <CampaignComparison open={showComparison} onOpenChange={setShowComparison} />
+      <CampaignTemplateLibrary open={showTemplates} onOpenChange={setShowTemplates} onApplyTemplate={(id) => setSelectedCampaign(id)} />
     </div>
   );
 }
