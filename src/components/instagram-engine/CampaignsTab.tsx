@@ -10,7 +10,7 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download, Sparkles, Zap, Copy, FileBarChart, GitCompare, LayoutGrid, List, CalendarDays, CheckSquare, BookTemplate, Bell, History, Palette, DollarSign, Smartphone, GanttChart } from 'lucide-react';
 import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -34,6 +34,9 @@ import { CampaignChangelog } from './CampaignChangelog';
 import { CampaignROIDashboard } from './CampaignROIDashboard';
 import { CampaignFinalReport } from './CampaignFinalReport';
 import { CampaignABComparison } from './CampaignABComparison';
+import { CampaignGanttTimeline } from './CampaignGanttTimeline';
+import { CampaignFeedPreview } from './CampaignFeedPreview';
+import { useProfileConfig } from '@/hooks/useInstagramEngine';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -45,6 +48,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 export function CampaignsTab() {
   const { data: campaigns, isLoading } = useInstagramCampaigns();
   const { data: posts } = useInstagramPosts();
+  const { data: profileConfig } = useProfileConfig();
   const { data: connection } = useInstagramConnection();
   const { data: insights } = useInstagramInsights(connection?.id);
   const qc = useQueryClient();
@@ -55,7 +59,7 @@ export function CampaignsTab() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi'>('dashboard');
+  const [detailView, setDetailView] = useState<'dashboard' | 'kanban' | 'timeline' | 'gantt' | 'calendar' | 'approval' | 'goals' | 'alerts' | 'changelog' | 'roi' | 'feed'>('dashboard');
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showABComparison, setShowABComparison] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -246,6 +250,8 @@ export function CampaignsTab() {
             { key: 'approval' as const, label: 'Aprovação', icon: <CheckSquare className="w-3.5 h-3.5" /> },
             { key: 'goals' as const, label: 'Metas', icon: <Target className="w-3.5 h-3.5" /> },
             { key: 'roi' as const, label: 'ROI', icon: <DollarSign className="w-3.5 h-3.5" /> },
+            { key: 'gantt' as const, label: 'Gantt', icon: <List className="w-3.5 h-3.5" /> },
+            { key: 'feed' as const, label: 'Feed', icon: <Smartphone className="w-3.5 h-3.5" /> },
             { key: 'alerts' as const, label: 'Alertas', icon: <Bell className="w-3.5 h-3.5" /> },
             { key: 'changelog' as const, label: 'Histórico', icon: <History className="w-3.5 h-3.5" /> },
             { key: 'timeline' as const, label: 'Timeline', icon: <List className="w-3.5 h-3.5" /> },
@@ -305,6 +311,14 @@ export function CampaignsTab() {
 
         {detailView === 'roi' && (
           <CampaignROIDashboard campaign={activeCampaign} posts={activePosts} />
+        )}
+
+        {detailView === 'gantt' && (
+          <CampaignGanttTimeline posts={activePosts} startDate={activeCampaign.start_date} endDate={activeCampaign.end_date} />
+        )}
+
+        {detailView === 'feed' && (
+          <CampaignFeedPreview posts={activePosts} profileHandle={profileConfig?.profile_handle || undefined} profileName={profileConfig?.profile_name || undefined} avatarUrl={profileConfig?.avatar_url || undefined} />
         )}
 
         {detailView === 'alerts' && (
