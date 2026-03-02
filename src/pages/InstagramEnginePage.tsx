@@ -195,33 +195,64 @@ export default function InstagramEnginePage() {
       if (result) {
         const scheduledDate = new Date(); scheduledDate.setDate(scheduledDate.getDate() + 1); scheduledDate.setHours(10, 0, 0, 0);
         
-        // Generate visual image using AI
+        // Generate visual image(s) using AI
         let thumbnailUrl: string | null = null;
+        let carouselSlidesWithImages = result.carousel_slides || [];
+        
+        const aspectMap: Record<string, '1:1' | '9:16' | '16:9'> = {
+          '1:1': '1:1', '4:5': '1:1', '9:16': '9:16', '16:9': '16:9', 'auto': genPostType === 'reel' || genPostType === 'story' || genPostType === 'story_sequence' ? '9:16' : '1:1',
+        };
+        const selectedAspect = aspectMap[genAspectRatio] || '1:1';
+        const styleHint = genTrend !== 'auto' ? genTrend : 'cinematic, professional';
+
         try {
-          toast.info('Gerando imagem visual do post... 🎨');
-          const imagePrompt = [
-            result.title || genTopic,
-            result.cover_suggestion || '',
-            `Style: ${genTrend !== 'auto' ? genTrend : 'cinematic, professional'}`,
-            `Category: ${genPillar}`,
-          ].filter(Boolean).join('. ');
-          
-          const aspectMap: Record<string, '1:1' | '9:16' | '16:9'> = {
-            '1:1': '1:1', '4:5': '1:1', '9:16': '9:16', '16:9': '16:9', 'auto': genPostType === 'reel' || genPostType === 'story' || genPostType === 'story_sequence' ? '9:16' : '1:1',
-          };
-          
-          const { data: imgData, error: imgError } = await supabase.functions.invoke('generate-image', {
-            body: {
-              prompt: imagePrompt,
-              purpose: 'key_visual',
-              aspectRatio: aspectMap[genAspectRatio] || '1:1',
-            },
-          });
-          
-          if (!imgError && imgData?.imageUrl) {
-            thumbnailUrl = imgData.imageUrl;
+          // For carousels: generate one image per slide
+          if (genPostType === 'carousel' && carouselSlidesWithImages.length > 0) {
+            toast.info(`Gerando ${carouselSlidesWithImages.length} imagens do carrossel... 🎨`);
+            const slidePromises = carouselSlidesWithImages.map((slide: any, idx: number) => {
+              const slidePrompt = [
+                `Slide ${idx + 1} of a carousel post.`,
+                `Title text overlay: "${slide.title || ''}"`,
+                slide.body ? `Subtitle: "${slide.body.substring(0, 80)}"` : '',
+                result.title || genTopic,
+                `Style: ${styleHint}. Category: ${genPillar}.`,
+                'Include bold readable text overlay on the image. Modern social media design.',
+              ].filter(Boolean).join('. ');
+              
+              return supabase.functions.invoke('generate-image', {
+                body: { prompt: slidePrompt, purpose: 'key_visual', aspectRatio: selectedAspect },
+              }).then(({ data, error }) => {
+                if (!error && data?.imageUrl) return data.imageUrl;
+                console.warn(`Slide ${idx + 1} image failed:`, error);
+                return null;
+              }).catch(() => null);
+            });
+            
+            const slideImages = await Promise.all(slidePromises);
+            carouselSlidesWithImages = carouselSlidesWithImages.map((slide: any, idx: number) => ({
+              ...slide,
+              image_url: slideImages[idx] || null,
+            }));
+            thumbnailUrl = slideImages[0] || null; // Use first slide as cover
           } else {
-            console.warn('Image generation failed, continuing without thumbnail:', imgError);
+            // Single image for non-carousel
+            toast.info('Gerando imagem visual do post... 🎨');
+            const imagePrompt = [
+              result.title || genTopic,
+              result.cover_suggestion || '',
+              `Style: ${styleHint}`,
+              `Category: ${genPillar}`,
+            ].filter(Boolean).join('. ');
+            
+            const { data: imgData, error: imgError } = await supabase.functions.invoke('generate-image', {
+              body: { prompt: imagePrompt, purpose: 'key_visual', aspectRatio: selectedAspect },
+            });
+            
+            if (!imgError && imgData?.imageUrl) {
+              thumbnailUrl = imgData.imageUrl;
+            } else {
+              console.warn('Image generation failed:', imgError);
+            }
           }
         } catch (imgErr) {
           console.warn('Image generation error:', imgErr);
@@ -233,7 +264,7 @@ export default function InstagramEnginePage() {
           hook: result.hook || null, script: result.script || null,
           caption_short: result.caption_short || null, caption_medium: result.caption_medium || null, caption_long: result.caption_long || null,
           cta: result.cta || null, pinned_comment: result.pinned_comment || null, hashtags: result.hashtags || [],
-          cover_suggestion: result.cover_suggestion || null, carousel_slides: result.carousel_slides || [],
+          cover_suggestion: result.cover_suggestion || null, carousel_slides: carouselSlidesWithImages,
           story_sequence: result.story_sequence || [], checklist: result.checklist || [], ai_generated: true, position: 0,
           thumbnail_url: thumbnailUrl,
         } as any);
