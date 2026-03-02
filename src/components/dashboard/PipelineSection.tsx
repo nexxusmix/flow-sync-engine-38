@@ -103,19 +103,19 @@ export function PipelineSection() {
           transition={{ delay: 0.5 }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <span className="text-mono font-black text-amber-500 uppercase tracking-wider">
+            <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+            <span className="text-mono font-black text-muted-foreground uppercase tracking-wider">
               {stuckDeals.length} deal{stuckDeals.length > 1 ? 's' : ''} parado{stuckDeals.length > 1 ? 's' : ''}
             </span>
           </div>
           <div className="space-y-2">
             {stuckDeals.slice(0, 3).map(deal => (
-              <div key={deal.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-amber-500/5 border border-amber-500/10">
+              <div key={deal.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/20 border border-border/30">
                 <div>
                   <p className="text-xs font-medium text-foreground">{deal.title}</p>
                   <p className="text-mono text-muted-foreground">{deal.company || deal.contactName}</p>
                 </div>
-                <p className="text-mono font-medium text-amber-500">
+                <p className="text-mono font-medium text-muted-foreground">
                   {differenceInDays(new Date(), parseISO(deal.updatedAt))}d parado
                 </p>
               </div>

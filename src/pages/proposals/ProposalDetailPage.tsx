@@ -454,7 +454,7 @@ export default function ProposalDetailPage() {
             {canConvert && (
               <Button 
                 size="sm" 
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={() => setShowConvertModal(true)}
               >
                 <FileSignature className="w-4 h-4 mr-2" />
@@ -491,8 +491,8 @@ export default function ProposalDetailPage() {
         </div>
 
         {isLocked && (
-          <Card className="p-4 bg-amber-500/10 border-amber-500/30">
-            <p className="text-amber-500 text-sm">
+          <Card className="p-4 bg-muted border-border">
+            <p className="text-muted-foreground text-sm">
               Esta proposta foi {proposal.status === 'approved' ? 'aprovada' : 'recusada'} e não pode ser editada.
               Crie uma nova versão para fazer alterações.
             </p>
@@ -515,7 +515,7 @@ export default function ProposalDetailPage() {
             <AlertDialogAction 
               onClick={handleConvertToContract}
               disabled={converting}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-primary hover:bg-primary/90"
             >
               {converting ? "Gerando..." : "Confirmar e gerar contrato"}
             </AlertDialogAction>

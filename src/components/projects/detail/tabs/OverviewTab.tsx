@@ -127,7 +127,7 @@ export function OverviewTab({ project }: OverviewTabProps) {
                 const StatusIcon = stage.status === 'completed' ? CheckCircle2 :
                                    stage.status === 'in_progress' ? Clock :
                                    stage.status === 'blocked' ? Lock : Circle;
-                const statusColor = stage.status === 'completed' ? 'text-emerald-500' :
+                const statusColor = stage.status === 'completed' ? 'text-primary' :
                                    stage.status === 'in_progress' ? 'text-primary' :
                                    stage.status === 'blocked' ? 'text-destructive' : 'text-muted-foreground';
 

@@ -42,7 +42,7 @@ export function PortalProgress({ project }: PortalProgressProps) {
                 <div key={stage.type} className="flex flex-col items-center">
                   <div className={`
                     w-8 h-8 rounded-full flex items-center justify-center z-10
-                    ${isCompleted ? 'bg-emerald-500' : ''}
+                    ${isCompleted ? 'bg-primary' : ''}
                     ${isCurrent ? 'bg-primary ring-4 ring-primary/20' : ''}
                     ${isPending ? 'bg-muted' : ''}
                   `}>
@@ -82,7 +82,7 @@ export function PortalProgress({ project }: PortalProgressProps) {
             >
               <div className={`
                 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0
-                ${isCompleted ? 'bg-emerald-500' : ''}
+                ${isCompleted ? 'bg-primary' : ''}
                 ${isCurrent ? 'bg-primary' : ''}
                 ${isPending ? 'bg-muted' : ''}
               `}>

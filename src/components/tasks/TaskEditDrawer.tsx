@@ -225,7 +225,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
 
   const priorityConfig: Record<TaskPriority, { label: string; icon: any; color: string }> = {
     urgent: { label: 'Urgente', icon: Flame, color: 'text-destructive' },
-    high: { label: 'Alta', icon: ArrowUp, color: 'text-amber-500' },
+    high: { label: 'Alta', icon: ArrowUp, color: 'text-muted-foreground' },
     normal: { label: 'Normal', icon: Minus, color: 'text-muted-foreground' },
     low: { label: 'Baixa', icon: ArrowDown, color: 'text-muted-foreground/60' },
   };

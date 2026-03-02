@@ -64,8 +64,8 @@ export function KPIStrip() {
       value: kpi.upcomingMeetings,
       icon: Phone,
       href: "/calendario",
-      accent: "text-emerald-400",
-      bgAccent: "bg-emerald-400/10",
+      accent: "text-primary",
+      bgAccent: "bg-primary/10",
     },
     {
       label: "Propostas",
@@ -73,8 +73,8 @@ export function KPIStrip() {
       value: kpi.sentProposals,
       icon: FileText,
       href: "/propostas",
-      accent: "text-amber-400",
-      bgAccent: "bg-amber-400/10",
+      accent: "text-muted-foreground",
+      bgAccent: "bg-muted",
     },
     {
       label: "Pgto Previsto",
@@ -82,8 +82,8 @@ export function KPIStrip() {
       value: formatCurrencyBRL(kpi.pendingPaymentsTotal),
       icon: DollarSign,
       href: "/financeiro",
-      accent: "text-emerald-400",
-      bgAccent: "bg-emerald-400/10",
+      accent: "text-primary",
+      bgAccent: "bg-primary/10",
     },
     {
       label: "Entregas",
@@ -91,8 +91,8 @@ export function KPIStrip() {
       value: kpi.upcomingDeliveries,
       icon: Truck,
       href: "/calendario",
-      accent: "text-red-400",
-      bgAccent: "bg-red-400/10",
+      accent: "text-destructive",
+      bgAccent: "bg-destructive/10",
     },
   ];
 

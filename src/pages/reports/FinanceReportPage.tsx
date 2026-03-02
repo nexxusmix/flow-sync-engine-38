@@ -129,10 +129,10 @@ export default function FinanceReportPage() {
           {/* Balance */}
           <Card className="glass-card p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-emerald-500/10 rounded-lg">
-                <Wallet className="w-5 h-5 text-emerald-500" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Wallet className="w-5 h-5 text-primary" />
               </div>
-              <Badge className={`text-xs ${isHealthy ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+              <Badge className={`text-xs ${isHealthy ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                 {isHealthy ? 'ESTÁVEL' : 'ATENÇÃO'}
               </Badge>
             </div>
@@ -173,12 +173,12 @@ export default function FinanceReportPage() {
           {/* Net Margin */}
           <Card className="glass-card p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2 bg-amber-500/10 rounded-lg">
-                <ShieldCheck className="w-5 h-5 text-amber-500" />
+              <div className="p-2 bg-muted rounded-lg">
+                <ShieldCheck className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${metrics.marginPercentage >= 20 ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                <span className={`text-xs font-bold ${metrics.marginPercentage >= 20 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                <div className={`w-2 h-2 rounded-full ${metrics.marginPercentage >= 20 ? 'bg-primary' : 'bg-muted-foreground'}`}></div>
+                <span className={`text-xs font-bold ${metrics.marginPercentage >= 20 ? 'text-primary' : 'text-muted-foreground'}`}>
                   {metrics.marginPercentage >= 20 ? '100% HEALTH' : 'ATENÇÃO'}
                 </span>
               </div>
@@ -231,7 +231,7 @@ export default function FinanceReportPage() {
                 <h4 className="text-xl font-bold">Projeção de Caixa</h4>
                 <p className="text-sm text-muted-foreground">Estimativa para os próximos 30 dias</p>
               </div>
-              <Badge className={`${isPositiveProjection ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>
+              <Badge className={`${isPositiveProjection ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
                 <ArrowUpRight className="w-3 h-3 mr-1" />
                 {isPositiveProjection ? 'PREVISÃO POSITIVA' : 'ATENÇÃO'}
               </Badge>
@@ -281,7 +281,7 @@ export default function FinanceReportPage() {
               </div>
               <div className="p-3 rounded-lg bg-muted/30">
                 <p className="text-xs text-muted-foreground uppercase">Crescimento</p>
-                <p className={`font-semibold ${isPositiveProjection ? 'text-emerald-500' : 'text-destructive'}`}>
+                <p className={`font-semibold ${isPositiveProjection ? 'text-primary' : 'text-destructive'}`}>
                   {isPositiveProjection ? '+' : ''}{Math.round(((metrics.projected30Days - metrics.currentBalance) / Math.max(metrics.currentBalance, 1)) * 100)}% Previsto
                 </p>
               </div>
@@ -302,16 +302,16 @@ export default function FinanceReportPage() {
                 <div 
                   key={item.range}
                   className={`flex items-center justify-between p-3 rounded-lg ${
-                    i === 0 ? 'bg-emerald-500/10' :
-                    i === 1 ? 'bg-amber-500/10' :
-                    i === 2 ? 'bg-orange-500/10' : 'bg-destructive/10'
+                    i === 0 ? 'bg-primary/10' :
+                    i === 1 ? 'bg-muted' :
+                    i === 2 ? 'bg-muted' : 'bg-destructive/10'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className={`text-sm font-medium ${
-                      i === 0 ? 'text-emerald-500' :
-                      i === 1 ? 'text-amber-500' :
-                      i === 2 ? 'text-orange-500' : 'text-destructive'
+                      i === 0 ? 'text-primary' :
+                      i === 1 ? 'text-muted-foreground' :
+                      i === 2 ? 'text-muted-foreground' : 'text-destructive'
                     }`}>
                       {item.range}
                     </span>
@@ -333,7 +333,7 @@ export default function FinanceReportPage() {
                 recentActivity.map((item, i) => (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
                     <div className={`w-2 h-2 rounded-full mt-1.5 ${
-                      item.type === 'revenue' ? 'bg-emerald-500' : 'bg-amber-500'
+                      item.type === 'revenue' ? 'bg-primary' : 'bg-muted-foreground'
                     }`} />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">
@@ -345,7 +345,7 @@ export default function FinanceReportPage() {
                       </p>
                     </div>
                     <span className={`font-semibold text-sm ${
-                      item.type === 'revenue' ? 'text-emerald-500' : 'text-amber-500'
+                      item.type === 'revenue' ? 'text-primary' : 'text-muted-foreground'
                     }`}>
                       {item.type === 'revenue' ? '+' : '-'}{formatCurrency(item.amount)}
                     </span>

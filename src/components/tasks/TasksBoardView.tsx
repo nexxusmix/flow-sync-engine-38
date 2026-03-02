@@ -318,8 +318,8 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
         {[
           { label: 'Pendentes', value: metrics.pending, icon: Clock, color: 'text-foreground' },
           { label: 'Atrasadas', value: metrics.overdue, icon: AlertTriangle, color: metrics.overdue > 0 ? 'text-destructive' : 'text-muted-foreground' },
-          { label: 'Vence hoje', value: metrics.dueToday, icon: Calendar, color: metrics.dueToday > 0 ? 'text-amber-400' : 'text-muted-foreground' },
-          { label: 'Concluídas hoje', value: metrics.completedToday, icon: CheckSquare, color: metrics.completedToday > 0 ? 'text-emerald-400' : 'text-muted-foreground' },
+          { label: 'Vence hoje', value: metrics.dueToday, icon: Calendar, color: metrics.dueToday > 0 ? 'text-muted-foreground' : 'text-muted-foreground' },
+          { label: 'Concluídas hoje', value: metrics.completedToday, icon: CheckSquare, color: metrics.completedToday > 0 ? 'text-primary' : 'text-muted-foreground' },
         ].map((m) => (
           <div
             key={m.label}
@@ -589,7 +589,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                             className="flex-shrink-0 mt-0.5"
                           >
                             {isDone ? (
-                              <CheckSquare className="w-4 h-4 text-emerald-500" />
+                              <CheckSquare className="w-4 h-4 text-primary" />
                             ) : (
                               <Square className="w-4 h-4 text-muted-foreground/40 hover:text-foreground transition-colors" />
                             )}
@@ -666,7 +666,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
 
                               {/* Dependency indicator */}
                               {depBlockedMap[task.id] && depBlockedMap[task.id] > 0 && (
-                                <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-amber-400/60">
+                                <span className="text-[10px] flex items-center gap-1 flex-shrink-0 font-light text-muted-foreground/60">
                                   <Link2 className="w-3 h-3" />
                                   {depBlockedMap[task.id]}
                                 </span>
@@ -678,7 +678,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                               {task.due_date && (
                                 <span className={cn(
                                   "text-[10px] flex items-center gap-1 flex-shrink-0 font-light",
-                                  isOverdue ? "text-destructive font-medium" : isDueToday ? "text-amber-400 font-medium" : "text-muted-foreground/50"
+                                  isOverdue ? "text-destructive font-medium" : isDueToday ? "text-muted-foreground font-medium" : "text-muted-foreground/50"
                                 )}>
                                   {isOverdue && <AlertTriangle className="w-3 h-3" />}
                                   <Calendar className="w-3 h-3" />

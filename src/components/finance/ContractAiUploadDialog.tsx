@@ -341,7 +341,7 @@ export function ContractAiUploadDialog({
               <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border">
                 <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                 <span className="text-xs text-muted-foreground truncate">{selectedFile.name}</span>
-                <CheckCircle className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-primary ml-auto flex-shrink-0" />
               </div>
             )}
 
@@ -444,18 +444,18 @@ export function ContractAiUploadDialog({
             </div>
 
             {createdRevenues > 0 && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-xs text-primary">
                   <strong>{createdRevenues} parcela(s)</strong> gerada(s) automaticamente com base nas condições de pagamento.
                 </p>
               </div>
             )}
 
             {!extracted.total_value && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <p className="text-xs text-amber-700 dark:text-amber-400">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted border border-border">
+                <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
                   Valor não identificado. Preencha o valor para gerar as parcelas financeiras.
                 </p>
               </div>
@@ -477,8 +477,8 @@ export function ContractAiUploadDialog({
         {/* DONE STEP */}
         {step === "done" && (
           <div className="flex flex-col items-center py-10 gap-3">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-emerald-500" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-primary" />
             </div>
             <p className="text-sm font-medium text-foreground">Contrato criado com sucesso!</p>
             {createdRevenues > 0 && (

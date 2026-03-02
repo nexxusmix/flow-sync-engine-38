@@ -10,9 +10,9 @@ interface Props {
 }
 
 const FUNNEL_STAGES = [
-  { key: 'topo', label: 'Topo — Descoberta', icon: <Eye className="w-4 h-4" />, pillars: ['educacao', 'bastidores'], color: 'from-blue-500/20 to-blue-500/5', border: 'border-blue-500/30', text: 'text-blue-400' },
-  { key: 'meio', label: 'Meio — Consideração', icon: <Users className="w-4 h-4" />, pillars: ['autoridade', 'social_proof'], color: 'from-amber-500/20 to-amber-500/5', border: 'border-amber-500/30', text: 'text-amber-400' },
-  { key: 'fundo', label: 'Fundo — Conversão', icon: <ShoppingCart className="w-4 h-4" />, pillars: ['venda', 'portfolio'], color: 'from-emerald-500/20 to-emerald-500/5', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+  { key: 'topo', label: 'Topo — Descoberta', icon: <Eye className="w-4 h-4" />, pillars: ['educacao', 'bastidores'], color: 'from-primary/20 to-primary/5', border: 'border-primary/30', text: 'text-primary' },
+  { key: 'meio', label: 'Meio — Consideração', icon: <Users className="w-4 h-4" />, pillars: ['autoridade', 'social_proof'], color: 'from-primary/15 to-primary/5', border: 'border-primary/20', text: 'text-primary/70' },
+  { key: 'fundo', label: 'Fundo — Conversão', icon: <ShoppingCart className="w-4 h-4" />, pillars: ['venda', 'portfolio'], color: 'from-primary/10 to-primary/5', border: 'border-primary/15', text: 'text-primary/50' },
 ];
 
 export function CampaignContentFunnel({ campaign, posts }: Props) {

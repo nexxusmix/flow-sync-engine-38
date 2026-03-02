@@ -281,7 +281,7 @@ function PortalRevisionsTabComponent({
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-white">{group.materialTitle}</span>
                         {group.materialVersion > 0 && (
-                          <Badge className="bg-[#1a1a1a] text-cyan-400 text-[10px] font-mono border border-cyan-500/30">
+                          <Badge className="bg-[#1a1a1a] text-primary text-[10px] font-mono border border-primary/30">
                             V{String(group.materialVersion).padStart(2, '0')}
                           </Badge>
                         )}
@@ -289,7 +289,7 @@ function PortalRevisionsTabComponent({
                       <p className="text-xs text-gray-500">
                         {group.items.length} {group.items.length === 1 ? 'solicitação' : 'solicitações'}
                         {pendingInGroup > 0 && (
-                          <span className="text-amber-500"> • {pendingInGroup} pendente{pendingInGroup > 1 ? 's' : ''}</span>
+                          <span className="text-muted-foreground"> • {pendingInGroup} pendente{pendingInGroup > 1 ? 's' : ''}</span>
                         )}
                       </p>
                     </div>
@@ -299,7 +299,7 @@ function PortalRevisionsTabComponent({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 text-xs text-gray-500 hover:text-cyan-400"
+                        className="h-8 text-xs text-gray-500 hover:text-primary"
                         onClick={(e) => {
                           e.stopPropagation();
                           onNavigateToMaterial(group.materialId!);
@@ -337,11 +337,11 @@ function PortalRevisionsTabComponent({
                             {/* Timeline dot */}
                             <div className="absolute left-0 top-0 w-4 h-4 rounded-full bg-[#0a0a0a] border-2 border-[#2a2a2a] flex items-center justify-center -translate-x-1/2">
                               {item.status === 'resolved' ? (
-                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <div className="w-2 h-2 rounded-full bg-primary" />
                               ) : item.status === 'in_progress' ? (
-                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                <div className="w-2 h-2 rounded-full bg-primary/50" />
                               ) : (
-                                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                               )}
                             </div>
 
@@ -354,7 +354,7 @@ function PortalRevisionsTabComponent({
                                   <span className="text-xs text-gray-400">{getStatusLabel(item.status)}</span>
                                   {getPriorityBadge(item.priority)}
                                   {item.timecode && (
-                                    <Badge variant="outline" className="text-[10px] font-mono text-cyan-400 border-cyan-500/30">
+                                    <Badge variant="outline" className="text-[10px] font-mono text-primary border-primary/30">
                                       <Play className="w-2.5 h-2.5 mr-1" />
                                       {item.timecode}
                                     </Badge>
@@ -397,8 +397,8 @@ function PortalRevisionsTabComponent({
                               {item.managerResponse && (
                                 <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <User className="w-3 h-3 text-cyan-500" />
-                                    <span className="text-[10px] text-cyan-500 uppercase tracking-wide">Resposta da equipe</span>
+                                    <User className="w-3 h-3 text-primary" />
+                                    <span className="text-[10px] text-primary uppercase tracking-wide">Resposta da equipe</span>
                                   </div>
                                   <p className="text-sm text-gray-300">{item.managerResponse}</p>
                                 </div>

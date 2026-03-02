@@ -140,7 +140,7 @@ export function TaskAIDeadlineSuggestions({ externalOpen, onExternalOpenChange }
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => rejectSuggestion(s.id)}>
                         <X className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-emerald-500" onClick={() => acceptSuggestion(s)}>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-primary" onClick={() => acceptSuggestion(s)}>
                         <Check className="w-3 h-3" />
                       </Button>
                     </div>

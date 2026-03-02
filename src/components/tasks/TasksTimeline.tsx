@@ -11,7 +11,7 @@ interface TasksTimelineProps {
 }
 
 const CATEGORY_CONFIG = {
-  pessoal: { icon: User, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
+  pessoal: { icon: User, color: 'text-primary/70', bg: 'bg-primary/10', border: 'border-primary/30' },
   operacao: { icon: Briefcase, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30' },
   projeto: { icon: FolderKanban, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
 };

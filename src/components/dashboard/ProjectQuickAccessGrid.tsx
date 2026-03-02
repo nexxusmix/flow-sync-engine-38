@@ -37,8 +37,8 @@ const stageLabels: Record<string, string> = {
 };
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  active: { label: "Ativo", className: "text-emerald-500 bg-emerald-500/10" },
-  paused: { label: "Pausado", className: "text-amber-500 bg-amber-500/10" },
+  active: { label: "Ativo", className: "text-primary bg-primary/10" },
+  paused: { label: "Pausado", className: "text-muted-foreground bg-muted" },
   completed: { label: "Concluído", className: "text-primary bg-primary/10" },
   archived: { label: "Arquivado", className: "text-muted-foreground bg-muted" },
 };
@@ -115,10 +115,10 @@ export function ProjectQuickAccessGrid({ projects, isLoading }: ProjectQuickAcce
             const stageName = stageLabels[project.stage_current] || project.stage_current;
             const healthColor =
               project.health_score >= 90
-                ? "text-emerald-500"
+                ? "text-primary"
                 : project.health_score >= 70
-                ? "text-amber-500"
-                : "text-red-500";
+                ? "text-muted-foreground"
+                : "text-destructive";
 
             return (
               <motion.div

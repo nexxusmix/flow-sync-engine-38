@@ -128,7 +128,7 @@ export function ProjectUpdatesSection({ project, updates, onAddUpdate }: Project
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {update.clientRequests && update.clientRequests.length > 0 && (
-                      <span className="text-[9px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                         {update.clientRequests.length} pedido(s)
                       </span>
                     )}
@@ -169,7 +169,7 @@ export function ProjectUpdatesSection({ project, updates, onAddUpdate }: Project
                         {update.clientRequests && update.clientRequests.length > 0 && (
                           <div>
                             <div className="flex items-center gap-2 mb-2">
-                              <AlertCircle className="w-3 h-3 text-amber-500" />
+                              <AlertCircle className="w-3 h-3 text-muted-foreground" />
                               <span className="text-[10px] font-light uppercase tracking-wide text-muted-foreground">
                                 Pedidos do Cliente
                               </span>
@@ -178,9 +178,9 @@ export function ProjectUpdatesSection({ project, updates, onAddUpdate }: Project
                               {update.clientRequests.map((request, idx) => (
                                 <li 
                                   key={idx}
-                                  className="flex items-start gap-2 text-sm text-foreground bg-amber-500/5 border border-amber-500/20 rounded-lg p-3"
+                                  className="flex items-start gap-2 text-sm text-foreground bg-muted/30 border border-border rounded-lg p-3"
                                 >
-                                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                  <CheckCircle2 className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                                   {request}
                                 </li>
                               ))}

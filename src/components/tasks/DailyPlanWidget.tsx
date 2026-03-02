@@ -19,15 +19,15 @@ interface DailyPlanWidgetProps {
 
 const MODE_LABELS: Record<string, { label: string; color: string }> = {
   deep_work: { label: "Deep Work", color: "text-violet-400" },
-  admin: { label: "Admin", color: "text-blue-400" },
-  criativo: { label: "Criativo", color: "text-pink-400" },
-  comunicacao: { label: "Comunicação", color: "text-cyan-400" },
+  admin: { label: "Admin", color: "text-primary/70" },
+  criativo: { label: "Criativo", color: "text-primary/50" },
+  comunicacao: { label: "Comunicação", color: "text-primary" },
 };
 
 const ENERGY_COLORS = {
-  baixa: "bg-emerald-500",
-  media: "bg-amber-500",
-  alta: "bg-red-500",
+  baixa: "bg-primary",
+  media: "bg-muted-foreground",
+  alta: "bg-destructive",
 };
 
 export function DailyPlanWidget({ todayTasks, plans, getPlanForTask }: DailyPlanWidgetProps) {
@@ -150,9 +150,9 @@ export function DailyPlanWidget({ todayTasks, plans, getPlanForTask }: DailyPlan
           transition={{ delay: 0.25 }}
           className={cn(
             "p-3 rounded-xl border",
-            dailyMetrics.overloadRisk === "alto" ? "bg-red-500/5 border-red-500/20" :
-            dailyMetrics.overloadRisk === "medio" ? "bg-amber-500/5 border-amber-500/20" :
-            "bg-emerald-500/5 border-emerald-500/20"
+            dailyMetrics.overloadRisk === "alto" ? "bg-destructive/5 border-destructive/20" :
+            dailyMetrics.overloadRisk === "medio" ? "bg-muted border-border" :
+            "bg-primary/5 border-primary/20"
           )}
         >
           <div className="flex items-center gap-2 mb-1">
@@ -161,8 +161,8 @@ export function DailyPlanWidget({ todayTasks, plans, getPlanForTask }: DailyPlan
           </div>
           <p className={cn(
             "text-lg font-semibold capitalize",
-            dailyMetrics.overloadRisk === "alto" ? "text-red-400" :
-            dailyMetrics.overloadRisk === "medio" ? "text-amber-400" : "text-emerald-400"
+            dailyMetrics.overloadRisk === "alto" ? "text-destructive" :
+            dailyMetrics.overloadRisk === "medio" ? "text-muted-foreground" : "text-primary"
           )}>
             {dailyMetrics.overloadRisk}
           </p>

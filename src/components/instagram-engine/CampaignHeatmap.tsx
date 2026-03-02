@@ -56,10 +56,10 @@ export function CampaignHeatmap({ campaign, posts }: Props) {
   const getHeatColor = (value: number, max: number) => {
     if (value === 0) return 'bg-muted/5';
     const intensity = value / max;
-    if (intensity > 0.75) return 'bg-emerald-500/80';
-    if (intensity > 0.5) return 'bg-emerald-500/50';
-    if (intensity > 0.25) return 'bg-emerald-500/30';
-    return 'bg-emerald-500/15';
+    if (intensity > 0.75) return 'bg-primary/80';
+    if (intensity > 0.5) return 'bg-primary/50';
+    if (intensity > 0.25) return 'bg-primary/30';
+    return 'bg-primary/15';
   };
 
   const formatHour = (h: number) => `${h.toString().padStart(2, '0')}h`;
@@ -67,8 +67,8 @@ export function CampaignHeatmap({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center">
-          <Flame className="w-4 h-4 text-orange-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <Flame className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Mapa de Calor Semanal</h4>
@@ -101,7 +101,7 @@ export function CampaignHeatmap({ campaign, posts }: Props) {
                 return (
                   <motion.div
                     key={hour}
-                    className={`flex-1 h-5 rounded-[2px] ${getHeatColor(val, heatmapData.maxVal)} ${isBest ? 'ring-1 ring-emerald-400/50' : ''} transition-all cursor-default`}
+                    className={`flex-1 h-5 rounded-[2px] ${getHeatColor(val, heatmapData.maxVal)} ${isBest ? 'ring-1 ring-primary/50' : ''} transition-all cursor-default`}
                     style={{ minWidth: '20px' }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -121,7 +121,7 @@ export function CampaignHeatmap({ campaign, posts }: Props) {
           <div className="flex items-center gap-2 mt-3 justify-end">
             <span className="text-[7px] text-muted-foreground">Menos</span>
             <div className="flex gap-0.5">
-              {['bg-muted/5', 'bg-emerald-500/15', 'bg-emerald-500/30', 'bg-emerald-500/50', 'bg-emerald-500/80'].map((c, i) => (
+              {['bg-muted/5', 'bg-primary/15', 'bg-primary/30', 'bg-primary/50', 'bg-primary/80'].map((c, i) => (
                 <div key={i} className={`w-4 h-3 rounded-[2px] ${c}`} />
               ))}
             </div>
@@ -134,7 +134,7 @@ export function CampaignHeatmap({ campaign, posts }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card className="glass-card p-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+            <TrendingUp className="w-3.5 h-3.5 text-primary" />
             <span className="text-[10px] font-semibold text-foreground">Top 5 Horários</span>
           </div>
           {heatmapData.bestSlots.length === 0 ? (
@@ -143,7 +143,7 @@ export function CampaignHeatmap({ campaign, posts }: Props) {
             <div className="space-y-1.5">
               {heatmapData.bestSlots.map((slot, i) => (
                 <motion.div key={i} className="flex items-center gap-2" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}>
-                  <Badge className="bg-emerald-500/15 text-emerald-400 text-[8px] w-5 h-5 flex items-center justify-center p-0">{i + 1}</Badge>
+                  <Badge className="bg-primary/15 text-primary text-[8px] w-5 h-5 flex items-center justify-center p-0">{i + 1}</Badge>
                   <span className="text-[10px] text-foreground flex-1">{DAYS[slot.day]} às {formatHour(slot.hour)}</span>
                   <Badge variant="outline" className="text-[7px]">{slot.count} posts</Badge>
                 </motion.div>

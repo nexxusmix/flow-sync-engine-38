@@ -105,7 +105,7 @@ export function CampaignAITools({ campaign, posts, open, onOpenChange }: Props) 
                 {t.icon}
                 <div>
                   <div className="font-medium">{t.label}</div>
-                  {results[t.key] && <span className="text-[9px] text-emerald-400">✓ gerado</span>}
+                  {results[t.key] && <span className="text-[9px] text-primary">✓ gerado</span>}
                 </div>
               </button>
             ))}
