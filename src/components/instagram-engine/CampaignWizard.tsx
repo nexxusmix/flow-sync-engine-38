@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { useProfileConfig } from '@/hooks/useInstagramEngine';
+import { useProfileConfig, useProfileSnapshots } from '@/hooks/useInstagramEngine';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -25,7 +25,7 @@ interface WizardData {
   // Step 2: Audience & Message
   target_audience: string;
   key_messages: string[];
-  tone: string;
+  tones: string[];
   // Step 3: Formats & Style
   formats: string[];
   pillars: string[];
@@ -99,11 +99,12 @@ interface Props {
 
 export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props) {
   const { data: profile } = useProfileConfig();
+  const { data: snapshots } = useProfileSnapshots();
   const qc = useQueryClient();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardData>({
     objective: '', theme: '',
-    target_audience: '', key_messages: [], tone: '',
+    target_audience: '', key_messages: [], tones: [],
     formats: [], pillars: [], style: '',
     duration_weeks: '2', posts_per_week: '4', budget: '', start_date: '',
   });
@@ -118,7 +119,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
       setStep(0);
       setData({
         objective: '', theme: '',
-        target_audience: '', key_messages: [], tone: '',
+        target_audience: '', key_messages: [], tones: [],
         formats: [], pillars: [], style: '',
         duration_weeks: '2', posts_per_week: '4', budget: '', start_date: '',
       });
@@ -142,6 +143,12 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
             profile_audience: profile?.target_audience,
             profile_pillars: profile?.content_pillars,
             profile_voice: profile?.brand_voice,
+            profile_snapshot: snapshots?.[0] ? {
+              followers: snapshots[0].followers,
+              avg_engagement: snapshots[0].avg_engagement,
+              avg_reach: snapshots[0].avg_reach,
+              posts_count: snapshots[0].posts_count,
+            } : undefined,
           },
         },
       });
@@ -218,7 +225,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
               objective: data.objective,
               target_audience: data.target_audience,
               key_messages: data.key_messages,
-              tone: data.tone,
+              tone: data.tones.join(', '),
               formats: data.formats,
               pillars: data.pillars,
               style: data.style,
@@ -254,7 +261,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
         budget: campaign.budget || (data.budget ? parseFloat(data.budget) : null),
         key_messages: campaign.key_messages || data.key_messages || [],
         content_plan: campaign.content_plan || [],
-        kpis: { ...(campaign.kpis || {}), strategy_notes: campaign.strategy_notes || null, wizard_context: { tone: data.tone, style: data.style, formats: data.formats, pillars: data.pillars } },
+        kpis: { ...(campaign.kpis || {}), strategy_notes: campaign.strategy_notes || null, wizard_context: { tones: data.tones, style: data.style, formats: data.formats, pillars: data.pillars } },
         status: 'planning',
       } as any).select().single();
 
@@ -328,7 +335,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
       setData(prev => ({
         ...prev,
         target_audience: prev.target_audience || profile.target_audience || '',
-        tone: prev.tone || profile.brand_voice || '',
+        tones: prev.tones.length > 0 ? prev.tones : (profile.brand_voice ? [profile.brand_voice] : []),
         pillars: prev.pillars.length > 0 ? prev.pillars :
           (Array.isArray(profile.content_pillars) ? (profile.content_pillars as string[]).slice(0, 3) : []),
       }));
@@ -453,8 +460,13 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
                         <SuggestionChip
                           key={t}
                           label={t}
-                          selected={data.theme === t}
-                          onClick={() => setData(d => ({ ...d, theme: t }))}
+                          selected={data.theme.includes(t)}
+                          onClick={() => setData(d => ({
+                            ...d,
+                            theme: d.theme.includes(t)
+                              ? d.theme.replace(t, '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim()
+                              : d.theme ? `${d.theme}, ${t}` : t,
+                          }))}
                         />
                       ))}
                     </div>
@@ -483,8 +495,13 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
                           <SuggestionChip
                             key={a}
                             label={a}
-                            selected={data.target_audience === a}
-                            onClick={() => setData(d => ({ ...d, target_audience: a }))}
+                            selected={data.target_audience.includes(a)}
+                            onClick={() => setData(d => ({
+                              ...d,
+                              target_audience: d.target_audience.includes(a)
+                                ? d.target_audience.replace(a, '').replace(/\.\s*\./g, '.').replace(/^\.\s*|\.\s*$/g, '').trim()
+                                : d.target_audience ? `${d.target_audience}. ${a}` : a,
+                            }))}
                           />
                         ))}
                       </div>
@@ -499,8 +516,11 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
                       <SuggestionChip
                         key={t}
                         label={t}
-                        selected={data.tone === t}
-                        onClick={() => setData(d => ({ ...d, tone: t }))}
+                        selected={data.tones.includes(t)}
+                        onClick={() => setData(d => ({
+                          ...d,
+                          tones: d.tones.includes(t) ? d.tones.filter(x => x !== t) : [...d.tones, t],
+                        }))}
                       />
                     ))}
                   </div>
@@ -716,7 +736,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
                   <ReviewRow label="Objetivo" value={data.objective} icon={<Target className="w-3.5 h-3.5" />} />
                   {data.theme && <ReviewRow label="Tema" value={data.theme} icon={<Lightbulb className="w-3.5 h-3.5" />} />}
                   <ReviewRow label="Público" value={data.target_audience} icon={<Users className="w-3.5 h-3.5" />} />
-                  {data.tone && <ReviewRow label="Tom" value={data.tone} icon={<MessageSquare className="w-3.5 h-3.5" />} />}
+                  {data.tones.length > 0 && <ReviewRow label="Tom" value={data.tones.join(', ')} icon={<MessageSquare className="w-3.5 h-3.5" />} />}
                   <ReviewRow label="Formatos" value={data.formats.map(f => FORMAT_OPTIONS.find(fo => fo.key === f)?.label || f).join(', ')} icon={<LayoutGrid className="w-3.5 h-3.5" />} />
                   {data.pillars.length > 0 && (
                     <ReviewRow label="Pilares" value={data.pillars.map(p => PILLAR_OPTIONS.find(po => po.key === p)?.label || p).join(', ')} icon={<Hash className="w-3.5 h-3.5" />} />

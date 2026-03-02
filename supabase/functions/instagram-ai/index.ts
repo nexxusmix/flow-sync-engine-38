@@ -666,17 +666,24 @@ Retorne JSON puro (sem markdown):
 
       // Campaign wizard: generate contextual suggestions per step
       case "campaign_wizard_suggestions": {
-        const { step: wizardStep, wizard_data, profile_niche, profile_audience, profile_pillars, profile_voice } = data;
+        const { step: wizardStep, wizard_data, profile_niche, profile_audience, profile_pillars, profile_voice, profile_snapshot } = data;
 
         const contextParts: string[] = [];
         if (profile_niche) contextParts.push(`Nicho: ${profile_niche}`);
         if (profile_audience) contextParts.push(`Público: ${profile_audience}`);
         if (profile_pillars) contextParts.push(`Pilares: ${JSON.stringify(profile_pillars)}`);
         if (profile_voice) contextParts.push(`Voz: ${profile_voice}`);
+        if (profile_snapshot) {
+          contextParts.push(`\nMÉTRICAS ATUAIS DO PERFIL:`);
+          if (profile_snapshot.followers) contextParts.push(`Seguidores: ${profile_snapshot.followers}`);
+          if (profile_snapshot.avg_engagement) contextParts.push(`Engajamento médio: ${profile_snapshot.avg_engagement}%`);
+          if (profile_snapshot.avg_reach) contextParts.push(`Alcance médio: ${profile_snapshot.avg_reach}`);
+          if (profile_snapshot.posts_count) contextParts.push(`Posts publicados: ${profile_snapshot.posts_count}`);
+        }
         if (wizard_data?.objective) contextParts.push(`Objetivo escolhido: ${wizard_data.objective}`);
         if (wizard_data?.theme) contextParts.push(`Tema: ${wizard_data.theme}`);
         if (wizard_data?.target_audience) contextParts.push(`Público definido: ${wizard_data.target_audience}`);
-        if (wizard_data?.tone) contextParts.push(`Tom: ${wizard_data.tone}`);
+        if (wizard_data?.tones?.length) contextParts.push(`Tons: ${wizard_data.tones.join(', ')}`);
         if (wizard_data?.formats?.length) contextParts.push(`Formatos: ${wizard_data.formats.join(', ')}`);
 
         const profileBlock = contextParts.length > 0 ? `\n\nCONTEXTO DO PERFIL E WIZARD:\n${contextParts.join('\n')}` : '';
@@ -696,7 +703,17 @@ Retorne JSON: {"formats": [{"key": "reel", "label": "Reels", "reason": "razão"}
           3: `Baseado em toda a configuração, sugira ajustes finais. Retorne JSON: {}`,
         };
 
-        systemPrompt = `Você é um consultor de marketing digital sênior. Gere sugestões inteligentes e PERSONALIZADAS para a etapa ${wizardStep} de criação de campanha de Instagram. Considere tendências 2026, melhores práticas e o contexto do perfil. RETORNE APENAS JSON VÁLIDO.${profileBlock}${memoryBlock}`;
+        systemPrompt = `Você é um consultor de marketing digital sênior especialista em Instagram. Gere sugestões inteligentes e PERSONALIZADAS para a etapa ${wizardStep} de criação de campanha.
+
+DIRETRIZES:
+- Analise as MÉTRICAS ATUAIS do perfil para identificar pontos fortes e fracos
+- Use a MEMÓRIA PERSISTENTE para entender o que funcionou e o que não funcionou no passado
+- Considere tendências 2026 e melhores práticas do nicho específico
+- Sugestões devem ser acionáveis, específicas e adaptadas ao momento atual do perfil
+- Se o perfil tem baixo engajamento, priorize estratégias de recuperação
+- Se tem bom alcance, sugira estratégias de conversão
+
+RETORNE APENAS JSON VÁLIDO.${profileBlock}${memoryBlock}`;
         userPrompt = stepPrompts[wizardStep as number] || 'Retorne JSON: {}';
 
         // Use a fast model for suggestions
