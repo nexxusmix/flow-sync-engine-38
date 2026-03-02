@@ -345,7 +345,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
   const SuggestionChip = ({ label, selected, onClick, color }: { label: string; selected?: boolean; onClick: () => void; color?: string }) => (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs transition-all border ${
+      className={`px-3 py-1.5 rounded-lg text-xs transition-all border whitespace-normal text-left ${
         selected
           ? 'bg-primary/20 border-primary/50 text-primary shadow-[0_0_10px_-3px_hsl(var(--primary)/0.3)]'
           : 'bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -416,7 +416,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-muted-foreground mb-2 block font-medium">Qual o objetivo principal?</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 p-1 -m-1">
                     {OBJECTIVE_PRESETS.map(obj => {
                       const Icon = obj.icon;
                       const selected = data.objective === obj.label;
@@ -455,7 +455,7 @@ export function CampaignWizard({ open, onOpenChange, onCampaignCreated }: Props)
                 {suggestions.themes && suggestions.themes.length > 0 && (
                   <div>
                     <AISuggestionLabel />
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-col gap-2">
                       {suggestions.themes.map(t => (
                         <SuggestionChip
                           key={t}
