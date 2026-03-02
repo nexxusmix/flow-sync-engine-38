@@ -21,9 +21,9 @@ type ApprovalStage = 'draft' | 'review' | 'approved' | 'rejected';
 
 const STAGES: { key: ApprovalStage; label: string; icon: React.ReactNode; color: string }[] = [
   { key: 'draft', label: 'Rascunho', icon: <Clock className="w-3.5 h-3.5" />, color: 'bg-muted/20 text-muted-foreground' },
-  { key: 'review', label: 'Em Revisão', icon: <Shield className="w-3.5 h-3.5" />, color: 'bg-amber-500/15 text-amber-400' },
-  { key: 'approved', label: 'Aprovado', icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'bg-emerald-500/15 text-emerald-400' },
-  { key: 'rejected', label: 'Rejeitado', icon: <XCircle className="w-3.5 h-3.5" />, color: 'bg-red-500/15 text-red-400' },
+  { key: 'review', label: 'Em Revisão', icon: <Shield className="w-3.5 h-3.5" />, color: 'bg-muted text-muted-foreground' },
+  { key: 'approved', label: 'Aprovado', icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: 'bg-primary/15 text-primary' },
+  { key: 'rejected', label: 'Rejeitado', icon: <XCircle className="w-3.5 h-3.5" />, color: 'bg-destructive/15 text-destructive' },
 ];
 
 function getApprovalStage(post: InstagramPost): ApprovalStage {
@@ -96,8 +96,8 @@ export function CampaignApprovalPipeline({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-          <Shield className="w-4 h-4 text-emerald-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <Shield className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Workflow de Aprovação</h4>
@@ -127,7 +127,7 @@ export function CampaignApprovalPipeline({ campaign, posts }: Props) {
           <div className="space-y-2">
             {[...stageGroups.draft, ...stageGroups.review].length === 0 ? (
               <div className="py-8 text-center">
-                <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+                <CheckCircle2 className="w-6 h-6 text-primary mx-auto mb-1" />
                 <p className="text-[10px] text-muted-foreground">Todos os posts estão aprovados!</p>
               </div>
             ) : (
@@ -168,7 +168,7 @@ export function CampaignApprovalPipeline({ campaign, posts }: Props) {
                         { label: 'CTA', ok: !!post.cta },
                         { label: 'Script', ok: !!post.script },
                       ].map(c => (
-                        <span key={c.label} className={`text-[7px] px-1.5 py-0.5 rounded ${c.ok ? 'bg-emerald-500/15 text-emerald-400' : 'bg-muted/20 text-muted-foreground'}`}>
+                        <span key={c.label} className={`text-[7px] px-1.5 py-0.5 rounded ${c.ok ? 'bg-primary/15 text-primary' : 'bg-muted/20 text-muted-foreground'}`}>
                           {c.label}
                         </span>
                       ))}
@@ -226,7 +226,7 @@ export function CampaignApprovalPipeline({ campaign, posts }: Props) {
                     Enviar p/ Revisão
                   </Button>
                 )}
-                <Button size="sm" variant="outline" className="flex-1 gap-1 text-[9px] text-red-400 hover:text-red-400" onClick={() => handleAction('reject')} disabled={processing}>
+                <Button size="sm" variant="outline" className="flex-1 gap-1 text-[9px] text-destructive hover:text-destructive" onClick={() => handleAction('reject')} disabled={processing}>
                   <XCircle className="w-3 h-3" /> Rejeitar
                 </Button>
                 <Button size="sm" className="flex-1 gap-1 text-[9px]" onClick={() => handleAction('approve')} disabled={processing}>
@@ -248,13 +248,13 @@ export function CampaignApprovalPipeline({ campaign, posts }: Props) {
       {stageGroups.approved.length > 0 && (
         <Card className="glass-card p-4">
           <h5 className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">
-            <CheckCircle2 className="w-3 h-3 inline mr-1 text-emerald-400" />
+            <CheckCircle2 className="w-3 h-3 inline mr-1 text-primary" />
             Aprovados ({stageGroups.approved.length})
           </h5>
           <div className="flex flex-wrap gap-1.5">
             {stageGroups.approved.map(p => (
               <Badge key={p.id} variant="outline" className="text-[8px] gap-1">
-                <Lock className="w-2 h-2 text-emerald-400" />
+                <Lock className="w-2 h-2 text-primary" />
                 {p.title.slice(0, 25)}{p.title.length > 25 ? '...' : ''}
               </Badge>
             ))}

@@ -31,7 +31,7 @@ function MiniRing({ value, size = 20 }: { value: number; size?: number }) {
   const r = (size - 3) / 2;
   const c = r * 2 * Math.PI;
   const offset = c - (Math.min(value, 100) / 100) * c;
-  const color = value >= 80 ? 'hsl(142,60%,45%)' : value >= 50 ? 'hsl(45,90%,50%)' : 'hsl(var(--muted-foreground))';
+  const color = value >= 80 ? 'hsl(var(--primary))' : value >= 50 ? 'hsl(var(--primary) / 0.6)' : 'hsl(var(--muted-foreground))';
   return (
     <svg width={size} height={size} className="transform -rotate-90 shrink-0">
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={2.5} opacity={0.2} />
@@ -151,11 +151,11 @@ function DraggableCard({ post }: { post: InstagramPost }) {
                       <span className="text-[8px] text-muted-foreground">{completion}%</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {post.hook && <FileText className="w-2.5 h-2.5 text-emerald-400" />}
-                      {hasCaption && <MessageSquare className="w-2.5 h-2.5 text-primary" />}
-                      {hasHashtags && <Hash className="w-2.5 h-2.5 text-amber-400" />}
+                      {post.hook && <FileText className="w-2.5 h-2.5 text-primary" />}
+                      {hasCaption && <MessageSquare className="w-2.5 h-2.5 text-primary/70" />}
+                      {hasHashtags && <Hash className="w-2.5 h-2.5 text-muted-foreground" />}
                       {post.scheduled_at && (
-                        <span className="flex items-center gap-0.5 text-[8px] text-cyan-400">
+                        <span className="flex items-center gap-0.5 text-[8px] text-primary">
                           <Clock className="w-2.5 h-2.5" />
                           {format(new Date(post.scheduled_at), 'dd/MM', { locale: ptBR })}
                         </span>

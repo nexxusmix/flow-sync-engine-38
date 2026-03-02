@@ -23,15 +23,15 @@ interface Task {
 
 const COLUMNS = [
   { key: 'todo' as const, label: 'A Fazer', color: 'text-muted-foreground' },
-  { key: 'doing' as const, label: 'Em Andamento', color: 'text-blue-400' },
-  { key: 'review' as const, label: 'Revisão', color: 'text-amber-400' },
-  { key: 'done' as const, label: 'Concluído', color: 'text-emerald-400' },
+  { key: 'doing' as const, label: 'Em Andamento', color: 'text-primary' },
+  { key: 'review' as const, label: 'Revisão', color: 'text-muted-foreground' },
+  { key: 'done' as const, label: 'Concluído', color: 'text-primary' },
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
-  urgent: 'bg-red-400/10 text-red-400',
-  high: 'bg-amber-400/10 text-amber-400',
-  normal: 'bg-blue-400/10 text-blue-400',
+  urgent: 'bg-destructive/10 text-destructive',
+  high: 'bg-muted text-muted-foreground',
+  normal: 'bg-primary/10 text-primary',
   low: 'bg-muted/20 text-muted-foreground',
 };
 
@@ -156,7 +156,7 @@ export function CampaignCollaborationBoard({ campaign }: Props) {
                           )}
                         </div>
                       </div>
-                      <button onClick={() => removeTask(task.id)} className="text-muted-foreground/30 hover:text-red-400 transition-colors">
+                      <button onClick={() => removeTask(task.id)} className="text-muted-foreground/30 hover:text-destructive transition-colors">
                         <X className="w-3 h-3" />
                       </button>
                     </div>

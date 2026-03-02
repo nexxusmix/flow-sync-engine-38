@@ -188,7 +188,7 @@ export function CampaignTimeline({ posts, startDate, endDate }: CampaignTimeline
                                 {s && <Badge className={`${s.color} text-[8px] py-0`}>{s.label}</Badge>}
                                 {f && <Badge variant="secondary" className="text-[8px] py-0">{f.label}</Badge>}
                                 {pl && <Badge variant="outline" className="text-[8px] py-0" style={{ borderColor: pl.color, color: pl.color }}>{pl.label}</Badge>}
-                                {isAd && <Badge className="bg-amber-500/15 text-amber-400 text-[8px] py-0"><Megaphone className="w-2.5 h-2.5 mr-0.5" />Ad</Badge>}
+                                {isAd && <Badge className="bg-muted text-muted-foreground text-[8px] py-0"><Megaphone className="w-2.5 h-2.5 mr-0.5" />Ad</Badge>}
                               </div>
                             </div>
 

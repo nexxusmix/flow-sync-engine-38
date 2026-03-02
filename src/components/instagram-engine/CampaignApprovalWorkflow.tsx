@@ -14,9 +14,9 @@ interface Props {
 
 const REVIEW_STATUSES = [
   { key: 'draft', label: 'Rascunho', color: 'bg-muted text-muted-foreground', icon: Clock },
-  { key: 'in_review', label: 'Em Revisão', color: 'bg-amber-500/15 text-amber-400', icon: Eye },
-  { key: 'approved', label: 'Aprovado', color: 'bg-emerald-500/15 text-emerald-400', icon: CheckCircle2 },
-  { key: 'rejected', label: 'Rejeitado', color: 'bg-red-500/15 text-red-400', icon: XCircle },
+  { key: 'in_review', label: 'Em Revisão', color: 'bg-muted text-muted-foreground', icon: Eye },
+  { key: 'approved', label: 'Aprovado', color: 'bg-primary/15 text-primary', icon: CheckCircle2 },
+  { key: 'rejected', label: 'Rejeitado', color: 'bg-destructive/15 text-destructive', icon: XCircle },
 ];
 
 export function CampaignApprovalWorkflow({ posts }: Props) {
@@ -104,7 +104,7 @@ export function CampaignApprovalWorkflow({ posts }: Props) {
 
       {/* Pending review banner */}
       {counts.in_review > 0 && (
-        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-[11px] text-amber-400">
+        <div className="flex items-center gap-2 bg-muted border border-border rounded-lg px-3 py-2 text-[11px] text-muted-foreground">
           <Eye className="w-3.5 h-3.5 shrink-0" />
           <span><strong>{counts.in_review}</strong> post(s) aguardando revisão</span>
         </div>
@@ -122,9 +122,9 @@ export function CampaignApprovalWorkflow({ posts }: Props) {
             <Card key={post.id} className="glass-card p-3">
               <div className="flex items-center gap-3">
                 <StatusIcon className={`w-4 h-4 shrink-0 ${
-                  reviewStatus === 'approved' ? 'text-emerald-400' :
-                  reviewStatus === 'rejected' ? 'text-red-400' :
-                  reviewStatus === 'in_review' ? 'text-amber-400' :
+                  reviewStatus === 'approved' ? 'text-primary' :
+                  reviewStatus === 'rejected' ? 'text-destructive' :
+                  reviewStatus === 'in_review' ? 'text-muted-foreground' :
                   'text-muted-foreground'
                 }`} />
                 <div className="flex-1 min-w-0">

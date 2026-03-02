@@ -101,7 +101,7 @@ export function CampaignCalendar({ posts, startDate, endDate }: Props) {
 
       {/* Gap warning */}
       {gaps.length > 0 && (
-        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-[11px] text-amber-400">
+        <div className="flex items-center gap-2 bg-muted border border-border rounded-lg px-3 py-2 text-[11px] text-muted-foreground">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>{gaps.length} dias em gaps de cobertura (3+ dias sem conteúdo)</span>
         </div>
@@ -127,7 +127,7 @@ export function CampaignCalendar({ posts, startDate, endDate }: Props) {
               key={key}
               className={`min-h-[80px] p-1 transition-colors ${
                 !isCurrentMonth ? 'bg-muted/5 opacity-40' :
-                isGap ? 'bg-amber-500/5' :
+                isGap ? 'bg-muted/20' :
                 inRange ? 'bg-card/50' : 'bg-muted/10'
               }`}
               onDragOver={e => e.preventDefault()}

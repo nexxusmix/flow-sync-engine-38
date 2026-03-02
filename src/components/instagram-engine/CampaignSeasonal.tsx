@@ -70,11 +70,11 @@ Retorne JSON com:
   };
 
   const typeColors: Record<string, string> = {
-    feriado: 'bg-red-400/10 text-red-400',
-    comercial: 'bg-emerald-400/10 text-emerald-400',
-    cultural: 'bg-purple-400/10 text-purple-400',
-    trending: 'bg-amber-400/10 text-amber-400',
-    micro_momento: 'bg-blue-400/10 text-blue-400',
+    feriado: 'bg-muted text-muted-foreground',
+    comercial: 'bg-primary/10 text-primary',
+    cultural: 'bg-primary/10 text-primary/70',
+    trending: 'bg-muted text-muted-foreground',
+    micro_momento: 'bg-primary/10 text-primary',
   };
 
   return (

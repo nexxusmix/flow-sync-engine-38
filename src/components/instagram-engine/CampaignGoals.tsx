@@ -207,7 +207,7 @@ export function CampaignGoals({ campaignId }: Props) {
       {goals && goals.length > 0 && (
         <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${overallProgress >= 80 ? 'bg-emerald-500' : overallProgress >= 50 ? 'bg-amber-500' : 'bg-primary'}`}
+            className={`h-full rounded-full transition-all ${overallProgress >= 80 ? 'bg-primary' : overallProgress >= 50 ? 'bg-primary/60' : 'bg-muted-foreground'}`}
             style={{ width: `${overallProgress}%` }}
           />
         </div>
@@ -236,7 +236,7 @@ export function CampaignGoals({ campaignId }: Props) {
                     <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => openEdit(goal)}>
                       <Edit2 className="w-3 h-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="w-6 h-6 text-red-400" onClick={() => handleDelete(goal.id)}>
+                    <Button variant="ghost" size="icon" className="w-6 h-6 text-destructive" onClick={() => handleDelete(goal.id)}>
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
@@ -253,13 +253,13 @@ export function CampaignGoals({ campaignId }: Props) {
 
                 <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden mb-2">
                   <div
-                    className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-primary' : pct >= 40 ? 'bg-amber-500' : 'bg-red-400'}`}
+                    className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-primary' : pct >= 70 ? 'bg-primary/70' : pct >= 40 ? 'bg-muted-foreground' : 'bg-destructive'}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className={`text-[10px] font-medium ${pct >= 100 ? 'text-emerald-400' : pct >= 70 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <span className={`text-[10px] font-medium ${pct >= 100 ? 'text-primary' : pct >= 70 ? 'text-primary/70' : 'text-muted-foreground'}`}>
                     {pct}% concluído
                   </span>
                   <Input

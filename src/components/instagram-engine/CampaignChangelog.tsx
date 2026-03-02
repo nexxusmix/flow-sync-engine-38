@@ -35,7 +35,7 @@ export function CampaignChangelog({ posts }: Props) {
         post,
         details: `Post "${post.title}" criado${fmt ? ` (${fmt.label})` : ''}`,
         icon: <Plus className="w-3 h-3" />,
-        color: 'text-blue-400 bg-blue-500/10',
+        color: 'text-primary bg-primary/10',
       });
 
       // Content updates (approximation from updated_at vs created_at)
@@ -67,7 +67,7 @@ export function CampaignChangelog({ posts }: Props) {
           post,
           details: `"${post.title}" aprovado${(post as any).reviewer_notes ? ` — "${(post as any).reviewer_notes}"` : ''}`,
           icon: <CheckCircle2 className="w-3 h-3" />,
-          color: 'text-emerald-400 bg-emerald-500/10',
+          color: 'text-primary bg-primary/10',
         });
       } else if (reviewStatus === 'rejected' && (post as any).reviewed_at) {
         result.push({
@@ -77,7 +77,7 @@ export function CampaignChangelog({ posts }: Props) {
           post,
           details: `"${post.title}" rejeitado — ${(post as any).reviewer_notes || 'sem motivo'}`,
           icon: <XCircle className="w-3 h-3" />,
-          color: 'text-red-400 bg-red-500/10',
+          color: 'text-destructive bg-destructive/10',
         });
       }
 
@@ -90,7 +90,7 @@ export function CampaignChangelog({ posts }: Props) {
           post,
           details: `"${post.title}" agendado para ${format(new Date(post.scheduled_at), 'dd/MM HH:mm', { locale: ptBR })}`,
           icon: <Eye className="w-3 h-3" />,
-          color: 'text-cyan-400 bg-cyan-500/10',
+          color: 'text-primary bg-primary/10',
         });
       }
 

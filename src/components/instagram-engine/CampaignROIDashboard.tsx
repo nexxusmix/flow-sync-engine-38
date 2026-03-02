@@ -97,7 +97,7 @@ export function CampaignROIDashboard({ campaign, posts }: Props) {
     }))
   , [stats.pillarCounts]);
 
-  const PIE_COLORS = ['hsl(var(--primary))', 'hsl(142, 60%, 45%)', 'hsl(45, 90%, 50%)', 'hsl(280, 60%, 50%)', 'hsl(210, 80%, 50%)', 'hsl(350, 60%, 50%)'];
+  const PIE_COLORS = ['hsl(var(--primary))', 'hsl(var(--primary) / 0.7)', 'hsl(var(--primary) / 0.5)', 'hsl(var(--muted-foreground))', 'hsl(var(--primary) / 0.3)', 'hsl(var(--muted-foreground) / 0.6)'];
 
   const formatCurrency = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
@@ -135,7 +135,7 @@ export function CampaignROIDashboard({ campaign, posts }: Props) {
             </Card>
             <Card className="glass-card p-3">
               <p className="text-[10px] text-muted-foreground uppercase">Saldo Restante</p>
-              <p className={`text-lg font-bold ${stats.remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <p className={`text-lg font-bold ${stats.remaining >= 0 ? 'text-primary' : 'text-destructive'}`}>
                 {formatCurrency(stats.remaining)}
               </p>
               <p className="text-[9px] text-muted-foreground">
@@ -178,10 +178,10 @@ export function CampaignROIDashboard({ campaign, posts }: Props) {
             </Card>
             <Card className="glass-card p-3">
               <div className="flex items-center gap-1 mb-1">
-                {stats.roi !== null && stats.roi >= 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-red-400" />}
+                {stats.roi !== null && stats.roi >= 0 ? <TrendingUp className="w-3 h-3 text-primary" /> : <TrendingDown className="w-3 h-3 text-destructive" />}
                 <p className="text-[10px] text-muted-foreground uppercase">ROI</p>
               </div>
-              <p className={`text-sm font-bold ${stats.roi !== null && stats.roi >= 0 ? 'text-emerald-400' : stats.roi !== null ? 'text-red-400' : 'text-foreground'}`}>
+              <p className={`text-sm font-bold ${stats.roi !== null && stats.roi >= 0 ? 'text-primary' : stats.roi !== null ? 'text-destructive' : 'text-foreground'}`}>
                 {stats.roi !== null ? `${stats.roi.toFixed(1)}%` : '—'}
               </p>
               <p className="text-[9px] text-muted-foreground">Retorno sobre investimento</p>
@@ -236,7 +236,7 @@ export function CampaignROIDashboard({ campaign, posts }: Props) {
             <h5 className="text-[10px] text-muted-foreground uppercase mb-2">Consumo do Budget</h5>
             <div className="h-3 bg-muted/30 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${stats.completionRate > 0.9 ? 'bg-red-500' : stats.completionRate > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                className={`h-full rounded-full transition-all ${stats.completionRate > 0.9 ? 'bg-destructive' : stats.completionRate > 0.7 ? 'bg-muted-foreground' : 'bg-primary'}`}
                 style={{ width: `${Math.min(stats.completionRate * 100, 100)}%` }}
               />
             </div>

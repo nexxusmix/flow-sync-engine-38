@@ -209,11 +209,11 @@ export function CampaignPublishQueue({ campaign, posts }: Props) {
                   exit={{ opacity: 0, x: 50 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <Card className={`glass-card p-4 transition-all hover:border-primary/20 ${isScheduled ? 'border-l-2 border-l-cyan-500' : ''}`}>
+                  <Card className={`glass-card p-4 transition-all hover:border-primary/20 ${isScheduled ? 'border-l-2 border-l-primary' : ''}`}>
                     <div className="flex items-start gap-3">
                       {/* Position indicator */}
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        isScheduled ? 'bg-cyan-500/15 text-cyan-400' : 'bg-primary/15 text-primary'
+                        isScheduled ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
                       }`}>
                         <span className="text-[11px] font-bold">{i + 1}</span>
                       </div>
@@ -234,7 +234,7 @@ export function CampaignPublishQueue({ campaign, posts }: Props) {
                             </span>
                           )}
                           {post.scheduled_at && (
-                            <span className="flex items-center gap-1 text-[9px] text-cyan-400 font-medium">
+                            <span className="flex items-center gap-1 text-[9px] text-primary font-medium">
                               <Calendar className="w-3 h-3" />
                               {format(new Date(post.scheduled_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                             </span>
@@ -244,7 +244,7 @@ export function CampaignPublishQueue({ campaign, posts }: Props) {
                         {/* Completion checks */}
                         <div className="flex items-center gap-2">
                           {checks.map(c => (
-                            <span key={c.label} className={`flex items-center gap-0.5 text-[8px] ${c.ok ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                            <span key={c.label} className={`flex items-center gap-0.5 text-[8px] ${c.ok ? 'text-primary' : 'text-muted-foreground'}`}>
                               {c.ok ? <CheckCircle2 className="w-2.5 h-2.5" /> : <AlertTriangle className="w-2.5 h-2.5" />}
                               {c.label}
                             </span>
@@ -259,7 +259,7 @@ export function CampaignPublishQueue({ campaign, posts }: Props) {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button size="icon" variant="ghost" className="w-7 h-7" onClick={() => handlePublish(post.id)}>
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px]">Marcar como publicado</TooltipContent>
