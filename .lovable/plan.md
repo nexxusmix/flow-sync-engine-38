@@ -1,66 +1,65 @@
 
 
-## Refinamento de Layout, Design e Cores -- Campanhas Instagram
+## Padronizacao de Cores — Campanhas Instagram
 
-### Problemas Identificados
+### Diagnostico
 
-1. **Navegacao catastrofica**: 60+ botoes planos espalhados em 4 linhas sem categorias. Impossivel encontrar algo rapido.
-2. **Header sobrecarregado**: 7 botoes de acao (Relatorio Final, Relatorio, Automacoes, IA Avancada, Duplicar, Template, PDF) todos amontoados.
-3. **Ausencia de hierarquia visual**: Todos os botoes tem o mesmo peso visual -- nao ha distincao entre funcoes primarias (Dashboard, Kanban, Calendario) e funcoes avancadas (DNA, Autopsia, Shadow).
-4. **Cards da lista de campanhas**: Funcionais mas sem a estetica premium do resto da plataforma (sem Tilt3D, sem glow).
-5. **Cores inconsistentes**: Badges usam vermelho/emerald enquanto o padrao Sonance e azul/branco/cinza.
+**1.328 ocorrencias** de cores poluidas (`emerald`, `amber`, `red`, `green`, `purple`, `teal`, etc.) espalhadas em **63 arquivos** de sub-componentes de campanha. O `CampaignsTab.tsx` principal ja esta limpo com a paleta Sonance, mas todos os componentes internos ainda usam cores semanticas hardcoded.
 
----
+### Mapeamento de Substituicao
 
-### Solucao: Mega-Menu Categorizado + Header Premium
-
-#### 1. Navegacao Categorizada (substituir os 60+ botoes)
-
-Agrupar os 60+ botoes em 8 categorias com um sistema de dropdown/popover:
+A paleta SQUAD e estritamente **azul (#009CCA) + branco + cinza**. Vermelho reservado **apenas** para erros/destrutivo.
 
 ```text
-[Dashboard] [Producao v] [Calendario v] [Analytics v] [Estrategia v] [IA Tools v] [Colaboracao v] [Exportar v]
+ANTES                    →  DEPOIS (Sonance)
+─────────────────────────────────────────────
+emerald-400/500          →  primary (azul)
+green-400/500            →  primary (azul)
+amber-400/500            →  muted-foreground (cinza)
+yellow-400/500           →  muted-foreground (cinza)
+orange-400/500           →  muted-foreground (cinza)
+purple-400/500           →  primary/70 (azul medio)
+violet-400/500           →  primary/70 (azul medio)
+pink-400/500             →  primary/50 (azul claro)
+teal-400/500             →  primary (azul)
+indigo-400/500           →  primary (azul)
+red-400/500 (sucesso)    →  primary (azul)
+red-400/500 (erro real)  →  destructive (manter)
 ```
 
-**Categorias:**
-- **Producao**: Kanban, Aprovacao, Workflow, Publicacao, Feed, Timeline
-- **Calendario**: Calendario, Cal. Unificado, Gantt, Timing, Feriados, Sazonal
-- **Analytics**: Analytics, ROI, Heatmap, Health, Velocity, Sentimento, Mood Tracker
-- **Estrategia**: Metas, Funil, Content Funnel, Content Map, Personas, Jornada, Story Arc, DNA
-- **IA Tools**: Alertas IA, Simulador, Auto-Planner, Briefing, Ads Copy, Spin, Hashtags, Hashtag Intel, A/B Test, A/B Framework, Risk Score, Gap Analysis, Pitch Deck, Budget
-- **Colaboracao**: Colaboracao, Tarefas, Revisao, War Room, Audiencia
-- **Exportar**: Relatorio, PDF Report, Comparar, Cross-Compare, Post-Mortem, Autopsia, Cloner, Swipe Files, Repost, Reciclagem, Repurpose, Concorrentes, Shadow, Blitz 24h, Mood Board
+### Abordagem
 
-#### 2. Header Refinado
+Dado o volume (63 arquivos, 1328 ocorrencias), a refatoracao sera feita em **lotes por categoria** do mega-menu:
 
-- Mover acoes secundarias (Duplicar, Template, PDF) para um menu "..." (DropdownMenu)
-- Manter apenas 2-3 acoes primarias visiveis (IA Avancada, Automacoes)
-- Adicionar indicadores visuais de progresso (ring animado) no header
+1. **Producao** (6 componentes): Kanban, Approval, ApprovalPipeline, PublishQueue, FeedPreview, Timeline
+2. **Calendario** (6 componentes): Calendar, UnifiedCalendar, GanttTimeline, TimingOptimizer, HolidayCalendar, Seasonal
+3. **Analytics** (7 componentes): AnalyticsAdvanced, ROI, Heatmap, HealthScore, VelocityTracker, SentimentAnalysis, MoodTracker
+4. **Estrategia** (8 componentes): Goals, FunnelView, ContentFunnel, ContentMap, PersonaMap, CustomerJourney, StoryArc, DNA
+5. **IA Tools** (14 componentes): SmartAlerts, ResultsSimulator, AutoPlanner, BriefingGenerator, AdsCopy, Spin, Hashtags, HashtagIntel, ABTesting, ABTestFramework, RiskScore, ContentGap, PitchDeck, BudgetAllocator
+6. **Colaboracao** (5 componentes): Collaboration, CollaborationBoard, ClientReview, WarRoom, AudienceHeatmap
+7. **Exportar** (16 componentes): PDFReport, Compare, CrossComparator, PostMortem, Autopsy, Cloner, SwipeFiles, RepostAutomation, ContentRecycling, SplitContent, CompetitorTracker, CompetitorShadow, MicroBlitz, MoodBoard, Alerts, Changelog
 
-#### 3. Cards da Lista de Campanhas
+### Regras de Substituicao
 
-- Aplicar `glass-card` com borda sutil animada no hover
-- Adicionar micro-sparkline de progresso
-- Usar paleta monocromatica azul nos badges de status (em vez de vermelho/emerald)
-- Ring de progresso circular em vez de barra horizontal
+Para cada arquivo:
+- `text-emerald-*` / `bg-emerald-*` → `text-primary` / `bg-primary/15`
+- `text-green-*` / `bg-green-*` → `text-primary` / `bg-primary/15`
+- `text-amber-*` / `bg-amber-*` → `text-muted-foreground` / `bg-muted`
+- `text-yellow-*` / `bg-yellow-*` → `text-muted-foreground` / `bg-muted`
+- `text-red-*` / `bg-red-*` para estados de erro/rejeicao → `text-destructive` / `bg-destructive/15` (manter)
+- `text-red-*` / `bg-red-*` para intensidade/climax → `text-primary` / `bg-primary/20`
+- `text-purple-*` / `bg-purple-*` → `text-primary/70` / `bg-primary/10`
+- `border-emerald-*` → `border-primary/30`
+- `border-amber-*` → `border-border`
+- `border-red-*` → `border-destructive/30`
 
-#### 4. Padrao de Cores Sonance
+### Prioridade
 
-- Status badges: azul claro (planning), azul medio (active), cinza (completed), cinza claro (paused) -- sem vermelho/emerald
-- Accent glow azul nos elementos interativos
-- Progress bars em escala monocromatica de azul
-
----
-
-### Arquivos Afetados
-
-- `src/components/instagram-engine/CampaignsTab.tsx` -- Refatoracao completa da navegacao (mega-menu categorizado), header simplificado, cards premium, paleta de cores
+Iniciar pelos componentes mais vistos (Dashboard, Kanban, Analytics, Goals) e avancar para os menos frequentes. Todos os 63 arquivos serao tratados para eliminar completamente a poluicao visual.
 
 ### Detalhes Tecnicos
 
-- Usar `DropdownMenu` do Radix para as categorias de navegacao
-- Cada categoria sera um `DropdownMenuTrigger` com `DropdownMenuContent` listando os sub-itens
-- O botao "Dashboard" permanece como botao direto (sem dropdown)
-- Acoes secundarias do header movidas para `DropdownMenu` com icone `MoreHorizontal`
-- Cards usam `hover:border-primary/20` + `transition-all duration-300` para efeito premium
+- Nenhuma dependencia nova necessaria
+- Todas as cores de substituicao ja existem como CSS variables em `index.css`
+- O `StatusBadge` do squad-ui ja segue o padrao correto e pode ser reutilizado onde badges aparecem nos sub-componentes
 
