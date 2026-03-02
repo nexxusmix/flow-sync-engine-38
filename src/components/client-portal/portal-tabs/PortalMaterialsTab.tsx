@@ -156,7 +156,7 @@ function PortalMaterialsTabComponent({
                   {/* Overlay badges */}
                   <div className="absolute top-2 left-2 flex gap-1">
                     {isApproved && (
-                      <Badge className="bg-emerald-500/90 text-white text-[10px]">
+                      <Badge className="bg-primary/90 text-primary-foreground text-[10px]">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
                         Aprovado
                       </Badge>
@@ -223,8 +223,8 @@ function PortalMaterialsTabComponent({
 
       {/* Payment Block Notice */}
       {hasPaymentBlock && (
-        <div className="glass-card rounded-xl p-4 border-amber-500/30 bg-amber-500/5">
-          <p className="text-sm text-amber-500">
+        <div className="glass-card rounded-xl p-4 border-border bg-muted/30">
+          <p className="text-sm text-muted-foreground">
             <strong>Nota:</strong> Alguns materiais podem ter download bloqueado devido a pendência financeira.
           </p>
         </div>

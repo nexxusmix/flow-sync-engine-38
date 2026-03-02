@@ -14,20 +14,20 @@ interface ActionItem {
 const actions: ActionItem[] = [
   { 
     icon: CheckCircle2, 
-    color: 'text-emerald-500', 
+    color: 'text-primary', 
     title: 'Aprovar Roteiro "BMW"', 
     sub: '10:00 - Cliente aguardando' 
   },
   { 
     icon: Clock, 
-    color: 'text-amber-500', 
+    color: 'text-muted-foreground', 
     title: 'Call de Follow-up (IA)', 
     sub: '14:30 - Coco Bambu', 
     extra: 'Auto' 
   },
   { 
     icon: AlertCircle, 
-    color: 'text-red-500', 
+    color: 'text-destructive', 
     title: 'Fatura em Atraso', 
     sub: 'D+3 - Clínica Bem Estar', 
     action: 'Cobrança IA' 
@@ -117,11 +117,11 @@ export function ActionsList() {
           transition={{ duration: 0.4 }}
         >
           <motion.div 
-            className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-3"
+            className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <CheckCircle className="w-5 h-5 text-emerald-500" />
+            <CheckCircle className="w-5 h-5 text-primary" />
           </motion.div>
           <p className="text-sm text-muted-foreground font-light">Sem ações pendentes</p>
           <p className="text-xs text-muted-foreground/60 mt-1">Agenda livre para hoje</p>

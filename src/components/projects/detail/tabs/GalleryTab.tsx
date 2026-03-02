@@ -79,10 +79,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   deliverable: 'bg-primary/10 text-primary',
-  reference: 'bg-blue-500/10 text-blue-600',
-  raw: 'bg-orange-500/10 text-orange-600',
-  contract: 'bg-purple-500/10 text-purple-600',
-  finance: 'bg-green-500/10 text-green-600',
+  reference: 'bg-primary/10 text-primary/70',
+  raw: 'bg-muted text-muted-foreground',
+  contract: 'bg-primary/10 text-primary/50',
+  finance: 'bg-primary/10 text-primary',
   other: 'bg-muted text-muted-foreground',
 };
 

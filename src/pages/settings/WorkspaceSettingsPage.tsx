@@ -216,7 +216,7 @@ export default function WorkspaceSettingsPage() {
         <Card className="glass-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-emerald-500" />
+              <Calendar className="w-4 h-4 text-primary" />
               Horário de Funcionamento
             </CardTitle>
           </CardHeader>

@@ -119,7 +119,7 @@ export function TasksCalendarView({ tasks, onEditTask, onCreateTask }: TasksCale
                     key={t.id}
                     className={cn(
                       "w-1.5 h-1.5 rounded-full",
-                      t.status === "done" ? "bg-emerald-500" : PRIORITY_DOTS[t.priority || "normal"],
+                      t.status === "done" ? "bg-primary" : PRIORITY_DOTS[t.priority || "normal"],
                     )}
                   />
                 ))}
@@ -203,7 +203,7 @@ export function TasksCalendarView({ tasks, onEditTask, onCreateTask }: TasksCale
                     <div
                       className={cn(
                         "w-2 h-2 rounded-full shrink-0",
-                        t.status === "done" ? "bg-emerald-500" : PRIORITY_DOTS[t.priority || "normal"],
+                        t.status === "done" ? "bg-primary" : PRIORITY_DOTS[t.priority || "normal"],
                       )}
                     />
                     <span className={cn("text-sm flex-1", t.status === "done" && "line-through text-muted-foreground")}>

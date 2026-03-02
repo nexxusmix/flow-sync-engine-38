@@ -15,10 +15,10 @@ interface TaskGanttViewProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  backlog: "bg-violet-500/60",
-  week: "bg-blue-500/60",
-  today: "bg-amber-500/60",
-  done: "bg-emerald-500/60",
+  backlog: "bg-primary/30",
+  week: "bg-primary/60",
+  today: "bg-muted-foreground/60",
+  done: "bg-primary/60",
 };
 
 const PRIORITY_BORDER: Record<string, string> = {

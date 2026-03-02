@@ -195,8 +195,8 @@ export function CampaignContentMap({ campaign, posts }: Props) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-            <Map className="w-4 h-4 text-indigo-400" />
+          <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+            <Map className="w-4 h-4 text-primary" />
           </div>
           <div>
             <h4 className="text-sm font-semibold text-foreground">Mapa de Conteúdo</h4>

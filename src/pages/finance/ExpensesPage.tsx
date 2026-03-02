@@ -38,9 +38,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 const STATUS_CONFIG = {
-  pending: { label: 'Pendente', color: 'bg-amber-500', icon: Clock },
-  paid: { label: 'Pago', color: 'bg-emerald-500', icon: CheckCircle },
-  overdue: { label: 'Vencido', color: 'bg-red-500', icon: AlertTriangle },
+  pending: { label: 'Pendente', color: 'bg-muted-foreground', icon: Clock },
+  paid: { label: 'Pago', color: 'bg-primary', icon: CheckCircle },
+  overdue: { label: 'Vencido', color: 'bg-destructive', icon: AlertTriangle },
 };
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -232,12 +232,12 @@ export default function ExpensesPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    expense.status === 'paid' ? 'bg-emerald-500/10' : 
-                    isOverdue ? 'bg-red-500/10' : 'bg-amber-500/10'
+                    expense.status === 'paid' ? 'bg-primary/10' : 
+                    isOverdue ? 'bg-destructive/10' : 'bg-muted'
                   }`}>
                     <CategoryIcon className={`w-5 h-5 ${
-                      expense.status === 'paid' ? 'text-emerald-500' : 
-                      isOverdue ? 'text-red-500' : 'text-amber-500'
+                      expense.status === 'paid' ? 'text-primary' : 
+                      isOverdue ? 'text-destructive' : 'text-muted-foreground'
                     }`} />
                   </div>
                   <div>
@@ -251,7 +251,7 @@ export default function ExpensesPage() {
                         Venc: {new Date(expense.due_date).toLocaleDateString('pt-BR')}
                       </span>
                       {expense.paid_date && (
-                        <span className="text-xs text-emerald-500 flex items-center gap-1">
+                        <span className="text-xs text-primary flex items-center gap-1">
                           <Check className="w-3 h-3" />
                           Pago: {new Date(expense.paid_date).toLocaleDateString('pt-BR')}
                         </span>

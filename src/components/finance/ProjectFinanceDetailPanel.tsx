@@ -36,7 +36,7 @@ interface ProjectFinanceDetailPanelProps {
 const CONTRACT_STATUS_CONFIG: Record<ContractStatus, { label: string; color: string }> = {
   draft: { label: 'Rascunho', color: 'bg-muted text-muted-foreground' },
   active: { label: 'Ativo', color: 'bg-primary text-primary-foreground' },
-  completed: { label: 'Finalizado', color: 'bg-emerald-500 text-white' },
+  completed: { label: 'Finalizado', color: 'bg-primary text-primary-foreground' },
   cancelled: { label: 'Cancelado', color: 'bg-destructive text-destructive-foreground' },
 };
 
@@ -182,7 +182,7 @@ export function ProjectFinanceDetailPanel({
               {CONTRACT_STATUS_CONFIG[contract.status].label}
             </Badge>
           ) : (
-            <Badge variant="outline" className="text-amber-500 border-amber-500">
+            <Badge variant="outline" className="text-muted-foreground border-border">
               Sem contrato
             </Badge>
           )}

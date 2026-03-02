@@ -64,10 +64,10 @@ function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
   const color =
     pct >= 80
-      ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30"
+      ? "bg-primary/20 text-primary border-primary/30"
       : pct >= 50
-      ? "bg-amber-500/20 text-amber-500 border-amber-500/30"
-      : "bg-red-500/20 text-red-500 border-red-500/30";
+      ? "bg-muted text-muted-foreground border-border"
+      : "bg-destructive/20 text-destructive border-destructive/30";
   return (
     <Badge variant="outline" className={cn("text-[10px] h-4 px-1", color)}>
       {pct}% confiança
@@ -208,9 +208,9 @@ export function SignatureScanPanel({
     <div className="space-y-5">
       {/* Already signed banner */}
       {isAlreadySigned && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-          <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/30">
+          <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+          <p className="text-sm text-primary font-medium">
             Este contrato já está marcado como Assinado. Você pode escanear para validação adicional.
           </p>
         </div>
@@ -352,14 +352,14 @@ export function SignatureScanPanel({
                 className={cn(
                   "rounded-xl p-3 text-center border transition-colors",
                   item.active
-                    ? "bg-emerald-500/10 border-emerald-500/30"
+                    ? "bg-primary/10 border-primary/30"
                     : "bg-muted/20 border-border/30"
                 )}
               >
                 <div
                   className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1.5",
-                    item.active ? "bg-emerald-500/20 text-emerald-500" : "bg-muted/40 text-muted-foreground"
+                    item.active ? "bg-primary/20 text-primary" : "bg-muted/40 text-muted-foreground"
                   )}
                 >
                   {item.icon}
@@ -385,10 +385,10 @@ export function SignatureScanPanel({
                   className={cn(
                     "h-1.5 rounded-full transition-all",
                     result.scan.confidence_overall >= 0.8
-                      ? "bg-emerald-500"
+                      ? "bg-primary"
                       : result.scan.confidence_overall >= 0.5
-                      ? "bg-amber-500"
-                      : "bg-red-500"
+                      ? "bg-muted-foreground"
+                      : "bg-destructive"
                   )}
                   style={{ width: `${result.scan.confidence_overall * 100}%` }}
                 />
@@ -405,9 +405,9 @@ export function SignatureScanPanel({
 
           {/* Contract update status */}
           {result.contract_updated && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/30">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              <p className="text-sm text-primary font-medium">
                 Contrato atualizado para <strong>Assinado</strong>
               </p>
             </div>

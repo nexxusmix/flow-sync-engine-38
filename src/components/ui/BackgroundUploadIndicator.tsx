@@ -26,11 +26,11 @@ export function BackgroundUploadIndicator() {
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
           <div className="flex items-center gap-2">
             {isProcessing ? (
-              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+              <Loader2 className="w-4 h-4 text-primary animate-spin" />
             ) : allDone && errorCount === 0 ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-primary" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-red-400" />
+              <AlertCircle className="w-4 h-4 text-destructive" />
             )}
             <span className="text-xs font-medium text-white/70">
               {isProcessing
@@ -80,11 +80,11 @@ export function BackgroundUploadIndicator() {
                   <div key={item.id} className="flex items-center gap-2 py-1">
                     <div className="flex-shrink-0">
                       {item.status === 'done' ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                       ) : item.status === 'uploading' ? (
-                        <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
                       ) : item.status === 'error' ? (
-                        <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                        <AlertCircle className="w-3.5 h-3.5 text-destructive" />
                       ) : (
                         <div className="w-3.5 h-3.5 rounded-full border border-white/20" />
                       )}

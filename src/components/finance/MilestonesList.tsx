@@ -223,7 +223,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
   const getStatusBadge = (status: MilestoneStatus) => {
     switch (status) {
       case 'paid':
-        return <Badge className="bg-emerald-500 text-white">Pago</Badge>;
+        return <Badge className="bg-primary text-primary-foreground">Pago</Badge>;
       case 'overdue':
         return <Badge className="bg-destructive text-white">Vencido</Badge>;
       default:
@@ -261,13 +261,13 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
       {/* Stats summary */}
       {milestones.length > 0 && (
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="p-2 rounded-lg bg-amber-500/10">
+          <div className="p-2 rounded-lg bg-muted">
             <p className="text-xs text-muted-foreground">A receber</p>
-            <p className="text-sm font-medium text-amber-600">{formatCurrency(stats.pendingValue + stats.overdueValue)}</p>
+            <p className="text-sm font-medium text-muted-foreground">{formatCurrency(stats.pendingValue + stats.overdueValue)}</p>
           </div>
-          <div className="p-2 rounded-lg bg-emerald-500/10">
+          <div className="p-2 rounded-lg bg-primary/10">
             <p className="text-xs text-muted-foreground">Recebido</p>
-            <p className="text-sm font-medium text-emerald-600">{formatCurrency(stats.paidValue)}</p>
+            <p className="text-sm font-medium text-primary">{formatCurrency(stats.paidValue)}</p>
           </div>
           <div className="p-2 rounded-lg bg-destructive/10">
             <p className="text-xs text-muted-foreground">Vencido</p>
@@ -287,14 +287,14 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
               key={milestone.id}
               className={`p-3 rounded-lg border transition-colors ${
                 isPaid 
-                  ? 'bg-emerald-500/5 border-emerald-500/20' 
+                  ? 'bg-primary/5 border-primary/20' 
                   : isOverdue 
                     ? 'bg-destructive/5 border-destructive/20'
                     : 'bg-muted/30 border-border'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className={`font-medium text-sm ${isPaid ? 'text-emerald-600' : ''}`}>
+                <span className={`font-medium text-sm ${isPaid ? 'text-primary' : ''}`}>
                   {milestone.title}
                 </span>
                 <div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
                             setConfirmPaymentId(milestone.id);
                             setPaymentDate(new Date().toISOString().split('T')[0]);
                           }}>
-                            <Check className="w-4 h-4 mr-2 text-emerald-500" />
+                            <Check className="w-4 h-4 mr-2 text-primary" />
                             Marcar como Pago
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -323,7 +323,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
                       {isPaid && (
                         <>
                           <DropdownMenuItem onClick={() => handleMarkPending(milestone.id)}>
-                            <Undo2 className="w-4 h-4 mr-2 text-amber-500" />
+                            <Undo2 className="w-4 h-4 mr-2 text-muted-foreground" />
                             Marcar como Pendente
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -350,12 +350,12 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
                   <Clock className="w-3 h-3" />
                   {format(new Date(milestone.due_date), "dd 'de' MMM, yyyy", { locale: ptBR })}
                   {isPaid && milestone.paid_date && (
-                    <span className="text-emerald-600 ml-2">
+                    <span className="text-primary ml-2">
                       (pago em {format(new Date(milestone.paid_date), "dd/MM", { locale: ptBR })})
                     </span>
                   )}
                 </div>
-                <div className={`font-semibold ${isPaid ? 'text-emerald-600' : isOverdue ? 'text-destructive' : ''}`}>
+                <div className={`font-semibold ${isPaid ? 'text-primary' : isOverdue ? 'text-destructive' : ''}`}>
                   {formatCurrency(Number(milestone.amount))}
                 </div>
               </div>
@@ -450,7 +450,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-emerald-500" />
+              <Check className="w-5 h-5 text-primary" />
               Confirmar Recebimento
             </DialogTitle>
           </DialogHeader>
@@ -470,7 +470,7 @@ export function MilestonesList({ contractId, milestones, onRefresh }: Milestones
             <Button variant="outline" onClick={() => setConfirmPaymentId(null)}>
               Cancelar
             </Button>
-            <Button onClick={handleConfirmPayment} className="bg-emerald-500 hover:bg-emerald-600">
+            <Button onClick={handleConfirmPayment} className="bg-primary hover:bg-primary/90">
               <Check className="w-4 h-4 mr-2" />
               Confirmar
             </Button>

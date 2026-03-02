@@ -54,9 +54,9 @@ function formatEstimatedTime(minutes: number): string {
 }
 
 function getBlockStatus(bIdx: number, activeBlockIdx: number, blockCompleted: boolean): { label: string; className: string } {
-  if (blockCompleted) return { label: 'Done', className: 'text-emerald-400' };
+  if (blockCompleted) return { label: 'Done', className: 'text-primary' };
   if (bIdx === activeBlockIdx) return { label: 'Active', className: 'text-white font-medium' };
-  if (bIdx < activeBlockIdx) return { label: 'Done', className: 'text-emerald-400' };
+  if (bIdx < activeBlockIdx) return { label: 'Done', className: 'text-primary' };
   if (bIdx === activeBlockIdx + 1) return { label: 'Queued', className: 'text-slate-400' };
   return { label: 'Scheduled', className: 'text-slate-600' };
 }
@@ -64,7 +64,7 @@ function getBlockStatus(bIdx: number, activeBlockIdx: number, blockCompleted: bo
 function getIndicatorStyle(type: ExecutionBlock['type']): string {
   if (type === 'deep_work') return 'bg-[hsl(var(--primary))] shadow-[0_0_6px_rgba(0,115,153,0.5)]';
   if (type === 'shallow_work') return 'bg-slate-600';
-  return 'bg-amber-500/50';
+  return 'bg-muted-foreground/50';
 }
 
 export function TaskExecutionGuide({ tasks, onComplete, externalOpen, onExternalOpenChange }: TaskExecutionGuideProps) {
