@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { AIButton } from '@/components/squad-ui/AIButton';
+import { CampaignTimeline } from './CampaignTimeline';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   planning: { label: 'Planejamento', color: 'bg-blue-500/15 text-blue-400' },
@@ -374,54 +375,14 @@ export function CampaignsTab() {
           </div>
         )}
 
-        {/* Posts list */}
+        {/* Timeline / Roadmap */}
         <div>
-          <h4 className="text-sm font-medium text-foreground mb-3">Posts Vinculados ({activePosts.length})</h4>
-          {activePosts.length === 0 ? (
-            <Card className="glass-card p-6 text-center">
-              <p className="text-xs text-muted-foreground">Nenhum post vinculado a esta campanha.</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Vincule posts no Calendário ao criar ou editar conteúdo.</p>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {activePosts
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .map(p => {
-                  const s = POST_STATUSES.find(st => st.key === p.status);
-                  const f = FORMATS.find(fm => fm.key === p.format);
-                  const pl = PILLARS.find(pi => pi.key === p.pillar);
-                  const dateStr = p.published_at
-                    ? format(new Date(p.published_at), "dd/MM/yy", { locale: ptBR })
-                    : p.scheduled_at
-                    ? format(new Date(p.scheduled_at), "dd/MM/yy", { locale: ptBR })
-                    : null;
-
-                  return (
-                    <Card key={p.id} className="glass-card p-3 hover:border-primary/20 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-primary text-lg shrink-0">
-                          {f?.icon || 'image'}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground font-medium truncate">{p.title}</p>
-                          <div className="flex flex-wrap gap-1.5 mt-1">
-                            {s && <Badge className={`${s.color} text-[9px]`}>{s.label}</Badge>}
-                            {f && <Badge variant="secondary" className="text-[9px]">{f.label}</Badge>}
-                            {pl && <Badge variant="outline" className="text-[9px]">{pl.label}</Badge>}
-                            {dateStr && <span className="text-[9px] text-muted-foreground">{dateStr}</span>}
-                          </div>
-                        </div>
-                        {p.status === 'published' && (
-                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px] shrink-0">
-                            ✓ Publicado
-                          </Badge>
-                        )}
-                      </div>
-                    </Card>
-                  );
-                })}
-            </div>
-          )}
+          <h4 className="text-sm font-medium text-foreground mb-3">Calendário Editorial ({activePosts.length} posts)</h4>
+          <CampaignTimeline
+            posts={activePosts}
+            startDate={activeCampaign.start_date}
+            endDate={activeCampaign.end_date}
+          />
         </div>
       </div>
     );
