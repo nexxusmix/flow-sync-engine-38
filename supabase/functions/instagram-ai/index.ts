@@ -729,14 +729,23 @@ Retorne JSON puro (sem markdown):
         const startDate = today.toISOString().split('T')[0];
         const endDate = new Date(today.getTime() + durationWeeks * 7 * 86400000).toISOString().split('T')[0];
 
-        systemPrompt = `Você é um estrategista de marketing digital e social media sênior. Sua função é criar campanhas completas de Instagram baseadas em pesquisa de mercado, análise de tendências do nicho e dados do perfil do cliente.
+        // Generate all real scheduled dates
+        const scheduledDates: string[] = [];
+        for (let d = 0; d < durationWeeks * 7; d++) {
+          const dt = new Date(today.getTime() + d * 86400000);
+          scheduledDates.push(dt.toISOString().split('T')[0]);
+        }
+
+        systemPrompt = `Você é um estrategista de marketing digital e social media sênior. Sua função é criar campanhas COMPLETÍSSIMAS de Instagram: estratégia + todos os posts prontos para publicação com roteiro, legendas, hashtags, calendário editorial com datas reais, ads sugeridos e checklists de produção.
 
 Você deve agir como se tivesse feito uma pesquisa profunda de mercado e tendências antes de gerar a campanha. Considere:
-- Tendências atuais do nicho e do Instagram
+- Tendências atuais do nicho e do Instagram 2026
 - Melhores práticas de engajamento e crescimento
 - Formatos que estão performando melhor (Reels, Carrosséis, Stories)
 - Horários e frequência ideais de postagem
 - Estratégias de hashtags e distribuição
+- Ads orgânicos vs pagos
+- Calendário editorial com datas reais
 
 ${profileContext}${referencesContext}${postsContext}${memoryBlock}
 
@@ -744,44 +753,85 @@ RETORNE APENAS JSON VÁLIDO (sem markdown, sem \`\`\`). O JSON deve seguir EXATA
 {
   "name": "Nome criativo da campanha",
   "objective": "Objetivo estratégico detalhado",
-  "target_audience": "Público-alvo específico",
+  "target_audience": "Público-alvo específico e detalhado",
   "start_date": "${startDate}",
   "end_date": "${endDate}",
   "budget": ${budget || 0},
-  "key_messages": ["mensagem 1", "mensagem 2", "mensagem 3"],
+  "key_messages": ["mensagem 1", "mensagem 2", "mensagem 3", "mensagem 4"],
   "kpis": {
     "target_reach": number,
     "target_engagement_rate": number,
     "target_followers_growth": number,
     "target_saves": number,
-    "target_shares": number
+    "target_shares": number,
+    "target_leads": number
   },
+  "strategy_notes": "Resumo completo da estratégia, racional, pesquisa de mercado e tendências identificadas (5-10 linhas)",
   "content_plan": [
     {
-      "title": "Título do post",
-      "format": "reel|carousel|static|story",
-      "pillar": "autoridade|educativo|bastidores|social_proof|entretenimento",
-      "hook": "Frase de abertura impactante",
-      "suggested_day": "dia da semana",
-      "notes": "Breve descrição/angle"
+      "title": "Título editorial do post",
+      "format": "reel|carousel|single|story_sequence",
+      "pillar": "autoridade|portfolio|bastidores|social_proof|educacao|venda",
+      "objective": "awareness|authority|engagement|leads|conversion",
+      "scheduled_date": "YYYY-MM-DD (data real dentro do período ${startDate} a ${endDate})",
+      "suggested_time": "HH:MM",
+      "is_ad": false,
+      "hook": "Frase de abertura impactante dos primeiros 3 segundos",
+      "script": "Roteiro completo com marcações de tempo, indicações de câmera, trilha e transições",
+      "caption_short": "Legenda curta até 3 linhas — tom direto e impactante",
+      "caption_medium": "Legenda média com storytelling 1 parágrafo completo",
+      "caption_long": "Legenda longa com narrativa completa, contexto e CTA forte",
+      "cta": "Chamada para ação clara e específica",
+      "pinned_comment": "Comentário fixado sugerido para engajamento",
+      "hashtags": ["hashtag1", "hashtag2", "até 15 hashtags estratégicas"],
+      "cover_suggestion": "Descrição detalhada da capa/thumbnail ideal",
+      "carousel_slides": [{"title": "título slide", "body": "corpo do slide com texto completo"}],
+      "story_sequence": [{"text": "texto do story", "media_type": "foto|video|boomerang", "interactive": "enquete|pergunta|quiz|null", "sticker_text": "texto do sticker interativo"}],
+      "checklist": [
+        {"task": "Gravar vídeo principal", "category": "captação"},
+        {"task": "Editar e color grading", "category": "edição"},
+        {"task": "Criar capa/thumbnail", "category": "design"},
+        {"task": "Escrever legenda final", "category": "copy"},
+        {"task": "Agendar publicação", "category": "publicação"}
+      ]
     }
-  ],
-  "strategy_notes": "Resumo da estratégia e racional por trás das escolhas"
-}`;
+  ]
+}
 
-        userPrompt = `Crie uma campanha completa de Instagram com as seguintes diretrizes:
+REGRAS IMPORTANTES:
+- Gere entre ${Math.max(durationWeeks * 3, 6)} e ${durationWeeks * 5} posts completos
+- Use datas reais entre ${startDate} e ${endDate}, distribuídas uniformemente
+- Alterne formatos: reel (40%), carousel (30%), single (15%), story_sequence (15%)
+- Distribua entre os pilares de conteúdo disponíveis
+- Melhores horários: 10:00, 12:00, 18:00, 20:00
+- Inclua pelo menos 1-2 posts marcados como is_ad: true (sugestão de anúncio)
+- Para carrosséis: gere 5-8 slides com título e corpo completo
+- Para story_sequence: gere 3-5 stories com interativos
+- Checklist de produção deve ter 4-6 itens relevantes ao formato
+- TODOS os campos de texto devem ser preenchidos — NENHUM campo vazio`;
+
+        userPrompt = `Crie uma campanha COMPLETÍSSIMA de Instagram com TODOS os posts prontos para publicação:
 
 ${theme ? `Tema/Foco: ${theme}` : 'Tema: livre (baseie-se no perfil e referências)'}
 Duração: ${durationWeeks} semanas (${startDate} a ${endDate})
 ${budget ? `Orçamento: R$ ${budget}` : 'Sem orçamento definido'}
+Datas disponíveis: ${scheduledDates.join(', ')}
 
 Gere:
-1. Nome criativo e objetivo estratégico
-2. Público-alvo detalhado
+1. Nome criativo e objetivo estratégico detalhado
+2. Público-alvo super específico e detalhado
 3. 3-5 mensagens-chave da campanha
 4. KPIs projetados realistas
-5. Plano de conteúdo com ${durationWeeks * 4}-${durationWeeks * 5} posts sugeridos (distribuídos pela duração)
-6. Notas de estratégia explicando o racional
+5. Notas de estratégia com pesquisa de mercado e tendências
+6. Plano de conteúdo com ${Math.max(durationWeeks * 3, 6)}-${durationWeeks * 5} posts COMPLETOS — cada um com:
+   - Título, hook, roteiro/script completo
+   - 3 variações de legenda (curta, média, longa)
+   - CTA, hashtags, comentário fixado
+   - Sugestão de capa/thumbnail
+   - Slides de carrossel OU sequência de stories (conforme formato)
+   - Checklist de produção
+   - Data real agendada e horário sugerido
+   - Marcação de ad para posts patrocinados
 
 Baseie-se nos dados do perfil, referências salvas, histórico de posts e memória de performance para personalizar ao máximo.`;
         break;
