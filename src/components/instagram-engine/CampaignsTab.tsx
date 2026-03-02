@@ -9,7 +9,8 @@ import { useInstagramCampaigns, useInstagramPosts, POST_STATUSES, FORMATS, PILLA
 import { useInstagramInsights, useInstagramConnection } from '@/hooks/useInstagramAPI';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft } from 'lucide-react';
+import { Loader2, Plus, Target, Calendar, Users, Megaphone, FileText, ChevronRight, TrendingUp, BarChart3, ArrowLeft, Download } from 'lucide-react';
+import { exportInstagramCampaignPDF } from '@/services/pdfExportService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -124,6 +125,15 @@ export function CampaignsTab() {
               <p className="text-xs text-muted-foreground mt-0.5">{activeCampaign.objective}</p>
             )}
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => exportInstagramCampaignPDF(selectedCampaign!)}
+          >
+            <Download className="w-4 h-4" />
+            Exportar PDF Completo
+          </Button>
         </div>
 
         {/* Campaign KPIs */}
