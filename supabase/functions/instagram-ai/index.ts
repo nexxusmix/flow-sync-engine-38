@@ -938,6 +938,148 @@ Baseie-se nos dados do perfil, referências salvas, histórico de posts e memór
         break;
       }
 
+      case "campaign_ai_tool": {
+        const { tool, campaign, competitors, objective, field, post_title, post_hook, post_caption, post_cta, post_format, post_pillar } = data;
+        const campaignCtx = `Campanha: ${campaign?.name || 'N/A'}
+Objetivo: ${campaign?.objective || 'N/A'}
+Público: ${campaign?.target_audience || 'N/A'}
+Orçamento: R$ ${campaign?.budget || 0}
+Período: ${campaign?.start_date || '?'} a ${campaign?.end_date || '?'}
+Posts: ${campaign?.total_posts || 0} (publicados: ${campaign?.published_posts || 0})
+Formatos: ${(campaign?.formats || []).join(', ')}
+Pilares: ${(campaign?.pillars || []).join(', ')}
+Títulos: ${(campaign?.post_titles || []).join(' | ')}`;
+
+        systemPrompt = `Você é o estrategista digital sênior da SQUAD Film, produtora audiovisual premium de Brasília/DF.
+Especialista em Instagram marketing, Meta Ads e estratégia de conteúdo para nichos de luxo.
+Responda SEMPRE em português do Brasil. Seja direto, prático e acionável.
+Retorne SEMPRE um JSON válido com seções claras e organizadas.${memoryBlock}`;
+
+        switch (tool) {
+          case 'competitors':
+            userPrompt = `Analise os concorrentes e gere um relatório estratégico comparativo.
+
+${campaignCtx}
+
+Concorrentes/Nicho informado: ${competitors || 'N/A'}
+
+Retorne um JSON com:
+{
+  "resumo_executivo": "Análise geral do cenário competitivo",
+  "concorrentes_analisados": ["lista de perfis/referências analisados"],
+  "pontos_fortes_concorrentes": ["o que eles fazem bem"],
+  "lacunas_e_oportunidades": ["gaps que podemos explorar"],
+  "diferenciais_recomendados": ["como se destacar"],
+  "estrategia_de_conteudo": ["tipos de conteúdo que funcionam no nicho"],
+  "frequencia_ideal": "recomendação de frequência",
+  "melhores_horarios": ["horários sugeridos"],
+  "hashtags_estrategicas": ["hashtags do nicho"],
+  "acoes_imediatas": ["3-5 ações práticas para implementar agora"]
+}`;
+            break;
+
+          case 'forecast':
+            userPrompt = `Projete os resultados esperados desta campanha com base no conteúdo planejado e benchmarks do nicho.
+
+${campaignCtx}
+
+Retorne um JSON com:
+{
+  "projecao_alcance": { "total_estimado": number, "por_post_medio": number, "melhor_formato": "formato" },
+  "projecao_engajamento": { "taxa_media_esperada": "X%", "likes_estimados": number, "comentarios_estimados": number, "compartilhamentos": number },
+  "projecao_crescimento": { "novos_seguidores_estimados": number, "taxa_crescimento": "X%", "timeline": "projeção semana a semana" },
+  "projecao_conversao": { "cliques_link_bio": number, "leads_estimados": number, "roi_estimado": "X%" },
+  "riscos": ["fatores que podem impactar negativamente"],
+  "otimizacoes_sugeridas": ["ajustes para maximizar resultados"],
+  "benchmark_nicho": { "taxa_engajamento_media": "X%", "alcance_medio": number, "frequencia_ideal": "X posts/semana" },
+  "cenarios": { "otimista": "descrição", "realista": "descrição", "conservador": "descrição" }
+}`;
+            break;
+
+          case 'budget_optimizer':
+            userPrompt = `Otimize a distribuição do orçamento desta campanha entre formatos, dias e objetivos.
+
+${campaignCtx}
+
+Retorne um JSON com:
+{
+  "resumo_estrategia": "Estratégia geral de alocação",
+  "distribuicao_por_formato": [{ "formato": "reel", "percentual": 40, "valor": 400, "justificativa": "..." }],
+  "distribuicao_por_objetivo": [{ "objetivo": "awareness", "percentual": 30, "valor": 300 }, { "objetivo": "consideration", "percentual": 40, "valor": 400 }, { "objetivo": "conversion", "percentual": 30, "valor": 300 }],
+  "distribuicao_temporal": [{ "semana": 1, "valor": number, "foco": "..." }],
+  "recomendacoes_bid": { "cpc_medio_esperado": "R$ X", "cpm_medio_esperado": "R$ X" },
+  "testes_ab_sugeridos": ["teste 1", "teste 2"],
+  "alertas": ["pontos de atenção sobre o budget"],
+  "roi_projetado": "X%"
+}`;
+            break;
+
+          case 'ad_copies':
+            userPrompt = `Gere copies otimizadas para Meta Ads (Instagram/Facebook) para a etapa "${objective || 'awareness'}" do funil.
+
+${campaignCtx}
+Hooks dos posts: ${(campaign?.post_hooks || []).join(' | ')}
+
+Retorne um JSON com:
+{
+  "etapa_funil": "${objective || 'awareness'}",
+  "anuncios": [
+    {
+      "titulo": "Headline principal (até 40 chars)",
+      "descricao": "Descrição do anúncio (até 125 chars)",
+      "texto_principal": "Texto do corpo do anúncio (2-3 linhas)",
+      "cta_button": "Botão CTA (Saiba Mais, Comprar, etc)",
+      "headline_alternativa_1": "Variação 1",
+      "headline_alternativa_2": "Variação 2",
+      "segmentacao_sugerida": "Público ideal para este anúncio",
+      "formato_recomendado": "Formato (feed, stories, reels)",
+      "bid_sugerido": "Estratégia de lance"
+    }
+  ],
+  "dicas_criativas": ["dica 1", "dica 2"],
+  "segmentacao_geral": { "interesses": ["..."], "comportamentos": ["..."], "demografico": "..." },
+  "metricas_alvo": { "ctr_esperado": "X%", "cpc_esperado": "R$ X" }
+}
+
+Gere pelo menos 3 anúncios variados.`;
+            break;
+
+          case 'ab_testing':
+            userPrompt = `Gere 3 variações criativas para A/B testing do campo "${field || 'hook'}" deste post.
+
+${campaignCtx}
+
+Post original:
+- Título: ${post_title || 'N/A'}
+- Hook atual: ${post_hook || 'N/A'}
+- Legenda atual: ${post_caption || 'N/A'}
+- CTA atual: ${post_cta || 'N/A'}
+- Formato: ${post_format || 'reel'}
+- Pilar: ${post_pillar || 'N/A'}
+
+Retorne um JSON com:
+{
+  "campo_testado": "${field || 'hook'}",
+  "original": "texto original do campo",
+  "variacoes": [
+    { "versao": "A", "texto": "variação A com abordagem diferente", "estrategia": "por que essa variação pode funcionar", "tom": "emocional/racional/urgente/etc" },
+    { "versao": "B", "texto": "variação B com outra abordagem", "estrategia": "justificativa", "tom": "..." },
+    { "versao": "C", "texto": "variação C ousada/disruptiva", "estrategia": "justificativa", "tom": "..." }
+  ],
+  "recomendacao_teste": "Como rodar o teste (duração, métricas, amostra)",
+  "metrica_decisao": "Qual métrica usar para decidir o vencedor"
+}`;
+            break;
+
+          default:
+            return new Response(JSON.stringify({ error: `Unknown campaign tool: ${tool}` }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+        }
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
