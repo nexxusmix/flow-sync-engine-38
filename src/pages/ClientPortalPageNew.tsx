@@ -522,6 +522,34 @@ export default function ClientPortalPage() {
               </AnimatePresence>
             </TabsContent>
 
+            {/* Messages Tab */}
+            <TabsContent value="messages" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="messages"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalMessagesTab
+                    comments={comments}
+                    timelineEvents={timelineEvents}
+                    onSendMessage={(data) => {
+                      // Use addComment as message channel
+                      if (!deliverables[0]?.id) return;
+                      addComment({
+                        deliverableId: deliverables[0].id,
+                        authorName: data.authorName,
+                        content: data.content,
+                      });
+                    }}
+                    isSending={isAddingComment}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
             {/* Tasks Tab */}
             <TabsContent value="tasks" className="mt-8">
               <AnimatePresence mode="wait">
