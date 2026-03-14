@@ -3683,6 +3683,128 @@ export type Database = {
           },
         ]
       }
+      inbox_item_actions: {
+        Row: {
+          action_data: Json | null
+          action_type: string
+          created_at: string
+          id: string
+          inbox_item_id: string
+          note: string | null
+          performed_by: string | null
+        }
+        Insert: {
+          action_data?: Json | null
+          action_type: string
+          created_at?: string
+          id?: string
+          inbox_item_id: string
+          note?: string | null
+          performed_by?: string | null
+        }
+        Update: {
+          action_data?: Json | null
+          action_type?: string
+          created_at?: string
+          id?: string
+          inbox_item_id?: string
+          note?: string | null
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_item_actions_inbox_item_id_fkey"
+            columns: ["inbox_item_id"]
+            isOneToOne: false
+            referencedRelation: "inbox_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inbox_items: {
+        Row: {
+          archived_at: string | null
+          assigned_to: string | null
+          automation_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          item_type: string
+          payload_json: Json | null
+          pinned: boolean
+          priority: string
+          project_id: string | null
+          requires_action: boolean
+          requires_approval: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          snoozed_until: string | null
+          source_entity_id: string | null
+          source_entity_type: string | null
+          source_module: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          assigned_to?: string | null
+          automation_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_type?: string
+          payload_json?: Json | null
+          pinned?: boolean
+          priority?: string
+          project_id?: string | null
+          requires_action?: boolean
+          requires_approval?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          snoozed_until?: string | null
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          source_module?: string
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          archived_at?: string | null
+          assigned_to?: string | null
+          automation_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_type?: string
+          payload_json?: Json | null
+          pinned?: boolean
+          priority?: string
+          project_id?: string | null
+          requires_action?: boolean
+          requires_approval?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          snoozed_until?: string | null
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          source_module?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       inbox_messages: {
         Row: {
           direction: Database["public"]["Enums"]["inbox_direction"]
