@@ -44,9 +44,9 @@ const itemVariants = {
 function PortalFilesTabComponent({ files }: PortalFilesTabProps) {
   const getFileIcon = (fileType: string | null) => {
     if (!fileType) return <File className="w-5 h-5" />;
-    if (fileType.includes('image')) return <Image className="w-5 h-5 text-emerald-500" />;
-    if (fileType.includes('video')) return <Film className="w-5 h-5 text-blue-500" />;
-    if (fileType.includes('pdf')) return <FileText className="w-5 h-5 text-red-500" />;
+    if (fileType.includes('image')) return <Image className="w-5 h-5 text-primary" />;
+    if (fileType.includes('video')) return <Film className="w-5 h-5 text-primary/70" />;
+    if (fileType.includes('pdf')) return <FileText className="w-5 h-5 text-destructive" />;
     return <File className="w-5 h-5 text-gray-500" />;
   };
 
