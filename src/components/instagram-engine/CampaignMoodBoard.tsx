@@ -3,28 +3,20 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { InstagramCampaign, useInstagramAI } from '@/hooks/useInstagramEngine';
-import { Palette, Plus, Sparkles, Loader2, Trash2, Image, Download, X } from 'lucide-react';
+import { InstagramCampaign, useInstagramAI, useMoodBoardItems, useMoodBoardMutations } from '@/hooks/useInstagramEngine';
+import { Palette, Plus, Sparkles, Loader2, Image, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { sc } from '@/lib/colors';
 
 interface Props {
   campaign: InstagramCampaign;
 }
 
-interface MoodItem {
-  id: string;
-  type: 'image' | 'color' | 'note';
-  url?: string;
-  color?: string;
-  note?: string;
-  label?: string;
-}
-
 export function CampaignMoodBoard({ campaign }: Props) {
   const ai = useInstagramAI();
-  const [items, setItems] = useState<MoodItem[]>([]);
+  const { data: items = [], isLoading } = useMoodBoardItems(campaign.id);
+  const { create, remove } = useMoodBoardMutations(campaign.id);
   const [uploading, setUploading] = useState(false);
   const [aiPalette, setAiPalette] = useState<any>(null);
   const [noteText, setNoteText] = useState('');
@@ -40,23 +32,21 @@ export function CampaignMoodBoard({ campaign }: Props) {
       const { error } = await supabase.storage.from('marketing-assets').upload(path, file);
       if (error) { toast.error('Erro no upload'); continue; }
       const { data: urlData } = supabase.storage.from('marketing-assets').getPublicUrl(path);
-      setItems(prev => [...prev, { id: crypto.randomUUID(), type: 'image', url: urlData.publicUrl, label: file.name }]);
+      create.mutate({ type: 'image', url: urlData.publicUrl, label: file.name, position: items.length });
     }
     setUploading(false);
     toast.success('Referências adicionadas!');
   };
 
-  const addColor = (color: string) => {
-    setItems(prev => [...prev, { id: crypto.randomUUID(), type: 'color', color, label: color }]);
+  const addColor = (color: string, label?: string) => {
+    create.mutate({ type: 'color', color, label: label || color, position: items.length });
   };
 
   const addNote = () => {
     if (!noteText.trim()) return;
-    setItems(prev => [...prev, { id: crypto.randomUUID(), type: 'note', note: noteText }]);
+    create.mutate({ type: 'note', note: noteText, position: items.length });
     setNoteText('');
   };
-
-  const removeItem = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
 
   const handleAIPalette = async () => {
     try {
@@ -77,15 +67,18 @@ Retorne JSON com:
         },
       });
       setAiPalette(result);
-      // Add generated colors
       if (Array.isArray(result?.palette)) {
         result.palette.forEach((c: string, i: number) => {
-          addColor(c);
+          addColor(c, result.palette_names?.[i]);
         });
       }
       toast.success('Direção visual gerada!');
     } catch { /* handled */ }
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary/40" /></div>;
+  }
 
   return (
     <div className="space-y-5">
@@ -102,7 +95,6 @@ Retorne JSON com:
         </div>
       </div>
 
-      {/* Upload + Note */}
       <div className="flex gap-3">
         <label className="flex-1">
           <div className="flex items-center gap-2 p-3 bg-card/50 border border-dashed border-border/40 rounded-lg cursor-pointer hover:border-primary/30 transition-colors text-center">
@@ -129,18 +121,17 @@ Retorne JSON com:
         </div>
       </div>
 
-      {/* Board grid */}
       {items.length > 0 && (
         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
           {items.map(item => (
             <div key={item.id} className="relative group">
               {item.type === 'image' && (
                 <div className="aspect-square rounded-lg overflow-hidden bg-muted/20">
-                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                  <img src={item.url!} alt="" className="w-full h-full object-cover" />
                 </div>
               )}
               {item.type === 'color' && (
-                <div className="aspect-square rounded-lg flex flex-col items-center justify-center gap-1" style={{ backgroundColor: item.color }}>
+                <div className="aspect-square rounded-lg flex flex-col items-center justify-center gap-1" style={{ backgroundColor: item.color! }}>
                   <span className="text-[8px] font-mono text-white mix-blend-difference">{item.color}</span>
                   {item.label && item.label !== item.color && (
                     <span className="text-[7px] text-white mix-blend-difference">{item.label}</span>
@@ -153,7 +144,7 @@ Retorne JSON com:
                 </div>
               )}
               <button
-                onClick={() => removeItem(item.id)}
+                onClick={() => remove.mutate(item.id)}
                 className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded-full p-0.5"
               >
                 <X className="w-3 h-3 text-muted-foreground" />
@@ -163,10 +154,8 @@ Retorne JSON com:
         </div>
       )}
 
-      {/* AI Palette Result */}
       {aiPalette && (
         <div className="space-y-4">
-          {/* Palette */}
           {Array.isArray(aiPalette.palette) && (
             <Card className="p-4 bg-card/50 border-border/30">
               <h4 className="text-xs font-semibold text-foreground mb-3">🎨 Paleta Gerada</h4>
@@ -184,7 +173,6 @@ Retorne JSON com:
             </Card>
           )}
 
-          {/* Mood keywords + Typography */}
           <div className="grid md:grid-cols-2 gap-4">
             {Array.isArray(aiPalette.mood_keywords) && (
               <Card className="p-4 bg-card/50 border-border/30">
@@ -210,11 +198,10 @@ Retorne JSON com:
             )}
           </div>
 
-          {/* Do/Don't */}
           <div className="grid md:grid-cols-2 gap-4">
             {Array.isArray(aiPalette.do_list) && (
               <Card className="p-4 bg-card/50 border-border/30">
-                <h4 className="text-xs font-semibold text-emerald-400 mb-2">✅ Fazer</h4>
+                <h4 className={`text-xs font-semibold mb-2 ${sc.status('success').text}`}>✅ Fazer</h4>
                 <div className="space-y-1">
                   {aiPalette.do_list.map((d: string, i: number) => (
                     <div key={i} className="text-[10px] text-muted-foreground">• {d}</div>
@@ -224,7 +211,7 @@ Retorne JSON com:
             )}
             {Array.isArray(aiPalette.dont_list) && (
               <Card className="p-4 bg-card/50 border-border/30">
-                <h4 className="text-xs font-semibold text-red-400 mb-2">🚫 Evitar</h4>
+                <h4 className={`text-xs font-semibold mb-2 ${sc.status('error').text}`}>🚫 Evitar</h4>
                 <div className="space-y-1">
                   {aiPalette.dont_list.map((d: string, i: number) => (
                     <div key={i} className="text-[10px] text-muted-foreground">• {d}</div>
@@ -234,7 +221,6 @@ Retorne JSON com:
             )}
           </div>
 
-          {/* Visual references */}
           {Array.isArray(aiPalette.visual_references) && (
             <Card className="p-4 bg-card/50 border-border/30">
               <h4 className="text-xs font-semibold text-foreground mb-2">🖼️ Referências Visuais Sugeridas</h4>
