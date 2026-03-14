@@ -286,8 +286,8 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
                       <div className={cn(
                         "inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[9px] font-medium",
                         milestone.severity === "critical" 
-                          ? "bg-red-500/20 text-red-400" 
-                          : "bg-amber-500/20 text-amber-400"
+                          ? "bg-destructive/20 text-destructive" 
+                          : "bg-muted text-muted-foreground"
                       )}>
                         <span className="w-1.5 h-1.5 rounded-full bg-current" />
                         {milestone.severity === "critical" ? "Crítico" : "Risco"}
