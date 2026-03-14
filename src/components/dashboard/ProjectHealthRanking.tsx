@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Activity } from 'lucide-react';
+import { sc } from '@/lib/colors';
 
 interface ProjectRisk {
   id: string;
