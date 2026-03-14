@@ -107,7 +107,7 @@ export default function CashflowPage() {
             <div>
               <p className="text-sm text-muted-foreground">Saldo Atual</p>
               <h2 className={`text-3xl font-semibold mt-1 ${
-                stats.currentBalance >= 0 ? 'text-emerald-500' : 'text-red-500'
+                stats.currentBalance >= 0 ? 'text-primary' : 'text-destructive'
               }`}>
                 {formatCurrency(stats.currentBalance)}
               </h2>
