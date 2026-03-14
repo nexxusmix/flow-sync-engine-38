@@ -129,30 +129,45 @@ function PortalClientUploadsComponent({
             <StaggerContainer className="divide-y divide-[#1a1a1a]">
               {clientUploads.slice(0, 5).map((upload) => (
                 <StaggerItem key={upload.id}>
-                  <div className="px-5 py-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors">
-                    <div className={cn(
-                      "w-8 h-8 flex items-center justify-center",
-                      upload.youtube_url ? "bg-red-500/10" : 
-                      upload.external_url ? "bg-cyan-500/10" : "bg-purple-500/10"
-                    )}>
-                      {upload.youtube_url ? (
-                        <Youtube className="w-4 h-4 text-red-500" />
-                      ) : upload.external_url ? (
-                        <Link2 className="w-4 h-4 text-cyan-500" />
-                      ) : (
-                        <FileUp className="w-4 h-4 text-purple-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white truncate">{upload.title}</p>
-                      {upload.description && (
-                        <p className="text-[10px] text-gray-500 truncate">{upload.description}</p>
-                      )}
-                    </div>
-                    <span className="text-[9px] uppercase tracking-wider text-gray-600 bg-[#1a1a1a] px-2 py-0.5">
-                      Enviado
-                    </span>
-                  </div>
+                    <a 
+                      href={upload.external_url || upload.youtube_url || upload.file_url || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-5 py-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors group"
+                    >
+                      {/* Icon / Thumbnail */}
+                      {(() => {
+                        const isDrive = upload.external_url && upload.external_url.includes('drive.google.com');
+                        return (
+                          <div className={cn(
+                            "w-10 h-10 flex items-center justify-center shrink-0 overflow-hidden",
+                            upload.youtube_url ? "bg-red-500/10" :
+                            isDrive ? "bg-green-500/10" :
+                            upload.external_url ? "bg-cyan-500/10" : "bg-purple-500/10"
+                          )}>
+                            {upload.youtube_url ? (
+                              <Youtube className="w-4 h-4 text-red-500" />
+                            ) : isDrive ? (
+                              <HardDrive className="w-4 h-4 text-green-500" />
+                            ) : upload.external_url ? (
+                              <Link2 className="w-4 h-4 text-cyan-500" />
+                            ) : (
+                              <FileUp className="w-4 h-4 text-purple-500" />
+                            )}
+                          </div>
+                        );
+                      })()}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white truncate">{upload.title}</p>
+                        {upload.description && (
+                          <p className="text-[10px] text-gray-500 truncate">{upload.description}</p>
+                        )}
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      <span className="text-[9px] uppercase tracking-wider text-gray-600 bg-[#1a1a1a] px-2 py-0.5">
+                        Enviado
+                      </span>
+                    </a>
                 </StaggerItem>
               ))}
             </StaggerContainer>

@@ -515,6 +515,8 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
 
       if (type === 'youtube') {
         insertData.youtube_url = url;
+      } else if (type === 'drive') {
+        insertData.external_url = url;
       } else if (type === 'link') {
         insertData.external_url = url;
       } else if (type === 'file' && url) {

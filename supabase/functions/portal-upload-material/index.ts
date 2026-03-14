@@ -132,6 +132,9 @@ serve(async (req) => {
     if (type === "youtube") {
       insertData.youtube_url = url;
       insertData.type = "video";
+    } else if (type === "drive") {
+      insertData.external_url = url;
+      insertData.type = "drive";
     } else if (type === "link") {
       insertData.external_url = url;
       insertData.type = "link";

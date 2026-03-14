@@ -514,7 +514,7 @@ function ClientUploadDialogComponent({
                         {item.preview ? (
                           <img src={item.preview} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-destructive' : 'text-primary')} />
+                          <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-destructive' : item.type === 'drive' ? 'text-green-500' : 'text-primary')} />
                         )}
                         {/* Status overlay */}
                         {isItemSending && (
