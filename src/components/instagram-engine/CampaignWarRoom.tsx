@@ -62,7 +62,7 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
         <Shield className="w-5 h-5 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">War Room — Comando Central</h3>
         {metrics.daysLeft !== null && (
-          <Badge className={`text-[9px] ml-auto ${metrics.daysLeft <= 3 ? 'bg-red-500/15 text-red-400 animate-pulse' : 'bg-primary/15 text-primary'}`}>
+          <Badge className={`text-[9px] ml-auto ${metrics.daysLeft <= 3 ? 'bg-destructive/15 text-destructive animate-pulse' : 'bg-primary/15 text-primary'}`}>
             {metrics.daysLeft > 0 ? `${metrics.daysLeft} dias restantes` : 'Prazo encerrado'}
           </Badge>
         )}
