@@ -224,7 +224,7 @@ function VideoPlayerWithMarkersComponent({
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs border-[#2a2a2a] text-amber-400 hover:text-amber-300 hover:border-amber-500/50"
+            className="h-7 text-xs border-[#2a2a2a] text-muted-foreground hover:text-foreground hover:border-border"
             onClick={onRequestRevision}
           >
             <AlertCircle className="w-3.5 h-3.5 mr-1.5" />
