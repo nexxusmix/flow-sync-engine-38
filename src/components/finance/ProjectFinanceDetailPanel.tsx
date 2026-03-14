@@ -318,7 +318,7 @@ export function ProjectFinanceDetailPanel({
         </div>
         <div className="flex justify-between items-center py-2">
           <span className="text-sm font-medium text-foreground">Lucro</span>
-          <span className={`font-semibold ${project.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+          <span className={`font-semibold ${project.profit >= 0 ? 'text-primary' : 'text-destructive'}`}>
             {formatCurrency(project.profit)}
           </span>
         </div>
