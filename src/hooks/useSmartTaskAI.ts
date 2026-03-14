@@ -110,7 +110,7 @@ export function useSmartTaskAI(tasks: Task[]) {
           id, user_id: rest.user_id, title: rest.title, description: rest.description,
           status: rest.status, category: rest.category, tags: rest.tags,
           due_date: rest.due_date, completed_at: rest.completed_at, position: rest.position,
-        } as any);
+        });
         if (error) console.error('Undo error for', id, error);
       }
       toast.success(`Ação "${entry.action}" desfeita com sucesso!`);
