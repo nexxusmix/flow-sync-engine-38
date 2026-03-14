@@ -172,7 +172,7 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
         </Card>
 
         {/* Category Pie Chart */}
-        <Card className="glass-card p-5">
+        <Card className="glass-card p-3 md:p-5">
           <h3 className="text-sm font-medium text-foreground mb-4">Por Categoria</h3>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
