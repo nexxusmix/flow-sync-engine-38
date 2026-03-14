@@ -218,7 +218,7 @@ export function UnifiedInboxView() {
             <div className="divide-y divide-border/50">
               {items.map((item) => {
                 const pStyle = priorityStyle(item.priority);
-                const Icon = typeIcon[item.type || "notification"] || Bell;
+                const Icon = typeIcon[item.item_type || "notification"] || Bell;
                 const isSelected = selectedId === item.id;
                 const isChecked = selectedIds.has(item.id);
 
