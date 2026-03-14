@@ -32,8 +32,8 @@ interface ActionItemsPanelProps {
 
 const statusConfig = {
   aberto: { icon: Circle, label: 'Aberto', color: 'text-muted-foreground' },
-  em_andamento: { icon: Clock, label: 'Em Andamento', color: 'text-amber-500' },
-  concluido: { icon: CheckCircle2, label: 'Concluído', color: 'text-emerald-500' },
+  em_andamento: { icon: Clock, label: 'Em Andamento', color: 'text-muted-foreground' },
+  concluido: { icon: CheckCircle2, label: 'Concluído', color: 'text-primary' },
 };
 
 export function ActionItemsPanel({ actionItems, projectId }: ActionItemsPanelProps) {
