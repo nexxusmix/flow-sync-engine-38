@@ -1688,3 +1688,23 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Responsive grid utility via Tailwind-compatible media queries */
+@media (min-width: 640px) {
+  .responsive-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .responsive-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1280px) {
+  .responsive-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Landscape-specific adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Very short landscape phones — reduce vertical padding */
+  .landing-section {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
