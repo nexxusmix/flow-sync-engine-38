@@ -123,6 +123,7 @@ import MkInstagramPage from "./pages/marketing-hub/MkInstagramPage";
 import MkTemplatesPage from "./pages/marketing-hub/MkTemplatesPage";
 import MkIdeasPage from "./pages/marketing-hub/MkIdeasPage";
 import InstagramEnginePage from "./pages/InstagramEnginePage";
+import AgencyAutomationsPage from "./pages/AgencyAutomationsPage";
 
 
 const queryClient = new QueryClient();
@@ -159,6 +160,7 @@ function AppRoutes() {
       <Route path="/tarefas" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
       <Route path="/avisos" element={<ProtectedRoute><AlertsBoardPage /></ProtectedRoute>} />
       <Route path="/central-acoes" element={<ProtectedRoute><ActionHubPage /></ProtectedRoute>} />
+      <Route path="/automacoes-agencia" element={<ProtectedRoute><AgencyAutomationsPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/clientes" element={<ProtectedRoute><ClientesPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
