@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { useInstagramConnection, useConnectInstagramManual, useDisconnectInstagram, useScrapeInstagramProfile } from '@/hooks/useInstagramAPI';
 import { useProfileSnapshots } from '@/hooks/useInstagramEngine';
-import { Loader2, Link2, Unlink, Instagram, Save, RefreshCw } from 'lucide-react';
+import { Loader2, Link2, Unlink, Instagram, Save, RefreshCw, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,9 +24,40 @@ export function InstagramMetaConnect() {
   const [following, setFollowing] = useState('');
   const [postsCount, setPostsCount] = useState('');
   const [saving, setSaving] = useState(false);
+  const [connectingOAuth, setConnectingOAuth] = useState(false);
   const qc = useQueryClient();
 
   const latestSnapshot = snapshots?.[0];
+  const isOAuthConnected = connection?.access_token && connection.access_token !== 'manual';
+
+  // Meta OAuth flow
+  const handleMetaOAuth = async () => {
+    setConnectingOAuth(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('instagram-oauth', {
+        body: {
+          action: 'get_auth_url',
+          redirect_uri: `${window.location.origin}/integrations/instagram/callback`,
+          workspace_id: '00000000-0000-0000-0000-000000000000',
+        },
+      });
+
+      if (error || !data?.url) {
+        // OAuth not configured — fall back to manual
+        toast.error('Integração Meta ainda não configurada. Use a conexão manual abaixo.');
+        setConnectingOAuth(false);
+        return;
+      }
+
+      // Open Meta OAuth in new window
+      window.open(data.url, '_blank', 'width=600,height=700');
+      toast.info('Complete a autorização na janela do Facebook.');
+    } catch {
+      toast.error('Erro ao iniciar autorização Meta.');
+    } finally {
+      setConnectingOAuth(false);
+    }
+  };
 
   if (loadingConn) {
     return <Card className="glass-card p-5"><Skeleton className="h-20 w-full" /></Card>;
@@ -41,15 +72,41 @@ export function InstagramMetaConnect() {
 
     return (
       <Card className="glass-card p-5 border border-dashed border-primary/30">
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center">
             <Instagram className="w-5 h-5 text-white" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Conectar Instagram</h3>
-            <p className="text-xs text-muted-foreground">Insira seu @ para registrar métricas manualmente</p>
+            <p className="text-xs text-muted-foreground">Conecte via Meta ou insira o @ manualmente</p>
           </div>
         </div>
+
+        {/* Meta OAuth button */}
+        <Button
+          onClick={handleMetaOAuth}
+          disabled={connectingOAuth}
+          className="w-full mb-3 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white hover:opacity-90"
+          size="sm"
+        >
+          {connectingOAuth ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            <ExternalLink className="w-4 h-4 mr-2" />
+          )}
+          Conectar via Meta (Recomendado)
+        </Button>
+
+        <div className="relative my-3">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border/50" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-card px-3 text-[10px] text-muted-foreground uppercase">ou conecte manualmente</span>
+          </div>
+        </div>
+
+        {/* Manual connect */}
         <div className="flex gap-2">
           <Input
             value={username}
@@ -61,7 +118,7 @@ export function InstagramMetaConnect() {
           <Button
             onClick={handleConnect}
             disabled={!username.trim() || connectMutation.isPending}
-            className="bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white hover:opacity-90"
+            variant="outline"
             size="sm"
           >
             {connectMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4 mr-1" />}
@@ -114,11 +171,13 @@ export function InstagramMetaConnect() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-foreground">@{connection.ig_username}</span>
-              <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px]">Conectado</Badge>
+              <Badge className={`text-[9px] ${isOAuthConnected ? 'bg-primary/10 text-primary border-primary/20' : 'bg-muted text-muted-foreground border-border'}`}>
+                {isOAuthConnected ? 'Meta API' : 'Manual'}
+              </Badge>
             </div>
             <p className="text-[10px] text-muted-foreground">
               <a href={`https://instagram.com/${connection.ig_username}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                https://www.instagram.com/{connection.ig_username}/
+                instagram.com/{connection.ig_username}
               </a>
               {' · '}
               {connection.connected_at && formatDistanceToNow(new Date(connection.connected_at), { addSuffix: true, locale: ptBR })}
@@ -126,6 +185,18 @@ export function InstagramMetaConnect() {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {!isOAuthConnected && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMetaOAuth}
+              disabled={connectingOAuth}
+              className="text-xs text-primary hover:text-primary/80"
+              title="Fazer upgrade para Meta API"
+            >
+              {connectingOAuth ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -165,46 +236,49 @@ export function InstagramMetaConnect() {
         </div>
       )}
 
-      <div className="mt-3 border-t border-border/40 pt-3">
-        <p className="text-[10px] text-muted-foreground mb-2">
-          {!latestSnapshot 
-            ? '⚠️ Nenhum snapshot salvo. Insira as métricas atuais do perfil:' 
-            : 'Atualizar métricas manualmente'}
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          <Input
-            type="number"
-            value={followers}
-            onChange={(e) => setFollowers(e.target.value)}
-            placeholder="Seguidores"
-            className="text-xs h-8"
-          />
-          <Input
-            type="number"
-            value={following}
-            onChange={(e) => setFollowing(e.target.value)}
-            placeholder="Seguindo"
-            className="text-xs h-8"
-          />
-          <Input
-            type="number"
-            value={postsCount}
-            onChange={(e) => setPostsCount(e.target.value)}
-            placeholder="Posts"
-            className="text-xs h-8"
-          />
+      {/* Manual snapshot entry — only show if not OAuth connected or no snapshot */}
+      {(!isOAuthConnected || !latestSnapshot) && (
+        <div className="mt-3 border-t border-border/40 pt-3">
+          <p className="text-[10px] text-muted-foreground mb-2">
+            {!latestSnapshot 
+              ? '⚠️ Nenhum snapshot salvo. Insira as métricas atuais do perfil:' 
+              : 'Atualizar métricas manualmente'}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <Input
+              type="number"
+              value={followers}
+              onChange={(e) => setFollowers(e.target.value)}
+              placeholder="Seguidores"
+              className="text-xs h-8"
+            />
+            <Input
+              type="number"
+              value={following}
+              onChange={(e) => setFollowing(e.target.value)}
+              placeholder="Seguindo"
+              className="text-xs h-8"
+            />
+            <Input
+              type="number"
+              value={postsCount}
+              onChange={(e) => setPostsCount(e.target.value)}
+              placeholder="Posts"
+              className="text-xs h-8"
+            />
+          </div>
+          <Button
+            onClick={handleSaveSnapshot}
+            disabled={saving}
+            size="sm"
+            className="w-full mt-2 text-xs"
+            variant="outline"
+          >
+            {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />}
+            Salvar Snapshot
+          </Button>
         </div>
-        <Button
-          onClick={handleSaveSnapshot}
-          disabled={saving}
-          size="sm"
-          className="w-full mt-2 text-xs"
-          variant="outline"
-        >
-          {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />}
-          Salvar Snapshot
-        </Button>
-      </div>
+      )}
     </Card>
   );
 }
