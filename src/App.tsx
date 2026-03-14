@@ -66,6 +66,8 @@ import DangerZoneSettingsPage from "./pages/settings/DangerZoneSettingsPage";
 import UsersSettingsPage from "./pages/settings/UsersSettingsPage";
 import TeamSettingsPage from "./pages/settings/TeamSettingsPage";
 import AiUsageDashboardPage from "./pages/settings/AiUsageDashboardPage";
+import InstallPage from "./pages/InstallPage";
+import { PWAInstallBanner } from "./components/pwa/PWAInstallBanner";
 
 // Prospecção Pages
 import ProspectingPage from "./pages/prospecting/ProspectingPage";
