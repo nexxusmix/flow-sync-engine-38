@@ -523,7 +523,7 @@ export default function ClientPortalPage() {
                         <span className="font-medium text-sm">{comment.author_name}</span>
                         <div className="flex items-center gap-2">
                           {comment.status === 'revision_requested' && (
-                            <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500">
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground border-border">
                               Revisão
                             </Badge>
                           )}
