@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Zap, History, Shield, LayoutTemplate } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { AutomationsList } from "@/components/automations/AutomationsList";
 import { AutomationCreator } from "@/components/automations/AutomationCreator";
 import { AutomationExecutionHistory } from "@/components/automations/AutomationExecutionHistory";
