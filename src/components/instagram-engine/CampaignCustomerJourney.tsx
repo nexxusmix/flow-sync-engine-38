@@ -49,7 +49,7 @@ export function CampaignCustomerJourney({ campaign, posts }: Props) {
           <h4 className="text-sm font-semibold text-foreground">Jornada do Seguidor</h4>
           <p className="text-[10px] text-muted-foreground">
             {journeyData.coverage}/4 etapas cobertas
-            {journeyData.gaps.length > 0 && <span className="text-amber-400 ml-1">· Gaps: {journeyData.gaps.join(', ')}</span>}
+            {journeyData.gaps.length > 0 && <span className="text-muted-foreground ml-1">· Gaps: {journeyData.gaps.join(', ')}</span>}
           </p>
         </div>
       </div>
