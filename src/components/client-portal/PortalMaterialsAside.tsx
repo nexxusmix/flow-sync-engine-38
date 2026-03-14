@@ -154,7 +154,7 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
+              <p className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
                 {file.name}
               </p>
               <p className="text-xs text-gray-500">{file.folder || 'Arquivo'}</p>
