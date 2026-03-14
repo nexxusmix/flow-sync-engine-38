@@ -127,9 +127,9 @@ export default function ClientPortalPage() {
         <div className="glass-card rounded-3xl p-8 max-w-md text-center space-y-4">
           <div className={cn(
             "w-16 h-16 rounded-full flex items-center justify-center mx-auto",
-            isInactive ? "bg-muted" : isExpired ? "bg-amber-500/20" : "bg-destructive/20"
+            isInactive ? "bg-muted" : isExpired ? "bg-muted" : "bg-destructive/20"
           )}>
-            {isInactive ? <Lock className="w-8 h-8 text-muted-foreground" /> : <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-amber-500" : "text-destructive")} />}
+            {isInactive ? <Lock className="w-8 h-8 text-muted-foreground" /> : <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-muted-foreground" : "text-destructive")} />}
           </div>
           <h1 className="text-xl font-bold text-foreground">
             {isInactive ? 'Portal Desativado' : isExpired ? 'Link Expirado' : 'Link Inválido'}
