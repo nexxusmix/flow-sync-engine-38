@@ -4,7 +4,7 @@ import { MkCard, MkStatusBadge, MkEmptyState, MkSectionHeader } from "@/componen
 import { useMarketingStore } from "@/stores/marketingStore";
 import { ContentItem, CONTENT_ITEM_STAGES } from "@/types/marketing";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, MessageSquare, ChevronDown, Send, Clock, AlertTriangle, FileText, Sparkles, Eye } from "lucide-react";
+import { CheckCircle, XCircle, MessageSquare, ChevronDown, Send, Clock, AlertTriangle, FileText, Sparkles, Eye, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { SendToClientApproval } from "@/components/marketing-hub/pipeline/SendToClientApproval";
+import { ContentStatusTimeline } from "@/components/marketing-hub/pipeline/ContentStatusTimeline";
 
 const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
 
