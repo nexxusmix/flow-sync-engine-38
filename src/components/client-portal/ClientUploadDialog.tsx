@@ -413,11 +413,16 @@ function ClientUploadDialogComponent({
               <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} accept="*/*" />
 
               {/* Add link buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button onClick={() => setLinkMode('youtube')}
                   className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
                     linkMode === 'youtube' ? "border-red-500/40 bg-red-500/10 text-red-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
                   <Youtube className="w-3.5 h-3.5" /> YouTube
+                </button>
+                <button onClick={() => setLinkMode('drive')}
+                  className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
+                    linkMode === 'drive' ? "border-green-500/40 bg-green-500/10 text-green-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
+                  <HardDrive className="w-3.5 h-3.5" /> Google Drive
                 </button>
                 <button onClick={() => setLinkMode('link')}
                   className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
