@@ -147,7 +147,7 @@ export function PortalDeliverables({ project, deliverables }: PortalDeliverables
               ))
             ) : (
               <div className="glass-card rounded-xl p-8 text-center min-h-[120px] flex flex-col items-center justify-center">
-                <CheckCircle className="w-10 h-10 text-emerald-500 mb-3" />
+                <CheckCircle className="w-10 h-10 text-primary mb-3" />
                 <p className="text-sm text-muted-foreground font-light">Nenhum item pendente de revisão</p>
                 <p className="text-xs text-muted-foreground/60 mt-1">Todas as entregas foram revisadas</p>
               </div>

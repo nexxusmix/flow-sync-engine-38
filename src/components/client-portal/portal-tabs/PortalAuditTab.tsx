@@ -81,9 +81,9 @@ function PortalAuditTabComponent({ comments, approvals, versions }: PortalAuditT
       case 'comment':
         return 'text-blue-500 bg-blue-500/20';
       case 'approval':
-        return 'text-emerald-500 bg-emerald-500/20';
+        return 'text-primary bg-primary/20';
       case 'version':
-        return 'text-violet-500 bg-violet-500/20';
+        return 'text-primary/70 bg-primary/10';
       default:
         return 'text-muted-foreground bg-muted';
     }

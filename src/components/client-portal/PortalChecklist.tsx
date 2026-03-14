@@ -83,12 +83,12 @@ export function PortalChecklist({ project }: PortalChecklistProps) {
               </Button>
             )}
             {item.status === 'enviado' && (
-              <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded">
+              <span className="text-xs text-primary/70 bg-primary/10 px-2 py-1 rounded">
                 Aguardando aprovação
               </span>
             )}
             {item.status === 'aprovado' && (
-              <span className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">
+              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
                 Aprovado
               </span>
             )}

@@ -102,7 +102,7 @@ function PortalNextStepsComponent({ stages, currentStageKey }: PortalNextStepsPr
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${
-                    isCurrent ? 'text-primary' : isCompleted ? 'text-emerald-400' : 'text-muted-foreground'
+                    isCurrent ? 'text-primary' : isCompleted ? 'text-primary/70' : 'text-muted-foreground'
                   }`}>
                     {stageName}
                   </p>
