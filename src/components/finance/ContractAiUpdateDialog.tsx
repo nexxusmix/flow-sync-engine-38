@@ -413,8 +413,8 @@ export function ContractAiUpdateDialog({
         {/* DONE STEP */}
         {step === "done" && (
           <div className="flex flex-col items-center py-10 gap-3">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-emerald-500" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-primary" />
             </div>
             <p className="text-sm font-medium text-foreground">Contrato atualizado com sucesso!</p>
           </div>

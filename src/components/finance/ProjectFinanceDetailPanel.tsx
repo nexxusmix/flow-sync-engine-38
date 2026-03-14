@@ -355,7 +355,7 @@ export function ProjectFinanceDetailPanel({
           {expenses.map(e => (
             <div key={e.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
               <span className="text-muted-foreground truncate mr-2">{e.description}</span>
-              <span className="text-red-600">
+              <span className="text-destructive">
                 {formatCurrency(Number(e.amount))}
               </span>
             </div>
