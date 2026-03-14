@@ -243,7 +243,7 @@ export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetail
             {summary.decisions.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                   Decisões
                 </h4>
                 <ul className="space-y-1">
