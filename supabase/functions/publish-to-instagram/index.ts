@@ -38,11 +38,13 @@ serve(async (req) => {
 
     if (!post_id) throw new Error("post_id é obrigatório");
 
+    const workspace_id = body.workspace_id || "00000000-0000-0000-0000-000000000000";
+
     // Get connection
     const { data: conn, error: connErr } = await supabase
       .from("instagram_connections")
       .select("*")
-      .eq("workspace_id", "00000000-0000-0000-0000-000000000000")
+      .eq("workspace_id", workspace_id)
       .order("connected_at", { ascending: false })
       .limit(1)
       .single();
