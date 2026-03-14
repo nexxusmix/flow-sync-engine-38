@@ -93,6 +93,6 @@ export default function AgencyAutomationsPage() {
           />
         )}
       </div>
-    </AppLayout>
+    </DashboardLayout>
   );
 }
