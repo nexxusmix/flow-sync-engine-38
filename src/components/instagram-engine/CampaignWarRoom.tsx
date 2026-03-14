@@ -62,7 +62,7 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
         <Shield className="w-5 h-5 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">War Room — Comando Central</h3>
         {metrics.daysLeft !== null && (
-          <Badge className={`text-[9px] ml-auto ${metrics.daysLeft <= 3 ? 'bg-red-500/15 text-red-400 animate-pulse' : 'bg-primary/15 text-primary'}`}>
+          <Badge className={`text-[9px] ml-auto ${metrics.daysLeft <= 3 ? 'bg-destructive/15 text-destructive animate-pulse' : 'bg-primary/15 text-primary'}`}>
             {metrics.daysLeft > 0 ? `${metrics.daysLeft} dias restantes` : 'Prazo encerrado'}
           </Badge>
         )}
@@ -98,12 +98,12 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
             </div>
             <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${
-                metrics.completionPct >= progressPct ? 'bg-emerald-400/60' : 'bg-amber-400/60'
+                metrics.completionPct >= progressPct ? 'bg-primary/60' : 'bg-muted-foreground/60'
               }`} style={{ width: `${metrics.completionPct}%` }} />
             </div>
           </div>
           {metrics.completionPct < progressPct && (
-            <div className="text-[9px] text-amber-400 flex items-center gap-1">
+            <div className="text-[9px] text-muted-foreground flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" /> Produção atrás do cronograma ({progressPct - metrics.completionPct}% de gap)
             </div>
           )}
@@ -121,21 +121,21 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <Flame className="w-3.5 h-3.5 text-muted-foreground" />
           </div>
           <div className="text-lg font-bold text-foreground">{metrics.formatCoverage}%</div>
           <div className="text-[8px] text-muted-foreground">Cobertura formatos</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
+            <Clock className="w-3.5 h-3.5 text-primary" />
           </div>
           <div className="text-lg font-bold text-foreground">{metrics.review}</div>
           <div className="text-[8px] text-muted-foreground">Aguardando revisão</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
           </div>
           <div className="text-lg font-bold text-foreground">{metrics.overdue.length}</div>
           <div className="text-[8px] text-muted-foreground">Atrasados</div>
@@ -149,7 +149,7 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
           <div className="space-y-2">
             {metrics.bottlenecks.map((b, i) => (
               <div key={i} className="flex items-center gap-2 p-2 bg-background/40 rounded">
-                <Badge className={`text-[7px] ${b.severity === 'high' ? 'bg-red-400/10 text-red-400' : b.severity === 'medium' ? 'bg-amber-400/10 text-amber-400' : 'bg-primary/10 text-primary'}`}>
+                <Badge className={`text-[7px] ${b.severity === 'high' ? 'bg-destructive/10 text-destructive' : b.severity === 'medium' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
                   {b.severity}
                 </Badge>
                 <span className="text-[10px] text-foreground">{b.label}</span>
@@ -162,14 +162,14 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
       {/* Overdue posts */}
       {metrics.overdue.length > 0 && (
         <Card className="p-4 bg-card/50 border-border/30">
-          <h4 className="text-xs font-semibold text-red-400 mb-3">⏰ Posts Atrasados</h4>
+          <h4 className="text-xs font-semibold text-destructive mb-3">⏰ Posts Atrasados</h4>
           <div className="space-y-2">
             {metrics.overdue.slice(0, 8).map(p => (
-              <div key={p.id} className="flex items-center gap-2 p-2 bg-red-500/5 rounded text-[10px]">
+              <div key={p.id} className="flex items-center gap-2 p-2 bg-destructive/5 rounded text-[10px]">
                 <Badge variant="outline" className="text-[7px]">{FORMATS.find(f => f.key === p.format)?.label || p.format}</Badge>
                 <span className="text-foreground font-medium flex-1 truncate">{p.title}</span>
                 {p.scheduled_at && (
-                  <span className="text-red-400 text-[9px] shrink-0">
+                  <span className="text-destructive text-[9px] shrink-0">
                     {format(parseISO(p.scheduled_at), 'dd/MM', { locale: ptBR })}
                   </span>
                 )}
@@ -203,9 +203,9 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
       </Card>
 
       {metrics.bottlenecks.length === 0 && metrics.overdue.length === 0 && (
-        <Card className="p-4 bg-emerald-500/5 border-emerald-500/10 text-center">
-          <CheckCircle className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
-          <p className="text-xs text-emerald-400 font-medium">Tudo sob controle! 🎯</p>
+        <Card className="p-4 bg-primary/5 border-primary/10 text-center">
+          <CheckCircle className="w-6 h-6 text-primary mx-auto mb-1" />
+          <p className="text-xs text-primary font-medium">Tudo sob controle! 🎯</p>
           <p className="text-[9px] text-muted-foreground">Sem gargalos ou atrasos detectados</p>
         </Card>
       )}

@@ -254,14 +254,14 @@ export function WhatsAppMessageModal({ alert, open, onClose, onResolved }: Whats
                       size="sm"
                       className="text-[10px] font-mono uppercase bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04]"
                     >
-                      {copied ? <Check className="w-3 h-3 mr-1.5 text-emerald-400" /> : <Copy className="w-3 h-3 mr-1.5" />}
+                      {copied ? <Check className="w-3 h-3 mr-1.5 text-primary" /> : <Copy className="w-3 h-3 mr-1.5" />}
                       {copied ? "Copiado!" : "Copiar"}
                     </Button>
                     <Button
                       onClick={sendWhatsApp}
                       variant="ghost"
                       size="sm"
-                      className="text-[10px] font-mono uppercase bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
+                      className="text-[10px] font-mono uppercase bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
                     >
                       <Send className="w-3 h-3 mr-1.5" /> Enviar WhatsApp
                     </Button>

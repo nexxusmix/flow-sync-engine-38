@@ -286,7 +286,7 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
           {/* Alerts */}
           <div className="flex flex-wrap gap-2 mb-4">
             {project.has_payment_block && (
-              <span className="px-2 py-1 bg-red-500/10 text-red-400 text-[8px] font-medium rounded-full flex items-center gap-1">
+              <span className="px-2 py-1 bg-destructive/10 text-destructive text-[8px] font-medium rounded-full flex items-center gap-1">
                 <span className="material-symbols-outlined text-[10px]">block</span>
                 Bloqueio Financeiro
               </span>

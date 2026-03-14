@@ -99,9 +99,9 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "critical":
-        return "bg-red-500";
+        return "bg-destructive";
       case "risk":
-        return "bg-amber-500";
+        return "bg-muted-foreground";
       default:
         return "bg-muted-foreground/60";
     }
@@ -286,8 +286,8 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
                       <div className={cn(
                         "inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[9px] font-medium",
                         milestone.severity === "critical" 
-                          ? "bg-red-500/20 text-red-400" 
-                          : "bg-amber-500/20 text-amber-400"
+                          ? "bg-destructive/20 text-destructive" 
+                          : "bg-muted text-muted-foreground"
                       )}>
                         <span className="w-1.5 h-1.5 rounded-full bg-current" />
                         {milestone.severity === "critical" ? "Crítico" : "Risco"}
@@ -309,8 +309,8 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
               animate={isInView ? { opacity: 1 } : { opacity: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/5 border border-emerald-500/10">
-                <div className="w-2 h-2 rounded-full bg-emerald-500/60" />
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-primary/5 border border-primary/10">
+                <div className="w-2 h-2 rounded-full bg-primary/60" />
                 <p className="text-xs text-muted-foreground font-light">Nenhum evento crítico nos próximos 30 dias</p>
               </div>
             </motion.div>

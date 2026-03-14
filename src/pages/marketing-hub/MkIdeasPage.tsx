@@ -285,7 +285,7 @@ export default function MkIdeasPage() {
           <button
             onClick={handleGenerateIdeas}
             disabled={isGeneratingIdeas}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-purple-500/25 bg-purple-500/8 text-purple-300 text-[10px] font-medium hover:bg-purple-500/15 transition-colors uppercase tracking-wider disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-primary/25 bg-primary/8 text-primary text-[10px] font-medium hover:bg-primary/15 transition-colors uppercase tracking-wider disabled:opacity-50"
           >
             {isGeneratingIdeas ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             {isGeneratingIdeas ? "Gerando..." : "Gerar 10 com IA"}

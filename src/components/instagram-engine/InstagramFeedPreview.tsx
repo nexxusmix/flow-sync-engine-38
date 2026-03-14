@@ -250,10 +250,10 @@ export function InstagramFeedPreview({ posts, config, snapshot }: InstagramFeedP
                         {status && post.status !== 'published' && (
                           <div className="absolute bottom-1.5 left-1.5">
                             <div className={`w-2 h-2 rounded-full ${
-                              post.status === 'scheduled' ? 'bg-cyan-400' :
-                              post.status === 'ready' ? 'bg-emerald-400' :
-                              post.status === 'in_production' ? 'bg-amber-400' :
-                              post.status === 'planned' ? 'bg-blue-400' :
+                              post.status === 'scheduled' ? 'bg-primary/60' :
+                              post.status === 'ready' ? 'bg-primary' :
+                              post.status === 'in_production' ? 'bg-muted-foreground' :
+                              post.status === 'planned' ? 'bg-primary/40' :
                               'bg-muted-foreground/40'
                             }`} />
                           </div>

@@ -94,7 +94,7 @@ function CampaignCard({
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-10 h-10 rounded-xl flex items-center justify-center",
-            campaign.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'
+            campaign.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
           )}>
             <Megaphone className="w-5 h-5" />
           </div>
@@ -392,7 +392,7 @@ export default function CampaignsPage() {
         {activeCampaigns.length > 0 && (
           <div>
             <h2 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="w-2 h-2 rounded-full bg-primary" />
               Ativas
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -609,7 +609,7 @@ export default function CampaignsPage() {
                 {/* Script Section */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
                     Roteiro Base
                   </h4>
                   <div className="space-y-2 pl-3 border-l-2 border-muted">
@@ -638,7 +638,7 @@ export default function CampaignsPage() {
                 {generatedPackage.content_suggestions && generatedPackage.content_suggestions.length > 0 && (
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                       Sugestões de Conteúdo
                     </h4>
                     <div className="space-y-2">
