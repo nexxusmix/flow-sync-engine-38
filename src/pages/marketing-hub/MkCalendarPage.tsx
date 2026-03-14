@@ -477,8 +477,8 @@ function ContentChip({ item, compact = false, draggable = false, onDragStart, on
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
 
   const statusColor = item.status === "published" ? "bg-primary/20 text-primary"
-    : item.status === "approved" || item.status === "scheduled" ? "bg-emerald-500/20 text-emerald-400"
-    : item.status === "review" ? "bg-amber-500/20 text-amber-400"
+    : item.status === "approved" || item.status === "scheduled" ? "bg-primary/20 text-primary"
+    : item.status === "review" ? "bg-muted text-muted-foreground"
     : "bg-muted/30 text-muted-foreground";
 
   return (
