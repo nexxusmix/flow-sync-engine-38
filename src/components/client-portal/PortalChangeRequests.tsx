@@ -123,7 +123,7 @@ function RequestItem({ request }: { request: ChangeRequest }) {
             <div className="mt-3 pt-3 border-t border-border/50">
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{request.description}</p>
               {request.resolved_at && request.resolved_by && (
-                <p className="text-[10px] text-emerald-500 mt-2">
+                <p className="text-[10px] text-primary mt-2">
                   ✓ Resolvido por {request.resolved_by} em {format(new Date(request.resolved_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </p>
               )}
