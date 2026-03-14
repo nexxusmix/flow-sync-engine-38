@@ -192,7 +192,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Visual Direction */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Layout className="w-3.5 h-3.5 text-pink-400" />
+                <Layout className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Direção Visual</span>
               </div>
               <p className="text-[10px] text-foreground/80 leading-relaxed">{briefing.visual_direction}</p>
