@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InstagramCampaign, InstagramPost, useInstagramAI, useUpdatePost } from '@/hooks/useInstagramEngine';
-import { GitCompare, Sparkles, Loader2, Plus, Trophy, Eye, ArrowRight, Trash2 } from 'lucide-react';
+import { GitCompare, Sparkles, Loader2, Plus, Trophy, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   campaign: InstagramCampaign;
@@ -16,13 +17,15 @@ interface Props {
 
 interface ABTest {
   id: string;
+  campaign_id: string;
+  post_id: string;
   name: string;
-  field: 'hook' | 'caption_short' | 'cta';
-  postId: string;
-  variantA: string;
-  variantB: string;
-  winner: 'a' | 'b' | null;
-  status: 'running' | 'completed';
+  field: string;
+  variant_a: string;
+  variant_b: string;
+  winner: string | null;
+  status: string;
+  created_at: string;
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -31,41 +34,63 @@ const FIELD_LABELS: Record<string, string> = {
   cta: 'CTA',
 };
 
+function useABTests(campaignId: string) {
+  return useQuery({
+    queryKey: ['instagram-ab-tests', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_ab_tests')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: false }) as any;
+      if (error) throw error;
+      return (data || []) as ABTest[];
+    },
+  });
+}
+
 export function CampaignABTestFramework({ campaign, posts }: Props) {
   const ai = useInstagramAI();
   const updatePost = useUpdatePost();
-  const [tests, setTests] = useState<ABTest[]>([]);
+  const qc = useQueryClient();
+  const { data: tests = [], isLoading } = useABTests(campaign.id);
   const [creating, setCreating] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
 
-  // New test form
   const [newTest, setNewTest] = useState({
     name: '',
-    field: 'hook' as 'hook' | 'caption_short' | 'cta',
+    field: 'hook' as string,
     postId: '',
   });
 
   const selectedPost = posts.find(p => p.id === newTest.postId);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newTest.name || !newTest.postId || !selectedPost) {
       toast.error('Preencha nome e selecione um post');
       return;
     }
 
-    const originalValue = selectedPost[newTest.field] || '';
-    const test: ABTest = {
-      id: crypto.randomUUID(),
-      name: newTest.name,
-      field: newTest.field,
-      postId: newTest.postId,
-      variantA: originalValue,
-      variantB: '',
-      winner: null,
-      status: 'running',
-    };
+    const originalValue = (selectedPost as any)[newTest.field] || '';
 
-    setTests(prev => [...prev, test]);
+    const { error } = await (supabase
+      .from('instagram_ab_tests') as any)
+      .insert({
+        campaign_id: campaign.id,
+        post_id: newTest.postId,
+        name: newTest.name,
+        field: newTest.field,
+        variant_a: originalValue,
+        variant_b: '',
+        status: 'running',
+      });
+
+    if (error) {
+      toast.error('Erro ao criar teste');
+      return;
+    }
+
+    qc.invalidateQueries({ queryKey: ['instagram-ab-tests', campaign.id] });
     setCreating(false);
     setNewTest({ name: '', field: 'hook', postId: '' });
     toast.success('Teste A/B criado!');
@@ -74,7 +99,7 @@ export function CampaignABTestFramework({ campaign, posts }: Props) {
   const handleGenerateVariant = async (testId: string) => {
     const test = tests.find(t => t.id === testId);
     if (!test) return;
-    const post = posts.find(p => p.id === test.postId);
+    const post = posts.find(p => p.id === test.post_id);
     if (!post) return;
 
     setGenerating(testId);
@@ -83,7 +108,7 @@ export function CampaignABTestFramework({ campaign, posts }: Props) {
         action: 'generate_from_context',
         data: {
           command: `Crie uma variação ALTERNATIVA para o campo "${FIELD_LABELS[test.field]}" deste post.
-Original: "${test.variantA}"
+Original: "${test.variant_a}"
 Contexto do post: ${post.title}
 Formato: ${post.format}
 Pilar: ${post.pillar || 'geral'}
@@ -94,11 +119,14 @@ Retorne APENAS o texto da variação, sem JSON.`,
         },
       });
 
-      const variantText = typeof result === 'string' ? result : result?.[test.field] || result?.text || JSON.stringify(result);
+      const variantText = typeof result === 'string' ? result : (result as any)?.[test.field] || (result as any)?.text || JSON.stringify(result);
 
-      setTests(prev => prev.map(t =>
-        t.id === testId ? { ...t, variantB: variantText } : t
-      ));
+      await (supabase
+        .from('instagram_ab_tests') as any)
+        .update({ variant_b: variantText })
+        .eq('id', testId);
+
+      qc.invalidateQueries({ queryKey: ['instagram-ab-tests', campaign.id] });
       toast.success('Variante B gerada!');
     } catch {
       // handled
@@ -111,25 +139,38 @@ Retorne APENAS o texto da variação, sem JSON.`,
     const test = tests.find(t => t.id === testId);
     if (!test) return;
 
-    const winnerText = winner === 'a' ? test.variantA : test.variantB;
+    const winnerText = winner === 'a' ? test.variant_a : test.variant_b;
 
     try {
       await updatePost.mutateAsync({
-        id: test.postId,
+        id: test.post_id,
         [test.field]: winnerText,
       } as any);
 
-      setTests(prev => prev.map(t =>
-        t.id === testId ? { ...t, winner, status: 'completed' as const } : t
-      ));
+      await (supabase
+        .from('instagram_ab_tests') as any)
+        .update({ winner, status: 'completed' })
+        .eq('id', testId);
+
+      qc.invalidateQueries({ queryKey: ['instagram-ab-tests', campaign.id] });
       toast.success(`Variante ${winner.toUpperCase()} aplicada ao post!`);
     } catch {
       // handled
     }
   };
 
+  const handleDelete = async (testId: string) => {
+    await (supabase.from('instagram_ab_tests') as any).delete().eq('id', testId);
+    qc.invalidateQueries({ queryKey: ['instagram-ab-tests', campaign.id] });
+    toast.success('Teste removido');
+  };
+
   const activeTests = tests.filter(t => t.status === 'running');
   const completedTests = tests.filter(t => t.status === 'completed');
+
+  if (isLoading) {
+    return <Card className="p-8 bg-card/30 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></Card>;
+  }
 
   return (
     <div className="space-y-5">
@@ -144,7 +185,6 @@ Retorne APENAS o texto da variação, sem JSON.`,
         </Button>
       </div>
 
-      {/* Create form */}
       {creating && (
         <Card className="p-4 bg-card/50 border-primary/20 space-y-3">
           <h4 className="text-xs font-semibold text-foreground">Criar Teste A/B</h4>
@@ -157,7 +197,7 @@ Retorne APENAS o texto da variação, sem JSON.`,
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] text-muted-foreground mb-1 block">Campo a testar</label>
-              <Select value={newTest.field} onValueChange={v => setNewTest(prev => ({ ...prev, field: v as any }))}>
+              <Select value={newTest.field} onValueChange={v => setNewTest(prev => ({ ...prev, field: v }))}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="hook">Hook</SelectItem>
@@ -185,12 +225,11 @@ Retorne APENAS o texto da variação, sem JSON.`,
         </Card>
       )}
 
-      {/* Active Tests */}
       {activeTests.length > 0 && (
         <div className="space-y-3">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Testes Ativos</h4>
           {activeTests.map(test => {
-            const post = posts.find(p => p.id === test.postId);
+            const post = posts.find(p => p.id === test.post_id);
             return (
               <Card key={test.id} className="p-4 bg-card/50 border-border/30">
                 <div className="flex items-center justify-between mb-3">
@@ -201,21 +240,20 @@ Retorne APENAS o texto da variação, sem JSON.`,
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-6 text-[10px] text-red-400 hover:text-red-300"
-                    onClick={() => setTests(prev => prev.filter(t => t.id !== test.id))}
+                    className="h-6 text-[10px] text-destructive hover:text-destructive/80"
+                    onClick={() => handleDelete(test.id)}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {/* Variant A */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5">
                       <Badge className="bg-primary/15 text-primary text-[9px]">A (Original)</Badge>
                     </div>
                     <div className="p-2 bg-muted/10 rounded-md text-xs text-muted-foreground min-h-[60px]">
-                      {test.variantA || <span className="italic">Vazio</span>}
+                      {test.variant_a || <span className="italic">Vazio</span>}
                     </div>
                     <Button
                       size="sm"
@@ -227,14 +265,13 @@ Retorne APENAS o texto da variação, sem JSON.`,
                     </Button>
                   </div>
 
-                  {/* Variant B */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5">
-                      <Badge className="bg-amber-500/15 text-amber-400 text-[9px]">B (Variação)</Badge>
+                      <Badge className="bg-muted text-muted-foreground text-[9px]">B (Variação)</Badge>
                     </div>
-                    {test.variantB ? (
+                    {test.variant_b ? (
                       <div className="p-2 bg-muted/10 rounded-md text-xs text-muted-foreground min-h-[60px]">
-                        {test.variantB}
+                        {test.variant_b}
                       </div>
                     ) : (
                       <Button
@@ -252,7 +289,7 @@ Retorne APENAS o texto da variação, sem JSON.`,
                         Gerar Variante B com IA
                       </Button>
                     )}
-                    {test.variantB && (
+                    {test.variant_b && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -270,16 +307,15 @@ Retorne APENAS o texto da variação, sem JSON.`,
         </div>
       )}
 
-      {/* Completed Tests */}
       {completedTests.length > 0 && (
         <div className="space-y-3">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Concluídos</h4>
           {completedTests.map(test => (
             <Card key={test.id} className="p-3 bg-card/30 border-border/20">
               <div className="flex items-center gap-2">
-                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <Trophy className="w-3.5 h-3.5 text-primary" />
                 <span className="text-xs text-foreground font-medium">{test.name}</span>
-                <Badge className={`text-[9px] ${test.winner === 'a' ? 'bg-primary/15 text-primary' : 'bg-amber-500/15 text-amber-400'}`}>
+                <Badge className={`text-[9px] ${test.winner === 'a' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   Vencedor: {test.winner?.toUpperCase()}
                 </Badge>
                 <span className="text-[10px] text-muted-foreground">{FIELD_LABELS[test.field]}</span>
