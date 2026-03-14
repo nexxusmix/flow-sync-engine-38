@@ -282,7 +282,7 @@ export function ContractAiUpdateDialog({
               <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border">
                 <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                 <span className="text-xs text-muted-foreground truncate">{selectedFile.name}</span>
-                <CheckCircle className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-primary ml-auto flex-shrink-0" />
               </div>
             )}
 
