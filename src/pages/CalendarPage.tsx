@@ -111,7 +111,7 @@ export default function CalendarPage() {
                               )}
                               <span className="truncate">{event.title}</span>
                             </div>
-                            <Badge className="bg-amber-500/20 text-amber-400 text-[10px] flex-shrink-0">
+                            <Badge className="bg-muted text-muted-foreground text-[10px] flex-shrink-0">
                               {getDaysLabel(event.date)}
                             </Badge>
                           </div>
