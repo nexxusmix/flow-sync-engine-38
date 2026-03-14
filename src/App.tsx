@@ -107,6 +107,7 @@ import TasksPage from "./pages/TasksPage";
 import AlertsBoardPage from "./pages/AlertsBoardPage";
 import ActionHubPage from "./pages/ActionHubPage";
 import ClientesPage from "./pages/ClientesPage";
+import UnifiedInboxPage from "./pages/UnifiedInboxPage";
 
 // Marketing Hub Pages
 import MkDashboardPage from "./pages/marketing-hub/MkDashboardPage";
