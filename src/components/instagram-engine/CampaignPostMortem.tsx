@@ -109,8 +109,8 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold ${
-                  report.overall_grade === 'A' ? 'bg-emerald-500/15 text-emerald-400' :
-                  report.overall_grade === 'B' ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400'
+                  report.overall_grade === 'A' ? 'bg-primary/15 text-primary' :
+                  report.overall_grade === 'B' ? 'bg-muted text-muted-foreground' : 'bg-destructive/15 text-destructive'
                 }`}>{report.overall_grade}</div>
                 <div>
                   <p className="text-[10px] font-semibold text-foreground">Nota Geral</p>
