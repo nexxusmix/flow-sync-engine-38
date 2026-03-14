@@ -119,7 +119,7 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
                 </h2>
                 <div className="flex items-center gap-2">
                   {canUndo && (
-                    <Button variant="ghost" size="sm" onClick={undoLastAction} disabled={isExecuting} className="gap-1.5 text-amber-500 hover:text-amber-400">
+                    <Button variant="ghost" size="sm" onClick={undoLastAction} disabled={isExecuting} className="gap-1.5 text-muted-foreground hover:text-foreground">
                       <Undo2 className="w-4 h-4" /> Desfazer
                     </Button>
                   )}
