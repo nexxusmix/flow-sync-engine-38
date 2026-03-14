@@ -180,6 +180,24 @@ export default function AiUsageDashboardPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Consumo, performance e histórico de ações de inteligência artificial</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-lg border border-border/30 p-0.5">
+              <Button
+                variant={viewMode === "mine" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("mine")}
+                className="gap-1 text-xs h-7 px-2.5"
+              >
+                <User className="w-3 h-3" /> Meu uso
+              </Button>
+              <Button
+                variant={viewMode === "all" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("all")}
+                className="gap-1 text-xs h-7 px-2.5"
+              >
+                <Users className="w-3 h-3" /> Todos
+              </Button>
+            </div>
             <Select value={String(periodDays)} onValueChange={v => setPeriodDays(Number(v))}>
               <SelectTrigger className="w-32 h-8 text-xs">
                 <SelectValue />
