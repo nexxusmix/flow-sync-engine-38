@@ -15,10 +15,10 @@ interface Suggestion {
 }
 
 const PRIORITY_ICONS: Record<string, { icon: typeof Flame; className: string; label: string }> = {
-  urgent: { icon: Flame, className: "text-destructive", label: "Urgente" },
-  high: { icon: ArrowUp, className: "text-muted-foreground", label: "Alta" },
-  normal: { icon: Minus, className: "text-muted-foreground", label: "Normal" },
-  low: { icon: ArrowDown, className: "text-muted-foreground/50", label: "Baixa" },
+  urgent: { icon: Flame, className: sc.priority("urgent").text, label: "Urgente" },
+  high: { icon: ArrowUp, className: sc.priority("high").text, label: "Alta" },
+  normal: { icon: Minus, className: sc.priority("normal").text, label: "Normal" },
+  low: { icon: ArrowDown, className: sc.priority("low").text, label: "Baixa" },
 };
 
 interface TaskAIPrioritySuggestionsProps {

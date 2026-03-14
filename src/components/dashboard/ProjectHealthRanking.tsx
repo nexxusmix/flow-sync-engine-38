@@ -26,8 +26,9 @@ export function ProjectHealthRanking({ projects }: { projects: ProjectRisk[] }) 
       </div>
       <div className="space-y-2">
         {sorted.map((p) => {
-          const riskColor = p.riskPct >= 60 ? 'text-destructive' : p.riskPct >= 30 ? 'text-muted-foreground' : 'text-primary';
-          const barColor = p.riskPct >= 60 ? 'bg-destructive' : p.riskPct >= 30 ? 'bg-muted-foreground' : 'bg-primary';
+          const riskStyle = sc.risk(p.riskPct);
+          const riskColor = riskStyle.text;
+          const barColor = riskStyle.bg;
 
           return (
             <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">

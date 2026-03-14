@@ -71,9 +71,10 @@ const PRIORITY_LABELS: Record<ChangeRequest['priority'], string> = {
 
 function RequestItem({ request }: { request: ChangeRequest }) {
   const [isOpen, setIsOpen] = useState(false);
-  const statusConfig = STATUS_CONFIG[request.status];
-  const priorityConfig = PRIORITY_CONFIG[request.priority];
-  const StatusIcon = statusConfig.icon;
+  const statusMeta = STATUS_ICONS[request.status];
+  const statusStyle = sc.status(request.status === 'open' ? 'pending' : request.status === 'resolved' ? 'completed' : request.status);
+  const priorityStyle = sc.priority(request.priority);
+  const StatusIcon = statusMeta.icon;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>

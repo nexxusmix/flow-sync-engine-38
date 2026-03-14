@@ -118,7 +118,8 @@ function PortalHeaderExpandedComponent({
     ? TEMPLATE_NAMES[project.template] || project.template 
     : 'Projeto';
   
-  const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG.active;
+  const statusLabel = STATUS_LABELS[project.status] || STATUS_LABELS.active;
+  const statusStyle = sc.status(project.status || 'active');
 
   return (
     <div className="space-y-4">
