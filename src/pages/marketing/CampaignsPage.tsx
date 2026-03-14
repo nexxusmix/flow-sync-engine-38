@@ -609,7 +609,7 @@ export default function CampaignsPage() {
                 {/* Script Section */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
                     Roteiro Base
                   </h4>
                   <div className="space-y-2 pl-3 border-l-2 border-muted">
