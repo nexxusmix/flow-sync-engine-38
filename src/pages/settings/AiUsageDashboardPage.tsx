@@ -97,20 +97,20 @@ export default function AiUsageDashboardPage() {
 
   // ─── Computed Stats ──────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const total = runs.length;
-    const success = runs.filter(r => r.status === "success").length;
-    const errors = runs.filter(r => r.status === "error").length;
-    const durations = runs.filter(r => r.duration_ms).map(r => r.duration_ms!);
+    const total = scopedRuns.length;
+    const success = scopedRuns.filter(r => r.status === "success").length;
+    const errors = scopedRuns.filter(r => r.status === "error").length;
+    const durations = scopedRuns.filter(r => r.duration_ms).map(r => r.duration_ms!);
     const avgDuration = durations.length
       ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
       : 0;
-    const totalInputTokens = runs.reduce((s, r) => s + estimateTokens(r.input_json), 0);
-    const totalOutputTokens = runs.reduce((s, r) => s + estimateTokens(r.output_json), 0);
+    const totalInputTokens = scopedRuns.reduce((s, r) => s + estimateTokens(r.input_json), 0);
+    const totalOutputTokens = scopedRuns.reduce((s, r) => s + estimateTokens(r.output_json), 0);
     const totalTokens = totalInputTokens + totalOutputTokens;
     const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
 
     return { total, success, errors, avgDuration, totalTokens, totalInputTokens, totalOutputTokens, successRate };
-  }, [runs]);
+  }, [scopedRuns]);
 
   // ─── Daily Chart Data ────────────────────────────────────────────────
   const dailyData = useMemo(() => {
