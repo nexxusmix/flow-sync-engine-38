@@ -22,7 +22,7 @@ const guarantees = [
 
 export function LandingGuarantee() {
   return (
-    <ScrollLinked className="relative z-10 px-6 md:px-12 py-16 md:py-20">
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-5 md:py-6">
       <div className="max-w-4xl mx-auto">
         <div className="grid md:grid-cols-3 gap-6">
           {guarantees.map((g, i) => (

@@ -35,7 +35,7 @@ function ComparisonRow({ without, withText }: { without: string; withText: strin
 
 export function LandingComparison() {
   return (
-    <ScrollLinked className="relative z-10 px-6 md:px-12 py-24 md:py-32">
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-7 md:py-10">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14 md:mb-16">
           <motion.div

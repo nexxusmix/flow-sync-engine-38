@@ -63,7 +63,7 @@ function BenefitCard({ icon: Icon, title, desc }: { icon: React.ElementType; tit
 
 export function LandingBenefits() {
   return (
-    <ScrollLinked id="beneficios" className="relative z-10 px-6 md:px-12 py-24 md:py-32">
+    <ScrollLinked id="beneficios" className="relative z-10 px-6 md:px-12 py-7 md:py-10">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14 md:mb-16">
           <motion.div
