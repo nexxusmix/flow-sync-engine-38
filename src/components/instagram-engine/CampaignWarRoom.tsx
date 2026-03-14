@@ -149,7 +149,7 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
           <div className="space-y-2">
             {metrics.bottlenecks.map((b, i) => (
               <div key={i} className="flex items-center gap-2 p-2 bg-background/40 rounded">
-                <Badge className={`text-[7px] ${b.severity === 'high' ? 'bg-red-400/10 text-red-400' : b.severity === 'medium' ? 'bg-amber-400/10 text-amber-400' : 'bg-primary/10 text-primary'}`}>
+                <Badge className={`text-[7px] ${b.severity === 'high' ? 'bg-destructive/10 text-destructive' : b.severity === 'medium' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
                   {b.severity}
                 </Badge>
                 <span className="text-[10px] text-foreground">{b.label}</span>
