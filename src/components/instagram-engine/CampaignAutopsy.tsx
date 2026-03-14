@@ -127,8 +127,8 @@ Retorne JSON com:
         {Array.isArray(autopsy.what_failed) && (
           <Card className="p-4 bg-card/50 border-border/30">
             <div className="flex items-center gap-1.5 mb-3">
-              <XCircle className="w-4 h-4 text-red-400" />
-              <h4 className="text-xs font-semibold text-red-400">O que falhou</h4>
+              <XCircle className="w-4 h-4 text-destructive" />
+              <h4 className="text-xs font-semibold text-destructive">O que falhou</h4>
             </div>
             <div className="space-y-1.5">
               {autopsy.what_failed.map((item: string, i: number) => (
