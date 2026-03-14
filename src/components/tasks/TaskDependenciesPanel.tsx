@@ -42,7 +42,7 @@ export function TaskDependenciesPanel({ taskId, allTasks }: TaskDependenciesPane
       <Label className="text-xs flex items-center gap-1 mb-2">
         <Link2 className="w-3 h-3" /> Depende de
         {hasUnresolved && (
-          <span className="text-[9px] text-amber-400 flex items-center gap-0.5 ml-1">
+          <span className="text-[9px] text-destructive flex items-center gap-0.5 ml-1">
             <AlertTriangle className="w-2.5 h-2.5" /> bloqueada
           </span>
         )}
