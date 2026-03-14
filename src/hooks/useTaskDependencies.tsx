@@ -30,7 +30,7 @@ export function useTaskDependencies(taskId?: string) {
     mutationFn: async ({ taskId, dependsOnId }: { taskId: string; dependsOnId: string }) => {
       const { data, error } = await supabase
         .from('task_dependencies')
-        .insert([{ task_id: taskId, depends_on_task_id: dependsOnId }] as any)
+        .insert({ task_id: taskId, depends_on_task_id: dependsOnId })
         .select()
         .single();
       if (error) throw error;

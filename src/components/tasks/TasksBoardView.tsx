@@ -566,7 +566,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                           isDone && "opacity-60",
                           draggingTaskId === task.id && "opacity-40 ring-2 ring-primary/30",
                           isOverdue && "border-destructive/20",
-                          isDueToday && "border-amber-500/20",
+                          isDueToday && "border-primary/20",
                           isFocused && "ring-2 ring-primary/40 bg-white/[0.04]"
                         )}
                       >
