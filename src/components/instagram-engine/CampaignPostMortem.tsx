@@ -128,7 +128,7 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
           {report.top_performers.length > 0 && (
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                 <TrendingUp className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Top Performers</span>
               </div>
               {report.top_performers.map((t, i) => (
