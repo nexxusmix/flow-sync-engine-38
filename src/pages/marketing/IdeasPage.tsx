@@ -100,7 +100,7 @@ function IdeaCard({
               <Instagram className="w-4 h-4 mr-2" />
               Vincular Referência
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-red-500">
+            <DropdownMenuItem onClick={onDelete} className="text-destructive">
               <Trash2 className="w-4 h-4 mr-2" />
               Excluir
             </DropdownMenuItem>
