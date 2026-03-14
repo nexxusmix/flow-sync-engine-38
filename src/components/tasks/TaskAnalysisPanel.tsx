@@ -267,8 +267,8 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
 
                     {/* Last Result */}
                     {lastResult && (
-                      <div className="p-3 rounded-xl border border-green-500/20 bg-green-500/5">
-                        <p className="text-sm text-green-400 flex items-center gap-1.5">
+                      <div className="p-3 rounded-xl border border-primary/20 bg-primary/5">
+                        <p className="text-sm text-primary flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" /> {lastResult}
                         </p>
                       </div>
