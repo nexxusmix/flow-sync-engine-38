@@ -469,7 +469,7 @@ export function CalendarTab() {
                           </Button>
                         )}
                         {p.status === 'published' && (
-                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px]">
+                          <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px]">
                             ✓ Publicado
                           </Badge>
                         )}

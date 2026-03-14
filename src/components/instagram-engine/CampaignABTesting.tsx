@@ -214,19 +214,19 @@ export function CampaignABTesting({ campaign, posts }: Props) {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[9px] text-muted-foreground">{c.name}</span>
                       <div className="flex items-center gap-4 text-[9px]">
-                        <span className="text-blue-400 font-semibold">A: {c.a}</span>
-                        <span className="text-amber-400 font-semibold">B: {c.b}</span>
+                        <span className="text-primary font-semibold">A: {c.a}</span>
+                        <span className="text-muted-foreground font-semibold">B: {c.b}</span>
                       </div>
                     </div>
                     <div className="flex gap-1 h-2">
                       <motion.div
-                        className="bg-blue-500 rounded-l-full"
+                        className="bg-primary rounded-l-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${(c.a / (c.a + c.b)) * 100}%` }}
                         transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }}
                       />
                       <motion.div
-                        className="bg-amber-500 rounded-r-full"
+                        className="bg-muted-foreground rounded-r-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${(c.b / (c.a + c.b)) * 100}%` }}
                         transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }}
