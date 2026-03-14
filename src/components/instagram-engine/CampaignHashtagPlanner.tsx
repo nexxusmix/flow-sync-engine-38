@@ -23,9 +23,9 @@ interface HashtagCluster {
 }
 
 const SATURATION_STYLES = {
-  low: { label: 'Baixa', color: 'bg-emerald-500/15 text-emerald-400' },
-  medium: { label: 'Média', color: 'bg-amber-500/15 text-amber-400' },
-  high: { label: 'Alta', color: 'bg-red-500/15 text-red-400' },
+  low: { label: 'Baixa', color: 'bg-primary/15 text-primary' },
+  medium: { label: 'Média', color: 'bg-muted text-muted-foreground' },
+  high: { label: 'Alta', color: 'bg-destructive/15 text-destructive' },
 };
 
 export function CampaignHashtagPlanner({ campaign, posts }: Props) {
