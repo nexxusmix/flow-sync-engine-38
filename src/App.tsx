@@ -168,6 +168,7 @@ function AppRoutes() {
       <Route path="/automacoes-agencia" element={<ProtectedRoute><AgencyAutomationsPage /></ProtectedRoute>} />
       <Route path="/ia-governanca" element={<ProtectedRoute><AIGovernanceDashboardPage /></ProtectedRoute>} />
       <Route path="/playbooks" element={<ProtectedRoute><PlaybooksPage /></ProtectedRoute>} />
+      <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/clientes" element={<ProtectedRoute><ClientesPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
