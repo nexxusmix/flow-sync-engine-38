@@ -187,7 +187,7 @@ export default function FinancePage() {
 
   return (
     <DashboardLayout title="Financeiro">
-      <div className="holo world-stage space-y-8 max-w-[1600px] 2xl:max-w-[1800px] mx-auto" data-platform="financeiro">
+      <div className="holo world-stage space-y-4 md:space-y-8 max-w-[1600px] 2xl:max-w-[1800px] mx-auto" data-platform="financeiro">
         {/* Ambient glow */}
         <div className="holo-ambient" />
 
