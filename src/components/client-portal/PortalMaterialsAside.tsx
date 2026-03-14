@@ -53,9 +53,9 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
   };
 
   const getMaterialColor = (material: PortalDeliverable): { bg: string; text: string } => {
-    if (material.youtube_url) return { bg: 'bg-red-500/20', text: 'text-red-400' };
-    if (material.file_url) return { bg: 'bg-blue-500/20', text: 'text-blue-400' };
-    return { bg: 'bg-cyan-500/20', text: 'text-cyan-400' };
+    if (material.youtube_url) return { bg: 'bg-destructive/20', text: 'text-destructive' };
+    if (material.file_url) return { bg: 'bg-primary/20', text: 'text-primary' };
+    return { bg: 'bg-primary/20', text: 'text-primary' };
   };
 
   const hasMaterials = materials.length > 0 || visibleFiles.length > 0;
