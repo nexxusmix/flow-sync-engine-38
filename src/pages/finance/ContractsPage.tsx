@@ -312,7 +312,7 @@ export default function ContractsPage() {
                                         <Calendar className="w-3 h-3" />
                                         {new Date(milestone.due_date).toLocaleDateString('pt-BR')}
                                         {isOverdue && !milestone.paid_date && (
-                                          <AlertTriangle className="w-3 h-3 text-red-500 ml-1" />
+                                          <AlertTriangle className="w-3 h-3 text-destructive ml-1" />
                                         )}
                                       </p>
                                     </div>
