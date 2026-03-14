@@ -96,7 +96,7 @@ export function ActionItemsPanel({ actionItems, projectId }: ActionItemsPanelPro
                       className={cn(
                         "bg-muted/30 border p-3 transition-all",
                         isOverdue ? "border-destructive/50 bg-destructive/5" :
-                        isDueToday ? "border-amber-500/50 bg-amber-500/5" :
+                        isDueToday ? "border-muted-foreground/50 bg-muted/50" :
                         "border-border"
                       )}
                     >
