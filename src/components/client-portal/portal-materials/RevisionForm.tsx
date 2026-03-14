@@ -102,7 +102,7 @@ function RevisionFormComponent({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-500" />
+          <AlertTriangle className="w-4 h-4 text-muted-foreground" />
           <div>
             <h3 className="text-sm font-medium text-white">Solicitar Ajuste</h3>
             <p className="text-xs text-gray-500">{materialTitle}</p>
