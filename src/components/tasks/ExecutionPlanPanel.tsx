@@ -23,16 +23,16 @@ interface ExecutionPlanPanelProps {
 }
 
 const ENERGY_CONFIG = {
-  baixa: { label: "Baixa", color: "text-emerald-400", bg: "bg-emerald-500/10" },
-  media: { label: "Média", color: "text-amber-400", bg: "bg-amber-500/10" },
-  alta: { label: "Alta", color: "text-red-400", bg: "bg-red-500/10" },
+  baixa: { label: "Baixa", color: "text-primary/60", bg: "bg-primary/10" },
+  media: { label: "Média", color: "text-primary", bg: "bg-primary/15" },
+  alta: { label: "Alta", color: "text-destructive", bg: "bg-destructive/10" },
 };
 
 const MODE_CONFIG = {
-  deep_work: { label: "Deep Work", icon: Brain, color: "text-violet-400" },
-  admin: { label: "Admin", icon: CheckCircle2, color: "text-blue-400" },
-  criativo: { label: "Criativo", icon: Sparkles, color: "text-pink-400" },
-  comunicacao: { label: "Comunicação", icon: Coffee, color: "text-cyan-400" },
+  deep_work: { label: "Deep Work", icon: Brain, color: "text-primary" },
+  admin: { label: "Admin", icon: CheckCircle2, color: "text-primary/70" },
+  criativo: { label: "Criativo", icon: Sparkles, color: "text-primary/50" },
+  comunicacao: { label: "Comunicação", icon: Coffee, color: "text-primary/60" },
 };
 
 export function ExecutionPlanPanel({
