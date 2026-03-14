@@ -135,7 +135,7 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
           </div>
           <div className="text-lg font-bold text-foreground">{metrics.overdue.length}</div>
           <div className="text-[8px] text-muted-foreground">Atrasados</div>
