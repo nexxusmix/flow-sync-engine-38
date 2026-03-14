@@ -98,7 +98,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
                 <div className="text-sm text-muted-foreground mt-1">Conclusão</div>
               </Card>
               <Card className="p-6 bg-card/50 border-border/30 text-center">
-                <div className="text-4xl font-bold text-amber-400">{Object.keys(pillars).length}</div>
+                <div className="text-4xl font-bold text-primary/70">{Object.keys(pillars).length}</div>
                 <div className="text-sm text-muted-foreground mt-1">Pilares</div>
               </Card>
             </div>
