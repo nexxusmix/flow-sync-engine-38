@@ -209,7 +209,7 @@ export function AddVersionDialog({
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-3">
             Nova Versão
-            <Badge className="bg-cyan-500/20 text-cyan-400 font-mono">
+            <Badge className="bg-primary/20 text-primary font-mono">
               V{String(nextVersion).padStart(2, '0')}
             </Badge>
           </DialogTitle>
