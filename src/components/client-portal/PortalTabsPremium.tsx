@@ -47,11 +47,11 @@ const tabsListVariants = {
 const getBadgeStyles = (variant: TabBadge['variant'] = 'default') => {
   switch (variant) {
     case 'warning':
-      return 'bg-amber-500 text-white';
+      return 'bg-destructive text-destructive-foreground';
     case 'success':
-      return 'bg-emerald-500 text-white';
+      return 'bg-primary text-primary-foreground';
     default:
-      return 'bg-cyan-500 text-white';
+      return 'bg-primary text-primary-foreground';
   }
 };
 
