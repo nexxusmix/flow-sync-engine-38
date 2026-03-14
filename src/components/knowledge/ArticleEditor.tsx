@@ -40,7 +40,7 @@ function renderMarkdown(md: string): string {
 export function ArticleEditor({ article, onSave, onCancel, categories }: ArticleEditorProps) {
   const [title, setTitle] = useState(article.title);
   const [category, setCategory] = useState(article.category || '');
-  const [content, setContent] = useState(article.content_md);
+  const [content, setContent] = useState(article.content);
   const [tags, setTags] = useState(article.tags?.join(', ') || '');
   const [showPreview, setShowPreview] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
