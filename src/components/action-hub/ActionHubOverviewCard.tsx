@@ -32,9 +32,9 @@ export function ActionHubOverviewCard() {
       </div>
 
       {criticalItem && (
-        <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-3 mb-3">
+        <div className="bg-destructive/5 border border-destructive/10 rounded-xl p-3 mb-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" strokeWidth={1.5} />
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive flex-shrink-0" strokeWidth={1.5} />
             <p className="text-[11px] text-red-400 truncate">{criticalItem.title}</p>
           </div>
         </div>

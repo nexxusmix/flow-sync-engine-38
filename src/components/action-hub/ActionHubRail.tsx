@@ -52,7 +52,7 @@ export function ActionHubRail({ projectId, title = "Central de Ações" }: Props
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[9px] text-muted-foreground font-mono">{openCount} abertas</span>
               {p0Count > 0 && (
-                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-mono">{p0Count} críticas</span>
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-destructive font-mono">{p0Count} críticas</span>
               )}
             </div>
           </div>
