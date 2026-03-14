@@ -348,7 +348,7 @@ export function ProjectFinanceDetailPanel({
       {/* Expenses */}
       <div>
         <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-          <TrendingDown className="w-4 h-4 text-red-600" />
+          <TrendingDown className="w-4 h-4 text-destructive" />
           Despesas ({expenses.length})
         </h4>
         <div className="space-y-2 max-h-40 overflow-y-auto">
