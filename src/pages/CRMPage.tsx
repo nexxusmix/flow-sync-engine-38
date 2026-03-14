@@ -225,14 +225,14 @@ export default function CRMPage() {
               value={minValue}
               onChange={e => setMinValue(e.target.value)}
               placeholder="Mín R$"
-              className="w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+              className="w-20 md:w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
             />
             <input
               type="number"
               value={maxValue}
               onChange={e => setMaxValue(e.target.value)}
               placeholder="Máx R$"
-              className="w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+              className="w-20 md:w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
             />
             {hasFilters && (
               <button
