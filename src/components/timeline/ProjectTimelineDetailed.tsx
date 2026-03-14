@@ -481,7 +481,7 @@ export function ProjectTimelineDetailed({
                       {segment.blockers.map((blocker, i) => (
                         <span
                           key={i}
-                          className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
+                          className="text-[9px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20"
                         >
                           {blocker.replace("_", " ")}
                         </span>
