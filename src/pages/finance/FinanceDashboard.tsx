@@ -204,7 +204,7 @@ export default function FinancePage() {
               RESUMO <span className="highlight">FINANCEIRO</span>
             </h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4">
             <div className="holo-timeline-ref">
               Timeline_Ref<br />
               <strong>{monthRef}</strong> / <strong>{yearRef}</strong>
