@@ -49,7 +49,7 @@ export function ArticleEditor({ article, onSave, onCancel, categories }: Article
     const changed = 
       title !== article.title ||
       category !== (article.category || '') ||
-      content !== article.content_md ||
+      content !== article.content ||
       tags !== (article.tags?.join(', ') || '');
     setHasChanges(changed);
   }, [title, category, content, tags, article]);
