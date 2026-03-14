@@ -53,9 +53,9 @@ function formatTimecode(ms: number): string {
 }
 
 const PRIORITIES: { id: Priority; label: string; color: string }[] = [
-  { id: 'normal', label: 'Normal', color: 'bg-gray-500' },
-  { id: 'high', label: 'Alta', color: 'bg-amber-500' },
-  { id: 'urgent', label: 'Urgente', color: 'bg-red-500' },
+  { id: 'normal', label: 'Normal', color: 'bg-muted-foreground' },
+  { id: 'high', label: 'Alta', color: 'bg-muted-foreground' },
+  { id: 'urgent', label: 'Urgente', color: 'bg-destructive' },
 ];
 
 function RevisionFormComponent({
