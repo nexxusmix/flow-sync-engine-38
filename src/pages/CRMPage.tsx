@@ -305,7 +305,7 @@ export default function CRMPage() {
 
       {/* New Deal Dialog */}
       <Dialog open={showNewDealDialog} onOpenChange={setShowNewDealDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Novo Deal</DialogTitle>
             <DialogDescription>Adicione uma nova oportunidade ao pipeline</DialogDescription>

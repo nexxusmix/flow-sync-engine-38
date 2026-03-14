@@ -480,7 +480,7 @@ export default function ClientPortalPage() {
                     </StaggerItem>
                     
                     {/* Sidebar */}
-                    <StaggerItem className="lg:col-span-4 xl:col-span-3 space-y-6">
+                    <StaggerItem className="lg:col-span-4 xl:col-span-3 space-y-4 md:space-y-6">
                       <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
                         <PortalMaterialsAside deliverables={deliverables} files={files} />
                       </GlowCard>
