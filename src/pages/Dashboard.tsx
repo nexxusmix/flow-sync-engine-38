@@ -408,7 +408,7 @@ export default function Dashboard() {
 
         {/* Visão de Contas - Financeiro */}
         <motion.div 
-          className="glass-card rounded-[2rem] p-6 min-h-[250px]"
+          className="glass-card rounded-xl md:rounded-[2rem] p-4 md:p-6 min-h-[200px] md:min-h-[250px]"
           initial={{ opacity: 0, y: 25, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ delay: 0.5, type: "spring", stiffness: 70, damping: 18 }}
