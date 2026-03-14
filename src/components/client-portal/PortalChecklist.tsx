@@ -29,13 +29,13 @@ export function PortalChecklist({ project }: PortalChecklistProps) {
         </div>
         <div className="flex items-center gap-4 text-xs">
           {pendingCount > 0 && (
-            <span className="text-amber-500">{pendingCount} pendente(s)</span>
+            <span className="text-muted-foreground">{pendingCount} pendente(s)</span>
           )}
           {submittedCount > 0 && (
-            <span className="text-blue-500">{submittedCount} enviado(s)</span>
+            <span className="text-primary/70">{submittedCount} enviado(s)</span>
           )}
           {approvedCount > 0 && (
-            <span className="text-emerald-500">{approvedCount} aprovado(s)</span>
+            <span className="text-primary">{approvedCount} aprovado(s)</span>
           )}
         </div>
       </div>
