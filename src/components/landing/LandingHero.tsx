@@ -30,16 +30,16 @@ export function LandingHero() {
     offset: ["start start", "end start"],
   });
 
-  const videoY = useSpring(useTransform(scrollYProgress, [0, 0.5], [0, -60]), sp);
-  const videoOpacity = useSpring(useTransform(scrollYProgress, [0.4, 0.6], [1, 0]), sp);
+  const videoY = useSpring(useTransform(scrollYProgress, [0, 0.4], [0, -60]), sp);
+  const videoOpacity = useSpring(useTransform(scrollYProgress, [0.25, 0.4], [1, 0]), sp);
 
-  const textOpacity = useSpring(useTransform(scrollYProgress, [0.25, 0.45], [0, 1]), sp);
-  const textY = useSpring(useTransform(scrollYProgress, [0.25, 0.5], [60, 0]), sp);
-  const textExitOpacity = useSpring(useTransform(scrollYProgress, [0.7, 1], [1, 0]), sp);
-  const textExitY = useSpring(useTransform(scrollYProgress, [0.7, 1], [0, -80]), sp);
+  const textOpacity = useSpring(useTransform(scrollYProgress, [0.3, 0.45], [0, 1]), sp);
+  const textY = useSpring(useTransform(scrollYProgress, [0.3, 0.45], [60, 0]), sp);
+  const textExitOpacity = useSpring(useTransform(scrollYProgress, [0.75, 1], [1, 0]), sp);
+  const textExitY = useSpring(useTransform(scrollYProgress, [0.75, 1], [0, -80]), sp);
 
   return (
-    <section ref={sectionRef} className="relative z-10 min-h-[160vh] md:min-h-[200vh]">
+    <section ref={sectionRef} className="relative z-10 min-h-[150vh] md:min-h-[180vh]">
       {/* Hero with video card */}
       <motion.div
         className="sticky top-0 left-0 w-full h-[100dvh] flex flex-col items-center justify-center z-20 px-4 md:px-6"
