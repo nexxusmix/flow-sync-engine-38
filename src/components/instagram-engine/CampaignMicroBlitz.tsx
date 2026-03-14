@@ -180,7 +180,7 @@ Retorne JSON com:
             {generatedPosts.map((post, i) => (
               <div key={i} className="relative">
                 <div className={`absolute -left-6 top-3 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                  post.urgency_level === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'
+                  post.urgency_level === 'high' ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary'
                 }`}>
                   {i + 1}
                 </div>
