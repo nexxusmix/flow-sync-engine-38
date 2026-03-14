@@ -276,7 +276,7 @@ function PortalInlineCommentComponent({
                     size="sm"
                     className={cn(
                       "h-8 text-xs",
-                      mode === 'revision' && "bg-amber-500/20 text-amber-400"
+                      mode === 'revision' && "bg-muted text-muted-foreground"
                     )}
                     onClick={() => setMode('revision')}
                   >
