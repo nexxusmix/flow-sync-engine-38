@@ -518,7 +518,7 @@ export default function MkTemplatesPage() {
                     <div className="space-y-3">
                       {generation.captions.map((c, i) => (
                         <div key={i} className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
-                          <span className="text-[9px] uppercase tracking-wider text-amber-400/60 font-medium">{c.tone}</span>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 font-medium">{c.tone}</span>
                           <p className="text-[11px] text-white/55 mt-1 whitespace-pre-wrap leading-relaxed">{c.text}</p>
                         </div>
                       ))}
