@@ -344,7 +344,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                     onClick={handleSyncFinance}
                     disabled={isSyncingFinance}
                   >
-                    <RefreshCw className={`w-4 h-4 mr-2 text-emerald-500 ${isSyncingFinance ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-4 h-4 mr-2 text-primary ${isSyncingFinance ? 'animate-spin' : ''}`} />
                     {isSyncingFinance ? 'Sincronizando...' : 'Sincronizar Financeiro'}
                   </DropdownMenuItem>
 
