@@ -558,7 +558,7 @@ export default function MkTemplatesPage() {
                 {generation.design_prompt && (
                   <OutputCard
                     title="Prompt de Design"
-                    icon={<Palette className="w-3.5 h-3.5 text-purple-400" />}
+                    icon={<Palette className="w-3.5 h-3.5 text-primary/70" />}
                     onCopy={() => copyToClipboard(generation.design_prompt!, "design")}
                     copied={copiedKey === "design"}
                   >
