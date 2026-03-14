@@ -236,10 +236,10 @@ export default function ClientPortalPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-violet-500" />
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-[9px] font-medium text-violet-500 uppercase">Valor</span>
+                <span className="text-[9px] font-medium text-primary uppercase">Valor</span>
               </div>
               <p className="text-lg font-medium text-foreground truncate">
                 {project.contract_value ? formatCurrency(project.contract_value) : '--'}
