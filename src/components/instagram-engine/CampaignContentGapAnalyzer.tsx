@@ -141,7 +141,7 @@ Retorne JSON com:
         <h4 className="text-xs font-semibold text-foreground">🔍 Lacunas Detectadas ({localGaps.length})</h4>
         {localGaps.length === 0 ? (
           <Card className="p-4 bg-card/50 border-border/30 text-center">
-            <CheckCircle className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+            <CheckCircle className="w-6 h-6 text-primary mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Nenhuma lacuna crítica detectada!</p>
           </Card>
         ) : (
