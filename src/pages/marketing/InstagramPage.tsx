@@ -148,7 +148,7 @@ export default function InstagramPage() {
             {/* Profile Card */}
             <Card className="glass-card p-6">
               <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/60 to-primary flex items-center justify-center">
                   {profile?.profile_picture_url ? (
                     <img 
                       src={profile.profile_picture_url} 
