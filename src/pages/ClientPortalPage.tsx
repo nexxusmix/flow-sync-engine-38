@@ -498,7 +498,7 @@ export default function ClientPortalPage() {
                   </Button>
                 </div>
                 {hasPaymentBlock && (
-                  <p className="text-xs text-amber-500">
+                  <p className="text-xs text-destructive">
                     * A aprovação está bloqueada devido a pendência financeira.
                   </p>
                 )}
