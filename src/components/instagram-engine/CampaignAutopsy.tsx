@@ -89,7 +89,7 @@ Retorne JSON com:
         <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Campaign Autopsy</h3>
-          <Badge className={`text-[9px] ${autopsy.verdict === 'sucesso' ? 'bg-emerald-400/10 text-emerald-400' : autopsy.verdict === 'parcial' ? 'bg-amber-400/10 text-amber-400' : 'bg-red-400/10 text-red-400'}`}>
+          <Badge className={`text-[9px] ${autopsy.verdict === 'sucesso' ? 'bg-primary/10 text-primary' : autopsy.verdict === 'parcial' ? 'bg-muted text-muted-foreground' : 'bg-destructive/10 text-destructive'}`}>
             {autopsy.verdict === 'sucesso' ? '🏆 Sucesso' : autopsy.verdict === 'parcial' ? '⚡ Parcial' : '❌ Fracasso'}
           </Badge>
         </div>
