@@ -249,15 +249,15 @@ export default function ClientPortalPage() {
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-emerald-500" />
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Activity className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-[9px] font-medium text-emerald-500 uppercase">Saúde</span>
+                <span className="text-[9px] font-medium text-primary uppercase">Saúde</span>
               </div>
               <p className={cn(
                 "text-lg font-medium truncate",
-                (project.health_score || 0) >= 90 ? 'text-emerald-500' :
-                (project.health_score || 0) >= 70 ? 'text-amber-500' : 'text-red-500'
+                (project.health_score || 0) >= 90 ? 'text-primary' :
+                (project.health_score || 0) >= 70 ? 'text-muted-foreground' : 'text-destructive'
               )}>
                 {project.health_score ?? 100}%
               </p>
