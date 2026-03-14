@@ -143,8 +143,8 @@ export default function ProjectsFinancePage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        project.status === 'ok' ? 'bg-emerald-500/10' :
-                        project.status === 'blocked' ? 'bg-destructive/10' : 'bg-amber-500/10'
+                        project.status === 'ok' ? 'bg-primary/10' :
+                        project.status === 'blocked' ? 'bg-destructive/10' : 'bg-muted'
                       }`}>
                         <Icon className={`w-5 h-5 ${statusConfig.textColor}`} />
                       </div>
