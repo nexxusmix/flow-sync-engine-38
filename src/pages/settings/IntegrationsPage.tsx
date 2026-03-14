@@ -124,7 +124,7 @@ export default function IntegrationsPage() {
                     </div>
                   </div>
                   {googleConnected ? (
-                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30 text-[10px]">
+                    <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px]">
                       <Check className="w-3 h-3 mr-1" /> Conectado
                     </Badge>
                   ) : (
