@@ -171,7 +171,7 @@ export function LandingHero() {
                 <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.08]">
                   Sua agência ainda opera<br className="hidden sm:block" />
                   em <span className="text-primary font-normal">mil ferramentas?</span>
-                  <span className="text-base md:text-xl text-muted-foreground font-light block mt-3 md:mt-4">
+                  <span className="text-base md:text-xl text-muted-foreground font-light block mt-4 md:mt-5">
                     Centralize tudo em uma única plataforma inteligente.
                   </span>
                 </h2>
