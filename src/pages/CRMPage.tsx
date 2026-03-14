@@ -204,7 +204,7 @@ export default function CRMPage() {
           </div>
 
           {/* Search + Value Filters */}
-          <div className="flex items-center gap-3 flex-wrap w-full md:w-auto">
+          <div className="flex items-center gap-2 md:gap-3 flex-wrap w-full md:w-auto">
             <div className="relative flex-1 md:flex-none md:w-52">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <input
