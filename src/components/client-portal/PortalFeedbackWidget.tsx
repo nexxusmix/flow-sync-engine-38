@@ -204,7 +204,7 @@ export function PortalFeedbackWidget({
 
       // Generate alert for low ratings (1-2 stars)
       if (rating <= 2) {
-        await supabase.from("alerts").insert({
+        await supabase.from("alerts").insert([{
           title: `Feedback negativo: ${rating} estrela${rating > 1 ? "s" : ""}`,
           message: `Cliente ${clientName || "anônimo"} avaliou com ${rating} estrela${rating > 1 ? "s" : ""}${comment.trim() ? `: "${comment.trim().slice(0, 120)}"` : "."}`,
           type: "feedback" as any,
@@ -214,12 +214,12 @@ export function PortalFeedbackWidget({
           entity_type: "client_feedback",
           entity_id: projectId || portalLinkId,
           project_id: projectId,
-        }).then(() => {});
+        }] as any).then(() => {});
       }
 
       // Generate alert on satisfaction drop
       if (lastRating && rating < lastRating && lastRating - rating >= 2) {
-        await supabase.from("alerts").insert({
+        await supabase.from("alerts").insert([{
           title: `Queda de satisfação: ${lastRating}★ → ${rating}★`,
           message: `Satisfação do cliente ${clientName || "anônimo"} caiu de ${lastRating} para ${rating} estrelas no projeto.`,
           type: "feedback" as any,
@@ -229,7 +229,7 @@ export function PortalFeedbackWidget({
           entity_type: "client_feedback",
           entity_id: projectId || portalLinkId,
           project_id: projectId,
-        }).then(() => {});
+        }] as any).then(() => {});
       }
 
       setSubmitted(true);
