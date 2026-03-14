@@ -729,7 +729,7 @@ export function useCampaignPersonas(campaignId: string) {
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data || []) as CampaignPersona[];
+      return (data || []) as unknown as CampaignPersona[];
     },
     enabled: !!campaignId,
   });
