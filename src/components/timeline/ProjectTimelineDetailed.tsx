@@ -451,7 +451,7 @@ export function ProjectTimelineDetailed({
 
                   <div className="text-right">
                     {delay > 0 && (
-                      <Badge variant="destructive" className="bg-red-500/20 text-red-400 text-[10px]">
+                      <Badge variant="destructive" className="bg-destructive/20 text-destructive text-[10px]">
                         <AlertTriangle className="w-3 h-3 mr-1" />
                         +{delay} dias
                       </Badge>
