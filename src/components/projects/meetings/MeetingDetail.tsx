@@ -45,9 +45,9 @@ interface MeetingDetailProps {
 
 const typeConfig = {
   reuniao: { icon: Video, label: 'Reunião', color: 'text-primary' },
-  pedido_cliente: { icon: FileText, label: 'Pedido do Cliente', color: 'text-amber-500' },
-  mensagem_cliente: { icon: MessageSquare, label: 'Mensagem do Cliente', color: 'text-emerald-500' },
-  alinhamento_interno: { icon: Users, label: 'Alinhamento Interno', color: 'text-violet-500' },
+  pedido_cliente: { icon: FileText, label: 'Pedido do Cliente', color: 'text-muted-foreground' },
+  mensagem_cliente: { icon: MessageSquare, label: 'Mensagem do Cliente', color: 'text-primary' },
+  alinhamento_interno: { icon: Users, label: 'Alinhamento Interno', color: 'text-primary/70' },
 };
 
 export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetailProps) {
