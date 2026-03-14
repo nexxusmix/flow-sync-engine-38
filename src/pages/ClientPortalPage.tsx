@@ -482,7 +482,7 @@ export default function ClientPortalPage() {
                   <Button 
                     onClick={handleRequestRevision} 
                     variant="outline"
-                    className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
+                    className="border-muted-foreground text-muted-foreground hover:bg-muted"
                     disabled={!commentForm.name || !commentForm.content || isRequestingRevision}
                   >
                     <Zap className="w-4 h-4 mr-2" />
