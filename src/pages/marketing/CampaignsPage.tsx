@@ -638,7 +638,7 @@ export default function CampaignsPage() {
                 {generatedPackage.content_suggestions && generatedPackage.content_suggestions.length > 0 && (
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                       Sugestões de Conteúdo
                     </h4>
                     <div className="space-y-2">
