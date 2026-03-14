@@ -602,6 +602,36 @@ export default function ClientPortalPage() {
               </AnimatePresence>
             </TabsContent>
 
+            {/* Documents Tab */}
+            <TabsContent value="documents" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="documents"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalDocumentsTab files={files} deliverables={deliverables} />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
+            {/* Financial Tab */}
+            <TabsContent value="financial" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="financial"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalFinancialTab project={project} />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
             {/* Files Tab */}
             <TabsContent value="files" className="mt-8">
               <AnimatePresence mode="wait">
