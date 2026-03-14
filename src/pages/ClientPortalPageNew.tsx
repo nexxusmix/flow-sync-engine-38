@@ -487,6 +487,15 @@ export default function ClientPortalPage() {
                       <ScrollReveal delay={0.5}>
                         <PortalAuditBadge />
                       </ScrollReveal>
+                      <ScrollReveal delay={0.6}>
+                        <PortalFeedbackWidget
+                          portalLinkId={portal.id}
+                          projectId={project.id}
+                          entityType="general"
+                          title="Como está sua experiência?"
+                          subtitle="Sua opinião nos ajuda a melhorar."
+                        />
+                      </ScrollReveal>
                     </StaggerItem>
                   </StaggerContainer>
                 </motion.div>
