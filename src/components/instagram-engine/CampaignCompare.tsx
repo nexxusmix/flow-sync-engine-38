@@ -85,7 +85,7 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
           <p className="text-[9px] text-muted-foreground">{statsA.total} posts</p>
         </Card>
         <Card className="glass-card p-3">
-          <Badge className="bg-amber-500/15 text-amber-400 text-[8px] mb-1">Campanha B</Badge>
+          <Badge className="bg-muted text-muted-foreground text-[8px] mb-1">Campanha B</Badge>
           <Select value={compareId} onValueChange={setCompareId}>
             <SelectTrigger className="text-[10px] h-7">
               <SelectValue placeholder="Selecione para comparar..." />
