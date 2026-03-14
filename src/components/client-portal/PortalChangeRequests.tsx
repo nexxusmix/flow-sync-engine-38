@@ -97,8 +97,8 @@ function RequestItem({ request }: { request: ChangeRequest }) {
                   {request.title}
                 </h4>
                 {request.priority !== 'normal' && (
-                  <Badge variant="outline" className={cn("text-[9px]", priorityConfig.color)}>
-                    {priorityConfig.label}
+                  <Badge variant="outline" className={cn("text-[9px]", priorityStyle.text)}>
+                    {PRIORITY_LABELS[request.priority]}
                   </Badge>
                 )}
               </div>
