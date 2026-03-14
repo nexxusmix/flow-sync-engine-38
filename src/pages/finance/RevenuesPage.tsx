@@ -37,9 +37,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 const STATUS_CONFIG = {
-  pending: { label: 'Pendente', color: 'bg-amber-500', icon: Clock },
-  received: { label: 'Recebido', color: 'bg-emerald-500', icon: CheckCircle },
-  overdue: { label: 'Vencido', color: 'bg-red-500', icon: AlertTriangle },
+  pending: { label: 'Pendente', color: 'bg-muted-foreground', icon: Clock },
+  received: { label: 'Recebido', color: 'bg-primary', icon: CheckCircle },
+  overdue: { label: 'Vencido', color: 'bg-destructive', icon: AlertTriangle },
   cancelled: { label: 'Cancelado', color: 'bg-muted', icon: X },
 };
 
