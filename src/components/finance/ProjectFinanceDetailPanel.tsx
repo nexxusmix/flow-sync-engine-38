@@ -306,7 +306,7 @@ export function ProjectFinanceDetailPanel({
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border">
           <span className="text-sm text-muted-foreground">Total recebido</span>
-          <span className="font-medium text-emerald-600">{formatCurrency(project.received)}</span>
+          <span className="font-medium text-primary">{formatCurrency(project.received)}</span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border">
           <span className="text-sm text-muted-foreground">A receber</span>
