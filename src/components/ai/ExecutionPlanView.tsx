@@ -135,7 +135,7 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                 className={cn(
                   'text-xs rounded-lg p-2.5 flex items-center gap-2 border',
                   errorCount === 0
-                    ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                    ? 'bg-primary/10 border-primary/20 text-primary'
                     : 'bg-destructive/10 border-destructive/20 text-destructive'
                 )}
               >
