@@ -1,65 +1,62 @@
 
 
-## Padronizacao de Cores — Campanhas Instagram
+# Padronização de Cores Sonance — 184 Arquivos Restantes
 
-### Diagnostico
+## Escopo
 
-**1.328 ocorrencias** de cores poluidas (`emerald`, `amber`, `red`, `green`, `purple`, `teal`, etc.) espalhadas em **63 arquivos** de sub-componentes de campanha. O `CampaignsTab.tsx` principal ja esta limpo com a paleta Sonance, mas todos os componentes internos ainda usam cores semanticas hardcoded.
+**190 arquivos** com cores poluídas (45 no Instagram Engine, 112 em componentes gerais, 33 em páginas). O utilitário `sc` em `src/lib/colors.ts` já existe e cobre status, prioridade, score, risco e trend.
 
-### Mapeamento de Substituicao
+## Abordagem
 
-A paleta SQUAD e estritamente **azul (#009CCA) + branco + cinza**. Vermelho reservado **apenas** para erros/destrutivo.
+Dado o volume, a refatoração será executada em **7 lotes sequenciais** por área funcional, do mais visível ao menos frequente. Cada lote aplica substituições mecânicas seguindo o mapeamento da paleta Sonance.
+
+### Mapeamento de substituição
 
 ```text
-ANTES                    →  DEPOIS (Sonance)
-─────────────────────────────────────────────
-emerald-400/500          →  primary (azul)
-green-400/500            →  primary (azul)
-amber-400/500            →  muted-foreground (cinza)
-yellow-400/500           →  muted-foreground (cinza)
-orange-400/500           →  muted-foreground (cinza)
-purple-400/500           →  primary/70 (azul medio)
-violet-400/500           →  primary/70 (azul medio)
-pink-400/500             →  primary/50 (azul claro)
-teal-400/500             →  primary (azul)
-indigo-400/500           →  primary (azul)
-red-400/500 (sucesso)    →  primary (azul)
-red-400/500 (erro real)  →  destructive (manter)
+ANTES                         →  DEPOIS
+──────────────────────────────────────────────
+emerald-400/500 (sucesso)     →  primary
+green-300/400/500             →  primary
+amber-400/500 (warning)       →  muted-foreground / border
+purple-400/500                →  primary/70
+teal/violet/pink/indigo       →  primary ou muted-foreground
+red (não-erro)                →  primary
+red (erro real)               →  destructive (manter)
 ```
 
-### Abordagem
+Onde possível, substituir blocos inline por chamadas a `sc.status()`, `sc.risk()`, `sc.score()`.
 
-Dado o volume (63 arquivos, 1328 ocorrencias), a refatoracao sera feita em **lotes por categoria** do mega-menu:
+### Lotes
 
-1. **Producao** (6 componentes): Kanban, Approval, ApprovalPipeline, PublishQueue, FeedPreview, Timeline
-2. **Calendario** (6 componentes): Calendar, UnifiedCalendar, GanttTimeline, TimingOptimizer, HolidayCalendar, Seasonal
-3. **Analytics** (7 componentes): AnalyticsAdvanced, ROI, Heatmap, HealthScore, VelocityTracker, SentimentAnalysis, MoodTracker
-4. **Estrategia** (8 componentes): Goals, FunnelView, ContentFunnel, ContentMap, PersonaMap, CustomerJourney, StoryArc, DNA
-5. **IA Tools** (14 componentes): SmartAlerts, ResultsSimulator, AutoPlanner, BriefingGenerator, AdsCopy, Spin, Hashtags, HashtagIntel, ABTesting, ABTestFramework, RiskScore, ContentGap, PitchDeck, BudgetAllocator
-6. **Colaboracao** (5 componentes): Collaboration, CollaborationBoard, ClientReview, WarRoom, AudienceHeatmap
-7. **Exportar** (16 componentes): PDFReport, Compare, CrossComparator, PostMortem, Autopsy, Cloner, SwipeFiles, RepostAutomation, ContentRecycling, SplitContent, CompetitorTracker, CompetitorShadow, MicroBlitz, MoodBoard, Alerts, Changelog
+**Lote 1 — Páginas principais (33 arquivos)**
+AlertsBoardPage, MkAutomationsPage, MkCalendarPage, e demais páginas em `src/pages/` com ocorrências.
 
-### Regras de Substituicao
+**Lote 2 — Client Portal e Projetos (~15 arquivos)**
+PortalProjectStages, GalleryTab, ProjectPaymentsSummary, etc.
 
-Para cada arquivo:
-- `text-emerald-*` / `bg-emerald-*` → `text-primary` / `bg-primary/15`
-- `text-green-*` / `bg-green-*` → `text-primary` / `bg-primary/15`
-- `text-amber-*` / `bg-amber-*` → `text-muted-foreground` / `bg-muted`
-- `text-yellow-*` / `bg-yellow-*` → `text-muted-foreground` / `bg-muted`
-- `text-red-*` / `bg-red-*` para estados de erro/rejeicao → `text-destructive` / `bg-destructive/15` (manter)
-- `text-red-*` / `bg-red-*` para intensidade/climax → `text-primary` / `bg-primary/20`
-- `text-purple-*` / `bg-purple-*` → `text-primary/70` / `bg-primary/10`
-- `border-emerald-*` → `border-primary/30`
-- `border-amber-*` → `border-border`
-- `border-red-*` → `border-destructive/30`
+**Lote 3 — Instagram Engine — Produção e Colaboração (~12 arquivos)**
+CampaignCollaboration, CampaignAlerts, InstagramFeedPreview, Kanban, Approval, PublishQueue, Timeline.
 
-### Prioridade
+**Lote 4 — Instagram Engine — Analytics e Estratégia (~10 arquivos)**
+AnalyticsAdvanced, ROI, Heatmap, HealthScore, SentimentAnalysis, CustomerJourney, CompetitorShadow.
 
-Iniciar pelos componentes mais vistos (Dashboard, Kanban, Analytics, Goals) e avancar para os menos frequentes. Todos os 63 arquivos serao tratados para eliminar completamente a poluicao visual.
+**Lote 5 — Instagram Engine — IA Tools (~14 arquivos)**
+SmartAlerts, ResultsSimulator, AutoPlanner, HashtagIntel, ABTesting, RiskScore, ContentGap, BudgetAllocator.
 
-### Detalhes Tecnicos
+**Lote 6 — Instagram Engine — Visual e Calendário (~10 arquivos)**
+RepostAutomation, ContentRecycling, MoodBoard, GanttTimeline, TimingOptimizer, AudienceHeatmap.
 
-- Nenhuma dependencia nova necessaria
-- Todas as cores de substituicao ja existem como CSS variables em `index.css`
-- O `StatusBadge` do squad-ui ja segue o padrao correto e pode ser reutilizado onde badges aparecem nos sub-componentes
+**Lote 7 — Componentes restantes (~20 arquivos)**
+Playbooks, Marketing Hub, Action Hub, Knowledge, Tasks, e quaisquer remanescentes.
+
+## Regras por arquivo
+
+1. Substituir classes hardcoded pela chamada `sc.*()` quando o contexto é status/risco/prioridade
+2. Para cores decorativas sem semântica de status, usar tokens diretos (`text-primary`, `bg-muted`, etc.)
+3. Manter `text-destructive`/`bg-destructive` para erros reais
+4. Não alterar lógica, apenas classes CSS
+
+## Estimativa
+
+~2500 ocorrências em ~190 arquivos. Substituições puramente mecânicas, sem mudança de lógica ou dependências.
 
