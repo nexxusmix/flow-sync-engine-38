@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingProblem } from "@/components/landing/LandingProblem";
@@ -19,8 +20,31 @@ import { LandingCTA } from "@/components/landing/LandingCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 
 export default function LandingPage() {
+  // Unlock native document scroll for the landing page.
+  // The app sets overflow:hidden + height:100vh on html/body for dashboard views;
+  // we temporarily revert that so framer-motion useScroll works correctly and
+  // the page scrolls naturally.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+
+    html.style.overflow = "auto";
+    html.style.height = "auto";
+    html.style.perspective = "none";
+    body.style.overflow = "auto";
+    body.style.height = "auto";
+
+    return () => {
+      html.style.overflow = "";
+      html.style.height = "";
+      html.style.perspective = "";
+      body.style.overflow = "";
+      body.style.height = "";
+    };
+  }, []);
+
   return (
-    <div className="landing-scroll bg-background relative">
+    <div className="bg-background relative min-h-screen">
       {/* Subtle ambient glow */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-primary/4 blur-[200px]" />
