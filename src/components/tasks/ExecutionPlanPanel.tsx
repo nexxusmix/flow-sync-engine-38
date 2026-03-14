@@ -126,11 +126,11 @@ export function ExecutionPlanPanel({
               </div>
             )}
             {plan.energy_level && (
-              <div className={cn("flex items-center gap-1.5 p-2 rounded-lg border border-white/[0.04]", ENERGY_CONFIG[plan.energy_level].bg)}>
-                <Zap className={cn("w-3.5 h-3.5", ENERGY_CONFIG[plan.energy_level].color)} />
+              <div className={cn("flex items-center gap-1.5 p-2 rounded-lg border border-white/[0.04]", sc.energy(plan.energy_level).bg)}>
+                <Zap className={cn("w-3.5 h-3.5", sc.energy(plan.energy_level).text)} />
                 <div>
-                  <p className={cn("text-xs font-medium", ENERGY_CONFIG[plan.energy_level].color)}>
-                    {ENERGY_CONFIG[plan.energy_level].label}
+                  <p className={cn("text-xs font-medium", sc.energy(plan.energy_level).text)}>
+                    {ENERGY_LABELS[plan.energy_level] || plan.energy_level}
                   </p>
                   <p className="text-[9px] text-muted-foreground">Energia</p>
                 </div>

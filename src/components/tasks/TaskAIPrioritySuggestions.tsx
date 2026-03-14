@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { sc } from "@/lib/colors";
 import { Portal } from "@/components/ui/Portal";
 
 interface Suggestion {

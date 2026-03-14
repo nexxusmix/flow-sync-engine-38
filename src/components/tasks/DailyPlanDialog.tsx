@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import type { Task } from "@/hooks/useTasksUnified";
+import { sc } from "@/lib/colors";
 
 interface Suggestion {
   task_id: string;

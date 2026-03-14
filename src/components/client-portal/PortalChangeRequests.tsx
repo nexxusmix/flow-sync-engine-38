@@ -108,8 +108,8 @@ function RequestItem({ request }: { request: ChangeRequest }) {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={cn("text-[9px]", statusConfig.color)}>
-                {statusConfig.label}
+              <Badge variant="outline" className={cn("text-[9px]", statusStyle.text, statusStyle.bg)}>
+                {statusMeta.label}
               </Badge>
               {request.description && (
                 isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />

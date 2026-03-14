@@ -18,6 +18,7 @@ import {
   ListChecks, Link2, Paperclip, X, ExternalLink, Trash2,
   AlertTriangle, Flame, Image, FileVideo, FileIcon, CheckCircle, Timer,
 } from "lucide-react";
+import { sc } from "@/lib/colors";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";

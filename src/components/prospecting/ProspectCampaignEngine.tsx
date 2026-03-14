@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useProspectAI, CampaignPlan } from '@/hooks/useProspectAI';
+import { sc } from '@/lib/colors';
 
 interface Props {
   prospectId?: string;

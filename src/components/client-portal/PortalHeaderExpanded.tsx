@@ -133,9 +133,9 @@ function PortalHeaderExpandedComponent({
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className={cn(
                 "text-[10px] md:text-xs px-2 py-1 rounded border font-medium",
-                statusConfig.color
+                statusStyle.text, statusStyle.bg, statusStyle.border
               )}>
-                {statusConfig.label}
+                {statusLabel}
               </span>
               <span className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
                 {templateName}

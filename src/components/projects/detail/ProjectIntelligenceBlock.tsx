@@ -3,6 +3,7 @@ import { TrendingUp, Calendar, DollarSign, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ProjectIntelligence } from "@/hooks/useProjectIntelligence";
+import { sc } from "@/lib/colors";
 
 interface Props {
   intelligence: ProjectIntelligence;
