@@ -166,7 +166,7 @@ export default function MkAutomationsPage() {
                         <div className="flex gap-2 shrink-0 mt-1">
                           <button
                             onClick={() => applySuggestion(s.id)}
-                            className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                            className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                             title="Aplicar"
                           >
                             <Check className="w-4 h-4" />
