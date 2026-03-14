@@ -89,12 +89,12 @@ Retorne JSON com:
         <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Campaign Autopsy</h3>
-          <Badge className={`text-[9px] ${autopsy.verdict === 'sucesso' ? 'bg-emerald-400/10 text-emerald-400' : autopsy.verdict === 'parcial' ? 'bg-amber-400/10 text-amber-400' : 'bg-red-400/10 text-red-400'}`}>
+          <Badge className={`text-[9px] ${autopsy.verdict === 'sucesso' ? 'bg-primary/10 text-primary' : autopsy.verdict === 'parcial' ? 'bg-muted text-muted-foreground' : 'bg-destructive/10 text-destructive'}`}>
             {autopsy.verdict === 'sucesso' ? '🏆 Sucesso' : autopsy.verdict === 'parcial' ? '⚡ Parcial' : '❌ Fracasso'}
           </Badge>
         </div>
         {autopsy.overall_score !== undefined && (
-          <div className={`text-2xl font-bold ${autopsy.overall_score >= 70 ? 'text-emerald-400' : autopsy.overall_score >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
+          <div className={`text-2xl font-bold ${autopsy.overall_score >= 70 ? 'text-primary' : autopsy.overall_score >= 40 ? 'text-muted-foreground' : 'text-destructive'}`}>
             {autopsy.overall_score}/100
           </div>
         )}
@@ -112,13 +112,13 @@ Retorne JSON com:
         {Array.isArray(autopsy.what_worked) && (
           <Card className="p-4 bg-card/50 border-border/30">
             <div className="flex items-center gap-1.5 mb-3">
-              <CheckCircle className="w-4 h-4 text-emerald-400" />
-              <h4 className="text-xs font-semibold text-emerald-400">O que funcionou</h4>
+              <CheckCircle className="w-4 h-4 text-primary" />
+              <h4 className="text-xs font-semibold text-primary">O que funcionou</h4>
             </div>
             <div className="space-y-1.5">
               {autopsy.what_worked.map((item: string, i: number) => (
                 <div key={i} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
-                  <span className="text-emerald-400 shrink-0">✓</span> {item}
+                  <span className="text-primary shrink-0">✓</span> {item}
                 </div>
               ))}
             </div>
@@ -127,13 +127,13 @@ Retorne JSON com:
         {Array.isArray(autopsy.what_failed) && (
           <Card className="p-4 bg-card/50 border-border/30">
             <div className="flex items-center gap-1.5 mb-3">
-              <XCircle className="w-4 h-4 text-red-400" />
-              <h4 className="text-xs font-semibold text-red-400">O que falhou</h4>
+              <XCircle className="w-4 h-4 text-destructive" />
+              <h4 className="text-xs font-semibold text-destructive">O que falhou</h4>
             </div>
             <div className="space-y-1.5">
               {autopsy.what_failed.map((item: string, i: number) => (
                 <div key={i} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
-                  <span className="text-red-400 shrink-0">✗</span> {item}
+                  <span className="text-destructive shrink-0">✗</span> {item}
                 </div>
               ))}
             </div>

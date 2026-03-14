@@ -246,8 +246,8 @@ export function ContractAiUpdateDialog({
               </p>
             </div>
 
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3">
-              <p className="text-xs text-amber-700 dark:text-amber-400">
+            <div className="rounded-lg bg-muted border border-border p-3">
+              <p className="text-xs text-muted-foreground">
                 <strong>Atenção:</strong> Os dados do contrato atual serão substituídos pelos dados extraídos do novo documento. Revise antes de confirmar.
               </p>
             </div>
@@ -282,7 +282,7 @@ export function ContractAiUpdateDialog({
               <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border">
                 <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                 <span className="text-xs text-muted-foreground truncate">{selectedFile.name}</span>
-                <CheckCircle className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-primary ml-auto flex-shrink-0" />
               </div>
             )}
 
@@ -385,9 +385,9 @@ export function ContractAiUpdateDialog({
             </div>
 
             {!extracted.total_value && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <p className="text-xs text-amber-700 dark:text-amber-400">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted border border-border">
+                <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
                   Valor não identificado. Preencha manualmente se necessário.
                 </p>
               </div>
@@ -413,8 +413,8 @@ export function ContractAiUpdateDialog({
         {/* DONE STEP */}
         {step === "done" && (
           <div className="flex flex-col items-center py-10 gap-3">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-emerald-500" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-primary" />
             </div>
             <p className="text-sm font-medium text-foreground">Contrato atualizado com sucesso!</p>
           </div>

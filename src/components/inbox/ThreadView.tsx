@@ -30,9 +30,9 @@ const channelIcons = {
 };
 
 const channelColors = {
-  instagram: 'text-pink-500 bg-pink-500/10',
-  whatsapp: 'text-green-500 bg-green-500/10',
-  email: 'text-blue-500 bg-blue-500/10',
+  instagram: 'text-primary bg-primary/10',
+  whatsapp: 'text-primary bg-primary/10',
+  email: 'text-primary bg-primary/10',
 };
 
 const statusLabels: Record<InboxStatus, string> = {
@@ -89,8 +89,8 @@ export function ThreadView({
           {/* Status Badge */}
           <span className={cn(
             "px-3 py-1 rounded-full text-mono font-bold uppercase tracking-wider",
-            thread.status === 'open' && "bg-green-500/10 text-green-500",
-            thread.status === 'pending' && "bg-amber-500/10 text-amber-500",
+            thread.status === 'open' && "bg-primary/10 text-primary",
+            thread.status === 'pending' && "bg-muted text-muted-foreground",
             thread.status === 'closed' && "bg-muted text-muted-foreground"
           )}>
             {statusLabels[thread.status]}

@@ -121,7 +121,7 @@ Escreva em português BR, tom profissional e analítico, com dados concretos.`,
             <p className="text-[9px] text-muted-foreground">Posts Totais</p>
           </Card>
           <Card className="p-2.5 text-center">
-            <p className="text-lg font-bold text-emerald-400">{published.length}</p>
+            <p className="text-lg font-bold text-primary">{published.length}</p>
             <p className="text-[9px] text-muted-foreground">Publicados</p>
           </Card>
           <Card className="p-2.5 text-center">
@@ -144,10 +144,10 @@ Escreva em português BR, tom profissional e analítico, com dados concretos.`,
             <h5 className="text-[10px] uppercase text-muted-foreground font-medium">Metas</h5>
             {goalsStatus.map((g, i) => (
               <div key={i} className="flex items-center gap-2">
-                {g.achieved ? <Trophy className="w-3 h-3 text-emerald-400" /> : <AlertTriangle className="w-3 h-3 text-amber-400" />}
+                {g.achieved ? <Trophy className="w-3 h-3 text-primary" /> : <AlertTriangle className="w-3 h-3 text-muted-foreground" />}
                 <span className="text-[11px] text-foreground flex-1">{g.title}</span>
                 <span className="text-[10px] text-muted-foreground">{g.current}/{g.target} {g.unit}</span>
-                <Badge variant="outline" className={`text-[9px] ${g.achieved ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <Badge variant="outline" className={`text-[9px] ${g.achieved ? 'text-primary' : 'text-muted-foreground'}`}>
                   {g.pct}%
                 </Badge>
               </div>

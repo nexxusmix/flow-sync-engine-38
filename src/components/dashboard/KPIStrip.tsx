@@ -55,8 +55,8 @@ export function KPIStrip() {
       value: kpi.inboundReplies,
       icon: MessageSquare,
       href: "/inbox",
-      accent: "text-violet-400",
-      bgAccent: "bg-violet-400/10",
+      accent: "text-primary",
+      bgAccent: "bg-primary/10",
     },
     {
       label: "Calls",

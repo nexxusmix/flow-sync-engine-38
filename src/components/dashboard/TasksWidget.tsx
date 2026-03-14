@@ -50,7 +50,7 @@ export function TasksWidget() {
             {overdue.length} atrasada{overdue.length > 1 ? "s" : ""}
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-xs text-amber-500/80">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock className="w-3.5 h-3.5" />
           {todayTasks.length} hoje
         </div>

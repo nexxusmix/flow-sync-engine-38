@@ -7,9 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const severityConfig = {
-  critical: { icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10' },
-  warning: { icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  info: { icon: Info, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  critical: { icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
+  warning: { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted' },
+  info: { icon: Info, color: 'text-primary', bg: 'bg-primary/10' },
 };
 
 export function AlertsOverviewCard() {
@@ -44,12 +44,12 @@ export function AlertsOverviewCard() {
       {/* Chips */}
       <div className="flex flex-wrap gap-2">
         {criticalCount > 0 && (
-          <span className="px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-[10px] font-medium">
+          <span className="px-2 py-1 rounded-md bg-destructive/10 text-destructive text-[10px] font-medium">
             {criticalCount} críticos
           </span>
         )}
         {overdueCount > 0 && (
-          <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-medium">
+          <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground text-[10px] font-medium">
             {overdueCount} atrasados
           </span>
         )}

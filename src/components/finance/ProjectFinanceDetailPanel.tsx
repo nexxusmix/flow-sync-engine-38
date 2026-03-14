@@ -306,19 +306,19 @@ export function ProjectFinanceDetailPanel({
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border">
           <span className="text-sm text-muted-foreground">Total recebido</span>
-          <span className="font-medium text-emerald-600">{formatCurrency(project.received)}</span>
+          <span className="font-medium text-primary">{formatCurrency(project.received)}</span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border">
           <span className="text-sm text-muted-foreground">A receber</span>
-          <span className="font-medium text-amber-600">{formatCurrency(project.pending)}</span>
+          <span className="font-medium text-muted-foreground">{formatCurrency(project.pending)}</span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border">
           <span className="text-sm text-muted-foreground">Despesas</span>
-          <span className="font-medium text-red-600">{formatCurrency(project.expenses)}</span>
+          <span className="font-medium text-destructive">{formatCurrency(project.expenses)}</span>
         </div>
         <div className="flex justify-between items-center py-2">
           <span className="text-sm font-medium text-foreground">Lucro</span>
-          <span className={`font-semibold ${project.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+          <span className={`font-semibold ${project.profit >= 0 ? 'text-primary' : 'text-destructive'}`}>
             {formatCurrency(project.profit)}
           </span>
         </div>
@@ -327,14 +327,14 @@ export function ProjectFinanceDetailPanel({
       {/* Revenues */}
       <div className="mb-4">
         <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-emerald-600" />
+          <TrendingUp className="w-4 h-4 text-primary" />
           Receitas ({revenues.length})
         </h4>
         <div className="space-y-2 max-h-40 overflow-y-auto">
           {revenues.map(r => (
             <div key={r.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
               <span className="text-muted-foreground truncate mr-2">{r.description}</span>
-              <span className={r.status === 'received' ? 'text-emerald-600' : 'text-amber-600'}>
+              <span className={r.status === 'received' ? 'text-primary' : 'text-muted-foreground'}>
                 {formatCurrency(Number(r.amount))}
               </span>
             </div>
@@ -348,14 +348,14 @@ export function ProjectFinanceDetailPanel({
       {/* Expenses */}
       <div>
         <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-          <TrendingDown className="w-4 h-4 text-red-600" />
+          <TrendingDown className="w-4 h-4 text-destructive" />
           Despesas ({expenses.length})
         </h4>
         <div className="space-y-2 max-h-40 overflow-y-auto">
           {expenses.map(e => (
             <div key={e.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
               <span className="text-muted-foreground truncate mr-2">{e.description}</span>
-              <span className="text-red-600">
+              <span className="text-destructive">
                 {formatCurrency(Number(e.amount))}
               </span>
             </div>

@@ -108,7 +108,7 @@ export function StudioSidebar({
       case 'empty':
         return <Circle className="w-3 h-3 text-white/15" strokeWidth={1.5} />;
       case 'draft':
-        return <AlertCircle className="w-3 h-3 text-amber-500/60" strokeWidth={1.5} />;
+        return <AlertCircle className="w-3 h-3 text-muted-foreground/60" strokeWidth={1.5} />;
       case 'ready':
       case 'approved':
         return <CheckCircle2 className="w-3 h-3 text-[hsl(195,100%,50%)]" strokeWidth={1.5} />;

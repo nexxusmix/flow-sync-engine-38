@@ -12,8 +12,8 @@ export function ProjectDeadlineAlert({ intelligence, dueDate }: Props) {
   if (!intelligence.deadlineAlert || !intelligence.predictedCompletionDate || !dueDate) return null;
 
   const isHighRisk = intelligence.daysOverDeadline > 14;
-  const bgClass = isHighRisk ? "bg-destructive/10 border-destructive/30" : "bg-yellow-500/10 border-yellow-500/30";
-  const textClass = isHighRisk ? "text-destructive" : "text-yellow-600";
+  const bgClass = isHighRisk ? "bg-destructive/10 border-destructive/30" : "bg-muted border-border";
+  const textClass = isHighRisk ? "text-destructive" : "text-muted-foreground";
   const Icon = isHighRisk ? AlertTriangle : Clock;
 
   return (

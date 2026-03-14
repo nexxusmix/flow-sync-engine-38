@@ -108,7 +108,7 @@ export default function MkInstagramPage() {
               </div>
             </div>
             <motion.div
-              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0a0a0f] flex items-center justify-center"
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary border-2 border-[#0a0a0f] flex items-center justify-center"
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
@@ -120,7 +120,7 @@ export default function MkInstagramPage() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-lg font-semibold text-white/90">@{MOCK_PROFILE.username}</h2>
-              <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 uppercase tracking-[0.12em] font-medium">
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20 uppercase tracking-[0.12em] font-medium">
                 Conectado
               </span>
             </div>
@@ -221,9 +221,9 @@ function QuickMetric({ icon: Icon, value, label, trend }: { icon: any; value: st
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3.5 h-3.5 text-[hsl(195,100%,50%)]" />
         {trend === "up" ? (
-          <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+          <ArrowUpRight className="w-3 h-3 text-primary" />
         ) : (
-          <TrendingDown className="w-3 h-3 text-red-400" />
+          <TrendingDown className="w-3 h-3 text-destructive" />
         )}
       </div>
       <span className="text-lg font-bold text-white/90 block">{value}</span>
@@ -303,7 +303,7 @@ function FeedView({ posts, onSelectPost }: { posts: typeof MOCK_POSTS; onSelectP
             <span className="text-xl font-bold text-white/85 block">{stat.value}</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-[9px] text-white/25 uppercase tracking-[0.1em]">{stat.label}</span>
-              <span className="text-[10px] text-emerald-400 font-medium">{stat.change}</span>
+              <span className="text-[10px] text-primary font-medium">{stat.change}</span>
             </div>
           </motion.div>
         ))}
@@ -327,7 +327,7 @@ function MetricsView() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold text-white/90">30.8k</span>
-            <span className="text-xs text-emerald-400 flex items-center gap-0.5">
+            <span className="text-xs text-primary flex items-center gap-0.5">
               <TrendingUp className="w-3 h-3" />+18%
             </span>
           </div>
@@ -399,10 +399,10 @@ function MetricsView() {
         </div>
 
         {/* Best posting times */}
-        <div className="rounded-2xl border border-amber-500/10 bg-amber-500/[0.02] p-6">
+        <div className="rounded-2xl border border-primary/10 bg-primary/[0.02] p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <h3 className="text-sm font-semibold text-amber-300/80">Melhores Horários</h3>
+            <Sparkles className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-primary/80">Melhores Horários</h3>
           </div>
           <div className="space-y-2.5">
             {BEST_TIMES.map((time, i) => (
@@ -418,7 +418,7 @@ function MetricsView() {
                   <motion.div
                     className={cn(
                       "h-full rounded-lg",
-                      time.score >= 90 ? "bg-gradient-to-r from-amber-500/40 to-amber-400/60" :
+                      time.score >= 90 ? "bg-gradient-to-r from-primary/40 to-primary/60" :
                       time.score >= 70 ? "bg-gradient-to-r from-[hsl(195,100%,40%)]/40 to-[hsl(195,100%,50%)]/60" :
                       "bg-white/[0.08]"
                     )}
@@ -429,7 +429,7 @@ function MetricsView() {
                   <div className="absolute inset-0 flex items-center justify-end pr-2">
                     <span className={cn(
                       "text-[9px] font-semibold uppercase tracking-[0.1em]",
-                      time.score >= 90 ? "text-amber-300" : "text-white/30"
+                      time.score >= 90 ? "text-primary" : "text-white/30"
                     )}>
                       {time.label}
                     </span>
@@ -468,7 +468,7 @@ function MetricsView() {
               <div className="flex items-center gap-4 text-[10px] text-white/30 shrink-0">
                 <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{post.likes}</span>
                 <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{post.reach.toLocaleString()}</span>
-                <span className="flex items-center gap-1 text-emerald-400/60">{post.engagement}%</span>
+                <span className="flex items-center gap-1 text-primary/60">{post.engagement}%</span>
               </div>
               <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-white/30 transition-colors" />
             </motion.div>

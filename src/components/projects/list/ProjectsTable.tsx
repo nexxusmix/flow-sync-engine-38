@@ -12,8 +12,8 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function HealthIndicator({ score }: { score: number }) {
-  const color = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
-  const textColor = score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500';
+  const color = score >= 80 ? 'bg-primary' : score >= 50 ? 'bg-muted-foreground' : 'bg-destructive';
+  const textColor = score >= 80 ? 'text-primary' : score >= 50 ? 'text-muted-foreground' : 'text-destructive';
   
   return (
     <div className="flex items-center gap-2">

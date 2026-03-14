@@ -157,12 +157,12 @@ Retorne JSON com:
         <div className="space-y-3">
           {/* Countdown banner */}
           {remaining && (
-            <Card className={`p-4 ${remaining.urgent ? 'bg-red-500/5 border-red-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
+            <Card className={`p-4 ${remaining.urgent ? 'bg-destructive/5 border-destructive/20' : 'bg-muted border-border'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Clock className={`w-5 h-5 ${remaining.urgent ? 'text-red-400' : 'text-amber-400'}`} />
+                  <Clock className={`w-5 h-5 ${remaining.urgent ? 'text-destructive' : 'text-muted-foreground'}`} />
                   <div>
-                    <div className={`text-lg font-bold ${remaining.urgent ? 'text-red-400' : 'text-amber-400'}`}>{remaining.text}</div>
+                    <div className={`text-lg font-bold ${remaining.urgent ? 'text-destructive' : 'text-muted-foreground'}`}>{remaining.text}</div>
                     <div className="text-[10px] text-muted-foreground">restantes para completar a blitz</div>
                   </div>
                 </div>
@@ -180,14 +180,14 @@ Retorne JSON com:
             {generatedPosts.map((post, i) => (
               <div key={i} className="relative">
                 <div className={`absolute -left-6 top-3 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                  post.urgency_level === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'
+                  post.urgency_level === 'high' ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary'
                 }`}>
                   {i + 1}
                 </div>
                 <Card className="p-4 bg-card/50 border-border/30">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="outline" className="text-[8px]">{post.format}</Badge>
-                    <Badge className={`text-[8px] ${post.purpose === 'conversion' ? 'bg-emerald-400/10 text-emerald-400' : 'bg-primary/10 text-primary'}`}>
+                    <Badge className={`text-[8px] ${post.purpose === 'conversion' ? 'bg-primary/10 text-primary' : 'bg-primary/5 text-primary/70'}`}>
                       {post.purpose}
                     </Badge>
                     <span className="text-[9px] text-muted-foreground ml-auto">📅 {post.suggested_time}</span>
@@ -198,7 +198,7 @@ Retorne JSON com:
                   )}
                   <p className="text-[10px] text-muted-foreground line-clamp-2">{post.caption_short}</p>
                   {post.cta && (
-                    <div className="text-[9px] text-amber-400 mt-1">📣 {post.cta}</div>
+                    <div className="text-[9px] text-muted-foreground mt-1">📣 {post.cta}</div>
                   )}
                 </Card>
               </div>

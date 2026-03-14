@@ -95,11 +95,11 @@ export function ProjectTimelineDetailed({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "done":
-        return "bg-emerald-500/20 border-emerald-500/40";
-      case "in_progress":
         return "bg-primary/20 border-primary/40";
+      case "in_progress":
+        return "bg-primary/10 border-primary/30";
       case "blocked":
-        return "bg-red-500/20 border-red-500/40";
+        return "bg-destructive/20 border-destructive/40";
       default:
         return "bg-muted/20 border-muted/40";
     }
@@ -351,11 +351,11 @@ export function ProjectTimelineDetailed({
                         className={cn(
                           "h-full rounded-lg transition-all duration-300",
                           segment.status === "done"
-                            ? "bg-emerald-500/30"
-                            : segment.status === "in_progress"
                             ? "bg-primary/30"
+                            : segment.status === "in_progress"
+                            ? "bg-primary/20"
                             : segment.status === "blocked"
-                            ? "bg-red-500/30"
+                            ? "bg-destructive/30"
                             : "bg-muted/30"
                         )}
                         style={{ width: `${segment.progress}%` }}
@@ -368,7 +368,7 @@ export function ProjectTimelineDetailed({
                         {segment.name}
                       </span>
                       {delay > 0 && (
-                        <span className="text-[8px] text-red-400">+{delay}d</span>
+                        <span className="text-[8px] text-destructive">+{delay}d</span>
                       )}
                     </div>
 
@@ -385,11 +385,11 @@ export function ProjectTimelineDetailed({
           {/* Legend */}
           <div className="flex items-center justify-center gap-6 mt-8 pt-4 border-t border-border/30">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/50" />
+              <div className="w-3 h-3 rounded bg-primary/30 border border-primary/50" />
               <span className="text-[10px] text-muted-foreground">Concluído</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-primary/30 border border-primary/50" />
+              <div className="w-3 h-3 rounded bg-primary/20 border border-primary/30" />
               <span className="text-[10px] text-muted-foreground">Em andamento</span>
             </div>
             <div className="flex items-center gap-2">
@@ -397,7 +397,7 @@ export function ProjectTimelineDetailed({
               <span className="text-[10px] text-muted-foreground">Pendente</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-red-500/30 border border-red-500/50" />
+              <div className="w-3 h-3 rounded bg-destructive/30 border border-destructive/50" />
               <span className="text-[10px] text-muted-foreground">Bloqueado</span>
             </div>
           </div>
@@ -451,7 +451,7 @@ export function ProjectTimelineDetailed({
 
                   <div className="text-right">
                     {delay > 0 && (
-                      <Badge variant="destructive" className="bg-red-500/20 text-red-400 text-[10px]">
+                      <Badge variant="destructive" className="bg-destructive/20 text-destructive text-[10px]">
                         <AlertTriangle className="w-3 h-3 mr-1" />
                         +{delay} dias
                       </Badge>
@@ -461,9 +461,9 @@ export function ProjectTimelineDetailed({
                         <div
                           className={cn(
                             "h-full rounded-full",
-                            segment.status === "done" && "bg-emerald-500",
-                            segment.status === "in_progress" && "bg-primary",
-                            segment.status === "blocked" && "bg-red-500",
+                            segment.status === "done" && "bg-primary",
+                            segment.status === "in_progress" && "bg-primary/60",
+                            segment.status === "blocked" && "bg-destructive",
                             segment.status === "not_started" && "bg-muted-foreground/30"
                           )}
                           style={{ width: `${segment.progress}%` }}
@@ -481,7 +481,7 @@ export function ProjectTimelineDetailed({
                       {segment.blockers.map((blocker, i) => (
                         <span
                           key={i}
-                          className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
+                          className="text-[9px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20"
                         >
                           {blocker.replace("_", " ")}
                         </span>
@@ -516,9 +516,9 @@ export function ProjectTimelineDetailed({
                 <Badge
                   className={cn(
                     "mt-1",
-                    selectedSegment.status === "done" && "bg-emerald-500/20 text-emerald-400",
-                    selectedSegment.status === "in_progress" && "bg-primary/20 text-primary",
-                    selectedSegment.status === "blocked" && "bg-red-500/20 text-red-400",
+                    selectedSegment.status === "done" && "bg-primary/20 text-primary",
+                    selectedSegment.status === "in_progress" && "bg-primary/10 text-primary/70",
+                    selectedSegment.status === "blocked" && "bg-destructive/20 text-destructive",
                     selectedSegment.status === "not_started" && "bg-muted/20 text-muted-foreground"
                   )}
                 >
