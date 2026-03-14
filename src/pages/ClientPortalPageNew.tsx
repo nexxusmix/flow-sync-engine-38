@@ -444,7 +444,7 @@ export default function ClientPortalPage() {
         </ScrollReveal>
 
         {/* Tabs with Tab Content Animation */}
-        <ScrollReveal delay={0.3} className="mt-12">
+        <ScrollReveal delay={0.3} className="mt-6 md:mt-12">
           <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab} badges={tabBadges}>
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-8">
