@@ -129,7 +129,7 @@ export function CampaignCustomerJourney({ campaign, posts }: Props) {
                         return (
                           <div key={post.id} className="flex items-center gap-2 py-1 border-b border-border/5 last:border-0">
                             {post.status === 'published' ? (
-                              <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <CheckCircle className="w-3 h-3 text-primary shrink-0" />
                             ) : (
                               <div className="w-3 h-3 rounded-full border border-muted-foreground/30 shrink-0" />
                             )}
