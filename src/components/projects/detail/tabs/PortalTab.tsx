@@ -269,7 +269,7 @@ export function PortalTab({ project }: PortalTabProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {portalLink.is_active ? (
-                <Eye className="w-5 h-5 text-emerald-500" />
+                <Eye className="w-5 h-5 text-primary" />
               ) : (
                 <EyeOff className="w-5 h-5 text-muted-foreground" />
               )}
