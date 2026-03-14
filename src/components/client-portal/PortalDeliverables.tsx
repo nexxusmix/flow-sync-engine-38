@@ -62,7 +62,7 @@ function DeliverableCard({
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-medium text-foreground truncate">{deliverable.title}</h4>
             {isApproved && (
-              <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
             )}
           </div>
           <p className="text-xs text-muted-foreground">
