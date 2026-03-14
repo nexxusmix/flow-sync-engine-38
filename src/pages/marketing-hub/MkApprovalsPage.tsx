@@ -310,7 +310,16 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
               transition={{ duration: 0.25 }}
               className="overflow-hidden"
             >
-              <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-4">
+              <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
+                {/* Client Approval Bridge */}
+                <div className="rounded-lg bg-muted/10 border border-border/20 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-[0.1em]">Aprovação do Cliente</span>
+                  </div>
+                  <SendToClientApproval item={item} onSent={() => { fetchContentItems(); }} />
+                </div>
+
                 {/* Content Preview */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Script / Caption */}
