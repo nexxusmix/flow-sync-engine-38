@@ -55,18 +55,18 @@ interface PortalChangeRequestsProps {
   isClientView?: boolean;
 }
 
-const STATUS_CONFIG: Record<ChangeRequest['status'], { label: string; icon: typeof CheckCircle2; color: string }> = {
-  open: { label: 'Aberto', icon: AlertCircle, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
-  in_progress: { label: 'Em Andamento', icon: Clock, color: 'text-blue-500 bg-blue-500/10 border-blue-500/30' },
-  resolved: { label: 'Resolvido', icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30' },
-  rejected: { label: 'Rejeitado', icon: XCircle, color: 'text-red-500 bg-red-500/10 border-red-500/30' },
+const STATUS_ICONS: Record<ChangeRequest['status'], { label: string; icon: typeof CheckCircle2 }> = {
+  open: { label: 'Aberto', icon: AlertCircle },
+  in_progress: { label: 'Em Andamento', icon: Clock },
+  resolved: { label: 'Resolvido', icon: CheckCircle2 },
+  rejected: { label: 'Rejeitado', icon: XCircle },
 };
 
-const PRIORITY_CONFIG: Record<ChangeRequest['priority'], { label: string; color: string }> = {
-  low: { label: 'Baixa', color: 'text-muted-foreground' },
-  normal: { label: 'Normal', color: 'text-foreground' },
-  high: { label: 'Alta', color: 'text-amber-500' },
-  urgent: { label: 'Urgente', color: 'text-red-500' },
+const PRIORITY_LABELS: Record<ChangeRequest['priority'], string> = {
+  low: 'Baixa',
+  normal: 'Normal',
+  high: 'Alta',
+  urgent: 'Urgente',
 };
 
 function RequestItem({ request }: { request: ChangeRequest }) {
