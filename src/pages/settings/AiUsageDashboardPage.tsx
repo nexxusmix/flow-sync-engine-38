@@ -6,8 +6,9 @@ import { ptBR } from "date-fns/locale";
 import {
   Brain, Clock, CheckCircle2, XCircle, Zap, TrendingUp,
   BarChart3, Activity, Loader2, RotateCcw, Search, Filter,
-  ArrowUpDown, Copy, Eye, ChevronRight
+  ArrowUpDown, Copy, Eye, ChevronRight, User, Users
 } from "lucide-react";
+import { getAiActionLabel } from "@/ai/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
