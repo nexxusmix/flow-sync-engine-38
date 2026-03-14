@@ -496,7 +496,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
                   <Paperclip className="w-3 h-3" /> Arquivos
                 </Label>
                 {attachments.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
                     {attachments.map((att, i) => renderAttachmentPreview(att, i))}
                   </div>
                 )}

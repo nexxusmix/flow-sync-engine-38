@@ -234,7 +234,7 @@ export function TaskEditDrawer({ task, open, onOpenChange, onUpdate, onDelete }:
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
+      <SheetContent className="w-[100vw] sm:max-w-xl overflow-y-auto" side="right">
         <SheetHeader>
           <SheetTitle className="text-sm text-muted-foreground">Editar Tarefa</SheetTitle>
         </SheetHeader>

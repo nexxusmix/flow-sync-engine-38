@@ -560,7 +560,7 @@ export function TasksBoardView({ tasks, onEditTask, onToggleComplete, onDeleteTa
                         onDragEnd={() => { setDraggingTaskId(null); setDropTargetStatus(null); }}
                         onClick={() => onEditTask(task)}
                         className={cn(
-                          "group relative rounded-2xl p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200",
+                          "group relative rounded-xl sm:rounded-2xl p-3 sm:p-3.5 cursor-grab active:cursor-grabbing transition-all duration-200",
                           "bg-white/[0.02] backdrop-blur-xl border border-white/[0.06]",
                           "hover:bg-white/[0.05] hover:border-white/[0.12]",
                           isDone && "opacity-60",

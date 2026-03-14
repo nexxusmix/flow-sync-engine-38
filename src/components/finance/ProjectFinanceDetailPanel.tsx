@@ -161,7 +161,7 @@ export function ProjectFinanceDetailPanel({
     : 0;
 
   return (
-    <Card className="glass-card p-6 sticky top-6">
+    <Card className="glass-card p-4 sm:p-6 lg:sticky lg:top-6">
       {/* Header */}
       <div className="mb-4">
         <h3 className="font-medium text-foreground">{project.project_name}</h3>

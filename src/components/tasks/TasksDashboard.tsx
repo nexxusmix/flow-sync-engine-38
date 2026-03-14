@@ -216,7 +216,7 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
       </div>
 
       {/* Upcoming Tasks Timeline */}
-      <Card className="glass-card p-5">
+      <Card className="glass-card p-3 md:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-foreground">Próximos 7 Dias</h3>
           <TrendingUp className="w-4 h-4 text-muted-foreground" />
