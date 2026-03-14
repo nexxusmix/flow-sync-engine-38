@@ -404,9 +404,9 @@ export default function ClientPortalPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <StaggerContainer className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6" staggerDelay={0.08}>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
                     {/* Main Content */}
-                    <StaggerItem className="lg:col-span-8 xl:col-span-9 space-y-4 md:space-y-6">
+                    <div className="lg:col-span-8 xl:col-span-9 space-y-4 md:space-y-6">
                       <PortalOverviewPremium 
                         project={project} 
                         stages={stages}
@@ -417,51 +417,38 @@ export default function ClientPortalPage() {
                           setActiveTab("materials");
                         }}
                       />
-                      
-                      <ScrollReveal delay={0.4}>
-                        <PortalClientUploads
-                          clientUploads={clientUploads}
-                          onUpload={handleClientUpload}
-                          isUploading={isUploadingMaterial}
-                        />
-                      </ScrollReveal>
-                    </StaggerItem>
+                      <PortalClientUploads
+                        clientUploads={clientUploads}
+                        onUpload={handleClientUpload}
+                        isUploading={isUploadingMaterial}
+                      />
+                    </div>
                     
                     {/* Sidebar */}
-                    <StaggerItem className="lg:col-span-4 xl:col-span-3 space-y-4 md:space-y-6">
-                      <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
-                        <PortalMaterialsAside deliverables={deliverables} files={files} />
-                      </GlowCard>
-                      <ScrollReveal delay={0.35}>
-                        <PortalProjectRoadmap
-                          stages={stages.map(s => ({
-                            id: s.id,
-                            name: s.title || s.stage_key,
-                            status: s.status as any,
-                            plannedEnd: s.planned_end || undefined,
-                            progress: s.status === 'done' ? 100 : s.status === 'in_progress' ? 50 : 0,
-                          }))}
-                          projectName={project.name}
-                          dueDate={project.due_date}
-                        />
-                      </ScrollReveal>
-                      <ScrollReveal delay={0.4}>
-                        <PortalNextSteps stages={stages} currentStageKey={project.stage_current} />
-                      </ScrollReveal>
-                      <ScrollReveal delay={0.5}>
-                        <PortalAuditBadge />
-                      </ScrollReveal>
-                      <ScrollReveal delay={0.6}>
-                        <PortalFeedbackWidget
-                          portalLinkId={portal.id}
-                          projectId={project.id}
-                          entityType="general"
-                          title="Como está sua experiência?"
-                          subtitle="Sua opinião nos ajuda a melhorar."
-                        />
-                      </ScrollReveal>
-                    </StaggerItem>
-                  </StaggerContainer>
+                    <div className="lg:col-span-4 xl:col-span-3 space-y-4 md:space-y-6">
+                      <PortalMaterialsAside deliverables={deliverables} files={files} />
+                      <PortalProjectRoadmap
+                        stages={stages.map(s => ({
+                          id: s.id,
+                          name: s.title || s.stage_key,
+                          status: s.status as any,
+                          plannedEnd: s.planned_end || undefined,
+                          progress: s.status === 'done' ? 100 : s.status === 'in_progress' ? 50 : 0,
+                        }))}
+                        projectName={project.name}
+                        dueDate={project.due_date}
+                      />
+                      <PortalNextSteps stages={stages} currentStageKey={project.stage_current} />
+                      <PortalAuditBadge />
+                      <PortalFeedbackWidget
+                        portalLinkId={portal.id}
+                        projectId={project.id}
+                        entityType="general"
+                        title="Como está sua experiência?"
+                        subtitle="Sua opinião nos ajuda a melhorar."
+                      />
+                    </div>
+                  </div>
                 </motion.div>
               </AnimatePresence>
             </TabsContent>
