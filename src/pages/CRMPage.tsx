@@ -151,7 +151,7 @@ export default function CRMPage() {
         </div>
 
         {/* CRM Filter Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-3 md:gap-4">
           <div className="flex items-center gap-4 flex-wrap">
             {/* View Toggle */}
             <div className="flex rounded-full border border-border p-1">
