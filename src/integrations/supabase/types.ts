@@ -4603,6 +4603,57 @@ export type Database = {
           },
         ]
       }
+      instagram_ab_tests: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          field: string
+          id: string
+          name: string
+          notes: string | null
+          post_id: string
+          status: string
+          updated_at: string
+          variant_a: string
+          variant_b: string
+          winner: string | null
+          workspace_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          field?: string
+          id?: string
+          name: string
+          notes?: string | null
+          post_id: string
+          status?: string
+          updated_at?: string
+          variant_a?: string
+          variant_b?: string
+          winner?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          field?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          post_id?: string
+          status?: string
+          updated_at?: string
+          variant_a?: string
+          variant_b?: string
+          winner?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       instagram_ai_memory: {
         Row: {
           category: string | null
