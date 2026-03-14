@@ -59,6 +59,14 @@ export default function AiUsageDashboardPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [periodDays, setPeriodDays] = useState(30);
   const [selectedRun, setSelectedRun] = useState<AiRun | null>(null);
+  const [viewMode, setViewMode] = useState<"mine" | "all">("mine");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
 
   useEffect(() => {
     fetchRuns();
@@ -80,6 +88,12 @@ export default function AiUsageDashboardPage() {
     }
     setIsLoading(false);
   };
+
+  // Filter by user when in "mine" mode
+  const scopedRuns = useMemo(() => {
+    if (viewMode === "all" || !currentUserId) return runs;
+    return runs.filter(r => r.user_id === currentUserId);
+  }, [runs, viewMode, currentUserId]);
 
   // ─── Computed Stats ──────────────────────────────────────────────────
   const stats = useMemo(() => {
