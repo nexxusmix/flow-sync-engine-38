@@ -21,17 +21,17 @@ interface Alert {
 }
 
 const TYPE_STYLES: Record<string, string> = {
-  danger: 'border-red-500/30 bg-red-500/5',
-  warning: 'border-amber-500/30 bg-amber-500/5',
-  info: 'border-blue-500/30 bg-blue-500/5',
-  success: 'border-emerald-500/30 bg-emerald-500/5',
+  danger: 'border-destructive/30 bg-destructive/5',
+  warning: 'border-border bg-muted/50',
+  info: 'border-primary/30 bg-primary/5',
+  success: 'border-primary/30 bg-primary/5',
 };
 
 const TYPE_BADGE: Record<string, string> = {
-  danger: 'bg-red-500/15 text-red-400',
-  warning: 'bg-amber-500/15 text-amber-400',
-  info: 'bg-blue-500/15 text-blue-400',
-  success: 'bg-emerald-500/15 text-emerald-400',
+  danger: 'bg-destructive/15 text-destructive',
+  warning: 'bg-muted text-muted-foreground',
+  info: 'bg-primary/15 text-primary',
+  success: 'bg-primary/15 text-primary',
 };
 
 export function CampaignAlerts({ campaign, posts, goals }: Props) {

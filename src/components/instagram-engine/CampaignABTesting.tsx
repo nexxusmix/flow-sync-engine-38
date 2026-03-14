@@ -110,8 +110,8 @@ export function CampaignABTesting({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-purple-500/15 flex items-center justify-center">
-          <GitCompare className="w-4 h-4 text-purple-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <GitCompare className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Teste A/B de Conteúdo</h4>

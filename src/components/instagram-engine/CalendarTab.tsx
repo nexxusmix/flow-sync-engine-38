@@ -213,8 +213,8 @@ export function CalendarTab() {
   }, [campaigns]);
 
   const statusColorMap: Record<string, string> = {
-    published: 'bg-emerald-500', scheduled: 'bg-cyan-500', ready: 'bg-primary',
-    in_production: 'bg-amber-500', planned: 'bg-blue-500', idea: 'bg-muted-foreground/40',
+    published: 'bg-primary', scheduled: 'bg-primary/70', ready: 'bg-primary/50',
+    in_production: 'bg-muted-foreground', planned: 'bg-primary/30', idea: 'bg-muted-foreground/40',
   };
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
