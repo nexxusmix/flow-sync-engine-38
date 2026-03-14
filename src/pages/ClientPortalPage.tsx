@@ -516,7 +516,7 @@ export default function ClientPortalPage() {
                     <div key={comment.id} className={cn(
                       "p-3 rounded-xl",
                       comment.status === 'revision_requested' 
-                        ? "bg-amber-500/10 border border-amber-500/20" 
+                        ? "bg-muted border border-border" 
                         : "bg-muted/50"
                     )}>
                       <div className="flex justify-between mb-1">
