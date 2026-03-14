@@ -161,8 +161,8 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
                     )}
 
                     {analysis.dormant.count > 0 && (
-                      <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-1">
-                        <p className="text-sm font-semibold text-amber-500 flex items-center gap-1.5">
+                      <div className="p-3 rounded-xl border border-border bg-muted/50 space-y-1">
+                        <p className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
                           <Clock className="w-4 h-4" /> {analysis.dormant.count} tarefas dormentes (+7d)
                         </p>
                         <ul className="text-xs text-muted-foreground space-y-0.5">
