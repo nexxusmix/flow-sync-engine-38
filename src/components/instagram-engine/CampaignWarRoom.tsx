@@ -98,12 +98,12 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
             </div>
             <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${
-                metrics.completionPct >= progressPct ? 'bg-emerald-400/60' : 'bg-amber-400/60'
+                metrics.completionPct >= progressPct ? 'bg-primary/60' : 'bg-muted-foreground/60'
               }`} style={{ width: `${metrics.completionPct}%` }} />
             </div>
           </div>
           {metrics.completionPct < progressPct && (
-            <div className="text-[9px] text-amber-400 flex items-center gap-1">
+            <div className="text-[9px] text-muted-foreground flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" /> Produção atrás do cronograma ({progressPct - metrics.completionPct}% de gap)
             </div>
           )}
