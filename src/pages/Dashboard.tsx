@@ -461,7 +461,7 @@ export default function Dashboard() {
         <ActionHubRail />
 
         {/* Section: Main Layout Split */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
           {/* Left Column: Projects (8 cols) */}
           <div className="xl:col-span-8">
             <div className="glass-card rounded-[2rem] p-6 min-h-[350px]">
