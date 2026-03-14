@@ -107,7 +107,7 @@ export function LandingNav() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl pt-20 px-6 md:hidden"
+            className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl pt-20 px-6 lg:hidden"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
