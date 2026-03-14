@@ -491,7 +491,7 @@ export default function ClientPortalPage() {
                   <Button 
                     onClick={handleApprove} 
                     disabled={!commentForm.name || isApproving || hasPaymentBlock} 
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     {isApproving ? 'Aprovando...' : 'Aprovar Entrega'}
