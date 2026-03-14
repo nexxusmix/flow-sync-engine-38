@@ -73,7 +73,7 @@ function IdeaCard({
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
           {idea.score > 0 && (
-            <div className="flex items-center gap-1 text-amber-500">
+            <div className="flex items-center gap-1 text-primary">
               <Star className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-medium">{idea.score}</span>
             </div>
