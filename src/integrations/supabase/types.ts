@@ -411,6 +411,93 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          is_resolved: boolean
+          message: string | null
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source_module: string | null
+          title: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          message?: string | null
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_module?: string | null
+          title: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          message?: string | null
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_module?: string | null
+          title?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      ai_governance_policies: {
+        Row: {
+          config_json: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_enabled: boolean
+          name: string
+          policy_type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          name: string
+          policy_type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          policy_type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       ai_outbox: {
         Row: {
           alert_id: string | null
@@ -521,6 +608,108 @@ export type Database = {
           status?: string
           user_id?: string
           workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_usage_events: {
+        Row: {
+          action_type: string
+          approved_by: string | null
+          created_at: string
+          error_message: string | null
+          estimated_cost: number | null
+          execution_time_ms: number | null
+          id: string
+          metadata: Json | null
+          model_name: string | null
+          provider_name: string | null
+          requires_approval: boolean | null
+          source_entity_id: string | null
+          source_entity_type: string | null
+          source_module: string
+          status: string
+          tokens_input: number | null
+          tokens_output: number | null
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action_type: string
+          approved_by?: string | null
+          created_at?: string
+          error_message?: string | null
+          estimated_cost?: number | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          model_name?: string | null
+          provider_name?: string | null
+          requires_approval?: boolean | null
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          source_module?: string
+          status?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          action_type?: string
+          approved_by?: string | null
+          created_at?: string
+          error_message?: string | null
+          estimated_cost?: number | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          model_name?: string | null
+          provider_name?: string | null
+          requires_approval?: boolean | null
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          source_module?: string
+          status?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      ai_workspace_limits: {
+        Row: {
+          created_at: string
+          current_value: number
+          id: string
+          is_active: boolean
+          limit_type: string
+          max_value: number
+          reset_period: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_active?: boolean
+          limit_type?: string
+          max_value?: number
+          reset_period?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_active?: boolean
+          limit_type?: string
+          max_value?: number
+          reset_period?: string
+          updated_at?: string
+          workspace_id?: string
         }
         Relationships: []
       }

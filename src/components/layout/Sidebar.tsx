@@ -40,6 +40,7 @@ const mainMenuItems: MenuItem[] = [
   { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
   { name: "Automações", href: "/automacoes-agencia", icon: "manufacturing" },
   { name: "Inbox Operacional", href: "/inbox-operacional", icon: "inbox" },
+  { name: "IA & Governança", href: "/ia-governanca", icon: "psychology" },
   { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
   { name: "Clientes", href: "/clientes", icon: "groups" },
   { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
