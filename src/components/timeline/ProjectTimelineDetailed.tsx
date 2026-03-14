@@ -516,9 +516,9 @@ export function ProjectTimelineDetailed({
                 <Badge
                   className={cn(
                     "mt-1",
-                    selectedSegment.status === "done" && "bg-emerald-500/20 text-emerald-400",
-                    selectedSegment.status === "in_progress" && "bg-primary/20 text-primary",
-                    selectedSegment.status === "blocked" && "bg-red-500/20 text-red-400",
+                    selectedSegment.status === "done" && "bg-primary/20 text-primary",
+                    selectedSegment.status === "in_progress" && "bg-primary/10 text-primary/70",
+                    selectedSegment.status === "blocked" && "bg-destructive/20 text-destructive",
                     selectedSegment.status === "not_started" && "bg-muted/20 text-muted-foreground"
                   )}
                 >

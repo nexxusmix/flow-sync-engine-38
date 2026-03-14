@@ -58,7 +58,7 @@ export function OnboardingDetail({ onboardingId, onBack }: Props) {
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <span className="material-symbols-rounded text-sm">attach_file</span>
-              {pendingMaterials > 0 ? <span className="text-amber-600">{pendingMaterials} pendentes</span> : "Materiais OK"}
+              {pendingMaterials > 0 ? <span className="text-muted-foreground">{pendingMaterials} pendentes</span> : "Materiais OK"}
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <span className="material-symbols-rounded text-sm">quiz</span>

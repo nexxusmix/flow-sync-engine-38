@@ -89,8 +89,8 @@ export function ThreadView({
           {/* Status Badge */}
           <span className={cn(
             "px-3 py-1 rounded-full text-mono font-bold uppercase tracking-wider",
-            thread.status === 'open' && "bg-green-500/10 text-green-500",
-            thread.status === 'pending' && "bg-amber-500/10 text-amber-500",
+            thread.status === 'open' && "bg-primary/10 text-primary",
+            thread.status === 'pending' && "bg-muted text-muted-foreground",
             thread.status === 'closed' && "bg-muted text-muted-foreground"
           )}>
             {statusLabels[thread.status]}

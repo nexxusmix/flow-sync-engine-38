@@ -107,7 +107,7 @@ export function ProfileCard({ config, snapshot, publishedCount, daysSincePost }:
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             {/* Activity indicator dot */}
             <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-background ${
-              daysSincePost <= 3 ? 'bg-emerald-500' : daysSincePost <= 7 ? 'bg-amber-500' : 'bg-destructive'
+              daysSincePost <= 3 ? 'bg-primary' : daysSincePost <= 7 ? 'bg-muted-foreground' : 'bg-destructive'
             }`} />
           </div>
 

@@ -49,7 +49,7 @@ export function AlertsOverviewCard() {
           </span>
         )}
         {overdueCount > 0 && (
-          <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-medium">
+          <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground text-[10px] font-medium">
             {overdueCount} atrasados
           </span>
         )}

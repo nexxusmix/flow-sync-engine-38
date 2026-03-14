@@ -188,7 +188,7 @@ export default function MarketingPage() {
             value={stats.scheduledThisWeek}
             icon={Clock}
             trend="Esta semana"
-            color="text-cyan-500"
+            color="text-primary"
           />
           <StatCard
             title="Publicados"

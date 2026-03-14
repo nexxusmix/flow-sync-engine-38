@@ -12,12 +12,12 @@ export function BillingOverview() {
   const cards = [
     { label: 'MRR', value: fmt(m.mrr), icon: 'trending_up', accent: 'text-primary' },
     { label: 'ARR estimado', value: fmt(m.arr), icon: 'calendar_month', accent: 'text-primary' },
-    { label: 'Receita do mês', value: fmt(m.revenueThisMonth), icon: 'payments', accent: 'text-emerald-400' },
+    { label: 'Receita do mês', value: fmt(m.revenueThisMonth), icon: 'payments', accent: 'text-primary' },
     { label: 'Assinaturas ativas', value: String(m.activeSubs), icon: 'card_membership', accent: 'text-primary' },
-    { label: 'Trials ativos', value: String(m.trialSubs), icon: 'hourglass_top', accent: 'text-amber-400' },
+    { label: 'Trials ativos', value: String(m.trialSubs), icon: 'hourglass_top', accent: 'text-muted-foreground' },
     { label: 'Cancelamentos', value: String(m.canceledSubs), icon: 'cancel', accent: 'text-destructive' },
     { label: 'Inadimplência', value: fmt(m.overdueAmount), icon: 'warning', accent: 'text-destructive' },
-    { label: 'Faturas vencidas', value: String(m.overdueCount), icon: 'receipt_long', accent: 'text-orange-400' },
+    { label: 'Faturas vencidas', value: String(m.overdueCount), icon: 'receipt_long', accent: 'text-destructive' },
   ];
 
   return (

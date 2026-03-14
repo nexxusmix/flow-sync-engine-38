@@ -34,8 +34,8 @@ export function RevenueForecaster({ forecast30, forecast60, forecast90 }: Revenu
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{item.label}</p>
               <p className="text-lg font-semibold text-foreground">{formatCurrencyBRL(item.value)}</p>
               <p className={`text-[10px] mt-1 ${
-                item.confidence === 'Alta' ? 'text-emerald-500' :
-                item.confidence === 'Média' ? 'text-yellow-500' : 'text-muted-foreground'
+                item.confidence === 'Alta' ? 'text-primary' :
+                item.confidence === 'Média' ? 'text-muted-foreground' : 'text-muted-foreground/60'
               }`}>
                 Confiança: {item.confidence}
               </p>

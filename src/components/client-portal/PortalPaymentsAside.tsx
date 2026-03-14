@@ -95,7 +95,7 @@ function PortalPaymentsAsideComponent({ projectId, hasPaymentBlock }: PortalPaym
                     variant="ghost"
                     size="sm"
                     onClick={() => handleCopyPix(payment.id)}
-                    className="text-cyan-400 hover:text-cyan-300 text-xs h-auto p-0"
+                    className="text-primary hover:text-primary/80 text-xs h-auto p-0"
                   >
                     {copiedId === payment.id ? 'Copiado!' : 'Copiar Pix'}
                   </Button>
