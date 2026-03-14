@@ -121,7 +121,7 @@ Escreva em português BR, tom profissional e analítico, com dados concretos.`,
             <p className="text-[9px] text-muted-foreground">Posts Totais</p>
           </Card>
           <Card className="p-2.5 text-center">
-            <p className="text-lg font-bold text-emerald-400">{published.length}</p>
+            <p className="text-lg font-bold text-primary">{published.length}</p>
             <p className="text-[9px] text-muted-foreground">Publicados</p>
           </Card>
           <Card className="p-2.5 text-center">
