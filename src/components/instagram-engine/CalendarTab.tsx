@@ -461,7 +461,7 @@ export function CalendarTab() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="gap-1 text-xs border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
+                            className="gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
                             onClick={() => openPublishDialog(p.id)}
                           >
                             <Send className="w-3 h-3" />
