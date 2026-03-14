@@ -246,8 +246,8 @@ export function ContractAiUpdateDialog({
               </p>
             </div>
 
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3">
-              <p className="text-xs text-amber-700 dark:text-amber-400">
+            <div className="rounded-lg bg-muted border border-border p-3">
+              <p className="text-xs text-muted-foreground">
                 <strong>Atenção:</strong> Os dados do contrato atual serão substituídos pelos dados extraídos do novo documento. Revise antes de confirmar.
               </p>
             </div>
