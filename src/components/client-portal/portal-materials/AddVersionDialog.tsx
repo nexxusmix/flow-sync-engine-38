@@ -258,7 +258,7 @@ export function AddVersionDialog({
               />
               {selectedFile ? (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-[#111] border border-[#2a2a2a]">
-                  <FileVideo className="w-8 h-8 text-cyan-500" />
+                  <FileVideo className="w-8 h-8 text-primary" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{selectedFile.name}</p>
                     <p className="text-xs text-gray-500">

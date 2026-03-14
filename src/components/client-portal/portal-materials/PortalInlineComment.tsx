@@ -390,10 +390,10 @@ function PortalInlineCommentComponent({
 
       {/* Approved Badge */}
       {isApproved && (
-        <div className="border-t border-[#1a1a1a] p-3 bg-emerald-500/5">
+        <div className="border-t border-border p-3 bg-primary/5">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span className="text-xs text-emerald-400">
+            <CheckCircle2 className="w-4 h-4 text-primary" />
+            <span className="text-xs text-primary">
               Aprovado por {approval.approved_by_name}
             </span>
             <span className="text-[10px] text-gray-600 ml-auto">
