@@ -198,9 +198,9 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-caption font-semibold text-green-500 uppercase">Online</span>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-caption font-semibold text-primary uppercase">Online</span>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center transition-colors">
               <span className="material-symbols-outlined text-muted-foreground hover:text-foreground">close</span>

@@ -91,9 +91,9 @@ export default function CalendarPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <Card className="border-amber-500/50 bg-amber-500/5">
+                <Card className="border-border bg-muted/50">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2 text-amber-500">
+                    <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
                       <Clock className="w-4 h-4" />
                       Em Risco ({riskEvents.length})
                     </CardTitle>
@@ -111,7 +111,7 @@ export default function CalendarPage() {
                               )}
                               <span className="truncate">{event.title}</span>
                             </div>
-                            <Badge className="bg-amber-500/20 text-amber-400 text-[10px] flex-shrink-0">
+                            <Badge className="bg-muted text-muted-foreground text-[10px] flex-shrink-0">
                               {getDaysLabel(event.date)}
                             </Badge>
                           </div>
@@ -144,8 +144,8 @@ export default function CalendarPage() {
           <Card className="bg-card/50">
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-emerald-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Package className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold">{stats.deliveries}</p>
@@ -158,8 +158,8 @@ export default function CalendarPage() {
           <Card className="bg-card/50">
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-amber-500" />
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-semibold">{stats.payments}</p>

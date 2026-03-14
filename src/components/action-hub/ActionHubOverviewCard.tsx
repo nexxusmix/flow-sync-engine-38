@@ -25,16 +25,16 @@ export function ActionHubOverviewCard() {
           <span className="text-[9px] text-muted-foreground font-mono">{openCount} ações abertas</span>
         </div>
         {p0Items.length > 0 && (
-          <span className="text-[8px] px-2 py-1 rounded-full bg-red-500/20 text-red-400 font-mono animate-pulse">
+          <span className="text-[8px] px-2 py-1 rounded-full bg-destructive/20 text-destructive font-mono animate-pulse">
             {p0Items.length} P0
           </span>
         )}
       </div>
 
       {criticalItem && (
-        <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-3 mb-3">
+        <div className="bg-destructive/5 border border-destructive/10 rounded-xl p-3 mb-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" strokeWidth={1.5} />
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive flex-shrink-0" strokeWidth={1.5} />
             <p className="text-[11px] text-red-400 truncate">{criticalItem.title}</p>
           </div>
         </div>

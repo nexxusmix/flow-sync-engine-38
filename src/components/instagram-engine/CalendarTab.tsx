@@ -213,8 +213,8 @@ export function CalendarTab() {
   }, [campaigns]);
 
   const statusColorMap: Record<string, string> = {
-    published: 'bg-emerald-500', scheduled: 'bg-cyan-500', ready: 'bg-primary',
-    in_production: 'bg-amber-500', planned: 'bg-blue-500', idea: 'bg-muted-foreground/40',
+    published: 'bg-primary', scheduled: 'bg-primary/70', ready: 'bg-primary/50',
+    in_production: 'bg-muted-foreground', planned: 'bg-primary/30', idea: 'bg-muted-foreground/40',
   };
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -461,7 +461,7 @@ export function CalendarTab() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="gap-1 text-xs border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
+                            className="gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
                             onClick={() => openPublishDialog(p.id)}
                           >
                             <Send className="w-3 h-3" />
@@ -469,7 +469,7 @@ export function CalendarTab() {
                           </Button>
                         )}
                         {p.status === 'published' && (
-                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px]">
+                          <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px]">
                             ✓ Publicado
                           </Badge>
                         )}

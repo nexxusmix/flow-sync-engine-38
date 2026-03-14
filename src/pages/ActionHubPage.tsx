@@ -160,8 +160,8 @@ export default function ActionHubPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
-              <CheckCircle className="w-7 h-7 text-emerald-500" strokeWidth={1.5} />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <CheckCircle className="w-7 h-7 text-primary" strokeWidth={1.5} />
             </div>
             <p className="text-lg text-muted-foreground font-light">Nenhuma ação pendente</p>
             <p className="text-xs text-muted-foreground/50 mt-1">Tudo sob controle — continue assim! ✓</p>

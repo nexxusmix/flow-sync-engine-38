@@ -83,8 +83,8 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-violet-500/15 flex items-center justify-center">
-          <BookOpen className="w-4 h-4 text-violet-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <BookOpen className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Post-Mortem Inteligente</h4>
@@ -109,8 +109,8 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold ${
-                  report.overall_grade === 'A' ? 'bg-emerald-500/15 text-emerald-400' :
-                  report.overall_grade === 'B' ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400'
+                  report.overall_grade === 'A' ? 'bg-primary/15 text-primary' :
+                  report.overall_grade === 'B' ? 'bg-muted text-muted-foreground' : 'bg-destructive/15 text-destructive'
                 }`}>{report.overall_grade}</div>
                 <div>
                   <p className="text-[10px] font-semibold text-foreground">Nota Geral</p>
@@ -128,7 +128,7 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
           {report.top_performers.length > 0 && (
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                 <TrendingUp className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Top Performers</span>
               </div>
               {report.top_performers.map((t, i) => (
@@ -141,7 +141,7 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                <Lightbulb className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-[10px] font-semibold text-foreground">Padrões de Sucesso</span>
               </div>
               {report.patterns_of_success.map((p, i) => (
@@ -150,7 +150,7 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
             </Card>
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+                <TrendingDown className="w-3.5 h-3.5 text-destructive" />
                 <span className="text-[10px] font-semibold text-foreground">Erros a Evitar</span>
               </div>
               {report.mistakes_to_avoid.map((m, i) => (

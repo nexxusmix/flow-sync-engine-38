@@ -13,10 +13,10 @@ interface Props {
 type JourneyStage = 'discovery' | 'engagement' | 'trust' | 'conversion';
 
 const STAGES: { key: JourneyStage; label: string; description: string; icon: React.ReactNode; color: string; bg: string; pillars: string[] }[] = [
-  { key: 'discovery', label: 'Descoberta', description: 'O seguidor encontra você', icon: <Eye className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-500/15', pillars: ['educacao', 'bastidores'] },
-  { key: 'engagement', label: 'Engajamento', description: 'Interage com o conteúdo', icon: <Heart className="w-5 h-5" />, color: 'text-rose-400', bg: 'bg-rose-500/15', pillars: ['autoridade', 'educacao'] },
-  { key: 'trust', label: 'Confiança', description: 'Passa a confiar na marca', icon: <MessageSquare className="w-5 h-5" />, color: 'text-amber-400', bg: 'bg-amber-500/15', pillars: ['social_proof', 'portfolio', 'bastidores'] },
-  { key: 'conversion', label: 'Conversão', description: 'Toma a decisão de compra', icon: <ShoppingBag className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-500/15', pillars: ['venda', 'social_proof'] },
+  { key: 'discovery', label: 'Descoberta', description: 'O seguidor encontra você', icon: <Eye className="w-5 h-5" />, color: 'text-primary', bg: 'bg-primary/15', pillars: ['educacao', 'bastidores'] },
+  { key: 'engagement', label: 'Engajamento', description: 'Interage com o conteúdo', icon: <Heart className="w-5 h-5" />, color: 'text-primary/80', bg: 'bg-primary/10', pillars: ['autoridade', 'educacao'] },
+  { key: 'trust', label: 'Confiança', description: 'Passa a confiar na marca', icon: <MessageSquare className="w-5 h-5" />, color: 'text-muted-foreground', bg: 'bg-muted', pillars: ['social_proof', 'portfolio', 'bastidores'] },
+  { key: 'conversion', label: 'Conversão', description: 'Toma a decisão de compra', icon: <ShoppingBag className="w-5 h-5" />, color: 'text-primary', bg: 'bg-primary/20', pillars: ['venda', 'social_proof'] },
 ];
 
 function classifyJourneyStage(post: InstagramPost): JourneyStage {
@@ -42,14 +42,14 @@ export function CampaignCustomerJourney({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-cyan-500/15 flex items-center justify-center">
-          <Route className="w-4 h-4 text-cyan-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <Route className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Jornada do Seguidor</h4>
           <p className="text-[10px] text-muted-foreground">
             {journeyData.coverage}/4 etapas cobertas
-            {journeyData.gaps.length > 0 && <span className="text-amber-400 ml-1">· Gaps: {journeyData.gaps.join(', ')}</span>}
+            {journeyData.gaps.length > 0 && <span className="text-muted-foreground ml-1">· Gaps: {journeyData.gaps.join(', ')}</span>}
           </p>
         </div>
       </div>
@@ -129,7 +129,7 @@ export function CampaignCustomerJourney({ campaign, posts }: Props) {
                         return (
                           <div key={post.id} className="flex items-center gap-2 py-1 border-b border-border/5 last:border-0">
                             {post.status === 'published' ? (
-                              <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <CheckCircle className="w-3 h-3 text-primary shrink-0" />
                             ) : (
                               <div className="w-3 h-3 rounded-full border border-muted-foreground/30 shrink-0" />
                             )}
@@ -181,8 +181,8 @@ export function CampaignCustomerJourney({ campaign, posts }: Props) {
         <p className="text-[9px] text-muted-foreground">
           Cobertura: <span className="font-bold text-foreground">{journeyData.coverage}/4</span> etapas ·
           {journeyData.gaps.length === 0
-            ? <span className="text-emerald-400 ml-1">Jornada completa ✓</span>
-            : <span className="text-amber-400 ml-1">Preencha: {journeyData.gaps.join(', ')}</span>
+            ? <span className="text-primary ml-1">Jornada completa ✓</span>
+            : <span className="text-muted-foreground ml-1">Preencha: {journeyData.gaps.join(', ')}</span>
           }
         </p>
       </Card>

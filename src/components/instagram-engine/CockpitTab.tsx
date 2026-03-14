@@ -91,7 +91,7 @@ export function CockpitTab({ onViewPost }: CockpitTabProps = {}) {
   const daysSincePost = lastPublished ? differenceInDays(today, new Date(lastPublished.published_at!)) : 999;
   const healthStatus = daysSincePost <= 3 ? 'green' : daysSincePost <= 7 ? 'yellow' : 'red';
   const healthLabel = { green: 'Saudável', yellow: 'Atenção', red: 'Crítico' }[healthStatus];
-  const healthColor = { green: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', yellow: 'text-amber-400 bg-amber-500/10 border-amber-500/20', red: 'text-destructive bg-destructive/10 border-destructive/20' }[healthStatus];
+  const healthColor = { green: 'text-primary bg-primary/10 border-primary/20', yellow: 'text-muted-foreground bg-muted border-border', red: 'text-destructive bg-destructive/10 border-destructive/20' }[healthStatus];
 
   const statusCounts = POST_STATUSES.map(s => ({
     ...s,

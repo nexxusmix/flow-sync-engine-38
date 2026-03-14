@@ -23,9 +23,9 @@ interface HashtagCluster {
 }
 
 const SATURATION_STYLES = {
-  low: { label: 'Baixa', color: 'bg-emerald-500/15 text-emerald-400' },
-  medium: { label: 'Média', color: 'bg-amber-500/15 text-amber-400' },
-  high: { label: 'Alta', color: 'bg-red-500/15 text-red-400' },
+  low: { label: 'Baixa', color: 'bg-primary/15 text-primary' },
+  medium: { label: 'Média', color: 'bg-muted text-muted-foreground' },
+  high: { label: 'Alta', color: 'bg-destructive/15 text-destructive' },
 };
 
 export function CampaignHashtagPlanner({ campaign, posts }: Props) {
@@ -147,8 +147,8 @@ export function CampaignHashtagPlanner({ campaign, posts }: Props) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-cyan-500/15 flex items-center justify-center">
-            <Hash className="w-4 h-4 text-cyan-400" />
+          <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+            <Hash className="w-4 h-4 text-primary" />
           </div>
           <div>
             <h4 className="text-sm font-semibold text-foreground">Planejador de Hashtags</h4>

@@ -62,9 +62,9 @@ function CampaignCard({
   const [showPackages, setShowPackages] = useState(false);
   
   const statusColors = {
-    draft: 'bg-slate-500',
-    active: 'bg-emerald-500',
-    paused: 'bg-amber-500',
+    draft: 'bg-muted-foreground',
+    active: 'bg-primary',
+    paused: 'bg-muted-foreground/50',
     ended: 'bg-destructive',
   };
 
