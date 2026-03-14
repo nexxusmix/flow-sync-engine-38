@@ -41,7 +41,7 @@ export function OnboardingDetail({ onboardingId, onBack }: Props) {
             <h2 className="text-xl font-semibold text-foreground">{ob.client_name}</h2>
             <span className={cn(
               "text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 rounded-full",
-              ob.status === "completed" ? "text-emerald-600 bg-emerald-500/10" : "text-primary bg-primary/10"
+              ob.status === "completed" ? "text-primary bg-primary/10" : "text-primary/70 bg-primary/5"
             )}>
               {ob.status === "completed" ? "Concluído" : "Em andamento"}
             </span>
