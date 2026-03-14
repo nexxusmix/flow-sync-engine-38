@@ -151,12 +151,12 @@ export default function MkApprovalsPage() {
           const count = contentItems.filter(c => c.status === s).length;
           return (
             <div key={s} className="flex items-center gap-2 shrink-0">
-              {i > 0 && <div className="w-8 h-px bg-white/[0.08]" />}
+              {i > 0 && <div className="w-8 h-px bg-border/30" />}
               <div className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.1em]",
-                s === "review" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                  : s === "approved" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "bg-white/[0.03] text-white/30 border border-white/[0.06]"
+                s === "review" ? "bg-primary/10 text-primary border border-primary/20"
+                  : s === "approved" ? "bg-primary/15 text-primary border border-primary/25"
+                  : "bg-muted/10 text-muted-foreground border border-border/30"
               )}>
                 <span>{stage?.name || s}</span>
                 <span className="font-mono">{count}</span>
