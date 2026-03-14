@@ -129,6 +129,7 @@ import AgencyAutomationsPage from "./pages/AgencyAutomationsPage";
 import AIGovernanceDashboardPage from "./pages/AIGovernanceDashboardPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
 import BillingPage from "./pages/BillingPage";
+import OnboardingPage from "./pages/OnboardingPage";
 
 const queryClient = new QueryClient();
 
