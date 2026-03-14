@@ -127,13 +127,13 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
                 {statsB && (
                   <div className="flex gap-1 h-1.5 rounded-full overflow-hidden">
                     <motion.div
-                      className="bg-blue-500 rounded-l-full"
+                      className="bg-primary rounded-l-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${aNum + bNum > 0 ? (aNum / (aNum + bNum)) * 100 : 50}%` }}
                       transition={{ duration: 0.6, delay: 0.1 + i * 0.05 }}
                     />
                     <motion.div
-                      className="bg-amber-500 rounded-r-full"
+                      className="bg-muted-foreground rounded-r-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${aNum + bNum > 0 ? (bNum / (aNum + bNum)) * 100 : 50}%` }}
                       transition={{ duration: 0.6, delay: 0.1 + i * 0.05 }}
