@@ -95,11 +95,11 @@ export function ProjectTimelineDetailed({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "done":
-        return "bg-emerald-500/20 border-emerald-500/40";
-      case "in_progress":
         return "bg-primary/20 border-primary/40";
+      case "in_progress":
+        return "bg-primary/10 border-primary/30";
       case "blocked":
-        return "bg-red-500/20 border-red-500/40";
+        return "bg-destructive/20 border-destructive/40";
       default:
         return "bg-muted/20 border-muted/40";
     }
