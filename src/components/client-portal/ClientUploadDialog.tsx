@@ -489,7 +489,7 @@ function ClientUploadDialogComponent({
               </div>
 
               {queue.map((item, i) => {
-                const Icon = item.file ? getFileIcon(item.file) : item.type === 'youtube' ? Youtube : Link2;
+                const Icon = item.file ? getFileIcon(item.file) : item.type === 'youtube' ? Youtube : item.type === 'drive' ? HardDrive : Link2;
                 const isItemSending = item.status === 'uploading';
                 const isItemDone = item.status === 'success';
                 const isItemFailed = item.status === 'error';
