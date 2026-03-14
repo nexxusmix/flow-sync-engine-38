@@ -250,7 +250,7 @@ export function PortalChangeRequests({
       <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
         {requests.length === 0 ? (
           <div className="text-center py-8">
-            <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500/30 mb-2" />
+            <CheckCircle2 className="w-10 h-10 mx-auto text-primary/30 mb-2" />
             <p className="text-sm text-muted-foreground">Nenhum ajuste solicitado</p>
             <p className="text-[10px] text-muted-foreground/60">
               Tudo certo com os materiais até agora

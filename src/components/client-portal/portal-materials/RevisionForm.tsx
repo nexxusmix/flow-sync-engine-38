@@ -231,10 +231,10 @@ function RevisionFormComponent({
           className={cn(
             "transition-colors",
             priority === 'urgent'
-              ? "bg-red-500 hover:bg-red-600"
+              ? "bg-destructive hover:bg-destructive/90"
               : priority === 'high'
-                ? "bg-amber-500 hover:bg-amber-600"
-                : "bg-cyan-500 hover:bg-cyan-600"
+                ? "bg-muted-foreground hover:bg-muted-foreground/90"
+                : "bg-primary hover:bg-primary/90"
           )}
           onClick={handleSubmit}
           disabled={!isValid || isSubmitting}

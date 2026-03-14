@@ -188,7 +188,7 @@ function MaterialCard({
           variant={isApproved ? "default" : material.awaiting_approval ? "outline" : "secondary"} 
           className={cn(
             "text-[10px] shrink-0",
-            material.awaiting_approval && !isApproved && "border-amber-500 text-amber-500"
+            material.awaiting_approval && !isApproved && "border-muted-foreground text-muted-foreground"
           )}
         >
           {isApproved ? (

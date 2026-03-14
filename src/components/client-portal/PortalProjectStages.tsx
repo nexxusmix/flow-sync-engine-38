@@ -95,7 +95,7 @@ function PortalProjectStagesComponent({ stages, currentStageKey }: PortalProject
               <div className="flex flex-col items-center">
                 <div className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center border-2",
-                  stage.status === 'completed' && "bg-emerald-500/20 border-emerald-500",
+                  stage.status === 'completed' && "bg-primary/20 border-primary",
                   stage.status === 'in_progress' && "bg-primary/20 border-primary",
                   stage.status === 'not_started' && "bg-muted/50 border-muted-foreground/30"
                 )}>

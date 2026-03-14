@@ -230,10 +230,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
           </p>
         </div>
 
-        <div className="glass-card rounded-xl p-4 border-l-2 border-amber-500">
+        <div className="glass-card rounded-xl p-4 border-l-2 border-primary">
           <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-4 h-4 text-amber-500" />
-            <span className="text-[8px] font-bold text-amber-500 uppercase">Cliente</span>
+            <Zap className="w-4 h-4 text-primary" />
+            <span className="text-[8px] font-bold text-primary uppercase">Cliente</span>
           </div>
           <p className="text-[10px] text-muted-foreground mb-1">Nome do Cliente</p>
           <p className="text-sm font-bold text-foreground truncate">{project.client_name || '--'}</p>

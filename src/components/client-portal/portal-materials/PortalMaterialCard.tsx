@@ -137,7 +137,7 @@ function PortalMaterialCardComponent({
             </Badge>
           )}
           {material.awaiting_approval && !isApproved && (
-            <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 text-mono">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground text-mono">
               <Clock className="w-3 h-3 mr-1" />
               Aguardando
             </Badge>

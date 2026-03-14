@@ -63,9 +63,9 @@ function getEventIcon(eventType: string) {
 function getEventColor(eventType: string) {
   switch (eventType) {
     case 'stage_update': return 'border-l-primary';
-    case 'task_completed': return 'border-l-emerald-500';
-    case 'chat_message': return 'border-l-blue-500';
-    case 'approval': return 'border-l-yellow-500';
+    case 'task_completed': return 'border-l-primary';
+    case 'chat_message': return 'border-l-primary/50';
+    case 'approval': return 'border-l-primary/70';
     default: return 'border-l-border';
   }
 }

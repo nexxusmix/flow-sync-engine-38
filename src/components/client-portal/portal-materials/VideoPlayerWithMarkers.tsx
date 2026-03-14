@@ -433,7 +433,7 @@ function VideoPlayerWithMarkersComponent({
                   {commentMarkers.slice(0, 5).map((marker, idx) => (
                     <button
                       key={idx}
-                      className="text-[10px] text-amber-400 hover:underline"
+                      className="text-[10px] text-primary hover:underline"
                       onClick={() => handleMarkerClick(marker.seconds)}
                     >
                       {formatTime(marker.seconds)}
