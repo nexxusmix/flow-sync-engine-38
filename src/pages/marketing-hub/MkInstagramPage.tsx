@@ -303,7 +303,7 @@ function FeedView({ posts, onSelectPost }: { posts: typeof MOCK_POSTS; onSelectP
             <span className="text-xl font-bold text-white/85 block">{stat.value}</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-[9px] text-white/25 uppercase tracking-[0.1em]">{stat.label}</span>
-              <span className="text-[10px] text-emerald-400 font-medium">{stat.change}</span>
+              <span className="text-[10px] text-primary font-medium">{stat.change}</span>
             </div>
           </motion.div>
         ))}
