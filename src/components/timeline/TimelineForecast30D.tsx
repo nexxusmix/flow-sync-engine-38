@@ -99,9 +99,9 @@ export function TimelineForecast30D({ milestones, projectId, className }: Timeli
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "critical":
-        return "bg-red-500";
+        return "bg-destructive";
       case "risk":
-        return "bg-amber-500";
+        return "bg-muted-foreground";
       default:
         return "bg-muted-foreground/60";
     }

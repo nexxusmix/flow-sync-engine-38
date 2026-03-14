@@ -94,7 +94,7 @@ function CampaignCard({
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-10 h-10 rounded-xl flex items-center justify-center",
-            campaign.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'
+            campaign.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
           )}>
             <Megaphone className="w-5 h-5" />
           </div>

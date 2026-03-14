@@ -363,7 +363,7 @@ export function PortalFeedbackAdmin() {
                         r >= 4
                           ? "bg-primary"
                           : r === 3
-                          ? "bg-yellow-500"
+                          ? "bg-muted-foreground"
                           : "bg-destructive"
                       )}
                       style={{

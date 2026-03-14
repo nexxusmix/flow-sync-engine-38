@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Search, Users, TrendingDown, Shield } from 'lucide-react';
 import { formatCurrencyBRL } from '@/utils/format';
 import { motion } from 'framer-motion';
+import { sc } from '@/lib/colors';
 import type { ClientHealthEntry } from '@/hooks/useCommandCenter';
 
 interface Props {
@@ -12,15 +13,11 @@ interface Props {
 }
 
 function healthColor(score: number) {
-  if (score >= 70) return 'text-primary';
-  if (score >= 40) return 'text-yellow-500';
-  return 'text-destructive';
+  return sc.score(score).text;
 }
 
 function healthBg(score: number) {
-  if (score >= 70) return 'bg-primary/10';
-  if (score >= 40) return 'bg-yellow-500/10';
-  return 'bg-destructive/10';
+  return sc.score(score).bg;
 }
 
 export function CCClientHealth({ clients }: Props) {

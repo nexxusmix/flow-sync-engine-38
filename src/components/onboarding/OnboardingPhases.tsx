@@ -19,11 +19,11 @@ export function OnboardingPhases({ phases, onToggleStep }: Props) {
             {/* Phase header */}
             <div className={cn(
               "flex items-center gap-3 px-4 py-3 border-b border-border",
-              allDone && "bg-emerald-500/5"
+              allDone && "bg-primary/5"
             )}>
               <div className={cn(
                 "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
-                allDone ? "bg-emerald-500/20 text-emerald-600" : "bg-primary/10 text-primary"
+                allDone ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
               )}>
                 {allDone ? (
                   <span className="material-symbols-rounded text-sm">check</span>
