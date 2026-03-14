@@ -145,8 +145,8 @@ export default function CRMPage() {
             Pipeline <span className="squad-logo-text font-normal text-muted-foreground">Comercial</span>
           </h1>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Live Sync</span>
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-black text-primary uppercase tracking-wider">Live Sync</span>
           </div>
         </div>
 
