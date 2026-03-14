@@ -137,7 +137,7 @@ export default function AiUsageDashboardPage() {
   // ─── Actions Breakdown ───────────────────────────────────────────────
   const actionBreakdown = useMemo(() => {
     const map = new Map<string, { count: number; tokens: number; errors: number; avgMs: number }>();
-    runs.forEach(r => {
+    scopedRuns.forEach(r => {
       const existing = map.get(r.action_key) || { count: 0, tokens: 0, errors: 0, avgMs: 0 };
       existing.count++;
       existing.tokens += estimateTokens(r.input_json) + estimateTokens(r.output_json);
@@ -146,13 +146,13 @@ export default function AiUsageDashboardPage() {
       map.set(r.action_key, existing);
     });
     return [...map.entries()]
-      .map(([key, v]) => ({ key, ...v, avgMs: v.count > 0 ? Math.round(v.avgMs / v.count) : 0 }))
+      .map(([key, v]) => ({ key, label: getAiActionLabel(key), ...v, avgMs: v.count > 0 ? Math.round(v.avgMs / v.count) : 0 }))
       .sort((a, b) => b.count - a.count);
-  }, [runs]);
+  }, [scopedRuns]);
 
   // ─── Filtered Runs ───────────────────────────────────────────────────
   const filteredRuns = useMemo(() => {
-    let result = runs;
+    let result = scopedRuns;
     if (filterAction !== "all") result = result.filter(r => r.action_key === filterAction);
     if (filterStatus !== "all") result = result.filter(r => r.status === filterStatus);
     if (search) {
@@ -163,9 +163,9 @@ export default function AiUsageDashboardPage() {
       );
     }
     return result;
-  }, [runs, filterAction, filterStatus, search]);
+  }, [scopedRuns, filterAction, filterStatus, search]);
 
-  const uniqueActions = useMemo(() => [...new Set(runs.map(r => r.action_key))], [runs]);
+  const uniqueActions = useMemo(() => [...new Set(scopedRuns.map(r => r.action_key))], [scopedRuns]);
 
   return (
     <DashboardLayout title="Uso de IA">
