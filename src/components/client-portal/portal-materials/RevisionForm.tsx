@@ -155,7 +155,7 @@ function RevisionFormComponent({
               )}
               {hasScreenshot && (
                 <div className="flex items-center gap-2">
-                  <ImageIcon className="w-3.5 h-3.5 text-emerald-500" />
+                  <ImageIcon className="w-3.5 h-3.5 text-primary" />
                   <span className="text-xs text-gray-400">
                     Anotação visual anexada
                   </span>
