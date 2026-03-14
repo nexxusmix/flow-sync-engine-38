@@ -5911,6 +5911,293 @@ export type Database = {
           },
         ]
       }
+      playbook_application_steps: {
+        Row: {
+          application_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_required: boolean
+          notes: string | null
+          phase_title: string | null
+          sort_order: number
+          status: string
+          step_id: string | null
+          step_title: string
+        }
+        Insert: {
+          application_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          phase_title?: string | null
+          sort_order?: number
+          status?: string
+          step_id?: string | null
+          step_title: string
+        }
+        Update: {
+          application_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          notes?: string | null
+          phase_title?: string | null
+          sort_order?: number
+          status?: string
+          step_id?: string | null
+          step_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_application_steps_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "playbook_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playbook_application_steps_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "playbook_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbook_applications: {
+        Row: {
+          applied_by: string | null
+          applied_to_entity_id: string
+          applied_to_entity_type: string
+          completed_at: string | null
+          completed_steps: number
+          created_at: string
+          id: string
+          playbook_id: string | null
+          playbook_version: number
+          started_at: string
+          status: string
+          total_steps: number
+          workspace_id: string
+        }
+        Insert: {
+          applied_by?: string | null
+          applied_to_entity_id: string
+          applied_to_entity_type: string
+          completed_at?: string | null
+          completed_steps?: number
+          created_at?: string
+          id?: string
+          playbook_id?: string | null
+          playbook_version?: number
+          started_at?: string
+          status?: string
+          total_steps?: number
+          workspace_id?: string
+        }
+        Update: {
+          applied_by?: string | null
+          applied_to_entity_id?: string
+          applied_to_entity_type?: string
+          completed_at?: string | null
+          completed_steps?: number
+          created_at?: string
+          id?: string
+          playbook_id?: string | null
+          playbook_version?: number
+          started_at?: string
+          status?: string
+          total_steps?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_applications_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbook_phases: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          playbook_id: string
+          relative_duration_days: number | null
+          relative_start_days: number | null
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          playbook_id: string
+          relative_duration_days?: number | null
+          relative_start_days?: number | null
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          playbook_id?: string
+          relative_duration_days?: number | null
+          relative_start_days?: number | null
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_phases_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbook_steps: {
+        Row: {
+          assigned_role: string | null
+          created_at: string
+          depends_on_step_id: string | null
+          description: string | null
+          evidence_required: string | null
+          id: string
+          is_required: boolean
+          metadata: Json | null
+          phase_id: string
+          playbook_id: string
+          relative_day_offset: number | null
+          sort_order: number
+          step_type: string
+          title: string
+        }
+        Insert: {
+          assigned_role?: string | null
+          created_at?: string
+          depends_on_step_id?: string | null
+          description?: string | null
+          evidence_required?: string | null
+          id?: string
+          is_required?: boolean
+          metadata?: Json | null
+          phase_id: string
+          playbook_id: string
+          relative_day_offset?: number | null
+          sort_order?: number
+          step_type?: string
+          title: string
+        }
+        Update: {
+          assigned_role?: string | null
+          created_at?: string
+          depends_on_step_id?: string | null
+          description?: string | null
+          evidence_required?: string | null
+          id?: string
+          is_required?: boolean
+          metadata?: Json | null
+          phase_id?: string
+          playbook_id?: string
+          relative_day_offset?: number | null
+          sort_order?: number
+          step_type?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_steps_depends_on_step_id_fkey"
+            columns: ["depends_on_step_id"]
+            isOneToOne: false
+            referencedRelation: "playbook_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playbook_steps_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "playbook_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playbook_steps_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbooks: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_template: boolean
+          objective: string | null
+          playbook_type: string
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          usage_count: number
+          version_number: number
+          when_to_use: string | null
+          workspace_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_template?: boolean
+          objective?: string | null
+          playbook_type?: string
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          usage_count?: number
+          version_number?: number
+          when_to_use?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_template?: boolean
+          objective?: string | null
+          playbook_type?: string
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          usage_count?: number
+          version_number?: number
+          when_to_use?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       portal_activities: {
         Row: {
           action: string
