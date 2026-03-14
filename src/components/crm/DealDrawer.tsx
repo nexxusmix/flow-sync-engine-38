@@ -114,7 +114,7 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
           </div>
 
           {/* Quick stats */}
-          <div className="flex items-center gap-4 mt-3">
+          <div className="flex items-center gap-3 sm:gap-4 mt-3 flex-wrap">
             <div>
               <p className="text-mono text-muted-foreground uppercase tracking-wider">Valor</p>
               <p className="text-sm font-semibold text-foreground">
