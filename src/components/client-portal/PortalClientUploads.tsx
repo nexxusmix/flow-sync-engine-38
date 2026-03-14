@@ -25,7 +25,7 @@ import type { PortalDeliverable } from "@/hooks/useClientPortalEnhanced";
 interface PortalClientUploadsProps {
   clientUploads: PortalDeliverable[];
   onUpload: (data: {
-    type: 'youtube' | 'link' | 'file';
+    type: 'youtube' | 'link' | 'file' | 'drive';
     title: string;
     description?: string;
     url?: string;
