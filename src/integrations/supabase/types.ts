@@ -5700,39 +5700,75 @@ export type Database = {
       }
       knowledge_articles: {
         Row: {
+          article_type: string
           category: string | null
-          content_md: string
+          category_id: string | null
+          content: string
           created_at: string
           created_by: string | null
+          helpful_count: number
           id: string
           is_published: boolean | null
+          published_at: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: string
+          summary: string | null
           tags: string[] | null
           title: string
           updated_at: string
+          version: number
+          views_count: number
           workspace_id: string
         }
         Insert: {
+          article_type?: string
           category?: string | null
-          content_md?: string
+          category_id?: string | null
+          content?: string
           created_at?: string
           created_by?: string | null
+          helpful_count?: number
           id?: string
           is_published?: boolean | null
+          published_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          summary?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
+          version?: number
+          views_count?: number
           workspace_id?: string
         }
         Update: {
+          article_type?: string
           category?: string | null
-          content_md?: string
+          category_id?: string | null
+          content?: string
           created_at?: string
           created_by?: string | null
+          helpful_count?: number
           id?: string
           is_published?: boolean | null
+          published_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          summary?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
+          version?: number
+          views_count?: number
           workspace_id?: string
         }
         Relationships: [
@@ -5741,6 +5777,159 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_assistant_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      knowledge_assistant_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          sources: Json | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          sources?: Json | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          sources?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_assistant_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_assistant_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          slug: string
+          sort_order: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          slug: string
+          sort_order?: number
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_faq_items: {
+        Row: {
+          answer: string
+          category_id: string | null
+          created_at: string
+          id: string
+          is_published: boolean
+          question: string
+          sort_order: number
+          updated_at: string
+          views_count: number
+          workspace_id: string
+        }
+        Insert: {
+          answer: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          question: string
+          sort_order?: number
+          updated_at?: string
+          views_count?: number
+          workspace_id?: string
+        }
+        Update: {
+          answer?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          question?: string
+          sort_order?: number
+          updated_at?: string
+          views_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_faq_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_categories"
             referencedColumns: ["id"]
           },
         ]
