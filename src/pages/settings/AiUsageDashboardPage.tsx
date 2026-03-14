@@ -322,7 +322,7 @@ export default function AiUsageDashboardPage() {
                     return (
                       <div key={a.key} className="space-y-1">
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="font-mono text-foreground/80 truncate flex-1">{a.key}</span>
+                          <span className="font-mono text-foreground/80 truncate flex-1" title={a.key}>{a.label}</span>
                           <span className="text-muted-foreground/50 font-mono text-[10px]">{a.count}×</span>
                           <span className="text-muted-foreground/40 font-mono text-[10px]">{formatNumber(a.tokens)} tok</span>
                           <span className="text-muted-foreground/40 font-mono text-[10px]">{(a.avgMs / 1000).toFixed(1)}s</span>
