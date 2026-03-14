@@ -72,7 +72,7 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
         variants={itemVariants}
       >
         <h3 className="text-sm font-light text-white">Materiais & Vídeos</h3>
-        <span className="material-symbols-outlined text-cyan-400" style={{ fontSize: 16 }}>
+        <span className="material-symbols-outlined text-primary" style={{ fontSize: 16 }}>
           auto_awesome
         </span>
       </motion.div>
