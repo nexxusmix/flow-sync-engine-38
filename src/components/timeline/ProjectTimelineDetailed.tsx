@@ -385,11 +385,11 @@ export function ProjectTimelineDetailed({
           {/* Legend */}
           <div className="flex items-center justify-center gap-6 mt-8 pt-4 border-t border-border/30">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/50" />
+              <div className="w-3 h-3 rounded bg-primary/30 border border-primary/50" />
               <span className="text-[10px] text-muted-foreground">Concluído</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-primary/30 border border-primary/50" />
+              <div className="w-3 h-3 rounded bg-primary/20 border border-primary/30" />
               <span className="text-[10px] text-muted-foreground">Em andamento</span>
             </div>
             <div className="flex items-center gap-2">
@@ -397,7 +397,7 @@ export function ProjectTimelineDetailed({
               <span className="text-[10px] text-muted-foreground">Pendente</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-red-500/30 border border-red-500/50" />
+              <div className="w-3 h-3 rounded bg-destructive/30 border border-destructive/50" />
               <span className="text-[10px] text-muted-foreground">Bloqueado</span>
             </div>
           </div>
