@@ -116,7 +116,7 @@ export function CampaignClientReview({ campaign, posts }: Props) {
               <Badge variant="outline" className="text-[9px]">{FORMATS.find(f => f.key === currentPost.format)?.label || currentPost.format}</Badge>
               {currentPost.pillar && <Badge variant="outline" className="text-[9px]">{PILLARS.find(p => p.key === currentPost.pillar)?.label || currentPost.pillar}</Badge>}
               {currentReview && (
-                <Badge className={currentReview.status === 'approved' ? 'bg-emerald-400/10 text-emerald-400 text-[9px]' : 'bg-red-400/10 text-red-400 text-[9px]'}>
+                <Badge className={currentReview.status === 'approved' ? 'bg-primary/10 text-primary text-[9px]' : 'bg-destructive/10 text-destructive text-[9px]'}>
                   {currentReview.status === 'approved' ? '✅ Aprovado' : '❌ Rejeitado'}
                 </Badge>
               )}
