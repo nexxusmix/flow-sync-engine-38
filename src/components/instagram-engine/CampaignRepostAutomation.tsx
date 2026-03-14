@@ -177,7 +177,7 @@ export function CampaignRepostAutomation({ campaign, posts }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[11px] font-semibold text-foreground truncate">{s.post.title}</span>
-                        <Badge className="bg-teal-500/15 text-teal-400 text-[7px] shrink-0">Score {s.score}</Badge>
+                        <Badge className="bg-primary/15 text-primary text-[7px] shrink-0">Score {s.score}</Badge>
                       </div>
                       <div className="flex items-center gap-2 text-[8px] text-muted-foreground">
                         <Clock className="w-3 h-3" />
