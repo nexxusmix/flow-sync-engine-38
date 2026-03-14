@@ -25,7 +25,7 @@ export function ActionHubOverviewCard() {
           <span className="text-[9px] text-muted-foreground font-mono">{openCount} ações abertas</span>
         </div>
         {p0Items.length > 0 && (
-          <span className="text-[8px] px-2 py-1 rounded-full bg-red-500/20 text-red-400 font-mono animate-pulse">
+          <span className="text-[8px] px-2 py-1 rounded-full bg-destructive/20 text-destructive font-mono animate-pulse">
             {p0Items.length} P0
           </span>
         )}
