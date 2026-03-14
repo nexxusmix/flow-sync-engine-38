@@ -812,7 +812,7 @@ export function useCampaignAutomationRules(campaignId: string) {
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data || []) as CampaignAutomationRule[];
+      return (data || []) as unknown as CampaignAutomationRule[];
     },
     enabled: !!campaignId,
   });
