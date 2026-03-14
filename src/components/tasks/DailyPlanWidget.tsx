@@ -18,7 +18,7 @@ interface DailyPlanWidgetProps {
 }
 
 const MODE_LABELS: Record<string, { label: string; color: string }> = {
-  deep_work: { label: "Deep Work", color: "text-violet-400" },
+  deep_work: { label: "Deep Work", color: "text-primary" },
   admin: { label: "Admin", color: "text-primary/70" },
   criativo: { label: "Criativo", color: "text-primary/50" },
   comunicacao: { label: "Comunicação", color: "text-primary" },

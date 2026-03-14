@@ -133,7 +133,7 @@ export function TaskDuplicateDetection({ externalOpen, onExternalOpenChange }: T
                       <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-muted-foreground" onClick={() => dismissGroup(group.keep)}>
                         Ignorar
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-emerald-500" onClick={() => mergeDuplicates(group)}>
+                      <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-primary" onClick={() => mergeDuplicates(group)}>
                         <Merge className="w-3 h-3" /> Mesclar
                       </Button>
                     </div>

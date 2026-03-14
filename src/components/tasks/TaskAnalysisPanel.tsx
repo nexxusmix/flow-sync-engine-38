@@ -308,12 +308,12 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
                     {analysis.recommendations.length > 0 && (
                       <div className="space-y-2">
                         <p className="flex items-center gap-1 text-xs font-semibold uppercase text-muted-foreground">
-                          <Target className="w-3 h-3 text-emerald-400" /> Recomendações
+                          <Target className="w-3 h-3 text-primary" /> Recomendações
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {analysis.recommendations.map((rec, i) => (
-                            <div key={`r-${i}`} className="flex items-start gap-3 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
-                              <Target className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            <div key={`r-${i}`} className="flex items-start gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
+                              <Target className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                               <p className="text-sm text-foreground leading-snug">{rec}</p>
                             </div>
                           ))}

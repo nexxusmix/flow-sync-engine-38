@@ -261,10 +261,10 @@ function KPICard({ icon: Icon, label, value, color, variants }: {
 }) {
   const colorMap: Record<string, string> = {
     primary: 'bg-primary/10 text-primary',
-    warning: 'bg-yellow-500/10 text-yellow-500',
-    success: 'bg-emerald-500/10 text-emerald-500',
-    destructive: 'bg-red-500/10 text-red-500',
-    info: 'bg-blue-500/10 text-blue-500',
+    warning: 'bg-muted text-muted-foreground',
+    success: 'bg-primary/10 text-primary',
+    destructive: 'bg-destructive/10 text-destructive',
+    info: 'bg-primary/10 text-primary/70',
   };
   const cls = colorMap[color] || colorMap.primary;
   const [bg, text] = cls.split(' ');

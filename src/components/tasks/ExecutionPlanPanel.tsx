@@ -214,7 +214,7 @@ export function ExecutionPlanPanel({
               <div className="space-y-1">
                 {plan.definition_of_done.map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-foreground/70">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500/50 flex-shrink-0" />
+                    <CheckCircle2 className="w-3 h-3 text-primary/50 flex-shrink-0" />
                     <span>{item}</span>
                   </div>
                 ))}

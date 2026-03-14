@@ -242,8 +242,8 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
                     <div className="flex items-center gap-2 mt-1">
                       <span 
                         className={`text-xs ${
-                          isOverdue ? 'text-red-500' : 
-                          isDueToday ? 'text-amber-500' : 
+                          isOverdue ? 'text-destructive' : 
+                          isDueToday ? 'text-muted-foreground' : 
                           'text-muted-foreground'
                         }`}
                       >

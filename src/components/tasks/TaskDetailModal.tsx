@@ -221,7 +221,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
 
   const priorityConfig: Record<TaskPriority, { label: string; icon: any; color: string }> = {
     normal: { label: 'Normal', icon: null, color: 'text-muted-foreground' },
-    alta: { label: 'Alta', icon: AlertTriangle, color: 'text-amber-500' },
+    alta: { label: 'Alta', icon: AlertTriangle, color: 'text-muted-foreground' },
     urgente: { label: 'Urgente', icon: Flame, color: 'text-destructive' },
   };
 

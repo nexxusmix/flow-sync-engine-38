@@ -62,7 +62,7 @@ function TaskCard({ task, onEdit, onToggle, onDelete, isDragging }: TaskCardProp
           className="flex-shrink-0 mt-0.5"
         >
           {isCompleted ? (
-            <CheckSquare className="w-4 h-4 text-green-500" />
+            <CheckSquare className="w-4 h-4 text-primary" />
           ) : (
             <Square className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           )}
