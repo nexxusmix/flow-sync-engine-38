@@ -10,24 +10,25 @@ import { TrendingUp, Calendar, Activity, AlertTriangle, Clock } from "lucide-rea
 import { format, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { ProjectInfo, ProjectStage } from "@/hooks/useClientPortalEnhanced";
+import { sc } from "@/lib/colors";
 
 interface Props {
   project: ProjectInfo;
   stages: ProjectStage[];
 }
 
-function getRiskLevel(value: number) {
-  if (value <= 25) return { color: "text-emerald-500", bg: "bg-emerald-500/10", label: "Baixo" };
-  if (value <= 50) return { color: "text-yellow-500", bg: "bg-yellow-500/10", label: "Moderado" };
-  if (value <= 75) return { color: "text-orange-500", bg: "bg-orange-500/10", label: "Alto" };
-  return { color: "text-destructive", bg: "bg-destructive/10", label: "Crítico" };
-}
+const RISK_LABELS: Record<string, string> = {
+  low: "Baixo",
+  moderate: "Moderado",
+  high: "Alto",
+  critical: "Crítico",
+};
 
-function getHealthStyle(value: number) {
-  if (value >= 75) return { color: "text-emerald-500", bg: "bg-emerald-500/10" };
-  if (value >= 50) return { color: "text-yellow-500", bg: "bg-yellow-500/10" };
-  if (value >= 25) return { color: "text-orange-500", bg: "bg-orange-500/10" };
-  return { color: "text-destructive", bg: "bg-destructive/10" };
+function getRiskLabel(value: number) {
+  if (value <= 25) return "Baixo";
+  if (value <= 50) return "Moderado";
+  if (value <= 75) return "Alto";
+  return "Crítico";
 }
 
 function PortalIntelligenceBlockComponent({ project, stages }: Props) {
