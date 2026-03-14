@@ -301,7 +301,7 @@ function VideoPlayerWithMarkersComponent({
               {commentMarkers.map((marker, idx) => (
                 <button
                   key={idx}
-                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-amber-500 hover:scale-150 transition-transform z-10"
+                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-primary hover:scale-150 transition-transform z-10"
                   style={{ left: `${(marker.seconds / duration) * 100}%` }}
                   onClick={() => handleMarkerClick(marker.seconds)}
                   title={`${formatTime(marker.seconds)} - ${marker.comment.author_name}`}
