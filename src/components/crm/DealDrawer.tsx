@@ -95,7 +95,7 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
+      <SheetContent className="w-[100vw] sm:max-w-lg p-0 flex flex-col"  side="right">
         <SheetHeader className="p-6 pb-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
