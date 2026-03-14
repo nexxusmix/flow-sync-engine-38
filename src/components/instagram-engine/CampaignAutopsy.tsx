@@ -118,7 +118,7 @@ Retorne JSON com:
             <div className="space-y-1.5">
               {autopsy.what_worked.map((item: string, i: number) => (
                 <div key={i} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
-                  <span className="text-emerald-400 shrink-0">✓</span> {item}
+                  <span className="text-primary shrink-0">✓</span> {item}
                 </div>
               ))}
             </div>
