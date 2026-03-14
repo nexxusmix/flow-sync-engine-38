@@ -439,10 +439,10 @@ export default function ClientPortalPage() {
 
             {/* Approval Status */}
             {fileApproval ? (
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  <p className="text-emerald-500 font-semibold">Aprovado por {fileApproval.approved_by_name}</p>
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                  <p className="text-primary font-semibold">Aprovado por {fileApproval.approved_by_name}</p>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   {format(new Date(fileApproval.approved_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
