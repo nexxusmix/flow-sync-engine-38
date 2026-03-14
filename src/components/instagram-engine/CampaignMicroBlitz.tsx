@@ -187,7 +187,7 @@ Retorne JSON com:
                 <Card className="p-4 bg-card/50 border-border/30">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="outline" className="text-[8px]">{post.format}</Badge>
-                    <Badge className={`text-[8px] ${post.purpose === 'conversion' ? 'bg-emerald-400/10 text-emerald-400' : 'bg-primary/10 text-primary'}`}>
+                    <Badge className={`text-[8px] ${post.purpose === 'conversion' ? 'bg-primary/10 text-primary' : 'bg-primary/5 text-primary/70'}`}>
                       {post.purpose}
                     </Badge>
                     <span className="text-[9px] text-muted-foreground ml-auto">📅 {post.suggested_time}</span>
