@@ -368,7 +368,7 @@ export function ProjectTimelineDetailed({
                         {segment.name}
                       </span>
                       {delay > 0 && (
-                        <span className="text-[8px] text-red-400">+{delay}d</span>
+                        <span className="text-[8px] text-destructive">+{delay}d</span>
                       )}
                     </div>
 
