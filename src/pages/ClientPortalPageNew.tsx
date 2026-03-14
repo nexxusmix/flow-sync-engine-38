@@ -1,13 +1,12 @@
 /**
- * ClientPortalPage - Portal do Cliente Premium com animações impactantes
- * Scroll reveal, parallax, 3D effects, magnetic interactions
+ * ClientPortalPage - Portal do Cliente Premium (otimizado)
  */
 
 import { useParams } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
-import { Loader2, Lock, AlertTriangle, Sparkles } from "lucide-react";
+import { Lock, AlertTriangle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
 import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPremium";
@@ -30,7 +29,7 @@ import { PortalMessagesTab } from "@/components/client-portal/portal-tabs/Portal
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
 import { PortalFeedbackWidget } from "@/components/client-portal/PortalFeedbackWidget";
 import { PortalProjectRoadmap } from "@/components/timeline/PortalProjectRoadmap";
-import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
+import { Floating } from "@/components/client-portal/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
