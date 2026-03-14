@@ -162,14 +162,14 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
       {/* Overdue posts */}
       {metrics.overdue.length > 0 && (
         <Card className="p-4 bg-card/50 border-border/30">
-          <h4 className="text-xs font-semibold text-red-400 mb-3">⏰ Posts Atrasados</h4>
+          <h4 className="text-xs font-semibold text-destructive mb-3">⏰ Posts Atrasados</h4>
           <div className="space-y-2">
             {metrics.overdue.slice(0, 8).map(p => (
-              <div key={p.id} className="flex items-center gap-2 p-2 bg-red-500/5 rounded text-[10px]">
+              <div key={p.id} className="flex items-center gap-2 p-2 bg-destructive/5 rounded text-[10px]">
                 <Badge variant="outline" className="text-[7px]">{FORMATS.find(f => f.key === p.format)?.label || p.format}</Badge>
                 <span className="text-foreground font-medium flex-1 truncate">{p.title}</span>
                 {p.scheduled_at && (
-                  <span className="text-red-400 text-[9px] shrink-0">
+                  <span className="text-destructive text-[9px] shrink-0">
                     {format(parseISO(p.scheduled_at), 'dd/MM', { locale: ptBR })}
                   </span>
                 )}
