@@ -110,7 +110,7 @@ function PortalDeliverablesPremiumComponent({
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2">
                   {isApproved ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                   ) : (
                     <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
                   )}
