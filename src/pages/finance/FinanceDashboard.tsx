@@ -383,7 +383,7 @@ export default function FinancePage() {
                   <tr key={entry.id}>
                     <td data-label="Data" className="font-mono text-white/40">{dateStr}</td>
                     <td data-label="Descrição" className="text-white/70">{entry.description}</td>
-                    <td>
+                    <td data-label="Status">
                       <span className={`holo-badge ${entry.type === 'revenue' ? 'holo-badge-verified' : 'holo-badge-active'}`}>
                         {entry.type === 'revenue' ? 'VERIFIED' : 'ACTIVE'}
                       </span>
