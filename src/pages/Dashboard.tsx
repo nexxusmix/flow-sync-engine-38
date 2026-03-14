@@ -252,7 +252,7 @@ export default function Dashboard() {
           </div>
           
           {/* Mini Kanban */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4 md:mb-6">
             {displayStages.map((stage) => (
               <div key={stage.stage} className="bg-muted/30 rounded-xl p-3 min-h-[140px]">
                 <div className="flex items-center justify-between mb-3">
