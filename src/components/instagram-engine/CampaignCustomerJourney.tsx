@@ -181,8 +181,8 @@ export function CampaignCustomerJourney({ campaign, posts }: Props) {
         <p className="text-[9px] text-muted-foreground">
           Cobertura: <span className="font-bold text-foreground">{journeyData.coverage}/4</span> etapas ·
           {journeyData.gaps.length === 0
-            ? <span className="text-emerald-400 ml-1">Jornada completa ✓</span>
-            : <span className="text-amber-400 ml-1">Preencha: {journeyData.gaps.join(', ')}</span>
+            ? <span className="text-primary ml-1">Jornada completa ✓</span>
+            : <span className="text-muted-foreground ml-1">Preencha: {journeyData.gaps.join(', ')}</span>
           }
         </p>
       </Card>

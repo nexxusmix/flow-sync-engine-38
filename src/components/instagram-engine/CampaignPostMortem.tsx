@@ -150,7 +150,7 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
             </Card>
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+                <TrendingDown className="w-3.5 h-3.5 text-destructive" />
                 <span className="text-[10px] font-semibold text-foreground">Erros a Evitar</span>
               </div>
               {report.mistakes_to_avoid.map((m, i) => (

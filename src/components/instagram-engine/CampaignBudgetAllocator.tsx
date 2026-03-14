@@ -62,7 +62,7 @@ Retorne JSON com:
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-emerald-400" />
+          <DollarSign className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Budget Allocator & ROI Predictor</h3>
         </div>
       </div>
@@ -99,7 +99,7 @@ Retorne JSON com:
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-[8px] w-20 justify-center">{f.label || f.format}</Badge>
                       <div className="flex-1 h-2 bg-muted/20 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-400/60 rounded-full" style={{ width: `${f.percentage}%` }} />
+                        <div className="h-full bg-primary/60 rounded-full" style={{ width: `${f.percentage}%` }} />
                       </div>
                       <span className="text-[9px] font-medium text-foreground w-20 text-right">R$ {f.amount?.toFixed(0)}</span>
                       <span className="text-[8px] text-muted-foreground w-8">{f.percentage}%</span>
@@ -118,22 +118,22 @@ Retorne JSON com:
               <div className="grid md:grid-cols-3 gap-3">
                 {result.scenarios.map((s: any) => (
                   <div key={s.name} className={`p-3 rounded-lg border ${
-                    s.name === 'agressivo' ? 'bg-red-500/5 border-red-500/20' :
-                    s.name === 'moderado' ? 'bg-amber-500/5 border-amber-500/20' :
-                    'bg-emerald-500/5 border-emerald-500/20'
+                    s.name === 'agressivo' ? 'bg-destructive/5 border-destructive/20' :
+                    s.name === 'moderado' ? 'bg-muted border-border' :
+                    'bg-primary/5 border-primary/20'
                   }`}>
                     <div className="flex items-center gap-1.5 mb-2">
                       <Badge className={`text-[7px] ${
-                        s.name === 'agressivo' ? 'bg-red-400/10 text-red-400' :
-                        s.name === 'moderado' ? 'bg-amber-400/10 text-amber-400' :
-                        'bg-emerald-400/10 text-emerald-400'
+                        s.name === 'agressivo' ? 'bg-destructive/10 text-destructive' :
+                        s.name === 'moderado' ? 'bg-muted text-muted-foreground' :
+                        'bg-primary/10 text-primary'
                       }`}>{s.name}</Badge>
                     </div>
                     <p className="text-[9px] text-muted-foreground mb-2">{s.description}</p>
                     <div className="space-y-1 text-[9px]">
                       <div className="flex justify-between"><span className="text-muted-foreground">Investimento:</span><span className="text-foreground font-medium">R$ {s.total_spend?.toFixed(0)}</span></div>
                       {s.expected_reach && <div className="flex justify-between"><span className="text-muted-foreground">Alcance:</span><span className="text-foreground">{s.expected_reach}</span></div>}
-                      {s.expected_roi_percentage && <div className="flex justify-between"><span className="text-muted-foreground">ROI estimado:</span><span className="text-emerald-400 font-medium">{s.expected_roi_percentage}%</span></div>}
+                      {s.expected_roi_percentage && <div className="flex justify-between"><span className="text-muted-foreground">ROI estimado:</span><span className="text-primary font-medium">{s.expected_roi_percentage}%</span></div>}
                     </div>
                     {Array.isArray(s.key_actions) && (
                       <div className="mt-2 pt-2 border-t border-border/20">
@@ -153,16 +153,16 @@ Retorne JSON com:
             <Card className="p-4 bg-card/50 border-border/30">
               <h4 className="text-xs font-semibold text-foreground mb-3">📊 Projeção de Retorno</h4>
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-3 bg-red-500/5 rounded-lg">
-                  <div className="text-[9px] text-red-400 mb-1">Pessimista</div>
+                <div className="p-3 bg-destructive/5 rounded-lg">
+                  <div className="text-[9px] text-destructive mb-1">Pessimista</div>
                   <div className="text-sm font-bold text-foreground">R$ {result.roi_projection.worst_case}</div>
                 </div>
                 <div className="p-3 bg-primary/5 rounded-lg">
                   <div className="text-[9px] text-primary mb-1">Provável</div>
                   <div className="text-sm font-bold text-foreground">R$ {result.roi_projection.most_likely}</div>
                 </div>
-                <div className="p-3 bg-emerald-500/5 rounded-lg">
-                  <div className="text-[9px] text-emerald-400 mb-1">Otimista</div>
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <div className="text-[9px] text-primary mb-1">Otimista</div>
                   <div className="text-sm font-bold text-foreground">R$ {result.roi_projection.best_case}</div>
                 </div>
               </div>
@@ -173,8 +173,8 @@ Retorne JSON com:
           {Array.isArray(result.waste_alerts) && (
             <Card className="p-4 bg-card/50 border-border/30">
               <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <h4 className="text-xs font-semibold text-amber-400">Alertas de Desperdício</h4>
+                <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+                <h4 className="text-xs font-semibold text-muted-foreground">Alertas de Desperdício</h4>
               </div>
               <div className="space-y-1">
                 {result.waste_alerts.map((a: string, i: number) => (
@@ -207,7 +207,7 @@ Retorne JSON com:
                       <span className="text-[10px] font-medium text-foreground">{p.title}</span>
                       <p className="text-[8px] text-muted-foreground">{p.reason}</p>
                     </div>
-                    <Badge className="bg-emerald-400/10 text-emerald-400 text-[8px]">R$ {p.suggested_budget}</Badge>
+                    <Badge className="bg-primary/10 text-primary text-[8px]">R$ {p.suggested_budget}</Badge>
                   </div>
                 ))}
               </div>
