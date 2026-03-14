@@ -59,7 +59,7 @@ export function LandingAI() {
             Não é só um dashboard bonito.<br />
             É uma operação que <span className="text-primary">anda com inteligência.</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-xl mx-auto leading-relaxed">
             Automações reais, IA assistiva integrada ao workflow e governança completa para uso seguro.
           </p>
         </div>

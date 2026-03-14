@@ -92,7 +92,7 @@ export function LandingPricing() {
             Escolha o plano ideal<br />
             para o seu <span className="text-primary">momento</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4">Preço justo Brasil. Produto nível global.</p>
+          <p className="text-base md:text-lg text-muted-foreground mt-5 leading-relaxed">Preço justo Brasil. Produto nível global.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8 items-start">

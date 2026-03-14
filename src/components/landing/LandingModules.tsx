@@ -63,7 +63,7 @@ export function LandingModules() {
             Não são ferramentas soltas.<br />
             É um <span className="text-primary">sistema operacional integrado.</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-2xl mx-auto leading-relaxed">
             12 módulos que conversam entre si para criar uma operação previsível, escalável e inteligente.
           </p>
         </div>

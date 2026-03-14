@@ -34,7 +34,7 @@ export function LandingCTA() {
           Estruture sua agência<br />
           como uma <span className="text-primary font-normal">operação de verdade.</span>
         </h2>
-        <p className="text-base md:text-lg text-muted-foreground mt-4 mb-12 max-w-xl mx-auto leading-relaxed">
+        <p className="text-base md:text-lg text-muted-foreground mt-5 mb-10 max-w-xl mx-auto leading-relaxed">
           Centralize operação, automatize processos e ganhe escala.<br className="hidden md:block" />
           Comece em menos de 2 minutos.
         </p>

@@ -64,7 +64,7 @@ export function LandingTransformation() {
             De improvisação para<br />
             <span className="text-primary">operação profissional</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-lg mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-lg mx-auto leading-relaxed">
             Veja o que muda quando você centraliza tudo em um sistema operacional integrado.
           </p>
         </div>

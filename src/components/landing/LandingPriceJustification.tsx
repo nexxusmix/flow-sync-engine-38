@@ -47,7 +47,7 @@ export function LandingPriceJustification() {
           <h2 className="text-3xl md:text-5xl font-light text-foreground tracking-tight leading-[1.1]">
             Por que o preço é <span className="text-primary">justo</span>?
           </h2>
-          <p className="text-base text-muted-foreground mt-4">Se você contratasse cada ferramenta separadamente:</p>
+          <p className="text-base md:text-lg text-muted-foreground mt-5 leading-relaxed">Se você contratasse cada ferramenta separadamente:</p>
         </div>
 
         <div className="max-w-md mx-auto mb-12 rounded-2xl border border-border/20 bg-card p-6">

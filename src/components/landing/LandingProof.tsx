@@ -97,8 +97,8 @@ export function LandingProof() {
         </div>
 
         {/* Comparisons */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-light text-foreground tracking-tight">
+        <div className="text-center mb-14 md:mb-16">
+          <h2 className="text-3xl md:text-5xl font-light text-foreground tracking-tight leading-[1.1]">
             Prova de <span className="text-primary">visão</span>
           </h2>
         </div>

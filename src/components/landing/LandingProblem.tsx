@@ -59,7 +59,7 @@ export function LandingProblem() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-16">
           {painPoints.map((point, i) => (
             <PainItem key={i} text={point.text} emoji={point.icon} />
           ))}

@@ -55,7 +55,7 @@ export function LandingClientExperience() {
             Seu cliente também<br />
             <span className="text-primary">percebe a diferença.</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-xl mx-auto leading-relaxed">
             Mais transparência, mais confiança, mais percepção de valor.
             O portal do cliente transforma como sua agência é vista.
           </p>
