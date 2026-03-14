@@ -101,16 +101,16 @@ export function CampaignRiskScore({ campaign, posts }: Props) {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'text-red-400 bg-red-400/10';
-      case 'medium': return 'text-amber-400 bg-amber-400/10';
+      case 'high': return 'text-destructive bg-destructive/10';
+      case 'medium': return 'text-muted-foreground bg-muted/20';
       default: return 'text-muted-foreground bg-muted/20';
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 50) return 'text-red-400';
-    if (score >= 20) return 'text-amber-400';
-    return 'text-emerald-400';
+    if (score >= 50) return 'text-destructive';
+    if (score >= 20) return 'text-muted-foreground';
+    return 'text-primary';
   };
 
   return (
