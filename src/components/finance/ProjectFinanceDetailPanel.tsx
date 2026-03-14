@@ -334,7 +334,7 @@ export function ProjectFinanceDetailPanel({
           {revenues.map(r => (
             <div key={r.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
               <span className="text-muted-foreground truncate mr-2">{r.description}</span>
-              <span className={r.status === 'received' ? 'text-emerald-600' : 'text-amber-600'}>
+              <span className={r.status === 'received' ? 'text-primary' : 'text-muted-foreground'}>
                 {formatCurrency(Number(r.amount))}
               </span>
             </div>
