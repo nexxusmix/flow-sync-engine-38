@@ -114,7 +114,7 @@ export function ArticleView({ article, onEdit, onArchive, onDelete }: ArticleVie
       <div className="flex-1 overflow-y-auto p-6">
         <article 
           className="prose prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: `<p class="mb-4">${renderMarkdown(article.content_md)}</p>` }}
+          dangerouslySetInnerHTML={{ __html: `<p class="mb-4">${renderMarkdown(article.content)}</p>` }}
         />
       </div>
     </div>

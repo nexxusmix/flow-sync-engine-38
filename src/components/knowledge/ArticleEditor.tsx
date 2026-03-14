@@ -58,7 +58,7 @@ export function ArticleEditor({ article, onSave, onCancel, categories }: Article
     onSave({
       title,
       category: category || null,
-      content_md: content,
+      content,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
     });
   };
