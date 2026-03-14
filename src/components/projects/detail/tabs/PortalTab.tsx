@@ -185,12 +185,12 @@ export function PortalTab({ project }: PortalTabProps) {
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center",
-              isAccessible ? "bg-emerald-500/20" : "bg-amber-500/20"
+              isAccessible ? "bg-primary/20" : "bg-muted"
             )}>
               {isAccessible ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <CheckCircle2 className="w-5 h-5 text-primary" />
               ) : (
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <AlertTriangle className="w-5 h-5 text-muted-foreground" />
               )}
             </div>
             <div>
