@@ -157,12 +157,12 @@ Retorne JSON com:
         <div className="space-y-3">
           {/* Countdown banner */}
           {remaining && (
-            <Card className={`p-4 ${remaining.urgent ? 'bg-red-500/5 border-red-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
+            <Card className={`p-4 ${remaining.urgent ? 'bg-destructive/5 border-destructive/20' : 'bg-muted border-border'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Clock className={`w-5 h-5 ${remaining.urgent ? 'text-red-400' : 'text-amber-400'}`} />
+                  <Clock className={`w-5 h-5 ${remaining.urgent ? 'text-destructive' : 'text-muted-foreground'}`} />
                   <div>
-                    <div className={`text-lg font-bold ${remaining.urgent ? 'text-red-400' : 'text-amber-400'}`}>{remaining.text}</div>
+                    <div className={`text-lg font-bold ${remaining.urgent ? 'text-destructive' : 'text-muted-foreground'}`}>{remaining.text}</div>
                     <div className="text-[10px] text-muted-foreground">restantes para completar a blitz</div>
                   </div>
                 </div>
