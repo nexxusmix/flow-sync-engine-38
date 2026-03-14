@@ -194,7 +194,7 @@ export default function MkApprovalsPage() {
         <DialogContent className="bg-[#111114] border-white/[0.08] text-white max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-white/90 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-amber-400" />
+              <XCircle className="w-5 h-5 text-muted-foreground" />
               Solicitar Alteração
             </DialogTitle>
           </DialogHeader>
