@@ -91,9 +91,9 @@ export default function CalendarPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <Card className="border-amber-500/50 bg-amber-500/5">
+                <Card className="border-border bg-muted/50">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2 text-amber-500">
+                    <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
                       <Clock className="w-4 h-4" />
                       Em Risco ({riskEvents.length})
                     </CardTitle>
