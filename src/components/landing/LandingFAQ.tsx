@@ -6,7 +6,7 @@ import { ScrollLinked } from "./ScrollLinked";
 const faqs = [
   {
     q: "Preciso pagar por cada módulo separadamente?",
-    a: "Não. O plano Hub Completo inclui todos os módulos (Produtora + Marketing) por um preço único. Você também pode contratar módulos individuais se preferir.",
+    a: "Não. O plano Hub Completo inclui todos os módulos por um preço único. Você também pode contratar módulos individuais se preferir.",
   },
   {
     q: "Posso testar antes de assinar?",
@@ -14,23 +14,27 @@ const faqs = [
   },
   {
     q: "A IA realmente executa tarefas ou só sugere?",
-    a: "Ela executa de verdade. Cria tarefas, gera roteiros, organiza entregáveis, preenche campos e muito mais — tudo por comando de texto ou voz.",
+    a: "Ela executa de verdade. Cria tarefas, gera briefings, organiza entregáveis e muito mais — tudo por comando de texto ou voz, com governança e controle.",
   },
   {
-    q: "Funciona para equipes pequenas?",
-    a: "Perfeitamente. O SQUAD Hub foi projetado tanto para freelancers solo quanto para equipes de até 50 pessoas. A estrutura escala com você.",
+    q: "Funciona para agências pequenas?",
+    a: "Perfeitamente. A plataforma foi projetada para escalar: de freelancers solo até agências com 50+ clientes. A estrutura cresce com você.",
+  },
+  {
+    q: "Substitui todas as outras ferramentas?",
+    a: "Sim, a maioria. CRM, gestão de projetos, financeiro, contratos, planejamento de conteúdo, portal do cliente — tudo integrado em um só lugar.",
+  },
+  {
+    q: "Meus clientes também acessam a plataforma?",
+    a: "Sim! O Portal do Cliente oferece uma área premium onde seus clientes acompanham projetos, aprovam entregas e acessam documentos e financeiro.",
   },
   {
     q: "Meus dados estão seguros?",
-    a: "Sim. Usamos infraestrutura enterprise com criptografia de ponta a ponta, backups automáticos e controle de acesso granular.",
+    a: "Sim. Usamos infraestrutura enterprise com criptografia, backups automáticos e controle de acesso granular. Cada workspace é totalmente isolado.",
   },
   {
     q: "Posso cancelar a qualquer momento?",
     a: "Sim, sem multa e sem burocracia. Seus dados ficam disponíveis para exportação por 30 dias após o cancelamento.",
-  },
-  {
-    q: "Tem app mobile?",
-    a: "O SQUAD Hub é 100% responsivo e funciona como PWA no celular. Você pode instalar como app direto do navegador.",
   },
 ];
 
@@ -38,20 +42,13 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <motion.div
-      className="border-b border-border/15 last:border-0"
-      initial={false}
-    >
+    <motion.div className="border-b border-border/15 last:border-0" initial={false}>
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between w-full py-5 text-left group"
       >
         <span className="text-sm md:text-base text-foreground font-medium pr-4 group-hover:text-primary transition-colors">{q}</span>
-        <motion.div
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.3 }}
-          className="shrink-0"
-        >
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.3 }} className="shrink-0">
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </motion.div>
       </button>

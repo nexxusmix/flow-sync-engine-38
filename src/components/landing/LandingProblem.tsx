@@ -1,22 +1,22 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { X, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { ScrollLinked } from "./ScrollLinked";
 
 const painPoints = [
-  { text: "Tarefas espalhadas em 5 apps", icon: "📋" },
-  { text: "Projetos sem visão geral", icon: "📊" },
-  { text: "Arquivos perdidos em pastas", icon: "📁" },
-  { text: "Financeiro na planilha", icon: "💸" },
-  { text: "Cliente cobrando no WhatsApp", icon: "📱" },
-  { text: "Marketing em uma ferramenta", icon: "📣" },
-  { text: "Produtora em outra", icon: "🎬" },
-  { text: "Nenhuma integração real", icon: "🔌" },
+  { text: "Tarefas espalhadas em 5 apps diferentes", icon: "📋" },
+  { text: "Projetos sem visão geral nem previsibilidade", icon: "📊" },
+  { text: "Financeiro na planilha, desconectado da operação", icon: "💸" },
+  { text: "Cliente cobrando no WhatsApp sem ter visibilidade", icon: "📱" },
+  { text: "Aprovações travando entregas há dias", icon: "⏳" },
+  { text: "Equipe sem saber a prioridade do momento", icon: "🎯" },
+  { text: "Informações espalhadas sem padrão nenhum", icon: "📁" },
+  { text: "Impossível escalar sem mais caos operacional", icon: "📈" },
 ];
 
 const springCfg = { stiffness: 120, damping: 30 };
 
-function PainItem({ text, emoji, index }: { text: string; emoji: string; index: number }) {
+function PainItem({ text, emoji }: { text: string; emoji: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "center center"] });
   const opacity = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1]), springCfg);
@@ -50,14 +50,18 @@ export function LandingProblem() {
             <span className="text-[10px] uppercase tracking-[0.2em] text-destructive font-medium">O problema</span>
           </motion.div>
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.1]">
-            Agências e produtoras vivem<br />
-            o <span className="text-destructive font-normal">mesmo drama</span>
+            Sua agência ainda opera<br />
+            no <span className="text-destructive font-normal">modo improviso?</span>
           </h2>
+          <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto">
+            Ferramentas desconectadas, processos manuais e falta de visibilidade
+            são o cenário de 90% das agências.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-20">
           {painPoints.map((point, i) => (
-            <PainItem key={i} text={point.text} emoji={point.icon} index={i} />
+            <PainItem key={i} text={point.text} emoji={point.icon} />
           ))}
         </div>
 
@@ -70,7 +74,7 @@ export function LandingProblem() {
         >
           <p className="text-xl md:text-3xl text-foreground/60 font-light leading-relaxed">
             Resultado? <span className="text-destructive font-normal">Caos operacional.</span><br className="hidden md:block" />
-            Retrabalho. <span className="text-destructive font-normal">Perda de dinheiro.</span> Burnout.
+            Retrabalho. <span className="text-destructive font-normal">Clientes insatisfeitos.</span> Impossível escalar.
           </p>
         </motion.div>
       </div>

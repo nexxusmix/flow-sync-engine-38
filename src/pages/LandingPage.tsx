@@ -1,11 +1,17 @@
 import { LandingNav } from "@/components/landing/LandingNav";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingProblem } from "@/components/landing/LandingProblem";
-import { LandingSolution } from "@/components/landing/LandingSolution";
-import { LandingPricing } from "@/components/landing/LandingPricing";
+import { LandingTransformation } from "@/components/landing/LandingTransformation";
+import { LandingModules } from "@/components/landing/LandingModules";
+import { LandingBenefits } from "@/components/landing/LandingBenefits";
+import { LandingAI } from "@/components/landing/LandingAI";
+import { LandingClientExperience } from "@/components/landing/LandingClientExperience";
 import { LandingDifferentials } from "@/components/landing/LandingDifferentials";
-import { LandingPriceJustification } from "@/components/landing/LandingPriceJustification";
+import { LandingHowItWorks } from "@/components/landing/LandingHowItWorks";
 import { LandingAudience } from "@/components/landing/LandingAudience";
+import { LandingComparison } from "@/components/landing/LandingComparison";
+import { LandingPricing } from "@/components/landing/LandingPricing";
+import { LandingPriceJustification } from "@/components/landing/LandingPriceJustification";
 import { LandingProof } from "@/components/landing/LandingProof";
 import { LandingFAQ } from "@/components/landing/LandingFAQ";
 import { LandingGuarantee } from "@/components/landing/LandingGuarantee";
@@ -24,11 +30,17 @@ export default function LandingPage() {
       <LandingNav />
       <LandingHero />
       <LandingProblem />
-      <LandingSolution />
+      <LandingTransformation />
+      <LandingModules />
+      <LandingBenefits />
+      <LandingAI />
+      <LandingClientExperience />
       <LandingDifferentials />
+      <LandingHowItWorks />
+      <LandingAudience />
+      <LandingComparison />
       <LandingPricing />
       <LandingPriceJustification />
-      <LandingAudience />
       <LandingProof />
       <LandingFAQ />
       <LandingGuarantee />
