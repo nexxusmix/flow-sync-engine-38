@@ -112,8 +112,8 @@ Retorne JSON com:
         {Array.isArray(autopsy.what_worked) && (
           <Card className="p-4 bg-card/50 border-border/30">
             <div className="flex items-center gap-1.5 mb-3">
-              <CheckCircle className="w-4 h-4 text-emerald-400" />
-              <h4 className="text-xs font-semibold text-emerald-400">O que funcionou</h4>
+              <CheckCircle className="w-4 h-4 text-primary" />
+              <h4 className="text-xs font-semibold text-primary">O que funcionou</h4>
             </div>
             <div className="space-y-1.5">
               {autopsy.what_worked.map((item: string, i: number) => (
