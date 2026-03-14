@@ -9,6 +9,7 @@ import {
   CheckCircle2, Coffee, Sun, AlertTriangle, Sparkles, CalendarClock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sc } from "@/lib/colors";
 import type { ExecutionPlan } from "@/hooks/useExecutionPlans";
 import type { Task } from "@/hooks/useTasksUnified";
 import { isPast, parseISO } from "date-fns";
