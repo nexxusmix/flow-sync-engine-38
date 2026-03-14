@@ -419,7 +419,7 @@ export default function MkTemplatesPage() {
               Shotlist / Decupagem
             </div>
             <div className="flex items-center gap-2 text-[10px] text-white/30">
-              <div className="w-1 h-1 rounded-full bg-purple-400" />
+              <div className="w-1 h-1 rounded-full bg-primary/50" />
               Prompt de Design
             </div>
           </div>
