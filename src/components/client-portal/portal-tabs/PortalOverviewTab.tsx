@@ -128,10 +128,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
 
         <div className="glass-card rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-violet-500" />
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-caption font-bold text-violet-500 uppercase">Valor</span>
+            <span className="text-caption font-bold text-primary uppercase">Valor</span>
           </div>
           <p className="text-lg font-bold text-foreground">{formatCurrency(project.contract_value || 0)}</p>
           <p className="text-mono text-muted-foreground">Valor do Contrato</p>
