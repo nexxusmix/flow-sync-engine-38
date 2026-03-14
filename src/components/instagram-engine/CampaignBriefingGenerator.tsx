@@ -201,7 +201,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Color Palette */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Palette className="w-3.5 h-3.5 text-pink-400" />
+                <Palette className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Paleta de Cores</span>
               </div>
               <div className="flex gap-2">
