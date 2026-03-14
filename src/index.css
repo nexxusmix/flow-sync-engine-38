@@ -1628,3 +1628,35 @@
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Standalone mode adjustments */
+@media all and (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior-y: contain;
+  }
+  /* Prevent pull-to-refresh */
+  html {
+    overscroll-behavior: none;
+  }
+}
+
+/* Mobile touch optimizations */
+@media (max-width: 768px) {
+  /* Minimum touch targets */
+  button, a, [role="button"], input, select, textarea {
+    min-height: 36px;
+  }
+  /* Remove tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Smoother scrolling */
+  .overflow-y-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}

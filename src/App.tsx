@@ -66,6 +66,8 @@ import DangerZoneSettingsPage from "./pages/settings/DangerZoneSettingsPage";
 import UsersSettingsPage from "./pages/settings/UsersSettingsPage";
 import TeamSettingsPage from "./pages/settings/TeamSettingsPage";
 import AiUsageDashboardPage from "./pages/settings/AiUsageDashboardPage";
+import InstallPage from "./pages/InstallPage";
+import { PWAInstallBanner } from "./components/pwa/PWAInstallBanner";
 
 // Prospecção Pages
 import ProspectingPage from "./pages/prospecting/ProspectingPage";
@@ -261,6 +263,7 @@ function AppRoutes() {
       <Route path="/m/automacoes" element={<ProtectedRoute><MkAutomationsPage /></ProtectedRoute>} />
       <Route path="/m/configuracoes" element={<ProtectedRoute><MkSettingsPage /></ProtectedRoute>} />
       <Route path="/instagram-engine" element={<ProtectedRoute><InstagramEnginePage /></ProtectedRoute>} />
+      <Route path="/instalar" element={<InstallPage />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -277,6 +280,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BackgroundUploadIndicator />
+              <PWAInstallBanner />
               <BrowserRouter>
                 <AppRoutes />
               </BrowserRouter>
