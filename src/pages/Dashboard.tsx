@@ -504,7 +504,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Column: Overview Card (4 cols) */}
-          <div className="xl:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-4 md:space-y-6">
             <ActionHubOverviewCard />
           </div>
         </div>
