@@ -95,7 +95,7 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
+      <SheetContent className="w-[100vw] sm:max-w-lg p-0 flex flex-col"  side="right">
         <SheetHeader className="p-6 pb-4 border-b border-border">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -114,7 +114,7 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
           </div>
 
           {/* Quick stats */}
-          <div className="flex items-center gap-4 mt-3">
+          <div className="flex items-center gap-3 sm:gap-4 mt-3 flex-wrap">
             <div>
               <p className="text-mono text-muted-foreground uppercase tracking-wider">Valor</p>
               <p className="text-sm font-semibold text-foreground">
@@ -246,7 +246,7 @@ export function DealDrawer({ deal, open, onClose }: DealDrawerProps) {
               </div>
             </div>
 
-            <div className="flex gap-2 pt-4">
+            <div className="flex flex-col sm:flex-row gap-2 pt-4">
               <Button
                 size="sm"
                 className="flex-1"

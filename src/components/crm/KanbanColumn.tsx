@@ -44,7 +44,7 @@ export function KanbanColumn({ title, count, deals, color, stageKey, onDeleteDea
 
   return (
     <div
-      className={`flex flex-col min-w-[300px] max-w-[300px] rounded-2xl p-2 transition-all duration-200 ${
+      className={`flex flex-col min-w-[260px] sm:min-w-[300px] max-w-[300px] rounded-2xl p-2 transition-all duration-200 ${
         isDragOver ? 'bg-primary/5 ring-2 ring-primary/20 ring-inset' : ''
       }`}
       onDragOver={handleDragOver}

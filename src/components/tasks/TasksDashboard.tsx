@@ -100,7 +100,7 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
     <div className="space-y-6">
       {/* Daily Plan Widget */}
       <DailyPlanWidget todayTasks={todayTasks} plans={plans} getPlanForTask={getPlanForTask} />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -151,9 +151,9 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Status Bar Chart */}
-        <Card className="glass-card p-5 lg:col-span-2">
+        <Card className="glass-card p-3 md:p-5 lg:col-span-2">
           <h3 className="text-sm font-medium text-foreground mb-4">Tarefas por Status</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={statusData} layout="vertical">
@@ -172,7 +172,7 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
         </Card>
 
         {/* Category Pie Chart */}
-        <Card className="glass-card p-5">
+        <Card className="glass-card p-3 md:p-5">
           <h3 className="text-sm font-medium text-foreground mb-4">Por Categoria</h3>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -216,7 +216,7 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
       </div>
 
       {/* Upcoming Tasks Timeline */}
-      <Card className="glass-card p-5">
+      <Card className="glass-card p-3 md:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-foreground">Próximos 7 Dias</h3>
           <TrendingUp className="w-4 h-4 text-muted-foreground" />
