@@ -260,7 +260,7 @@ export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetail
             {summary.action_items.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                   Ações / Próximos Passos
                 </h4>
                 <ul className="space-y-1">
