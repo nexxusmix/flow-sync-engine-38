@@ -80,7 +80,7 @@ export function LandingHero() {
           </motion.h1>
 
           <motion.p
-            className="text-base md:text-xl text-white/60 font-light mt-4 md:mt-6 max-w-2xl mx-auto leading-relaxed px-2"
+            className="text-base md:text-xl text-white/60 font-light mt-5 md:mt-7 max-w-2xl mx-auto leading-relaxed px-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.6 }}
