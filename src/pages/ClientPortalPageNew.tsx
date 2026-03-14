@@ -29,6 +29,7 @@ import { PortalFinancialTab } from "@/components/client-portal/portal-tabs/Porta
 import { PortalMessagesTab } from "@/components/client-portal/portal-tabs/PortalMessagesTab";
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
 import { PortalFeedbackWidget } from "@/components/client-portal/PortalFeedbackWidget";
+import { PortalProjectRoadmap } from "@/components/timeline/PortalProjectRoadmap";
 import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -481,6 +482,19 @@ export default function ClientPortalPage() {
                       <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
                         <PortalMaterialsAside deliverables={deliverables} files={files} />
                       </GlowCard>
+                      <ScrollReveal delay={0.35}>
+                        <PortalProjectRoadmap
+                          stages={stages.map(s => ({
+                            id: s.id,
+                            name: s.title || s.stage_key,
+                            status: s.status as any,
+                            plannedEnd: s.planned_end || undefined,
+                            progress: s.status === 'done' ? 100 : s.status === 'in_progress' ? 50 : 0,
+                          }))}
+                          projectName={project.name}
+                          dueDate={project.due_date}
+                        />
+                      </ScrollReveal>
                       <ScrollReveal delay={0.4}>
                         <PortalNextSteps stages={stages} currentStageKey={project.stage_current} />
                       </ScrollReveal>

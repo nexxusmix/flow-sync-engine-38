@@ -15,6 +15,7 @@ import {
   DollarSign,
   Images,
   Brush,
+  Activity,
 } from "lucide-react";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { TasksTab } from "./tabs/TasksTab";
@@ -30,6 +31,7 @@ import { AlertsTab } from "./tabs/AlertsTab";
 import { FinanceTab } from "./tabs/FinanceTab";
 import { GalleryTab } from "./tabs/GalleryTab";
 import { BrandIdentityTab } from "./tabs/BrandIdentityTab";
+import { EntityTimeline } from "@/components/timeline/EntityTimeline";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useProjectRevisions } from "@/hooks/useProjectRevisions";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -51,6 +53,7 @@ const tabs = [
   { id: "gallery", label: "Galeria IA", icon: Images },
   { id: "brand", label: "Identidade Visual", icon: Brush },
   { id: "schedule", label: "Cronograma", icon: Calendar },
+  { id: "timeline", label: "Timeline", icon: Activity },
   { id: "finance", label: "Financeiro", icon: DollarSign },
   { id: "storyboard", label: "Storyboard IA", icon: Clapperboard },
   { id: "alerts", label: "Avisos", icon: Bell },
@@ -136,6 +139,15 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
       
       <TabsContent value="schedule" className="mt-6">
         <ScheduleTab project={project} />
+      </TabsContent>
+
+      <TabsContent value="timeline" className="mt-6">
+        <EntityTimeline
+          entityType="project"
+          projectId={project.id}
+          title="Timeline do Projeto"
+          initialCount={20}
+        />
       </TabsContent>
 
       <TabsContent value="finance" className="mt-6">
