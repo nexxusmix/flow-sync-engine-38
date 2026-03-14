@@ -24,9 +24,8 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claimsData?.claims) {
+    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
@@ -38,11 +37,13 @@ serve(async (req) => {
 
     if (!post_id) throw new Error("post_id é obrigatório");
 
+    const workspace_id = body.workspace_id || "00000000-0000-0000-0000-000000000000";
+
     // Get connection
     const { data: conn, error: connErr } = await supabase
       .from("instagram_connections")
       .select("*")
-      .eq("workspace_id", "00000000-0000-0000-0000-000000000000")
+      .eq("workspace_id", workspace_id)
       .order("connected_at", { ascending: false })
       .limit(1)
       .single();
