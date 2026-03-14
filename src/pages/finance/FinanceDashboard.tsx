@@ -365,7 +365,7 @@ export default function FinancePage() {
             </button>
           </div>
           
-          <table className="holo-table">
+          <table className="holo-table responsive-table w-full">
             <thead>
               <tr>
                 <th>Stamp</th>
