@@ -670,26 +670,96 @@ export const AI_ACTIONS_REGISTRY: Record<string, AiActionDefinition<unknown, unk
   'marketing.generateCopy': marketingGenerateCopy as AiActionDefinition<unknown, unknown>,
   'marketing.generateIdeas': marketingGenerateIdeas as AiActionDefinition<unknown, unknown>,
   'projects.generateBrief': projectsGenerateBrief as AiActionDefinition<unknown, unknown>,
-  // Lightweight actions (dedicated edge functions)
+
+  // --- Instagram ---
   'instagram.generateCampaign': instagramGenerateCampaign,
   'instagram.generatePost': instagramGeneratePost,
   'instagram.abTest': instagramAbTest,
+  'instagram.fetchInsights': instagramFetchInsights,
+  'instagram.scrapeProfile': instagramScrapeProfile,
+  'instagram.exportPost': instagramExportPost,
+  'instagram.publish': instagramPublish,
+
+  // --- Tasks ---
   'tasks.dailySummary': tasksDailySummary,
   'tasks.suggestPlan': tasksSuggestPlan,
   'tasks.refine': tasksRefine,
   'tasks.detectDuplicates': tasksDetectDuplicates,
+  'tasks.generateAutomations': tasksGenerateAutomations,
+  'tasks.generateTemplates': tasksGenerateTemplates,
+  'tasks.fromText': tasksFromText,
+  'tasks.suggestDeadline': tasksSuggestDeadline,
+  'tasks.suggestPriorities': tasksSuggestPriorities,
+  'tasks.analyze': tasksAnalyze,
+  'tasks.search': tasksSearch,
+
+  // --- Projects ---
   'projects.extractDocument': projectsExtractDocument,
   'projects.generateInsights': projectsGenerateInsights,
+  'projects.generateArt': projectsGenerateArt,
+  'projects.repurpose': projectsRepurpose,
+  'projects.autoUpdate': projectsAutoUpdate,
+  'projects.executionPlan': projectsExecutionPlan,
+  'projects.executionBlocks': projectsExecutionBlocks,
+  'projects.nextSteps': projectsNextSteps,
+
+  // --- Contracts ---
   'contracts.generateText': contractsGenerateText,
   'contracts.extractFromFile': contractsExtractFromFile,
+  'contracts.generateMilestones': contractsGenerateMilestones,
+  'contracts.scanSignatures': contractsScanSignatures,
+
+  // --- CRM ---
   'crm.scoreLead': crmScoreLead,
   'crm.generateMessage': crmGenerateMessage,
+  'crm.interactionSummary': crmInteractionSummary,
+  'crm.clientFromProject': crmClientFromProject,
+  'crm.scrapeUrl': crmScrapeUrl,
+
+  // --- Creative ---
   'creative.studio': creativeStudio,
   'creative.storyboard': creativeStoryboard,
+  'creative.script': creativeScript,
+  'creative.captions': creativeCaptions,
+  'creative.studioBlock': creativeStudioBlock,
+  'creative.logoVariations': creativeLogoVariations,
+  'creative.extractVisualAssets': creativeExtractVisualAssets,
+  'creative.generateImage': creativeGenerateImage,
+  'creative.transcribeMedia': creativeTranscribeMedia,
+
+  // --- Marketing ---
   'marketing.generate30DayPlan': marketingGenerate30DayPlan,
   'marketing.generateFromTemplate': marketingGenerateFromTemplate,
+  'marketing.contentSuggestions': marketingContentSuggestions,
+  'marketing.contentAi': marketingContentAi,
+  'marketing.exportCampaignPdf': marketingExportCampaignPdf,
+  'marketing.generateProposal': marketingGenerateProposal,
+
+  // --- Knowledge ---
   'knowledge.assistant': knowledgeAssistant,
+
+  // --- Prospecting ---
   'prospecting.generate': prospectingGenerate,
+  'prospecting.tts': prospectingTts,
+  'prospecting.scoutCopy': prospectingScoutCopy,
+
+  // --- Alerts ---
+  'alerts.composeAi': alertsComposeAi,
+  'alerts.generateWhatsapp': alertsGenerateWhatsapp,
+  'alerts.generateActionMessage': alertsGenerateActionMessage,
+
+  // --- Finance ---
+  'finance.syncProject': financeSyncProject,
+  'finance.execInsights': financeExecInsights,
+
+  // --- Files ---
+  'files.classify': filesClassify,
+  'files.fillMaterials': filesFillMaterials,
+  'files.templateFields': filesTemplateFields,
+
+  // --- Agent / Copilot ---
+  'agent.chat': agentChat,
+  'agent.execute': agentExecute,
 };
 
 export function getAiAction(key: string): AiActionDefinition<unknown, unknown> | undefined {
