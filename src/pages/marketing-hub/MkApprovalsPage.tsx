@@ -284,12 +284,12 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
             {item.status === "review" && (
               <>
                 <button onClick={e => { e.stopPropagation(); onApprove(); }}
-                  className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                  className="p-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                   title="Aprovar">
                   <CheckCircle className="w-5 h-5" />
                 </button>
                 <button onClick={e => { e.stopPropagation(); onReject(); }}
-                  className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+                  className="p-2.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
                   title="Solicitar alteração">
                   <XCircle className="w-5 h-5" />
                 </button>
