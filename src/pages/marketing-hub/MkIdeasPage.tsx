@@ -134,7 +134,7 @@ function IdeaCard({
       {/* Promote CTA */}
       <button
         onClick={onPromote}
-        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[10px] uppercase tracking-wider font-medium opacity-0 group-hover:opacity-100 transition-all hover:bg-emerald-500/10"
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md border border-primary/20 bg-primary/5 text-primary text-[10px] uppercase tracking-wider font-medium opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/10"
       >
         <ArrowRight className="w-3 h-3" />
         Produzir

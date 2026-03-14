@@ -196,7 +196,7 @@ export default function MkAutomationsPage() {
                   const config = RULE_CONFIG[s.rule_key] || DEFAULT_RULE;
                   return (
                     <MkCard key={s.id} className="flex items-center gap-3 py-3 opacity-50">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <Check className="w-4 h-4 text-primary shrink-0" />
                       <span className={cn("text-[9px] uppercase tracking-[0.1em] font-mono shrink-0", config.color)}>
                         {config.label}
                       </span>

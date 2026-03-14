@@ -381,8 +381,8 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
                         comments.map((c: any) => (
                           <div key={c.id} className={cn(
                             "rounded-lg p-3 text-xs",
-                            c.text.startsWith('✅') ? "bg-emerald-500/10 border border-emerald-500/10"
-                              : c.text.startsWith('🔄') ? "bg-amber-500/10 border border-amber-500/10"
+                            c.text.startsWith('✅') ? "bg-primary/10 border border-primary/10"
+                              : c.text.startsWith('🔄') ? "bg-muted border border-border"
                               : "bg-white/[0.03] border border-white/[0.06]"
                           )}>
                             <div className="flex items-center justify-between mb-1">
