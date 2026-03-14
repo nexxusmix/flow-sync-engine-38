@@ -165,6 +165,7 @@ function AppRoutes() {
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/clientes" element={<ProtectedRoute><ClientesPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
+      <Route path="/inbox-operacional" element={<ProtectedRoute><UnifiedInboxPage /></ProtectedRoute>} />
       {/* Projetos */}
       <Route path="/projetos" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
       <Route path="/projetos/board" element={<ProtectedRoute><ProjectsListPage /></ProtectedRoute>} />
