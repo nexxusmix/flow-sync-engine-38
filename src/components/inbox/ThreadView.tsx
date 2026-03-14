@@ -30,9 +30,9 @@ const channelIcons = {
 };
 
 const channelColors = {
-  instagram: 'text-pink-500 bg-pink-500/10',
-  whatsapp: 'text-green-500 bg-green-500/10',
-  email: 'text-blue-500 bg-blue-500/10',
+  instagram: 'text-primary bg-primary/10',
+  whatsapp: 'text-primary bg-primary/10',
+  email: 'text-primary bg-primary/10',
 };
 
 const statusLabels: Record<InboxStatus, string> = {
