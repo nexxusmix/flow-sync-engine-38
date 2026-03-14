@@ -87,10 +87,12 @@ export function TaskAIPrioritySuggestions({ externalOpen, onExternalOpenChange }
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={fetchSuggestions} disabled={loading}>
-        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-        <span className="hidden lg:inline">Sugerir prioridades</span>
-      </Button>
+      {externalOpen === undefined && (
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={fetchSuggestions} disabled={loading}>
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+          <span className="hidden lg:inline">Sugerir prioridades</span>
+        </Button>
+      )}
 
       <Portal>
       <AnimatePresence>

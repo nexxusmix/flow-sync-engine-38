@@ -88,10 +88,12 @@ export function TaskAIDeadlineSuggestions({ externalOpen, onExternalOpenChange }
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={fetchSuggestions} disabled={loading}>
-        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarClock className="w-3.5 h-3.5" />}
-        <span className="hidden lg:inline">Sugerir prazos</span>
-      </Button>
+      {externalOpen === undefined && (
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={fetchSuggestions} disabled={loading}>
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarClock className="w-3.5 h-3.5" />}
+          <span className="hidden lg:inline">Sugerir prazos</span>
+        </Button>
+      )}
 
       <Portal>
       <AnimatePresence>

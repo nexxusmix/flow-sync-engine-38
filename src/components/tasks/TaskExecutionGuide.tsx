@@ -265,10 +265,12 @@ export function TaskExecutionGuide({ tasks, onComplete, externalOpen, onExternal
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={openSelection} className="gap-1.5" disabled={pendingTasks.length === 0}>
-        <Brain className="w-4 h-4" />
-        <span className="hidden sm:inline">Modo Foco</span>
-      </Button>
+      {externalOpen === undefined && (
+        <Button variant="outline" size="sm" onClick={openSelection} className="gap-1.5" disabled={pendingTasks.length === 0}>
+          <Brain className="w-4 h-4" />
+          <span className="hidden sm:inline">Modo Foco</span>
+        </Button>
+      )}
 
       <Portal>
       <AnimatePresence>

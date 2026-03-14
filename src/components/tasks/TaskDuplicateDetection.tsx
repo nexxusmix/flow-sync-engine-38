@@ -78,10 +78,12 @@ export function TaskDuplicateDetection({ externalOpen, onExternalOpenChange }: T
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={detect} disabled={loading}>
-        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
-        <span className="hidden lg:inline">Duplicatas</span>
-      </Button>
+      {externalOpen === undefined && (
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={detect} disabled={loading}>
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+          <span className="hidden lg:inline">Duplicatas</span>
+        </Button>
+      )}
 
       <Portal>
       <AnimatePresence>
