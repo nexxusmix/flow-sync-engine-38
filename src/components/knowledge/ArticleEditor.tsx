@@ -40,7 +40,7 @@ function renderMarkdown(md: string): string {
 export function ArticleEditor({ article, onSave, onCancel, categories }: ArticleEditorProps) {
   const [title, setTitle] = useState(article.title);
   const [category, setCategory] = useState(article.category || '');
-  const [content, setContent] = useState(article.content_md);
+  const [content, setContent] = useState(article.content);
   const [tags, setTags] = useState(article.tags?.join(', ') || '');
   const [showPreview, setShowPreview] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -49,7 +49,7 @@ export function ArticleEditor({ article, onSave, onCancel, categories }: Article
     const changed = 
       title !== article.title ||
       category !== (article.category || '') ||
-      content !== article.content_md ||
+      content !== article.content ||
       tags !== (article.tags?.join(', ') || '');
     setHasChanges(changed);
   }, [title, category, content, tags, article]);
@@ -58,7 +58,7 @@ export function ArticleEditor({ article, onSave, onCancel, categories }: Article
     onSave({
       title,
       category: category || null,
-      content_md: content,
+      content,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
     });
   };
