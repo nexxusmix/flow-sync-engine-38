@@ -75,7 +75,7 @@ function PortalDeliverablesPremiumComponent({
       animate={{ opacity: 1 }}
     >
       <motion.h2 
-        className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-medium border-l-2 border-cyan-400 pl-4"
+        className="text-xs uppercase tracking-[0.3em] text-primary font-medium border-l-2 border-primary pl-4"
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
