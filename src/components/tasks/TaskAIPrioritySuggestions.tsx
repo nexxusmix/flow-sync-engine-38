@@ -15,8 +15,8 @@ interface Suggestion {
 }
 
 const PRIORITY_ICONS: Record<string, { icon: typeof Flame; className: string; label: string }> = {
-  urgent: { icon: Flame, className: "text-red-400", label: "Urgente" },
-  high: { icon: ArrowUp, className: "text-orange-400", label: "Alta" },
+  urgent: { icon: Flame, className: "text-destructive", label: "Urgente" },
+  high: { icon: ArrowUp, className: "text-muted-foreground", label: "Alta" },
   normal: { icon: Minus, className: "text-muted-foreground", label: "Normal" },
   low: { icon: ArrowDown, className: "text-muted-foreground/50", label: "Baixa" },
 };
