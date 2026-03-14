@@ -103,7 +103,7 @@ function ClientUploadDialogComponent({
   isUploading = false,
 }: ClientUploadDialogProps) {
   const [queue, setQueue] = useState<QueuedItem[]>([]);
-  const [linkMode, setLinkMode] = useState<'youtube' | 'link' | null>(null);
+  const [linkMode, setLinkMode] = useState<'youtube' | 'link' | 'drive' | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
   const [linkDesc, setLinkDesc] = useState('');
