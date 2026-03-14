@@ -141,6 +141,15 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
         <ScheduleTab project={project} />
       </TabsContent>
 
+      <TabsContent value="timeline" className="mt-6">
+        <EntityTimeline
+          entityType="project"
+          projectId={project.id}
+          title="Timeline do Projeto"
+          initialCount={20}
+        />
+      </TabsContent>
+
       <TabsContent value="finance" className="mt-6">
         <FinanceTab project={project} />
       </TabsContent>
