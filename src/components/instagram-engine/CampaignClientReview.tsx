@@ -152,8 +152,8 @@ export function CampaignClientReview({ campaign, posts }: Props) {
             )}
 
             {currentPost.cta && (
-              <div className="p-2 bg-amber-400/5 rounded-lg border border-amber-400/10">
-                <span className="text-[10px] text-amber-400">📣 CTA: {currentPost.cta}</span>
+              <div className="p-2 bg-muted/10 rounded-lg border border-border/20">
+                <span className="text-[10px] text-muted-foreground">📣 CTA: {currentPost.cta}</span>
               </div>
             )}
 
