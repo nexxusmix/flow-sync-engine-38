@@ -180,7 +180,7 @@ export default function MarketingPage() {
             title="Aprovados"
             value={stats.approved}
             icon={CheckCircle}
-            color="text-emerald-500"
+            color="text-primary"
             onClick={() => navigate('/marketing/pipeline')}
           />
           <StatCard
