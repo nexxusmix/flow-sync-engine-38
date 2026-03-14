@@ -10,24 +10,25 @@ import { TrendingUp, Calendar, Activity, AlertTriangle, Clock } from "lucide-rea
 import { format, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { ProjectInfo, ProjectStage } from "@/hooks/useClientPortalEnhanced";
+import { sc } from "@/lib/colors";
 
 interface Props {
   project: ProjectInfo;
   stages: ProjectStage[];
 }
 
-function getRiskLevel(value: number) {
-  if (value <= 25) return { color: "text-emerald-500", bg: "bg-emerald-500/10", label: "Baixo" };
-  if (value <= 50) return { color: "text-yellow-500", bg: "bg-yellow-500/10", label: "Moderado" };
-  if (value <= 75) return { color: "text-orange-500", bg: "bg-orange-500/10", label: "Alto" };
-  return { color: "text-destructive", bg: "bg-destructive/10", label: "Crítico" };
-}
+const RISK_LABELS: Record<string, string> = {
+  low: "Baixo",
+  moderate: "Moderado",
+  high: "Alto",
+  critical: "Crítico",
+};
 
-function getHealthStyle(value: number) {
-  if (value >= 75) return { color: "text-emerald-500", bg: "bg-emerald-500/10" };
-  if (value >= 50) return { color: "text-yellow-500", bg: "bg-yellow-500/10" };
-  if (value >= 25) return { color: "text-orange-500", bg: "bg-orange-500/10" };
-  return { color: "text-destructive", bg: "bg-destructive/10" };
+function getRiskLabel(value: number) {
+  if (value <= 25) return "Baixo";
+  if (value <= 50) return "Moderado";
+  if (value <= 75) return "Alto";
+  return "Crítico";
 }
 
 function PortalIntelligenceBlockComponent({ project, stages }: Props) {
@@ -89,23 +90,23 @@ function PortalIntelligenceBlockComponent({ project, stages }: Props) {
     };
   }, [project, stages]);
 
-  const riskStyle = getRiskLevel(metrics.delayRisk);
-  const healthStyle = getHealthStyle(metrics.health);
+  const riskStyle = sc.risk(metrics.delayRisk);
+  const healthStyle = sc.score(metrics.health);
 
   const cards = [
     {
       label: "Progresso",
       value: `${metrics.progress}%`,
       icon: TrendingUp,
-      colorClass: metrics.progress >= 75 ? "text-emerald-500" : metrics.progress >= 40 ? "text-primary" : "text-muted-foreground",
-      bgClass: metrics.progress >= 75 ? "bg-emerald-500/10" : "bg-primary/10",
+      colorClass: sc.score(metrics.progress).text,
+      bgClass: sc.score(metrics.progress).bg,
       sub: `${metrics.completedStages}/${metrics.totalStages} etapas concluídas`,
     },
     {
       label: "Risco de Atraso",
-      value: riskStyle.label,
+      value: getRiskLabel(metrics.delayRisk),
       icon: AlertTriangle,
-      colorClass: riskStyle.color,
+      colorClass: riskStyle.text,
       bgClass: riskStyle.bg,
       sub: metrics.overdueCount > 0 
         ? `${metrics.overdueCount} etapa(s) atrasada(s)` 
@@ -120,11 +121,11 @@ function PortalIntelligenceBlockComponent({ project, stages }: Props) {
           : "—",
       icon: Calendar,
       colorClass: metrics.estimatedCompletion && project.due_date && metrics.estimatedCompletion > new Date(project.due_date)
-        ? "text-destructive"
-        : "text-emerald-500",
+        ? sc.status("overdue").text
+        : sc.status("active").text,
       bgClass: metrics.estimatedCompletion && project.due_date && metrics.estimatedCompletion > new Date(project.due_date)
-        ? "bg-destructive/10"
-        : "bg-emerald-500/10",
+        ? sc.status("overdue").bg
+        : sc.status("active").bg,
       sub: metrics.daysRemaining !== null
         ? metrics.daysRemaining >= 0
           ? `${metrics.daysRemaining} dias restantes`
@@ -135,7 +136,7 @@ function PortalIntelligenceBlockComponent({ project, stages }: Props) {
       label: "Saúde do Projeto",
       value: `${metrics.health}%`,
       icon: Activity,
-      colorClass: healthStyle.color,
+      colorClass: healthStyle.text,
       bgClass: healthStyle.bg,
       sub: metrics.health >= 75 ? "Saudável" : metrics.health >= 50 ? "Atenção" : "Em risco",
     },

@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { sc } from "@/lib/colors";
 
 export interface ChangeRequest {
   id: string;
@@ -55,25 +56,26 @@ interface PortalChangeRequestsProps {
   isClientView?: boolean;
 }
 
-const STATUS_CONFIG: Record<ChangeRequest['status'], { label: string; icon: typeof CheckCircle2; color: string }> = {
-  open: { label: 'Aberto', icon: AlertCircle, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
-  in_progress: { label: 'Em Andamento', icon: Clock, color: 'text-blue-500 bg-blue-500/10 border-blue-500/30' },
-  resolved: { label: 'Resolvido', icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30' },
-  rejected: { label: 'Rejeitado', icon: XCircle, color: 'text-red-500 bg-red-500/10 border-red-500/30' },
+const STATUS_ICONS: Record<ChangeRequest['status'], { label: string; icon: typeof CheckCircle2 }> = {
+  open: { label: 'Aberto', icon: AlertCircle },
+  in_progress: { label: 'Em Andamento', icon: Clock },
+  resolved: { label: 'Resolvido', icon: CheckCircle2 },
+  rejected: { label: 'Rejeitado', icon: XCircle },
 };
 
-const PRIORITY_CONFIG: Record<ChangeRequest['priority'], { label: string; color: string }> = {
-  low: { label: 'Baixa', color: 'text-muted-foreground' },
-  normal: { label: 'Normal', color: 'text-foreground' },
-  high: { label: 'Alta', color: 'text-amber-500' },
-  urgent: { label: 'Urgente', color: 'text-red-500' },
+const PRIORITY_LABELS: Record<ChangeRequest['priority'], string> = {
+  low: 'Baixa',
+  normal: 'Normal',
+  high: 'Alta',
+  urgent: 'Urgente',
 };
 
 function RequestItem({ request }: { request: ChangeRequest }) {
   const [isOpen, setIsOpen] = useState(false);
-  const statusConfig = STATUS_CONFIG[request.status];
-  const priorityConfig = PRIORITY_CONFIG[request.priority];
-  const StatusIcon = statusConfig.icon;
+  const statusMeta = STATUS_ICONS[request.status];
+  const statusStyle = sc.status(request.status === 'open' ? 'pending' : request.status === 'resolved' ? 'completed' : request.status);
+  const priorityStyle = sc.priority(request.priority);
+  const StatusIcon = statusMeta.icon;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -83,7 +85,7 @@ function RequestItem({ request }: { request: ChangeRequest }) {
       )}>
         <CollapsibleTrigger className="w-full">
           <div className="flex items-start gap-3">
-            <div className={cn("w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0", statusConfig.color)}>
+            <div className={cn("w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0", statusStyle.bg, statusStyle.text)}>
               <StatusIcon className="w-3.5 h-3.5" />
             </div>
             <div className="flex-1 text-left min-w-0">
@@ -95,8 +97,8 @@ function RequestItem({ request }: { request: ChangeRequest }) {
                   {request.title}
                 </h4>
                 {request.priority !== 'normal' && (
-                  <Badge variant="outline" className={cn("text-[9px]", priorityConfig.color)}>
-                    {priorityConfig.label}
+                  <Badge variant="outline" className={cn("text-[9px]", priorityStyle.text)}>
+                    {PRIORITY_LABELS[request.priority]}
                   </Badge>
                 )}
               </div>
@@ -106,8 +108,8 @@ function RequestItem({ request }: { request: ChangeRequest }) {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={cn("text-[9px]", statusConfig.color)}>
-                {statusConfig.label}
+              <Badge variant="outline" className={cn("text-[9px]", statusStyle.text, statusStyle.bg)}>
+                {statusMeta.label}
               </Badge>
               {request.description && (
                 isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />

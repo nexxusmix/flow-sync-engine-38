@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { sc } from "@/lib/colors";
 import squadHubLogo from "@/assets/squad-hub-logo.png";
 import type { ProjectInfo } from "@/hooks/useClientPortalEnhanced";
 
@@ -64,12 +65,12 @@ const TEMPLATE_NAMES: Record<string, string> = {
   custom: 'Projeto',
 };
 
-// Status config
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  active: { label: 'Ativo', color: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
-  paused: { label: 'Pausado', color: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
-  completed: { label: 'Concluído', color: 'bg-blue-500/20 text-blue-500 border-blue-500/30' },
-  cancelled: { label: 'Cancelado', color: 'bg-red-500/20 text-red-500 border-red-500/30' },
+// Status config - labels only, colors from sc utility
+const STATUS_LABELS: Record<string, string> = {
+  active: 'Ativo',
+  paused: 'Pausado',
+  completed: 'Concluído',
+  cancelled: 'Cancelado',
 };
 
 function PortalHeaderExpandedComponent({
@@ -118,7 +119,8 @@ function PortalHeaderExpandedComponent({
     ? TEMPLATE_NAMES[project.template] || project.template 
     : 'Projeto';
   
-  const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG.active;
+  const statusLabel = STATUS_LABELS[project.status] || STATUS_LABELS.active;
+  const statusStyle = sc.status(project.status || 'active');
 
   return (
     <div className="space-y-4">
@@ -131,9 +133,9 @@ function PortalHeaderExpandedComponent({
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className={cn(
                 "text-[10px] md:text-xs px-2 py-1 rounded border font-medium",
-                statusConfig.color
+                statusStyle.text, statusStyle.bg, statusStyle.border
               )}>
-                {statusConfig.label}
+                {statusLabel}
               </span>
               <span className="text-[10px] md:text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
                 {templateName}

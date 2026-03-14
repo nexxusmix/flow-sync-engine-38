@@ -3,6 +3,7 @@ import { TrendingUp, Calendar, DollarSign, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ProjectIntelligence } from "@/hooks/useProjectIntelligence";
+import { sc } from "@/lib/colors";
 
 interface Props {
   intelligence: ProjectIntelligence;
@@ -36,14 +37,21 @@ function getHealthBg(value: number) {
   return "bg-destructive/10";
 }
 
+interface Props {
+  intelligence: ProjectIntelligence;
+}
+
 export function ProjectIntelligenceBlock({ intelligence }: Props) {
+  const riskStyle = sc.risk(intelligence.delayRisk);
+  const healthStyle = sc.score(intelligence.clientHealth);
+
   const cards = [
     {
       label: "Risco de Atraso",
       value: `${intelligence.delayRisk}%`,
       icon: TrendingUp,
-      colorClass: getRiskColor(intelligence.delayRisk),
-      bgClass: getRiskBg(intelligence.delayRisk),
+      colorClass: riskStyle.text,
+      bgClass: riskStyle.bg,
       sub: `Velocity: ${intelligence.velocity}/dia`,
     },
     {
@@ -52,8 +60,8 @@ export function ProjectIntelligenceBlock({ intelligence }: Props) {
         ? format(intelligence.predictedCompletionDate, "dd MMM yyyy", { locale: ptBR })
         : "—",
       icon: Calendar,
-      colorClass: intelligence.deadlineAlert ? "text-destructive" : "text-primary",
-      bgClass: intelligence.deadlineAlert ? "bg-destructive/10" : "bg-primary/10",
+      colorClass: intelligence.deadlineAlert ? sc.status("overdue").text : sc.status("active").text,
+      bgClass: intelligence.deadlineAlert ? sc.status("overdue").bg : sc.status("active").bg,
       sub: `${intelligence.tasksPending} pendentes · ${intelligence.tasksCompleted} concluídas`,
     },
     {
@@ -62,16 +70,16 @@ export function ProjectIntelligenceBlock({ intelligence }: Props) {
         ? `R$ ${intelligence.roi.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}/h`
         : "—",
       icon: DollarSign,
-      colorClass: "text-primary",
-      bgClass: "bg-primary/10",
+      colorClass: sc.financial("revenue").text,
+      bgClass: sc.financial("revenue").bg,
       sub: `${intelligence.financialStatus.percentPaid}% pago · R$ ${(intelligence.financialStatus.totalOverdue / 100).toLocaleString("pt-BR", { minimumFractionDigits: 0 })} vencido`,
     },
     {
       label: "Saúde do Cliente",
       value: `${intelligence.clientHealth}/100`,
       icon: Heart,
-      colorClass: getHealthColor(intelligence.clientHealth),
-      bgClass: getHealthBg(intelligence.clientHealth),
+      colorClass: healthStyle.text,
+      bgClass: healthStyle.bg,
       sub: intelligence.clientHealth >= 75 ? "Saudável" : intelligence.clientHealth >= 50 ? "Atenção" : "Em risco",
     },
   ];

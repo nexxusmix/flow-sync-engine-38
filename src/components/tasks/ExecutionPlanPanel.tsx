@@ -9,6 +9,7 @@ import {
   CheckCircle2, Coffee, Sun, AlertTriangle, Sparkles, CalendarClock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sc } from "@/lib/colors";
 import type { ExecutionPlan } from "@/hooks/useExecutionPlans";
 import type { Task } from "@/hooks/useTasksUnified";
 import { isPast, parseISO } from "date-fns";
@@ -22,17 +23,17 @@ interface ExecutionPlanPanelProps {
   onTogglePin: (taskId: string) => void;
 }
 
-const ENERGY_CONFIG = {
-  baixa: { label: "Baixa", color: "text-primary/60", bg: "bg-primary/10" },
-  media: { label: "Média", color: "text-primary", bg: "bg-primary/15" },
-  alta: { label: "Alta", color: "text-destructive", bg: "bg-destructive/10" },
+const ENERGY_LABELS = {
+  baixa: "Baixa",
+  media: "Média",
+  alta: "Alta",
 };
 
 const MODE_CONFIG = {
-  deep_work: { label: "Deep Work", icon: Brain, color: "text-primary" },
-  admin: { label: "Admin", icon: CheckCircle2, color: "text-primary/70" },
-  criativo: { label: "Criativo", icon: Sparkles, color: "text-primary/50" },
-  comunicacao: { label: "Comunicação", icon: Coffee, color: "text-primary/60" },
+  deep_work: { label: "Deep Work", icon: Brain, color: sc.energy("alta").text },
+  admin: { label: "Admin", icon: CheckCircle2, color: sc.energy("media").text },
+  criativo: { label: "Criativo", icon: Sparkles, color: sc.energy("baixa").text },
+  comunicacao: { label: "Comunicação", icon: Coffee, color: sc.energy("media").text },
 };
 
 export function ExecutionPlanPanel({
@@ -125,11 +126,11 @@ export function ExecutionPlanPanel({
               </div>
             )}
             {plan.energy_level && (
-              <div className={cn("flex items-center gap-1.5 p-2 rounded-lg border border-white/[0.04]", ENERGY_CONFIG[plan.energy_level].bg)}>
-                <Zap className={cn("w-3.5 h-3.5", ENERGY_CONFIG[plan.energy_level].color)} />
+              <div className={cn("flex items-center gap-1.5 p-2 rounded-lg border border-white/[0.04]", sc.energy(plan.energy_level).bg)}>
+                <Zap className={cn("w-3.5 h-3.5", sc.energy(plan.energy_level).text)} />
                 <div>
-                  <p className={cn("text-xs font-medium", ENERGY_CONFIG[plan.energy_level].color)}>
-                    {ENERGY_CONFIG[plan.energy_level].label}
+                  <p className={cn("text-xs font-medium", sc.energy(plan.energy_level).text)}>
+                    {ENERGY_LABELS[plan.energy_level] || plan.energy_level}
                   </p>
                   <p className="text-[9px] text-muted-foreground">Energia</p>
                 </div>

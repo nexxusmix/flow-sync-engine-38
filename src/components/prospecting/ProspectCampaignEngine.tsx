@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useProspectAI, CampaignPlan } from '@/hooks/useProspectAI';
+import { sc } from '@/lib/colors';
 
 interface Props {
   prospectId?: string;
@@ -19,9 +20,9 @@ interface Props {
 }
 
 const RISK_CONFIG = {
-  low: { label: 'Baixo', color: 'text-primary bg-primary/10', icon: CheckCircle },
-  medium: { label: 'Médio', color: 'text-muted-foreground bg-muted', icon: AlertTriangle },
-  high: { label: 'Alto', color: 'text-destructive bg-destructive/10', icon: AlertTriangle },
+  low: { label: 'Baixo', color: `${sc.risk(10).text} ${sc.risk(10).bg}`, icon: CheckCircle },
+  medium: { label: 'Médio', color: `${sc.risk(50).text} ${sc.risk(50).bg}`, icon: AlertTriangle },
+  high: { label: 'Alto', color: `${sc.risk(80).text} ${sc.risk(80).bg}`, icon: AlertTriangle },
 };
 
 const CHANNEL_ICONS: Record<string, string> = {
