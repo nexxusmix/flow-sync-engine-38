@@ -183,6 +183,7 @@ export default function MkApprovalsPage() {
               onCommentChange={setCommentText}
               onSendComment={() => sendComment(item.id)}
               sendingComment={sendingComment}
+              onRefresh={fetchContentItems}
             />
           ))}
         </div>
