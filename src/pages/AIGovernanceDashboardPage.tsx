@@ -26,7 +26,7 @@ export default function AIGovernanceDashboardPage() {
   const governance = useAIGovernance(dateRange);
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="IA & Governança">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
