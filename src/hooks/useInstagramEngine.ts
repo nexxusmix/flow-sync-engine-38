@@ -665,7 +665,7 @@ export function useMoodBoardItems(campaignId: string) {
         .eq('campaign_id', campaignId)
         .order('position', { ascending: true });
       if (error) throw error;
-      return (data || []) as MoodBoardItem[];
+      return (data || []) as unknown as MoodBoardItem[];
     },
     enabled: !!campaignId,
   });
