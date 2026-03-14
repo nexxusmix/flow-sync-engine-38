@@ -75,7 +75,7 @@ function PortalClientUploadsComponent({
         </div>
 
         {/* Quick Actions */}
-        <div className="p-5 grid grid-cols-3 gap-3">
+        <div className="p-5 grid grid-cols-4 gap-3">
           <HoverLift className="cursor-pointer" glowColor="rgba(239, 68, 68, 0.15)">
             <button
               onClick={() => setDialogOpen(true)}
@@ -83,6 +83,16 @@ function PortalClientUploadsComponent({
             >
               <Youtube className="w-5 h-5 text-red-500" />
               <span className="text-[10px] uppercase tracking-wider text-gray-500">YouTube</span>
+            </button>
+          </HoverLift>
+          
+          <HoverLift className="cursor-pointer" glowColor="rgba(34, 197, 94, 0.15)">
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="w-full flex flex-col items-center gap-2 p-4 bg-green-500/5 border border-green-500/20 hover:border-green-500/40 transition-colors"
+            >
+              <HardDrive className="w-5 h-5 text-green-500" />
+              <span className="text-[10px] uppercase tracking-wider text-gray-500">Drive</span>
             </button>
           </HoverLift>
           
