@@ -429,7 +429,7 @@ function MetricsView() {
                   <div className="absolute inset-0 flex items-center justify-end pr-2">
                     <span className={cn(
                       "text-[9px] font-semibold uppercase tracking-[0.1em]",
-                      time.score >= 90 ? "text-amber-300" : "text-white/30"
+                      time.score >= 90 ? "text-primary" : "text-white/30"
                     )}>
                       {time.label}
                     </span>
