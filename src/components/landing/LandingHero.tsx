@@ -39,30 +39,30 @@ export function LandingHero() {
   const textExitY = useSpring(useTransform(scrollYProgress, [0.7, 1], [0, -80]), sp);
 
   return (
-    <section ref={sectionRef} className="relative z-10 min-h-[250vh]">
+    <section ref={sectionRef} className="relative z-10 min-h-[200vh] md:min-h-[250vh]">
       {/* Hero with video card */}
       <motion.div
-        className="sticky top-0 left-0 w-full h-screen flex flex-col items-center justify-center z-20 px-6"
+        className="sticky top-0 left-0 w-full h-[100dvh] flex flex-col items-center justify-center z-20 px-4 md:px-6"
         style={{ opacity: videoOpacity }}
       >
         {/* Text content */}
         <motion.div
-          className="text-center max-w-5xl mb-10"
+          className="text-center max-w-5xl mb-6 md:mb-10"
           style={{ y: videoY }}
         >
           <motion.div
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-8"
+            className="inline-flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-6 md:mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <span className="text-xs text-white font-medium uppercase tracking-wider">
+            <span className="text-[10px] md:text-xs text-white font-medium uppercase tracking-wider leading-tight text-center">
               CRM · Projetos · Financeiro · Portal · IA · Automação — Tudo em um
             </span>
           </motion.div>
 
           <motion.h1
-            className="text-4xl md:text-6xl lg:text-[5.5rem] font-light text-white tracking-tight leading-[1.08]"
+            className="text-3xl sm:text-4xl md:text-6xl lg:text-[5.5rem] font-light text-white tracking-tight leading-[1.08]"
             variants={maskContainer}
             initial="hidden"
             animate="visible"
@@ -80,7 +80,7 @@ export function LandingHero() {
           </motion.h1>
 
           <motion.p
-            className="text-lg md:text-xl text-white/60 font-light mt-6 max-w-2xl mx-auto leading-relaxed"
+            className="text-base md:text-xl text-white/60 font-light mt-4 md:mt-6 max-w-2xl mx-auto leading-relaxed px-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.6 }}
@@ -91,7 +91,7 @@ export function LandingHero() {
           </motion.p>
 
           <motion.div
-            className="flex flex-wrap justify-center gap-4 mt-10"
+            className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-4 mt-8 md:mt-10 px-4 sm:px-0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.8, duration: 0.6 }}
@@ -99,23 +99,23 @@ export function LandingHero() {
             <Button
               size="lg"
               onClick={() => navigate("/login")}
-              className="gap-2 bg-primary hover:bg-primary/90 h-14 px-10 text-base pointer-events-auto hover-invert"
+              className="gap-2 bg-primary hover:bg-primary/90 h-12 md:h-14 px-8 md:px-10 text-sm md:text-base pointer-events-auto hover-invert w-full sm:w-auto"
             >
               Agendar Demonstração <ArrowRight className="w-4 h-4" />
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="gap-2 border-white/20 text-white hover:bg-white/10 h-14 px-8 pointer-events-auto"
+              className="gap-2 border-white/20 text-white hover:bg-white/10 h-12 md:h-14 px-6 md:px-8 pointer-events-auto w-full sm:w-auto"
             >
               <Play className="w-3.5 h-3.5" /> Ver Como Funciona
             </Button>
           </motion.div>
         </motion.div>
 
-        {/* Video card with rounded borders */}
+        {/* Video card */}
         <motion.div
-          className="w-full max-w-5xl"
+          className="w-full max-w-5xl hidden md:block"
           style={{ y: videoY }}
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -133,7 +133,7 @@ export function LandingHero() {
 
         {/* Scroll indicator */}
         <motion.div
-          className="absolute bottom-8"
+          className="absolute bottom-6 md:bottom-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2.4 }}
@@ -151,26 +151,27 @@ export function LandingHero() {
           </motion.div>
         </motion.div>
       </motion.div>
+
       {/* Content revealed behind the video */}
-      <div className="relative z-10 pt-[110vh]">
+      <div className="relative z-10 pt-[100dvh] md:pt-[110vh]">
         <motion.div
-          className="sticky top-0 min-h-screen flex items-center px-6 md:px-12"
+          className="sticky top-0 min-h-[100dvh] flex items-center px-4 md:px-12"
           style={{ opacity: textExitOpacity, y: textExitY }}
         >
           <motion.div
             className="max-w-7xl mx-auto w-full"
             style={{ opacity: textOpacity, y: textY }}
           >
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              <div className="space-y-6 md:space-y-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15">
-                  <span className="text-xs text-primary font-medium uppercase tracking-wider">Sistema Operacional para Agências</span>
+                  <span className="text-[10px] md:text-xs text-primary font-medium uppercase tracking-wider">Sistema Operacional para Agências</span>
                 </div>
 
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.08]">
-                  Sua agência ainda opera<br />
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.08]">
+                  Sua agência ainda opera<br className="hidden sm:block" />
                   em <span className="text-primary font-normal">mil ferramentas?</span>
-                  <span className="text-lg md:text-xl text-muted-foreground font-light block mt-4">
+                  <span className="text-base md:text-xl text-muted-foreground font-light block mt-3 md:mt-4">
                     Centralize tudo em uma única plataforma inteligente.
                   </span>
                 </h2>
@@ -188,27 +189,27 @@ export function LandingHero() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4">
-                  <Button size="lg" onClick={() => navigate('/login')} className="gap-2 bg-primary hover:bg-primary/90 px-8 h-12 hover-invert pointer-events-auto">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 md:gap-4">
+                  <Button size="lg" onClick={() => navigate('/login')} className="gap-2 bg-primary hover:bg-primary/90 px-8 h-12 hover-invert pointer-events-auto w-full sm:w-auto">
                     Agendar Demo <ArrowRight className="w-4 h-4" />
                   </Button>
-                  <Button size="lg" variant="outline" className="gap-2 border-border/50 hover:border-primary/20 hover:bg-primary/5 h-12 px-8 pointer-events-auto">
+                  <Button size="lg" variant="outline" className="gap-2 border-border/50 hover:border-primary/20 hover:bg-primary/5 h-12 px-8 pointer-events-auto w-full sm:w-auto">
                     <Play className="w-3.5 h-3.5" /> Ver Planos
                   </Button>
                 </div>
 
-                <div className="flex gap-10 pt-8 border-t border-border/20">
+                <div className="flex gap-6 md:gap-10 pt-6 md:pt-8 border-t border-border/20">
                   <div>
-                    <p className="text-3xl font-light text-foreground tracking-tight">+<AnimatedCounter value={500} /></p>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Agências</p>
+                    <p className="text-2xl md:text-3xl font-light text-foreground tracking-tight">+<AnimatedCounter value={500} /></p>
+                    <p className="text-[10px] md:text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Agências</p>
                   </div>
                   <div>
-                    <p className="text-3xl font-light text-foreground tracking-tight"><AnimatedCounter value={98} suffix="%" /></p>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Satisfação</p>
+                    <p className="text-2xl md:text-3xl font-light text-foreground tracking-tight"><AnimatedCounter value={98} suffix="%" /></p>
+                    <p className="text-[10px] md:text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Satisfação</p>
                   </div>
                   <div>
-                    <p className="text-3xl font-light text-foreground tracking-tight"><AnimatedCounter value={40} suffix="%" /></p>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">+ Produtividade</p>
+                    <p className="text-2xl md:text-3xl font-light text-foreground tracking-tight"><AnimatedCounter value={40} suffix="%" /></p>
+                    <p className="text-[10px] md:text-[11px] text-muted-foreground uppercase tracking-wider mt-1">+ Produtividade</p>
                   </div>
                 </div>
               </div>

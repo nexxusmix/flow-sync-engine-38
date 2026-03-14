@@ -1598,13 +1598,41 @@
     border-bottom-color: rgba(255, 255, 255, 0.05);
   }
 
-  /* Landing scroll container — smooth scroll */
+  /* Landing scroll — compat class */
   .landing-scroll {
     scroll-behavior: smooth;
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 100vh;
-    height: 100dvh;
+  }
+
+  /* Responsive card grid utility */
+  .responsive-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Responsive table → cards on mobile */
+  @media (max-width: 767px) {
+    .responsive-table thead { display: none; }
+    .responsive-table tbody tr {
+      display: flex;
+      flex-direction: column;
+      padding: 0.75rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.3);
+      gap: 0.25rem;
+    }
+    .responsive-table tbody td {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+    }
+    .responsive-table tbody td::before {
+      content: attr(data-label);
+      font-weight: 500;
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
   }
 
   /* Landing Section Fade */
@@ -1658,5 +1686,25 @@
   /* Smoother scrolling */
   .overflow-y-auto, .overflow-auto {
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Responsive grid utility via Tailwind-compatible media queries */
+@media (min-width: 640px) {
+  .responsive-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .responsive-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1280px) {
+  .responsive-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Landscape-specific adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Very short landscape phones — reduce vertical padding */
+  .landing-section {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 }
