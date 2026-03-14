@@ -102,10 +102,10 @@ Retorne JSON com:
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-amber-400" />
+          <Zap className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Micro-Campanha Relâmpago</h3>
           {remaining && (
-            <Badge className={`text-[9px] ${remaining.urgent ? 'bg-red-500/15 text-red-400 animate-pulse' : 'bg-amber-500/15 text-amber-400'}`}>
+            <Badge className={`text-[9px] ${remaining.urgent ? 'bg-destructive/15 text-destructive animate-pulse' : 'bg-muted text-muted-foreground'}`}>
               ⏱️ {remaining.text}
             </Badge>
           )}

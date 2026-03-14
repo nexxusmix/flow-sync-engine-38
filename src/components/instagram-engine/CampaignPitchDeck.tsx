@@ -192,7 +192,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
                 </ul>
               </Card>
               <Card className="p-4 bg-card/50 border-border/30">
-                <h4 className="text-sm font-semibold text-amber-400 mb-2">⚠️ Oportunidades</h4>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2">⚠️ Oportunidades</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   {PILLARS.filter(p => !pillars[p.key]).slice(0, 2).map(p => (
                     <li key={p.key}>• Pilar "{p.label}" não utilizado — considerar na próxima campanha</li>

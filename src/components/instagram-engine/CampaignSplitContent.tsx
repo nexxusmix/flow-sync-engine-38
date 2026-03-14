@@ -82,9 +82,9 @@ Retorne JSON com:
   };
 
   const effortColors: Record<string, string> = {
-    low: 'bg-emerald-400/10 text-emerald-400',
-    medium: 'bg-amber-400/10 text-amber-400',
-    high: 'bg-red-400/10 text-red-400',
+    low: 'bg-primary/10 text-primary',
+    medium: 'bg-muted text-muted-foreground',
+    high: 'bg-destructive/10 text-destructive',
   };
 
   const publishedPosts = posts.filter(p => ['published', 'ready', 'creating'].includes(p.status));

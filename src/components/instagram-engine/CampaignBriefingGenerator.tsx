@@ -257,7 +257,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
               <div className="space-y-1">
                 {briefing.recording_tips.map((tip, i) => (
                   <div key={i} className="text-[9px] text-foreground/80 flex items-center gap-1.5">
-                    <span className="text-pink-400">▸</span> {tip}
+                    <span className="text-primary">▸</span> {tip}
                   </div>
                 ))}
               </div>
