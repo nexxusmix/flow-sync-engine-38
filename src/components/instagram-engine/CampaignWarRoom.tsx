@@ -203,9 +203,9 @@ export function CampaignWarRoom({ campaign, posts }: Props) {
       </Card>
 
       {metrics.bottlenecks.length === 0 && metrics.overdue.length === 0 && (
-        <Card className="p-4 bg-emerald-500/5 border-emerald-500/10 text-center">
-          <CheckCircle className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
-          <p className="text-xs text-emerald-400 font-medium">Tudo sob controle! 🎯</p>
+        <Card className="p-4 bg-primary/5 border-primary/10 text-center">
+          <CheckCircle className="w-6 h-6 text-primary mx-auto mb-1" />
+          <p className="text-xs text-primary font-medium">Tudo sob controle! 🎯</p>
           <p className="text-[9px] text-muted-foreground">Sem gargalos ou atrasos detectados</p>
         </Card>
       )}
