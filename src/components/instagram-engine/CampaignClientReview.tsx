@@ -81,8 +81,8 @@ export function CampaignClientReview({ campaign, posts }: Props) {
           <h3 className="text-sm font-semibold text-foreground">Client Review Portal</h3>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className="bg-emerald-400/10 text-emerald-400 text-[9px]">✅ {approvedCount}</Badge>
-          <Badge className="bg-red-400/10 text-red-400 text-[9px]">❌ {rejectedCount}</Badge>
+          <Badge className="bg-primary/10 text-primary text-[9px]">✅ {approvedCount}</Badge>
+          <Badge className="bg-destructive/10 text-destructive text-[9px]">❌ {rejectedCount}</Badge>
           <Badge variant="outline" className="text-[9px]">{reviewablePosts.length - approvedCount - rejectedCount} pendentes</Badge>
         </div>
       </div>
