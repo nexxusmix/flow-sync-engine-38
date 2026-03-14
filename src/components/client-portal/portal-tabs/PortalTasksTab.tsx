@@ -35,9 +35,9 @@ function PortalTasksTabComponent({ tasks = [] }: PortalTasksTabProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'done':
-        return <CheckSquare className="w-4 h-4 text-emerald-500" />;
+        return <CheckSquare className="w-4 h-4 text-primary" />;
       case 'in_progress':
-        return <Clock className="w-4 h-4 text-amber-500" />;
+        return <Clock className="w-4 h-4 text-muted-foreground" />;
       default:
         return <Square className="w-4 h-4 text-muted-foreground" />;
     }
