@@ -1328,6 +1328,280 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_addons: {
+        Row: {
+          addon_type: string
+          billing_type: string
+          created_at: string
+          description: string | null
+          id: string
+          limit_amount: number
+          limit_key: string | null
+          name: string
+          price: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          addon_type?: string
+          billing_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          limit_amount?: number
+          limit_key?: string | null
+          name: string
+          price?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          addon_type?: string
+          billing_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          limit_amount?: number
+          limit_key?: string | null
+          name?: string
+          price?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      billing_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          line_items: Json | null
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          line_items?: Json | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          line_items?: Json | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "billing_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          is_highlighted: boolean
+          limits: Json
+          name: string
+          price_monthly: number
+          price_yearly: number
+          slug: string
+          sort_order: number
+          status: string
+          trial_days: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_highlighted?: boolean
+          limits?: Json
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          slug: string
+          sort_order?: number
+          status?: string
+          trial_days?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_highlighted?: boolean
+          limits?: Json
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          slug?: string
+          sort_order?: number
+          status?: string
+          trial_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      billing_subscription_addons: {
+        Row: {
+          addon_id: string | null
+          created_at: string
+          id: string
+          quantity: number
+          status: string
+          subscription_id: string
+        }
+        Insert: {
+          addon_id?: string | null
+          created_at?: string
+          id?: string
+          quantity?: number
+          status?: string
+          subscription_id: string
+        }
+        Update: {
+          addon_id?: string | null
+          created_at?: string
+          id?: string
+          quantity?: number
+          status?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_subscription_addons_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "billing_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_subscription_addons_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "billing_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_subscriptions: {
+        Row: {
+          billing_cycle: string
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          metadata: Json | null
+          plan_id: string | null
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          billing_cycle?: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          billing_cycle?: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "billing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_usage_events: {
+        Row: {
+          amount: number
+          id: string
+          metadata: Json | null
+          recorded_at: string
+          usage_key: string
+          workspace_id: string
+        }
+        Insert: {
+          amount?: number
+          id?: string
+          metadata?: Json | null
+          recorded_at?: string
+          usage_key: string
+          workspace_id?: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          metadata?: Json | null
+          recorded_at?: string
+          usage_key?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       brand_kits: {
         Row: {
           account_id: string | null
