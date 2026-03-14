@@ -120,7 +120,7 @@ export default function MkInstagramPage() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-lg font-semibold text-white/90">@{MOCK_PROFILE.username}</h2>
-              <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 uppercase tracking-[0.12em] font-medium">
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20 uppercase tracking-[0.12em] font-medium">
                 Conectado
               </span>
             </div>
