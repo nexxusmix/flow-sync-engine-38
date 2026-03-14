@@ -116,9 +116,9 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
                     <span className="text-[9px] text-muted-foreground">{m.label}</span>
                   </div>
                   <div className="flex items-center gap-4 text-[9px]">
-                    <span className={`font-semibold ${winner === 'A' ? 'text-emerald-400' : 'text-blue-400'}`}>{m.a}</span>
+                    <span className={`font-semibold ${winner === 'A' ? 'text-primary' : 'text-primary/60'}`}>{m.a}</span>
                     {m.b !== undefined ? (
-                      <span className={`font-semibold ${winner === 'B' ? 'text-emerald-400' : 'text-amber-400'}`}>{m.b}</span>
+                      <span className={`font-semibold ${winner === 'B' ? 'text-primary' : 'text-muted-foreground'}`}>{m.b}</span>
                     ) : (
                       <span className="text-muted-foreground/30">—</span>
                     )}
