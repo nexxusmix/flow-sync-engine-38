@@ -225,7 +225,7 @@ export default function MkApprovalsPage() {
 }
 
 // --- Approval Card with expandable detail ---
-function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, commentText, onCommentChange, onSendComment, sendingComment }: {
+function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, commentText, onCommentChange, onSendComment, sendingComment, onRefresh }: {
   item: ContentItem;
   index: number;
   expanded: boolean;
@@ -236,6 +236,7 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
   onCommentChange: (v: string) => void;
   onSendComment: () => void;
   sendingComment: boolean;
+  onRefresh: () => void;
 }) {
   const { data: comments } = useItemComments(expanded ? item.id : null);
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
