@@ -115,8 +115,8 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
 
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-amber-500" />
+            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+              <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">{metrics.pending}</p>
