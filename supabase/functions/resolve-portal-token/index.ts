@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -17,24 +16,17 @@ serve(async (req) => {
     const { token } = await req.json();
 
     if (!token || typeof token !== "string") {
-      console.log("[resolve-portal-token] Missing or invalid token");
       return new Response(
         JSON.stringify({ error: "Token is required", code: "MISSING_TOKEN" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[resolve-portal-token] Resolving token: ${token.substring(0, 8)}...`);
-
-    // Create Supabase client with service role to bypass RLS
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
     // 1. Lookup portal_links by share_token
@@ -45,172 +37,165 @@ serve(async (req) => {
       .single();
 
     if (portalError || !portal) {
-      console.log(`[resolve-portal-token] Token not found: ${portalError?.message || 'no data'}`);
       return new Response(
         JSON.stringify({ error: "Token not found", code: "NOT_FOUND" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 2. Check if token is active
     if (!portal.is_active) {
-      console.log(`[resolve-portal-token] Token inactive: ${portal.id}`);
       return new Response(
         JSON.stringify({ error: "Portal is inactive", code: "INACTIVE" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 3. Check expiration
     if (portal.expires_at && new Date(portal.expires_at) < new Date()) {
-      console.log(`[resolve-portal-token] Token expired: ${portal.id}`);
       return new Response(
         JSON.stringify({ error: "Portal has expired", code: "EXPIRED" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 4. Fetch project data
-    const { data: project, error: projectError } = await supabase
-      .from("projects")
-      .select(`
-        id, name, client_name, description, template, status, 
-        stage_current, health_score, contract_value, has_payment_block, 
-        due_date, owner_name, logo_url, banner_url
-      `)
-      .eq("id", portal.project_id)
-      .single();
-
-    if (projectError) {
-      console.log(`[resolve-portal-token] Project fetch error: ${projectError.message}`);
-    }
-
-    // 5. Fetch project stages
-    const { data: stages } = await supabase
-      .from("project_stages")
-      .select("*")
-      .eq("project_id", portal.project_id)
-      .order("order_index", { ascending: true });
-
-    // 6. Fetch portal deliverables
-    const { data: deliverables } = await supabase
-      .from("portal_deliverables")
-      .select("*")
-      .eq("portal_link_id", portal.id)
-      .eq("visible_in_portal", true)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
-
-    // 7. Fetch project files visible in portal
-    const { data: files } = await supabase
-      .from("project_files")
-      .select("*")
-      .eq("project_id", portal.project_id)
-      .eq("visible_in_portal", true)
-      .order("created_at", { ascending: false });
-
-    // 8. Get IDs for comments/approvals queries
-    const deliverableIds = (deliverables || []).map((d: any) => d.id);
-    const fileIds = (files || []).map((f: any) => f.id);
-
-    // 9. Fetch comments
-    let comments: any[] = [];
-    if (deliverableIds.length > 0) {
-      const { data: delComments } = await supabase
-        .from("portal_comments")
+    // 2. PARALLEL: Fetch all independent data at once
+    const [
+      projectResult,
+      stagesResult,
+      deliverablesResult,
+      filesResult,
+      tasksResult,
+      timelineResult,
+      changeRequestsResult,
+    ] = await Promise.all([
+      supabase
+        .from("projects")
+        .select("id, name, client_name, description, template, status, stage_current, health_score, contract_value, has_payment_block, due_date, owner_name, logo_url, banner_url")
+        .eq("id", portal.project_id)
+        .single(),
+      supabase
+        .from("project_stages")
         .select("*")
-        .in("deliverable_id", deliverableIds)
-        .order("created_at", { ascending: true });
-      if (delComments) comments = [...comments, ...delComments];
+        .eq("project_id", portal.project_id)
+        .order("order_index", { ascending: true }),
+      supabase
+        .from("portal_deliverables")
+        .select("*")
+        .eq("portal_link_id", portal.id)
+        .eq("visible_in_portal", true)
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("project_files")
+        .select("*")
+        .eq("project_id", portal.project_id)
+        .eq("visible_in_portal", true)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("tasks")
+        .select("id, title, status, due_date, assignee_name, priority, category")
+        .eq("project_id", portal.project_id)
+        .in("status", ["todo", "in_progress", "done"])
+        .order("position", { ascending: true }),
+      supabase
+        .from("portal_timeline_events")
+        .select("*")
+        .eq("portal_link_id", portal.id)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("portal_change_requests")
+        .select("*")
+        .eq("portal_link_id", portal.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    const project = projectResult.data;
+    const stages = stagesResult.data || [];
+    const deliverables = deliverablesResult.data || [];
+    const files = filesResult.data || [];
+    const tasks = tasksResult.data || [];
+    const timelineEvents = timelineResult.data || [];
+    const changeRequests = changeRequestsResult.data || [];
+
+    // 3. Collect IDs for dependent queries
+    const deliverableIds = deliverables.map((d: any) => d.id);
+    const fileIds = files.map((f: any) => f.id);
+
+    // 4. PARALLEL: Fetch comments, approvals, versions (depend on IDs above)
+    const dependentQueries: Promise<any>[] = [];
+
+    // Comments
+    if (deliverableIds.length > 0) {
+      dependentQueries.push(
+        supabase.from("portal_comments").select("*").in("deliverable_id", deliverableIds).order("created_at", { ascending: true })
+      );
+    } else {
+      dependentQueries.push(Promise.resolve({ data: [] }));
     }
+
     if (fileIds.length > 0) {
-      const { data: fileComments } = await supabase
-        .from("portal_comments")
-        .select("*")
-        .in("project_file_id", fileIds)
-        .order("created_at", { ascending: true });
-      if (fileComments) comments = [...comments, ...fileComments];
+      dependentQueries.push(
+        supabase.from("portal_comments").select("*").in("project_file_id", fileIds).order("created_at", { ascending: true })
+      );
+    } else {
+      dependentQueries.push(Promise.resolve({ data: [] }));
     }
 
-    // 10. Fetch approvals
-    let approvals: any[] = [];
+    // Approvals
     if (deliverableIds.length > 0) {
-      const { data: delApprovals } = await supabase
-        .from("portal_approvals")
-        .select("*")
-        .in("deliverable_id", deliverableIds);
-      if (delApprovals) approvals = [...approvals, ...delApprovals];
+      dependentQueries.push(
+        supabase.from("portal_approvals").select("*").in("deliverable_id", deliverableIds)
+      );
+    } else {
+      dependentQueries.push(Promise.resolve({ data: [] }));
     }
+
     if (fileIds.length > 0) {
-      const { data: fileApprovals } = await supabase
-        .from("portal_approvals")
-        .select("*")
-        .in("project_file_id", fileIds);
-      if (fileApprovals) approvals = [...approvals, ...fileApprovals];
+      dependentQueries.push(
+        supabase.from("portal_approvals").select("*").in("project_file_id", fileIds)
+      );
+    } else {
+      dependentQueries.push(Promise.resolve({ data: [] }));
     }
 
-    // 11. Fetch change requests
-    const { data: changeRequests } = await supabase
-      .from("portal_change_requests")
-      .select("*")
-      .eq("portal_link_id", portal.id)
-      .order("created_at", { ascending: false });
-
-    // 12. Fetch versions
-    let versions: any[] = [];
+    // Versions
     if (deliverableIds.length > 0) {
-      const { data: versionData } = await supabase
-        .from("portal_deliverable_versions")
-        .select("*")
-        .in("deliverable_id", deliverableIds)
-        .order("version_number", { ascending: false });
-      if (versionData) versions = versionData;
+      dependentQueries.push(
+        supabase.from("portal_deliverable_versions").select("*").in("deliverable_id", deliverableIds).order("version_number", { ascending: false })
+      );
+    } else {
+      dependentQueries.push(Promise.resolve({ data: [] }));
     }
 
-    // 13. Fetch tasks for this project (visible to client)
-    const { data: tasks } = await supabase
-      .from("tasks")
-      .select("id, title, status, due_date, assignee_name, priority, category")
-      .eq("project_id", portal.project_id)
-      .in("status", ["todo", "in_progress", "done"])
-      .order("position", { ascending: true });
+    const [delComments, fileComments, delApprovals, fileApprovals, versionsResult] = await Promise.all(dependentQueries);
 
-    // 14. Fetch timeline events
-    const { data: timelineEvents } = await supabase
-      .from("portal_timeline_events")
-      .select("*")
-      .eq("portal_link_id", portal.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const comments = [...(delComments.data || []), ...(fileComments.data || [])];
+    const approvals = [...(delApprovals.data || []), ...(fileApprovals.data || [])];
+    const versions = versionsResult.data || [];
 
-    // 15. Log visit
-    await supabase.from("event_logs").insert({
+    // 5. Log visit (fire-and-forget)
+    supabase.from("event_logs").insert({
       action: "portal_visited",
       entity_type: "portal_link",
       entity_id: portal.id,
     });
-
-    console.log(`[resolve-portal-token] Success for project: ${project?.name || portal.project_id}`);
 
     return new Response(
       JSON.stringify({
         ok: true,
         portal,
         project: project || null,
-        stages: stages || [],
-        deliverables: deliverables || [],
-        files: files || [],
+        stages,
+        deliverables,
+        files,
         comments,
         approvals,
-        changeRequests: changeRequests || [],
+        changeRequests,
         versions,
-        tasks: tasks || [],
-        timelineEvents: timelineEvents || [],
+        tasks,
+        timelineEvents,
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("[resolve-portal-token] Error:", error);

@@ -34,71 +34,22 @@ import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Cursor follower component
-function CursorGlow() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
+// Lightweight background particles (reduced from 20 to 6)
+const PARTICLE_POSITIONS = [
+  { left: '15%', top: '20%' }, { left: '75%', top: '10%' }, { left: '45%', top: '60%' },
+  { left: '85%', top: '45%' }, { left: '25%', top: '80%' }, { left: '60%', top: '35%' },
+];
 
-  useEffect(() => {
-    const updateMousePosition = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-      setIsVisible(true);
-    };
-
-    const handleMouseLeave = () => setIsVisible(false);
-    const handleMouseEnter = () => setIsVisible(true);
-
-    window.addEventListener('mousemove', updateMousePosition);
-    document.body.addEventListener('mouseleave', handleMouseLeave);
-    document.body.addEventListener('mouseenter', handleMouseEnter);
-
-    return () => {
-      window.removeEventListener('mousemove', updateMousePosition);
-      document.body.removeEventListener('mouseleave', handleMouseLeave);
-      document.body.removeEventListener('mouseenter', handleMouseEnter);
-    };
-  }, []);
-
-  return (
-    <motion.div
-      className="fixed pointer-events-none z-0 w-96 h-96 rounded-full"
-      style={{
-        background: 'radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%)',
-        left: mousePosition.x - 192,
-        top: mousePosition.y - 192,
-      }}
-      animate={{
-        opacity: isVisible ? 1 : 0,
-        scale: isVisible ? 1 : 0.8,
-      }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-    />
-  );
-}
-
-// Animated background particles
 function BackgroundParticles() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {[...Array(20)].map((_, i) => (
+      {PARTICLE_POSITIONS.map((pos, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 rounded-full bg-primary/20"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0.2, 0.5, 0.2],
-            scale: [1, 1.5, 1],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 2,
-            ease: "easeInOut",
-          }}
+          style={pos}
+          animate={{ y: [0, -30, 0], opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 4 + i * 0.5, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
         />
       ))}
     </div>
