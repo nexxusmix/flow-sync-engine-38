@@ -56,7 +56,7 @@ function PortalDeliverablesPremiumComponent({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-medium border-l-2 border-cyan-400 pl-4">
+        <h2 className="text-xs uppercase tracking-[0.3em] text-primary font-medium border-l-2 border-primary pl-4">
           Entregas Contratadas
         </h2>
         <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-12 text-center">
