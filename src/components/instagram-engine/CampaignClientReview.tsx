@@ -175,7 +175,7 @@ export function CampaignClientReview({ campaign, posts }: Props) {
               className="text-xs min-h-[60px]"
             />
             <div className="flex gap-2">
-              <Button className="flex-1 gap-1.5 text-xs h-9 bg-emerald-500 hover:bg-emerald-600" onClick={() => handleReview('approved')}>
+              <Button className="flex-1 gap-1.5 text-xs h-9 bg-primary hover:bg-primary/90" onClick={() => handleReview('approved')}>
                 <CheckCircle className="w-4 h-4" /> Aprovar
               </Button>
               <Button variant="destructive" className="flex-1 gap-1.5 text-xs h-9" onClick={() => handleReview('rejected')}>
