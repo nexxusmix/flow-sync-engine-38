@@ -500,12 +500,12 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
             {/* Health Score */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
               <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                (project.health_score || 0) >= 80 ? 'bg-emerald-500/20' : 
-                (project.health_score || 0) >= 50 ? 'bg-amber-500/20' : 'bg-red-500/20'
+                (project.health_score || 0) >= 80 ? 'bg-primary/20' : 
+                (project.health_score || 0) >= 50 ? 'bg-muted' : 'bg-destructive/20'
               }`}>
                 <Activity className={`w-4 h-4 md:w-5 md:h-5 ${
-                  (project.health_score || 0) >= 80 ? 'text-emerald-500' : 
-                  (project.health_score || 0) >= 50 ? 'text-amber-500' : 'text-red-500'
+                  (project.health_score || 0) >= 80 ? 'text-primary' : 
+                  (project.health_score || 0) >= 50 ? 'text-muted-foreground' : 'text-destructive'
                 }`} />
               </div>
               <div className="min-w-0">
