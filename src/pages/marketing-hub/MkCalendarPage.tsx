@@ -181,10 +181,10 @@ export default function MkCalendarPage() {
             transition={{ duration: 0.25 }}
             className="overflow-hidden mb-6"
           >
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-4">
+            <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-amber-400">Melhores Horários por Canal</span>
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-primary">Melhores Horários por Canal</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {CONTENT_CHANNELS.map(ch => {
