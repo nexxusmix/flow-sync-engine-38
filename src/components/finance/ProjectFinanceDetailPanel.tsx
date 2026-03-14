@@ -310,7 +310,7 @@ export function ProjectFinanceDetailPanel({
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border">
           <span className="text-sm text-muted-foreground">A receber</span>
-          <span className="font-medium text-amber-600">{formatCurrency(project.pending)}</span>
+          <span className="font-medium text-muted-foreground">{formatCurrency(project.pending)}</span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-border">
           <span className="text-sm text-muted-foreground">Despesas</span>
