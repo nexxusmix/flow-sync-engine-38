@@ -120,7 +120,7 @@ export default function AiUsageDashboardPage() {
       const d = startOfDay(subDays(new Date(), i));
       buckets.push({ date: format(d, "dd/MM"), count: 0, tokens: 0, errors: 0 });
     }
-    runs.forEach(r => {
+    scopedRuns.forEach(r => {
       const dayIdx = days - 1 - differenceInCalendarDays(new Date(), parseISO(r.created_at));
       if (dayIdx >= 0 && dayIdx < buckets.length) {
         buckets[dayIdx].count++;
@@ -129,7 +129,7 @@ export default function AiUsageDashboardPage() {
       }
     });
     return buckets;
-  }, [runs, periodDays]);
+  }, [scopedRuns, periodDays]);
 
   const maxCount = Math.max(...dailyData.map(d => d.count), 1);
   const maxTokens = Math.max(...dailyData.map(d => d.tokens), 1);
