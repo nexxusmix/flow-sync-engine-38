@@ -62,7 +62,7 @@ export function useCommandCenter() {
         supabase.from('automation_executions').select('id, status, automation_id, started_at').limit(500),
         supabase.from('automation_approvals').select('id, status').eq('status', 'pending').limit(200),
         supabase.from('ai_runs').select('id, status, duration_ms, action_key, created_at').limit(500),
-        supabase.from('alerts').select('id, status, severity').eq('status', 'pending').limit(200),
+        supabase.from('alerts').select('id, status, severity').eq('status', 'open').limit(200),
         supabase.from('revenues').select('id, project_id, amount, status, due_date').limit(5000),
         supabase.from('tasks').select('id, project_id, status').limit(5000),
         supabase.from('projects').select('id, name, client_name, status, health_score, has_payment_block, updated_at').neq('status', 'archived').limit(5000),
