@@ -474,7 +474,7 @@ export default function Dashboard() {
                 </Link>
               </div>
               {recentProjects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   {recentProjects.slice(0, 4).map((project, idx) => (
                     <ProjectCard
                       key={project.id}
