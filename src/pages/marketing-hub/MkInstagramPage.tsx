@@ -108,7 +108,7 @@ export default function MkInstagramPage() {
               </div>
             </div>
             <motion.div
-              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0a0a0f] flex items-center justify-center"
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary border-2 border-[#0a0a0f] flex items-center justify-center"
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
