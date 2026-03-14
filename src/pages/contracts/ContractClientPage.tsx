@@ -290,12 +290,12 @@ export default function ContractClientPage() {
     <div className="min-h-screen bg-background">
       {/* Status Banner */}
       {isSigned && (
-        <div className="py-3 px-6 text-center text-sm font-medium bg-emerald-500/10 text-emerald-500">
+        <div className="py-3 px-6 text-center text-sm font-medium bg-primary/10 text-primary">
           <span className="flex items-center justify-center gap-2">
             <CheckCircle className="w-4 h-4" />
             Este contrato foi assinado em {format(new Date(signature.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
             {signature.provider === 'govbr' && (
-              <Badge className="ml-2 bg-emerald-500/20 text-emerald-500 text-xs">
+              <Badge className="ml-2 bg-primary/20 text-primary text-xs">
                 <Shield className="w-3 h-3 mr-1" />
                 gov.br
               </Badge>
