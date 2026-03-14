@@ -51,6 +51,20 @@ export function LandingNav() {
 
         <div className="flex items-center gap-3">
           <Button
+            variant="ghost"
+            onClick={() => navigate("/login")}
+            className="text-xs uppercase tracking-wider h-9 px-4 text-muted-foreground hover:text-foreground"
+          >
+            Login
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/login?tab=signup")}
+            className="text-xs uppercase tracking-wider h-9 px-4 border-border/50 hover:border-primary/30 hover:bg-primary/5"
+          >
+            Criar Conta
+          </Button>
+          <Button
             onClick={() => navigate("/login")}
             className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs uppercase tracking-wider h-9 px-5 hover-invert"
           >
