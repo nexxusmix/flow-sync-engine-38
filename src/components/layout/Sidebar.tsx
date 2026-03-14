@@ -38,6 +38,7 @@ const mainMenuItems: MenuItem[] = [
   },
   { name: "Instagram Engine", href: "/instagram-engine", icon: "photo_camera", customIcon: instagramIcon },
   { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
+  { name: "Automações", href: "/automacoes-agencia", icon: "manufacturing" },
   { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
   { name: "Clientes", href: "/clientes", icon: "groups" },
   { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
