@@ -2098,6 +2098,9 @@ export type Database = {
           caption_long: string | null
           caption_short: string | null
           channel: string | null
+          client_approval_status: string | null
+          client_approved_at: string | null
+          client_feedback: string | null
           created_at: string
           created_by: string | null
           cta: string | null
@@ -2112,6 +2115,7 @@ export type Database = {
           owner_initials: string | null
           owner_name: string | null
           pillar: string | null
+          portal_delivery_id: string | null
           post_url: string | null
           project_id: string | null
           published_at: string | null
@@ -2132,6 +2136,9 @@ export type Database = {
           caption_long?: string | null
           caption_short?: string | null
           channel?: string | null
+          client_approval_status?: string | null
+          client_approved_at?: string | null
+          client_feedback?: string | null
           created_at?: string
           created_by?: string | null
           cta?: string | null
@@ -2146,6 +2153,7 @@ export type Database = {
           owner_initials?: string | null
           owner_name?: string | null
           pillar?: string | null
+          portal_delivery_id?: string | null
           post_url?: string | null
           project_id?: string | null
           published_at?: string | null
@@ -2166,6 +2174,9 @@ export type Database = {
           caption_long?: string | null
           caption_short?: string | null
           channel?: string | null
+          client_approval_status?: string | null
+          client_approved_at?: string | null
+          client_feedback?: string | null
           created_at?: string
           created_by?: string | null
           cta?: string | null
@@ -2180,6 +2191,7 @@ export type Database = {
           owner_initials?: string | null
           owner_name?: string | null
           pillar?: string | null
+          portal_delivery_id?: string | null
           post_url?: string | null
           project_id?: string | null
           published_at?: string | null
@@ -2215,8 +2227,10 @@ export type Database = {
           comments: number | null
           content_item_id: string
           created_at: string
+          engagement_rate: number | null
           id: string
           likes: number | null
+          performance_score: number | null
           reach: number | null
           shares: number | null
           views: number | null
@@ -2227,8 +2241,10 @@ export type Database = {
           comments?: number | null
           content_item_id: string
           created_at?: string
+          engagement_rate?: number | null
           id?: string
           likes?: number | null
+          performance_score?: number | null
           reach?: number | null
           shares?: number | null
           views?: number | null
@@ -2239,8 +2255,10 @@ export type Database = {
           comments?: number | null
           content_item_id?: string
           created_at?: string
+          engagement_rate?: number | null
           id?: string
           likes?: number | null
+          performance_score?: number | null
           reach?: number | null
           shares?: number | null
           views?: number | null
@@ -2309,6 +2327,50 @@ export type Database = {
             columns: ["idea_id"]
             isOneToOne: false
             referencedRelation: "content_ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_status_history: {
+        Row: {
+          changed_by: string | null
+          content_item_id: string
+          created_at: string
+          duration_minutes: number | null
+          from_status: string | null
+          id: string
+          notes: string | null
+          to_status: string
+          workspace_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          content_item_id: string
+          created_at?: string
+          duration_minutes?: number | null
+          from_status?: string | null
+          id?: string
+          notes?: string | null
+          to_status: string
+          workspace_id?: string
+        }
+        Update: {
+          changed_by?: string | null
+          content_item_id?: string
+          created_at?: string
+          duration_minutes?: number | null
+          from_status?: string | null
+          id?: string
+          notes?: string | null
+          to_status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_status_history_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
         ]
@@ -5259,7 +5321,11 @@ export type Database = {
       marketing_assets: {
         Row: {
           brand_kit_id: string | null
+          campaign_id: string | null
+          category: string | null
+          content_item_id: string | null
           created_at: string
+          description: string | null
           file_size: number | null
           id: string
           mime_type: string | null
@@ -5273,7 +5339,11 @@ export type Database = {
         }
         Insert: {
           brand_kit_id?: string | null
+          campaign_id?: string | null
+          category?: string | null
+          content_item_id?: string | null
           created_at?: string
+          description?: string | null
           file_size?: number | null
           id?: string
           mime_type?: string | null
@@ -5287,7 +5357,11 @@ export type Database = {
         }
         Update: {
           brand_kit_id?: string | null
+          campaign_id?: string | null
+          category?: string | null
+          content_item_id?: string | null
           created_at?: string
+          description?: string | null
           file_size?: number | null
           id?: string
           mime_type?: string | null
@@ -5305,6 +5379,20 @@ export type Database = {
             columns: ["brand_kit_id"]
             isOneToOne: false
             referencedRelation: "brand_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_assets_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
         ]

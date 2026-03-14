@@ -4,7 +4,7 @@ import { MkCard, MkStatusBadge, MkEmptyState, MkSectionHeader } from "@/componen
 import { useMarketingStore } from "@/stores/marketingStore";
 import { ContentItem, CONTENT_ITEM_STAGES } from "@/types/marketing";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, MessageSquare, ChevronDown, Send, Clock, AlertTriangle, FileText, Sparkles, Eye } from "lucide-react";
+import { CheckCircle, XCircle, MessageSquare, ChevronDown, Send, Clock, AlertTriangle, FileText, Sparkles, Eye, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { SendToClientApproval } from "@/components/marketing-hub/pipeline/SendToClientApproval";
+import { ContentStatusTimeline } from "@/components/marketing-hub/pipeline/ContentStatusTimeline";
 
 const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
 
@@ -149,12 +151,12 @@ export default function MkApprovalsPage() {
           const count = contentItems.filter(c => c.status === s).length;
           return (
             <div key={s} className="flex items-center gap-2 shrink-0">
-              {i > 0 && <div className="w-8 h-px bg-white/[0.08]" />}
+              {i > 0 && <div className="w-8 h-px bg-border/30" />}
               <div className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.1em]",
-                s === "review" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                  : s === "approved" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "bg-white/[0.03] text-white/30 border border-white/[0.06]"
+                s === "review" ? "bg-primary/10 text-primary border border-primary/20"
+                  : s === "approved" ? "bg-primary/15 text-primary border border-primary/25"
+                  : "bg-muted/10 text-muted-foreground border border-border/30"
               )}>
                 <span>{stage?.name || s}</span>
                 <span className="font-mono">{count}</span>
@@ -181,6 +183,7 @@ export default function MkApprovalsPage() {
               onCommentChange={setCommentText}
               onSendComment={() => sendComment(item.id)}
               sendingComment={sendingComment}
+              onRefresh={fetchContentItems}
             />
           ))}
         </div>
@@ -223,7 +226,7 @@ export default function MkApprovalsPage() {
 }
 
 // --- Approval Card with expandable detail ---
-function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, commentText, onCommentChange, onSendComment, sendingComment }: {
+function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, commentText, onCommentChange, onSendComment, sendingComment, onRefresh }: {
   item: ContentItem;
   index: number;
   expanded: boolean;
@@ -234,6 +237,7 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
   onCommentChange: (v: string) => void;
   onSendComment: () => void;
   sendingComment: boolean;
+  onRefresh: () => void;
 }) {
   const { data: comments } = useItemComments(expanded ? item.id : null);
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
@@ -308,7 +312,16 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
               transition={{ duration: 0.25 }}
               className="overflow-hidden"
             >
-              <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-4">
+              <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
+                {/* Client Approval Bridge */}
+                <div className="rounded-lg bg-muted/10 border border-border/20 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-[0.1em]">Aprovação do Cliente</span>
+                  </div>
+                  <SendToClientApproval item={item} onSent={onRefresh} />
+                </div>
+
                 {/* Content Preview */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Script / Caption */}
