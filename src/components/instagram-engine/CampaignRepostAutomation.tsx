@@ -148,8 +148,8 @@ export function CampaignRepostAutomation({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-teal-500/15 flex items-center justify-center">
-          <RefreshCw className="w-4 h-4 text-teal-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <RefreshCw className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Automação de Repostagem</h4>
