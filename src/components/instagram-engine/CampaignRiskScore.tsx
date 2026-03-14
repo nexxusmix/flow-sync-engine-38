@@ -127,11 +127,11 @@ export function CampaignRiskScore({ campaign, posts }: Props) {
           <div className="text-[10px] text-muted-foreground">Risco Médio</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
-          <div className="text-lg font-bold text-red-400">{highRiskCount}</div>
+          <div className="text-lg font-bold text-destructive">{highRiskCount}</div>
           <div className="text-[10px] text-muted-foreground">Alto Risco</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
-          <div className="text-lg font-bold text-emerald-400">{cleanCount}</div>
+          <div className="text-lg font-bold text-primary">{cleanCount}</div>
           <div className="text-[10px] text-muted-foreground">Sem Risco</div>
         </Card>
       </div>
