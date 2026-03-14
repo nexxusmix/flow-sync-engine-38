@@ -439,7 +439,7 @@ export default function ClientPortalPage() {
         </ScrollReveal>
 
         {/* Metrics Grid */}
-        <ScrollReveal delay={0.2} className="mt-8">
+        <ScrollReveal delay={0.2} className="mt-4 md:mt-8">
           <PortalMetricsGrid project={project} />
         </ScrollReveal>
 
