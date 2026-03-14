@@ -221,9 +221,9 @@ function QuickMetric({ icon: Icon, value, label, trend }: { icon: any; value: st
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3.5 h-3.5 text-[hsl(195,100%,50%)]" />
         {trend === "up" ? (
-          <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+          <ArrowUpRight className="w-3 h-3 text-primary" />
         ) : (
-          <TrendingDown className="w-3 h-3 text-red-400" />
+          <TrendingDown className="w-3 h-3 text-destructive" />
         )}
       </div>
       <span className="text-lg font-bold text-white/90 block">{value}</span>
