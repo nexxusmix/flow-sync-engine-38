@@ -399,10 +399,10 @@ function MetricsView() {
         </div>
 
         {/* Best posting times */}
-        <div className="rounded-2xl border border-amber-500/10 bg-amber-500/[0.02] p-6">
+        <div className="rounded-2xl border border-primary/10 bg-primary/[0.02] p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <h3 className="text-sm font-semibold text-amber-300/80">Melhores Horários</h3>
+            <Sparkles className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-primary/80">Melhores Horários</h3>
           </div>
           <div className="space-y-2.5">
             {BEST_TIMES.map((time, i) => (
