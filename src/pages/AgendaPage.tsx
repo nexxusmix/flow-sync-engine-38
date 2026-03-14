@@ -54,6 +54,7 @@ export default function AgendaPage() {
 
     // DB events
     dbEvents.forEach(e => {
+      const eventSource = (e as any).source || "manual";
       merged.push({
         id: e.id,
         title: e.title,
@@ -61,8 +62,8 @@ export default function AgendaPage() {
         end: e.end_at,
         allDay: e.all_day || false,
         type: e.event_type || "meeting",
-        source: (e as any).source || "manual",
-        color: e.color || "#3b82f6",
+        source: eventSource,
+        color: eventSource === "google" ? "#4285f4" : (e.color || "#3b82f6"),
         description: e.description || undefined,
         projectId: e.project_id || undefined,
         dbEvent: e,
