@@ -482,6 +482,19 @@ export default function ClientPortalPage() {
                       <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
                         <PortalMaterialsAside deliverables={deliverables} files={files} />
                       </GlowCard>
+                      <ScrollReveal delay={0.35}>
+                        <PortalProjectRoadmap
+                          stages={stages.map(s => ({
+                            id: s.id,
+                            name: s.stage_name || s.stage_key,
+                            status: s.status as any,
+                            plannedEnd: s.planned_end || undefined,
+                            progress: s.progress || 0,
+                          }))}
+                          projectName={project.name}
+                          dueDate={project.due_date}
+                        />
+                      </ScrollReveal>
                       <ScrollReveal delay={0.4}>
                         <PortalNextSteps stages={stages} currentStageKey={project.stage_current} />
                       </ScrollReveal>
