@@ -183,7 +183,7 @@ export default function ProjectsFinancePage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Recebido</p>
-                      <p className="text-sm font-medium text-emerald-600">{formatCurrency(project.received)}</p>
+                      <p className="text-sm font-medium text-primary">{formatCurrency(project.received)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">A receber</p>
