@@ -64,6 +64,6 @@ export default function PlaybooksPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }
