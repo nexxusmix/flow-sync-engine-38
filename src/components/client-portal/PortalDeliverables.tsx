@@ -70,7 +70,7 @@ function DeliverableCard({
           </p>
           <div className="flex items-center gap-2 mt-2">
             {needsReview && (
-              <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-mono">
+              <Badge variant="outline" className="text-muted-foreground border-border text-mono">
                 <Clock className="w-3 h-3 mr-1" />
                 Aguardando Revisão
               </Badge>
