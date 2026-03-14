@@ -2260,6 +2260,78 @@ export type Database = {
         }
         Relationships: []
       }
+      client_onboardings: {
+        Row: {
+          ai_summary: string | null
+          assigned_to: string | null
+          client_id: string | null
+          client_name: string
+          completed_at: string | null
+          contract_id: string | null
+          created_at: string
+          created_by: string | null
+          current_phase: number
+          due_date: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          progress: number
+          project_id: string | null
+          service_type: string
+          started_at: string
+          status: string
+          template_name: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          assigned_to?: string | null
+          client_id?: string | null
+          client_name: string
+          completed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_phase?: number
+          due_date?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          progress?: number
+          project_id?: string | null
+          service_type?: string
+          started_at?: string
+          status?: string
+          template_name?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          assigned_to?: string | null
+          client_id?: string | null
+          client_name?: string
+          completed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_phase?: number
+          due_date?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          progress?: number
+          project_id?: string | null
+          service_type?: string
+          started_at?: string
+          status?: string
+          template_name?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       content_assets: {
         Row: {
           content_item_id: string
@@ -6054,6 +6126,209 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      onboarding_briefing_answers: {
+        Row: {
+          answer: string | null
+          created_at: string
+          id: string
+          onboarding_id: string
+          question_key: string
+          question_label: string
+          section: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          onboarding_id: string
+          question_key: string
+          question_label: string
+          section?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          onboarding_id?: string
+          question_key?: string
+          question_label?: string
+          section?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_briefing_answers_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "client_onboardings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_material_requests: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_url: string | null
+          id: string
+          is_required: boolean
+          item_type: string
+          notes: string | null
+          onboarding_id: string
+          sort_order: number
+          status: string
+          submitted_at: string | null
+          submitted_by: string | null
+          title: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_required?: boolean
+          item_type?: string
+          notes?: string | null
+          onboarding_id: string
+          sort_order?: number
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          title: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_required?: boolean
+          item_type?: string
+          notes?: string | null
+          onboarding_id?: string
+          sort_order?: number
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          title?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_material_requests_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "client_onboardings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_phase_steps: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean
+          is_required: boolean
+          phase_id: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          is_required?: boolean
+          phase_id: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          is_required?: boolean
+          phase_id?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_phase_steps_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_phases: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          onboarding_id: string
+          phase_number: number
+          sort_order: number
+          status: string
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          onboarding_id: string
+          phase_number?: number
+          sort_order?: number
+          status?: string
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          onboarding_id?: string
+          phase_number?: number
+          sort_order?: number
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_phases_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "client_onboardings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       panorama_access_log: {
         Row: {
