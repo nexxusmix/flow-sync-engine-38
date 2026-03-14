@@ -362,7 +362,7 @@ export function TaskSelectionStep({ tasks: rawTasks, onConfirm, excludeIds }: Ta
                         {task.due_date && (
                           <span className={cn(
                             "text-caption font-mono flex items-center gap-0.5 shrink-0",
-                            overdue ? "text-red-400" : "text-muted-foreground/70"
+                            overdue ? "text-destructive" : "text-muted-foreground/70"
                           )}>
                             {overdue && <AlertTriangle className="w-2.5 h-2.5" />}
                             {format(parseISO(task.due_date), 'dd/MM')}
