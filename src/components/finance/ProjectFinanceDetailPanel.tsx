@@ -327,7 +327,7 @@ export function ProjectFinanceDetailPanel({
       {/* Revenues */}
       <div className="mb-4">
         <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-emerald-600" />
+          <TrendingUp className="w-4 h-4 text-primary" />
           Receitas ({revenues.length})
         </h4>
         <div className="space-y-2 max-h-40 overflow-y-auto">
