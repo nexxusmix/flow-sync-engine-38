@@ -497,3 +497,370 @@ export function useAIMemory() {
     },
   });
 }
+
+// ========== Campaign Tasks (Collaboration Board) ==========
+export interface CampaignTask {
+  id: string;
+  campaign_id: string;
+  title: string;
+  assignee: string;
+  status: string;
+  priority: string;
+  due_date: string;
+  position: number;
+  created_at: string;
+}
+
+export function useCampaignTasks(campaignId: string) {
+  return useQuery({
+    queryKey: ['instagram-campaign-tasks', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_campaign_tasks' as any)
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('position', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as CampaignTask[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useCampaignTaskMutations(campaignId: string) {
+  const qc = useQueryClient();
+  const key = ['instagram-campaign-tasks', campaignId];
+
+  const create = useMutation({
+    mutationFn: async (task: Partial<CampaignTask>) => {
+      const { data, error } = await supabase
+        .from('instagram_campaign_tasks' as any)
+        .insert({ ...task, campaign_id: campaignId } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<CampaignTask> & { id: string }) => {
+      const { error } = await supabase
+        .from('instagram_campaign_tasks' as any)
+        .update(updates as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('instagram_campaign_tasks' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return { create, update, remove };
+}
+
+// ========== Competitors ==========
+export interface CampaignCompetitor {
+  id: string;
+  campaign_id: string;
+  name: string;
+  handle: string;
+  analysis: any;
+  created_at: string;
+}
+
+export function useCampaignCompetitors(campaignId: string) {
+  return useQuery({
+    queryKey: ['instagram-competitors', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_competitors' as any)
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as CampaignCompetitor[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useCampaignCompetitorMutations(campaignId: string) {
+  const qc = useQueryClient();
+  const key = ['instagram-competitors', campaignId];
+
+  const create = useMutation({
+    mutationFn: async (comp: { name: string; handle: string }) => {
+      const { data, error } = await supabase
+        .from('instagram_competitors' as any)
+        .insert({ ...comp, campaign_id: campaignId } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; analysis?: any }) => {
+      const { error } = await supabase
+        .from('instagram_competitors' as any)
+        .update(updates as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('instagram_competitors' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return { create, update, remove };
+}
+
+// ========== Mood Board Items ==========
+export interface MoodBoardItem {
+  id: string;
+  campaign_id: string;
+  type: string;
+  url: string | null;
+  color: string | null;
+  note: string | null;
+  label: string | null;
+  position: number;
+  created_at: string;
+}
+
+export function useMoodBoardItems(campaignId: string) {
+  return useQuery({
+    queryKey: ['instagram-mood-items', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_mood_items' as any)
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('position', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as MoodBoardItem[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useMoodBoardMutations(campaignId: string) {
+  const qc = useQueryClient();
+  const key = ['instagram-mood-items', campaignId];
+
+  const create = useMutation({
+    mutationFn: async (item: Partial<MoodBoardItem>) => {
+      const { data, error } = await supabase
+        .from('instagram_mood_items' as any)
+        .insert({ ...item, campaign_id: campaignId } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('instagram_mood_items' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return { create, remove };
+}
+
+// ========== Personas ==========
+export interface CampaignPersona {
+  id: string;
+  campaign_id: string;
+  name: string;
+  age_range: string;
+  pain: string;
+  desire: string;
+  objection: string;
+  funnel_stage: string;
+  linked_posts: string[];
+  ai_generated: boolean;
+  created_at: string;
+}
+
+export function useCampaignPersonas(campaignId: string) {
+  return useQuery({
+    queryKey: ['instagram-personas', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_personas' as any)
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as CampaignPersona[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useCampaignPersonaMutations(campaignId: string) {
+  const qc = useQueryClient();
+  const key = ['instagram-personas', campaignId];
+
+  const create = useMutation({
+    mutationFn: async (persona: Partial<CampaignPersona>) => {
+      const { data, error } = await supabase
+        .from('instagram_personas' as any)
+        .insert({ ...persona, campaign_id: campaignId } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const createMany = useMutation({
+    mutationFn: async (personas: Partial<CampaignPersona>[]) => {
+      const rows = personas.map(p => ({ ...p, campaign_id: campaignId }));
+      const { error } = await supabase
+        .from('instagram_personas' as any)
+        .insert(rows as any);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<CampaignPersona> & { id: string }) => {
+      const { error } = await supabase
+        .from('instagram_personas' as any)
+        .update(updates as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('instagram_personas' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return { create, createMany, update, remove };
+}
+
+// ========== Automation Rules ==========
+export interface CampaignAutomationRule {
+  id: string;
+  campaign_id: string;
+  name: string;
+  trigger_config: any;
+  action_config: any;
+  enabled: boolean;
+  created_at: string;
+}
+
+export function useCampaignAutomationRules(campaignId: string) {
+  return useQuery({
+    queryKey: ['instagram-automation-rules', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instagram_automation_rules' as any)
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as CampaignAutomationRule[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useCampaignAutomationRuleMutations(campaignId: string) {
+  const qc = useQueryClient();
+  const key = ['instagram-automation-rules', campaignId];
+
+  const create = useMutation({
+    mutationFn: async (rule: { name: string; trigger_config: any; action_config: any; enabled: boolean }) => {
+      const { data, error } = await supabase
+        .from('instagram_automation_rules' as any)
+        .insert({ ...rule, campaign_id: campaignId } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; enabled?: boolean }) => {
+      const { error } = await supabase
+        .from('instagram_automation_rules' as any)
+        .update(updates as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('instagram_automation_rules' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: key });
+      toast.success('Regra removida');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return { create, update, remove };
+}
