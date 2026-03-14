@@ -90,7 +90,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
                 <div className="text-sm text-muted-foreground mt-1">Total Posts</div>
               </Card>
               <Card className="p-6 bg-card/50 border-border/30 text-center">
-                <div className="text-4xl font-bold text-emerald-400">{published}</div>
+                <div className="text-4xl font-bold text-primary">{published}</div>
                 <div className="text-sm text-muted-foreground mt-1">Publicados</div>
               </Card>
               <Card className="p-6 bg-card/50 border-border/30 text-center">
