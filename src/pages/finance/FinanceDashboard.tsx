@@ -388,7 +388,7 @@ export default function FinancePage() {
                         {entry.type === 'revenue' ? 'VERIFIED' : 'ACTIVE'}
                       </span>
                     </td>
-                    <td className={`text-right font-mono ${entry.type === 'revenue' ? 'text-white/80' : 'text-red-400/80'}`}>
+                    <td data-label="Valor" className={`text-right font-mono ${entry.type === 'revenue' ? 'text-white/80' : 'text-red-400/80'}`}>
                       {entry.type === 'expense' ? '- ' : ''}{formatCurrency(entry.amount).replace('R$', '').trim()}
                     </td>
                   </tr>
