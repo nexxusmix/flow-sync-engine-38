@@ -275,7 +275,7 @@ export default function Report360Page() {
               <p className="text-sm text-muted-foreground mt-1">Em Andamento</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-red-500">{metrics.delayed}</p>
+              <p className="text-3xl font-bold text-destructive">{metrics.delayed}</p>
               <p className="text-sm text-muted-foreground mt-1">Com Atraso</p>
             </div>
           </div>

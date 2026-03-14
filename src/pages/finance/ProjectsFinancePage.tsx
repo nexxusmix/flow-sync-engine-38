@@ -187,7 +187,7 @@ export default function ProjectsFinancePage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">A receber</p>
-                      <p className="text-sm font-medium text-amber-600">{formatCurrency(project.pending)}</p>
+                      <p className="text-sm font-medium text-muted-foreground">{formatCurrency(project.pending)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Despesas</p>

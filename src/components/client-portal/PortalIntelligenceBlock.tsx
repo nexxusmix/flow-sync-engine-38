@@ -152,12 +152,12 @@ function PortalIntelligenceBlockComponent({ project, stages }: Props) {
         <div className={`border rounded-xl p-3 flex items-start gap-3 ${
           metrics.daysRemaining !== null && metrics.daysRemaining < 0 
             ? "bg-destructive/10 border-destructive/30" 
-            : "bg-yellow-500/10 border-yellow-500/30"
+            : "bg-muted border-border"
         }`}>
           <Clock className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
             metrics.daysRemaining !== null && metrics.daysRemaining < 0 
               ? "text-destructive" 
-              : "text-yellow-600"
+              : "text-muted-foreground"
           }`} />
           <div className="text-xs">
             <span className="font-semibold text-foreground">

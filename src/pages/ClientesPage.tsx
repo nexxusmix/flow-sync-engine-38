@@ -111,9 +111,9 @@ export default function ClientesPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: "Total de Clientes", value: totalClients, icon: Users, color: "text-primary" },
-            { label: "Clientes Ativos", value: activeClients, icon: Briefcase, color: "text-emerald-400" },
-            { label: "Valor em Contratos", value: formatCurrencyBRL(totalContractValue), icon: DollarSign, color: "text-amber-400" },
-            { label: "Novos no Mês", value: newThisMonth, icon: UserPlus, color: "text-blue-400" },
+            { label: "Clientes Ativos", value: activeClients, icon: Briefcase, color: "text-primary" },
+            { label: "Valor em Contratos", value: formatCurrencyBRL(totalContractValue), icon: DollarSign, color: "text-muted-foreground" },
+            { label: "Novos no Mês", value: newThisMonth, icon: UserPlus, color: "text-primary" },
           ].map((m) => (
             <div key={m.label} className="glass-card p-4 rounded-xl">
               <div className="flex items-center gap-2 mb-1">
