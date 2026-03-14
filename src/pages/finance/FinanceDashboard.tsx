@@ -200,7 +200,7 @@ export default function FinancePage() {
         >
           <div>
             <div className="holo-section-label mb-2">Section_03 // Financial_Summary</div>
-            <h1 className="holo-section-title text-3xl md:text-4xl tracking-tight">
+            <h1 className="holo-section-title text-2xl md:text-4xl tracking-tight">
               RESUMO <span className="highlight">FINANCEIRO</span>
             </h1>
           </div>
