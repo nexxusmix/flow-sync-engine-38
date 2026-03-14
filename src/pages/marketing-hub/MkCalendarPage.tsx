@@ -197,7 +197,7 @@ export default function MkCalendarPage() {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {best?.hours.map(h => (
-                          <span key={h} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono">
+                          <span key={h} className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono">
                             {h}h
                           </span>
                         ))}
