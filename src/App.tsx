@@ -279,6 +279,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BackgroundUploadIndicator />
+              <PWAInstallBanner />
               <BrowserRouter>
                 <AppRoutes />
               </BrowserRouter>
