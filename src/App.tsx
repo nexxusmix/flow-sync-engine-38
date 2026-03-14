@@ -13,6 +13,7 @@ import { BackgroundUploadIndicator } from "./components/ui/BackgroundUploadIndic
 
 import Dashboard from "./pages/Dashboard";
 import ExecutiveDashboardPage from "./pages/ExecutiveDashboardPage";
+import CommandCenterPage from "./pages/CommandCenterPage";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
