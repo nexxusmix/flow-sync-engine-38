@@ -65,6 +65,7 @@ import AuditSettingsPage from "./pages/settings/AuditSettingsPage";
 import DangerZoneSettingsPage from "./pages/settings/DangerZoneSettingsPage";
 import UsersSettingsPage from "./pages/settings/UsersSettingsPage";
 import TeamSettingsPage from "./pages/settings/TeamSettingsPage";
+import AiUsageDashboardPage from "./pages/settings/AiUsageDashboardPage";
 
 // Prospecção Pages
 import ProspectingPage from "./pages/prospecting/ProspectingPage";
@@ -240,6 +241,7 @@ function AppRoutes() {
       <Route path="/configuracoes/equipe" element={<ProtectedRoute><TeamSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/auditoria" element={<ProtectedRoute><AuditSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/danger-zone" element={<ProtectedRoute><DangerZoneSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/ai-usage" element={<ProtectedRoute><AiUsageDashboardPage /></ProtectedRoute>} />
       <Route path="/plataforma" element={<Navigate to="/" replace />} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />
       <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
