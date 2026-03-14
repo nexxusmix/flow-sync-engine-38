@@ -154,7 +154,7 @@ export default function ProjectsFinancePage() {
                           {contract ? (
                             <FileText className="w-3 h-3 text-primary" />
                           ) : (
-                            <Badge variant="outline" className="text-[10px] py-0 px-1 text-amber-500 border-amber-500/50">
+                            <Badge variant="outline" className="text-[10px] py-0 px-1 text-muted-foreground border-border">
                               Sem contrato
                             </Badge>
                           )}
