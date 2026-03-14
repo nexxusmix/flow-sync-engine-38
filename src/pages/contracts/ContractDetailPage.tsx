@@ -522,7 +522,7 @@ export default function ContractDetailPage() {
                       </p>
                       <Badge
                         variant="outline"
-                        className={cn("text-xs", rev.status === 'received' ? 'text-emerald-500 border-emerald-500' : 'text-amber-500 border-amber-500')}
+                        className={cn("text-xs", rev.status === 'received' ? 'text-primary border-primary' : 'text-muted-foreground border-border')}
                       >
                         {rev.status === 'received' ? 'Recebido' : 'Pendente'}
                       </Badge>
