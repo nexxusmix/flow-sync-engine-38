@@ -37,11 +37,11 @@ function PainItem({ text, emoji }: { text: string; emoji: string }) {
 
 export function LandingProblem() {
   return (
-    <ScrollLinked className="relative z-10 px-6 md:px-12 py-28 md:py-40">
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-24 md:py-32">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-20">
+        <div className="text-center mb-14 md:mb-16">
           <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/8 border border-destructive/15 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/8 border border-destructive/15 mb-5"
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
