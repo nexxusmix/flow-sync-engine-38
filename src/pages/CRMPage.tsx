@@ -141,7 +141,7 @@ export default function CRMPage() {
       <div className="space-y-4 md:space-y-6 animate-fade-in max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
         <div className="flex flex-col gap-2">
-          <h1 className="text-4xl md:text-5xl font-extrabold uppercase tracking-tighter text-foreground">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold uppercase tracking-tighter text-foreground">
             Pipeline <span className="squad-logo-text font-normal text-muted-foreground">Comercial</span>
           </h1>
           <div className="flex items-center gap-2">
