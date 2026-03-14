@@ -59,7 +59,7 @@ function PortalTasksTabComponent({ tasks = [] }: PortalTasksTabProps) {
       case 'urgent':
         return <Badge variant="destructive" className="text-[10px]">Urgente</Badge>;
       case 'high':
-        return <Badge className="bg-amber-500 text-[10px]">Alta</Badge>;
+        return <Badge className="bg-muted-foreground text-[10px]">Alta</Badge>;
       case 'low':
         return <Badge variant="secondary" className="text-[10px]">Baixa</Badge>;
       default:
