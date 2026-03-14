@@ -199,8 +199,8 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'paused': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      case 'active': return 'bg-primary/20 text-primary border-primary/30';
+      case 'paused': return 'bg-muted text-muted-foreground border-border';
       case 'completed': return 'bg-primary/20 text-primary border-primary/30';
       case 'archived': return 'bg-muted text-muted-foreground border-border';
       default: return 'bg-muted text-muted-foreground';
@@ -208,9 +208,9 @@ function BoardView({ projects }: { projects: ProjectWithStages[] }) {
   };
 
   const getHealthColor = (score: number) => {
-    if (score >= 80) return 'text-emerald-500';
-    if (score >= 60) return 'text-amber-500';
-    return 'text-red-500';
+    if (score >= 80) return 'text-primary';
+    if (score >= 60) return 'text-muted-foreground';
+    return 'text-destructive';
   };
 
   const formatCurrency = (value: number) => {
