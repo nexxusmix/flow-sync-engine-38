@@ -1820,6 +1820,65 @@ export type Database = {
         }
         Relationships: []
       }
+      client_feedback: {
+        Row: {
+          client_email: string | null
+          client_name: string | null
+          comment: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          portal_link_id: string | null
+          project_id: string | null
+          rating: number
+          status: string
+          submitted_at: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_email?: string | null
+          client_name?: string | null
+          comment?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          portal_link_id?: string | null
+          project_id?: string | null
+          rating: number
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string | null
+          comment?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          portal_link_id?: string | null
+          project_id?: string | null
+          rating?: number
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_feedback_portal_link_id_fkey"
+            columns: ["portal_link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_message_events: {
         Row: {
           created_at: string
