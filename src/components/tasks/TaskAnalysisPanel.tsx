@@ -91,10 +91,12 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={runAnalysis} className="gap-1.5">
-        <BarChart3 className="w-4 h-4" />
-        <span className="hidden sm:inline">Análise IA</span>
-      </Button>
+      {!externalOpen && externalOpen === undefined && (
+        <Button variant="outline" size="sm" onClick={runAnalysis} className="gap-1.5">
+          <BarChart3 className="w-4 h-4" />
+          <span className="hidden sm:inline">Análise IA</span>
+        </Button>
+      )}
 
       <Portal>
       <AnimatePresence>
