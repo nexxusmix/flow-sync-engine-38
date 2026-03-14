@@ -129,11 +129,11 @@ function PortalTasksTabComponent({ tasks = [] }: PortalTasksTabProps) {
           <p className="text-[10px] text-muted-foreground">A fazer</p>
         </div>
         <div className="glass-card rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-amber-500">{inProgressTasks.length}</p>
+          <p className="text-2xl font-bold text-muted-foreground">{inProgressTasks.length}</p>
           <p className="text-[10px] text-muted-foreground">Em andamento</p>
         </div>
         <div className="glass-card rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-emerald-500">{doneTasks.length}</p>
+          <p className="text-2xl font-bold text-primary">{doneTasks.length}</p>
           <p className="text-[10px] text-muted-foreground">Concluídas</p>
         </div>
       </div>

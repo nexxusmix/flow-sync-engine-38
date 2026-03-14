@@ -121,9 +121,9 @@ function PortalDeliverablesPremiumComponent({
                 <span className={cn(
                   "text-caption px-2 py-0.5 uppercase tracking-wider font-medium",
                   isApproved 
-                    ? "bg-emerald-500/20 text-emerald-400" 
+                    ? "bg-primary/20 text-primary" 
                     : deliverable.awaiting_approval 
-                      ? "bg-amber-500/20 text-amber-400"
+                      ? "bg-muted text-muted-foreground"
                       : "border border-[#1a1a1a] text-gray-500"
                 )}>
                   {isApproved ? 'Aprovado' : deliverable.awaiting_approval ? 'Aguardando' : 'Pendente'}

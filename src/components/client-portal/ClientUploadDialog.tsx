@@ -413,7 +413,7 @@ function ClientUploadDialogComponent({
                 </button>
                 <button onClick={() => setLinkMode('link')}
                   className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
-                    linkMode === 'link' ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
+                    linkMode === 'link' ? "border-primary/40 bg-primary/10 text-primary" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
                   <Link2 className="w-3.5 h-3.5" /> Link
                 </button>
               </div>

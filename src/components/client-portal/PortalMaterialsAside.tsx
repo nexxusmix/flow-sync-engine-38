@@ -160,7 +160,7 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
               <p className="text-xs text-gray-500">{file.folder || 'Arquivo'}</p>
             </div>
             {file.file_url && (
-              <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
+              <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-primary transition-colors" />
             )}
           </motion.div>
         ))}
