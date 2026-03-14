@@ -301,10 +301,10 @@ export default function ContractsPage() {
                                   key={milestone.id}
                                   className="flex items-center justify-between p-3 rounded-lg bg-background/50"
                                 >
-                                  <div className="flex items-center gap-3">
+                                   <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full ${
-                                      milestone.status === 'paid' ? 'bg-emerald-500' :
-                                      isOverdue ? 'bg-red-500' : 'bg-amber-500'
+                                      milestone.status === 'paid' ? 'bg-primary' :
+                                      isOverdue ? 'bg-destructive' : 'bg-muted-foreground'
                                     }`} />
                                     <div>
                                       <p className="text-sm font-medium text-foreground">{milestone.title}</p>
