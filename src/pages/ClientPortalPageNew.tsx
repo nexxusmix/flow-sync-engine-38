@@ -28,6 +28,7 @@ import { PortalDocumentsTab } from "@/components/client-portal/portal-tabs/Porta
 import { PortalFinancialTab } from "@/components/client-portal/portal-tabs/PortalFinancialTab";
 import { PortalMessagesTab } from "@/components/client-portal/portal-tabs/PortalMessagesTab";
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
+import { PortalFeedbackWidget } from "@/components/client-portal/PortalFeedbackWidget";
 import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -485,6 +486,15 @@ export default function ClientPortalPage() {
                       </ScrollReveal>
                       <ScrollReveal delay={0.5}>
                         <PortalAuditBadge />
+                      </ScrollReveal>
+                      <ScrollReveal delay={0.6}>
+                        <PortalFeedbackWidget
+                          portalLinkId={portal.id}
+                          projectId={project.id}
+                          entityType="general"
+                          title="Como está sua experiência?"
+                          subtitle="Sua opinião nos ajuda a melhorar."
+                        />
                       </ScrollReveal>
                     </StaggerItem>
                   </StaggerContainer>
