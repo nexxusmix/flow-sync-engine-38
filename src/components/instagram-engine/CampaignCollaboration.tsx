@@ -134,8 +134,8 @@ export function CampaignCollaboration({ campaign, posts }: Props) {
 
   const TYPE_ICONS = {
     comment: <MessageSquare className="w-3 h-3" />,
-    approval: <ThumbsUp className="w-3 h-3 text-emerald-400" />,
-    revision: <ThumbsDown className="w-3 h-3 text-amber-400" />,
+    approval: <ThumbsUp className="w-3 h-3 text-primary" />,
+    revision: <ThumbsDown className="w-3 h-3 text-muted-foreground" />,
     note: <FileText className="w-3 h-3 text-primary" />,
   };
 
