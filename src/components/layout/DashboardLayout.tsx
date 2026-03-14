@@ -7,8 +7,8 @@ import { PoweredByFooter } from "./PoweredByFooter";
 import { PageTransition } from "./PageTransition";
 import { BottomNav } from "./BottomNav";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 import { Portal } from "@/components/ui/Portal";
 
 interface DashboardLayoutProps {
@@ -21,11 +21,13 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
   const mainRef = useRef<HTMLElement>(null);
 
-  const { scrollYProgress } = useScroll({ container: mainRef });
-  const scrollRotateX = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, -0.8, -0.8, 0]);
-  const scrollPerspectiveZ = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0, -5, -5, 0]);
+  // On tablet, always start collapsed
+  useEffect(() => {
+    if (isTablet) setSidebarCollapsed(true);
+  }, [isTablet]);
 
   // Cmd+K handler
   useEffect(() => {
@@ -41,10 +43,10 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
 
   // Close mobile sidebar on route change
   useEffect(() => {
-    if (isMobile) {
+    if (isMobile || isTablet) {
       setMobileSidebarOpen(false);
     }
-  }, [title, isMobile]);
+  }, [title, isMobile, isTablet]);
 
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {
@@ -56,30 +58,36 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     return () => { document.body.style.overflow = ''; };
   }, [mobileSidebarOpen]);
 
+  const showDrawerSidebar = isMobile || isTablet;
+
   return (
     <div className="h-[100dvh] bg-background relative flex overflow-hidden">
-      {/* Background Blobs - hidden on mobile via CSS */}
-      <motion.div 
-        className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]"
-        initial={{ opacity: 0, scale: 0.6, filter: "blur(100px)" }}
-        animate={{ opacity: 0.15, scale: 1, filter: "blur(220px)" }}
-        transition={{ duration: 2.5 }}
-      />
-      <motion.div 
-        className="blob w-[800px] h-[800px] bg-white bottom-[-20%] right-[-10%] opacity-5"
-        initial={{ opacity: 0, scale: 0.6, filter: "blur(100px)" }}
-        animate={{ opacity: 0.05, scale: 1, filter: "blur(220px)" }}
-        transition={{ duration: 2.5, delay: 0.3 }}
-      />
+      {/* Background Blobs - hidden on mobile/tablet */}
+      {!isMobile && !isTablet && (
+        <>
+          <motion.div 
+            className="blob w-[1200px] h-[1200px] bg-primary top-[-40%] left-[-20%]"
+            initial={{ opacity: 0, scale: 0.6, filter: "blur(100px)" }}
+            animate={{ opacity: 0.15, scale: 1, filter: "blur(220px)" }}
+            transition={{ duration: 2.5 }}
+          />
+          <motion.div 
+            className="blob w-[800px] h-[800px] bg-white bottom-[-20%] right-[-10%] opacity-5"
+            initial={{ opacity: 0, scale: 0.6, filter: "blur(100px)" }}
+            animate={{ opacity: 0.05, scale: 1, filter: "blur(220px)" }}
+            transition={{ duration: 2.5, delay: 0.3 }}
+          />
+        </>
+      )}
       
       {/* Desktop Sidebar */}
-      {!isMobile && (
+      {!showDrawerSidebar && (
         <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       )}
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile/Tablet Sidebar Overlay */}
       <AnimatePresence>
-        {isMobile && mobileSidebarOpen && (
+        {showDrawerSidebar && mobileSidebarOpen && (
           <Portal>
             <motion.div
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
@@ -107,29 +115,25 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       <motion.div 
         className={cn(
           "relative z-10 flex flex-col h-[100dvh] overflow-hidden flex-1",
-          !isMobile && (sidebarCollapsed ? "ml-[72px]" : "ml-[280px]")
+          !showDrawerSidebar && (sidebarCollapsed ? "ml-[72px]" : "ml-[280px]")
         )}
         initial={false}
-        animate={{ marginLeft: isMobile ? 0 : (sidebarCollapsed ? 72 : 280) }}
+        animate={{ marginLeft: showDrawerSidebar ? 0 : (sidebarCollapsed ? 72 : 280) }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         <Header 
           title={title} 
           onOpenSearch={() => setSearchOpen(true)} 
-          onOpenMobileSidebar={isMobile ? () => setMobileSidebarOpen(true) : undefined}
+          onOpenMobileSidebar={showDrawerSidebar ? () => setMobileSidebarOpen(true) : undefined}
         />
         <main 
           ref={mainRef}
           className={cn(
-            "flex-1 overflow-y-auto py-6 flex flex-col dashboard-scroll",
-            isMobile ? "px-3 pb-24" : "px-4 md:px-6 lg:px-8"
+            "flex-1 overflow-y-auto py-4 md:py-6 flex flex-col dashboard-scroll",
+            isMobile ? "px-3 pb-24" : isTablet ? "px-4 pb-6" : "px-4 md:px-6 lg:px-8"
           )} 
-          style={isMobile ? undefined : { zoom: 1.2 }}
         >
-          <motion.div 
-            className="w-full flex-1"
-            style={undefined}
-          >
+          <motion.div className="w-full flex-1">
             <AnimatePresence mode="wait">
               <PageTransition>
                 {children}
