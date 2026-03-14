@@ -242,7 +242,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Soundtrack */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Music className="w-3.5 h-3.5 text-pink-400" />
+                <Music className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Trilha Sonora</span>
               </div>
               <p className="text-[10px] text-foreground/80">{briefing.soundtrack_mood}</p>
