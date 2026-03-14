@@ -366,7 +366,7 @@ export default function ClientPortalPage() {
           <motion.div 
             className={cn(
               "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto",
-              isInactive ? "bg-muted" : isExpired ? "bg-amber-500/20" : "bg-destructive/20"
+              isInactive ? "bg-muted" : isExpired ? "bg-muted" : "bg-destructive/20"
             )}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
