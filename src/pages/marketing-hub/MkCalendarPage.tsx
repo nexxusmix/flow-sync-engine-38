@@ -136,7 +136,7 @@ export default function MkCalendarPage() {
             className={cn(
               "px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 border transition-all duration-300",
               showBestTimes
-                ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                ? "bg-primary/15 text-primary border-primary/30"
                 : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border"
             )}
             whileTap={{ scale: 0.95 }}
