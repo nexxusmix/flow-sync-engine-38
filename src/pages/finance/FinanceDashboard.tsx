@@ -187,7 +187,7 @@ export default function FinancePage() {
 
   return (
     <DashboardLayout title="Financeiro">
-      <div className="holo world-stage space-y-8 max-w-[1600px] 2xl:max-w-[1800px] mx-auto" data-platform="financeiro">
+      <div className="holo world-stage space-y-4 md:space-y-8 max-w-[1600px] 2xl:max-w-[1800px] mx-auto" data-platform="financeiro">
         {/* Ambient glow */}
         <div className="holo-ambient" />
 
@@ -200,16 +200,16 @@ export default function FinancePage() {
         >
           <div>
             <div className="holo-section-label mb-2">Section_03 // Financial_Summary</div>
-            <h1 className="holo-section-title text-3xl md:text-4xl tracking-tight">
+            <h1 className="holo-section-title text-2xl md:text-4xl tracking-tight">
               RESUMO <span className="highlight">FINANCEIRO</span>
             </h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4">
             <div className="holo-timeline-ref">
               Timeline_Ref<br />
               <strong>{monthRef}</strong> / <strong>{yearRef}</strong>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => navigate('/financeiro/receitas')} className="border-white/10 text-white/50 hover:text-white hover:border-white/20 text-[10px] uppercase tracking-widest">
                 Receitas
               </Button>
@@ -224,7 +224,7 @@ export default function FinancePage() {
         </motion.div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           <HoloStatCard
             label="Revenue_Total"
             value={formatCurrency(stats.currentBalance)}
@@ -265,7 +265,7 @@ export default function FinancePage() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Revenue vs Expense Chart */}
           <motion.div
             className="holo-card rounded-xl p-6"
@@ -281,7 +281,7 @@ export default function FinancePage() {
               </div>
               <BarChart3 className="w-5 h-5 text-white/20" />
             </div>
-            <div className="h-64">
+            <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -319,7 +319,7 @@ export default function FinancePage() {
               </div>
               <DollarSign className="w-5 h-5 text-white/20" />
             </div>
-            <div className="h-64">
+            <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={cashflowProjection}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -365,7 +365,7 @@ export default function FinancePage() {
             </button>
           </div>
           
-          <table className="holo-table">
+          <table className="holo-table responsive-table w-full">
             <thead>
               <tr>
                 <th>Stamp</th>
@@ -381,14 +381,14 @@ export default function FinancePage() {
                 
                 return (
                   <tr key={entry.id}>
-                    <td className="font-mono text-white/40">{dateStr}</td>
-                    <td className="text-white/70">{entry.description}</td>
-                    <td>
+                    <td data-label="Data" className="font-mono text-white/40">{dateStr}</td>
+                    <td data-label="Descrição" className="text-white/70">{entry.description}</td>
+                    <td data-label="Status">
                       <span className={`holo-badge ${entry.type === 'revenue' ? 'holo-badge-verified' : 'holo-badge-active'}`}>
                         {entry.type === 'revenue' ? 'VERIFIED' : 'ACTIVE'}
                       </span>
                     </td>
-                    <td className={`text-right font-mono ${entry.type === 'revenue' ? 'text-white/80' : 'text-red-400/80'}`}>
+                    <td data-label="Valor" className={`text-right font-mono ${entry.type === 'revenue' ? 'text-white/80' : 'text-red-400/80'}`}>
                       {entry.type === 'expense' ? '- ' : ''}{formatCurrency(entry.amount).replace('R$', '').trim()}
                     </td>
                   </tr>

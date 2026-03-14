@@ -406,15 +406,17 @@ export default function ClientPortalPage() {
   return (
     <div 
       ref={containerRef}
-      className="holo min-h-screen h-screen overflow-y-auto bg-background scroll-smooth relative"
+      className="holo min-h-[100dvh] h-[100dvh] overflow-y-auto bg-background scroll-smooth relative"
       data-platform="portal"
     >
       {/* Holographic Ambient Glow */}
       <div className="holo-ambient" />
       
-      {/* Animated Background */}
-      <CursorGlow />
-      <BackgroundParticles />
+      {/* Animated Background - desktop only */}
+      <div className="hidden md:block">
+        <CursorGlow />
+        <BackgroundParticles />
+      </div>
       
       {/* Background Gradient that moves with scroll */}
       <motion.div 
@@ -425,7 +427,7 @@ export default function ClientPortalPage() {
         }}
       />
 
-      <div className="world-stage max-w-[1400px] xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <div className="world-stage max-w-[1400px] xl:max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8 relative z-10 pb-8">
         {/* Header with animations */}
         <ScrollReveal direction="down" delay={0.1}>
           <PortalHeaderPremium
@@ -437,12 +439,12 @@ export default function ClientPortalPage() {
         </ScrollReveal>
 
         {/* Metrics Grid */}
-        <ScrollReveal delay={0.2} className="mt-8">
+        <ScrollReveal delay={0.2} className="mt-4 md:mt-8">
           <PortalMetricsGrid project={project} />
         </ScrollReveal>
 
         {/* Tabs with Tab Content Animation */}
-        <ScrollReveal delay={0.3} className="mt-12">
+        <ScrollReveal delay={0.3} className="mt-6 md:mt-12">
           <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab} badges={tabBadges}>
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-8">
@@ -454,9 +456,9 @@ export default function ClientPortalPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <StaggerContainer className="grid lg:grid-cols-12 gap-6" staggerDelay={0.08}>
+                  <StaggerContainer className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6" staggerDelay={0.08}>
                     {/* Main Content */}
-                    <StaggerItem className="lg:col-span-8 xl:col-span-9 space-y-6">
+                    <StaggerItem className="lg:col-span-8 xl:col-span-9 space-y-4 md:space-y-6">
                       <PortalOverviewPremium 
                         project={project} 
                         stages={stages}
@@ -478,7 +480,7 @@ export default function ClientPortalPage() {
                     </StaggerItem>
                     
                     {/* Sidebar */}
-                    <StaggerItem className="lg:col-span-4 xl:col-span-3 space-y-6">
+                    <StaggerItem className="lg:col-span-4 xl:col-span-3 space-y-4 md:space-y-6">
                       <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
                         <PortalMaterialsAside deliverables={deliverables} files={files} />
                       </GlowCard>

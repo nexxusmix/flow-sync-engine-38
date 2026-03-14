@@ -121,28 +121,28 @@ export default function Dashboard() {
     <DashboardLayout title="Dashboard">
       <OnboardingDialog open={shouldShow} onClose={dismiss} />
       
-      <div className="space-y-10 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
+      <div className="space-y-6 md:space-y-10 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
         <motion.div 
-          className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6"
+          className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 md:gap-6"
           initial={{ opacity: 0, y: -20, filter: "blur(4px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.8, type: "spring", stiffness: 80 }}
         >
           <motion.div 
-            className="flex items-center gap-4"
+            className="flex items-center gap-3 md:gap-4"
             whileHover={{ scale: 1.02 }}
           >
             <motion.img 
               src={squadLogo} 
               alt="SQUAD Hub" 
-              className="w-10 h-10 object-contain"
+              className="w-8 h-8 md:w-10 md:h-10 object-contain"
               initial={{ opacity: 0, scale: 0.5, filter: "blur(4px)" }}
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               transition={{ type: "spring" as const, stiffness: 150, damping: 15, delay: 0.1 }}
             />
             <motion.h1 
-              className="text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground"
+              className="text-2xl sm:text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground"
               initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
               animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
               transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
@@ -190,7 +190,7 @@ export default function Dashboard() {
 
         {/* Section: Metrics */}
         <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6"
           initial={{ opacity: 0, filter: "blur(4px)" }}
           animate={{ opacity: 1, filter: "blur(0px)" }}
           transition={{ delay: 0.25 }}
@@ -215,7 +215,7 @@ export default function Dashboard() {
         <AIDailySummary />
 
         {/* Interactive Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <RevenueChart />
           <PipelineChart />
         </div>
@@ -231,7 +231,7 @@ export default function Dashboard() {
 
         {/* Visual Board Section - PROJETOS */}
         <motion.div 
-          className="glass-card rounded-[2rem] p-6 min-h-[400px]"
+          className="glass-card rounded-xl md:rounded-[2rem] p-4 md:p-6 min-h-[300px] md:min-h-[400px]"
           initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-80px" }}
@@ -252,7 +252,7 @@ export default function Dashboard() {
           </div>
           
           {/* Mini Kanban */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4 md:mb-6">
             {displayStages.map((stage) => (
               <div key={stage.stage} className="bg-muted/30 rounded-xl p-3 min-h-[140px]">
                 <div className="flex items-center justify-between mb-3">
@@ -289,7 +289,7 @@ export default function Dashboard() {
           </div>
 
           {/* Timeline 30D & Capacity Monitor */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {/* Timeline 30D */}
             <div className="bg-muted/20 rounded-xl p-4 min-h-[180px]">
               <div className="flex items-center gap-2 mb-3">
@@ -363,7 +363,7 @@ export default function Dashboard() {
 
         {/* Key Metrics Row */}
         <motion.div 
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4"
           initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-80px" }}
@@ -408,7 +408,7 @@ export default function Dashboard() {
 
         {/* Visão de Contas - Financeiro */}
         <motion.div 
-          className="glass-card rounded-[2rem] p-6 min-h-[250px]"
+          className="glass-card rounded-xl md:rounded-[2rem] p-4 md:p-6 min-h-[200px] md:min-h-[250px]"
           initial={{ opacity: 0, y: 25, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ delay: 0.5, type: "spring", stiffness: 70, damping: 18 }}
@@ -461,10 +461,10 @@ export default function Dashboard() {
         <ActionHubRail />
 
         {/* Section: Main Layout Split */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
           {/* Left Column: Projects (8 cols) */}
-          <div className="xl:col-span-8">
-            <div className="glass-card rounded-[2rem] p-6 min-h-[350px]">
+          <div className="lg:col-span-8">
+            <div className="glass-card rounded-xl md:rounded-[2rem] p-4 md:p-6 min-h-[250px] md:min-h-[350px]">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-normal text-foreground">Projetos Recentes</h2>
                 <Link to="/projetos">
@@ -474,7 +474,7 @@ export default function Dashboard() {
                 </Link>
               </div>
               {recentProjects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   {recentProjects.slice(0, 4).map((project, idx) => (
                     <ProjectCard
                       key={project.id}
@@ -504,7 +504,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Column: Overview Card (4 cols) */}
-          <div className="xl:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-4 md:space-y-6">
             <ActionHubOverviewCard />
           </div>
         </div>

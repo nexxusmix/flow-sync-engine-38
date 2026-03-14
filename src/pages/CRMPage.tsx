@@ -138,10 +138,10 @@ export default function CRMPage() {
 
   return (
     <DashboardLayout title="Cine CRM">
-      <div className="space-y-6 animate-fade-in max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
+      <div className="space-y-4 md:space-y-6 animate-fade-in max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
         <div className="flex flex-col gap-2">
-          <h1 className="text-4xl md:text-5xl font-extrabold uppercase tracking-tighter text-foreground">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold uppercase tracking-tighter text-foreground">
             Pipeline <span className="squad-logo-text font-normal text-muted-foreground">Comercial</span>
           </h1>
           <div className="flex items-center gap-2">
@@ -151,8 +151,8 @@ export default function CRMPage() {
         </div>
 
         {/* CRM Filter Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-col gap-3 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-wrap overflow-x-auto">
             {/* View Toggle */}
             <div className="flex rounded-full border border-border p-1">
               <button 
@@ -204,7 +204,7 @@ export default function CRMPage() {
           </div>
 
           {/* Search + Value Filters */}
-          <div className="flex items-center gap-3 flex-wrap w-full md:w-auto">
+          <div className="flex items-center gap-2 md:gap-3 flex-wrap w-full md:w-auto">
             <div className="relative flex-1 md:flex-none md:w-52">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <input
@@ -225,14 +225,14 @@ export default function CRMPage() {
               value={minValue}
               onChange={e => setMinValue(e.target.value)}
               placeholder="Mín R$"
-              className="w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+              className="w-20 md:w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
             />
             <input
               type="number"
               value={maxValue}
               onChange={e => setMaxValue(e.target.value)}
               placeholder="Máx R$"
-              className="w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+              className="w-20 md:w-24 px-3 py-2 rounded-full bg-muted border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
             />
             {hasFilters && (
               <button
@@ -305,7 +305,7 @@ export default function CRMPage() {
 
       {/* New Deal Dialog */}
       <Dialog open={showNewDealDialog} onOpenChange={setShowNewDealDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Novo Deal</DialogTitle>
             <DialogDescription>Adicione uma nova oportunidade ao pipeline</DialogDescription>
