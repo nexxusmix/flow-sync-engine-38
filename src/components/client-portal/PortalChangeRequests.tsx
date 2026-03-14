@@ -85,7 +85,7 @@ function RequestItem({ request }: { request: ChangeRequest }) {
       )}>
         <CollapsibleTrigger className="w-full">
           <div className="flex items-start gap-3">
-            <div className={cn("w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0", statusConfig.color)}>
+            <div className={cn("w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0", statusStyle.bg, statusStyle.text)}>
               <StatusIcon className="w-3.5 h-3.5" />
             </div>
             <div className="flex-1 text-left min-w-0">
