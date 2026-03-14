@@ -94,13 +94,15 @@ function extractEntities(text: string): string[] {
   const quoteRegex = /"([^"]+)"/g;
   let m;
   while ((m = quoteRegex.exec(text)) !== null) entities.push(m[1]);
-  // Uppercase words (project-like names) — at least 2 consecutive uppercase words or uppercase+number
-  const upperRegex = /\b([A-ZÀ-Ú][A-ZÀ-Ú0-9]+(?:\s+[A-ZÀ-Ú0-9]+)*(?:\s+\d+)?)\b/g;
+  // Uppercase words (project-like names) — captures composite like "PORTO 153"
+  const upperRegex = /([A-ZÀ-Ú][A-ZÀ-Ú0-9]+(?:\s+[A-ZÀ-Ú0-9]+)*(?:\s+\d+[\w]*)*)/g;
   // Only exclude pure generic acronyms (not combined with numbers/other words)
   const STOP_WORDS = new Set(['TODO', 'ASAP', 'CRM', 'ROI', 'KPI']);
   while ((m = upperRegex.exec(text)) !== null) {
     const val = m[1].trim();
-    if (val.length > 2 && !STOP_WORDS.has(val) && !entities.includes(val)) {
+    // Allow stop words when they're part of a composite (e.g. "PORTO 153")
+    const isComposite = val.includes(' ');
+    if (val.length > 2 && (!STOP_WORDS.has(val) || isComposite) && !entities.includes(val)) {
       entities.push(val);
     }
   }

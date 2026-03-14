@@ -1,62 +1,65 @@
 
 
-# Correção de Bugs Conhecidos
+## Padronizacao de Cores — Campanhas Instagram
 
-## Bug 1 — extractEntities e "PORTO 153"
+### Diagnostico
 
-**Arquivo:** `src/components/dashboard/AIDailySummary.tsx` (linhas 91-107)
+**1.328 ocorrencias** de cores poluidas (`emerald`, `amber`, `red`, `green`, `purple`, `teal`, etc.) espalhadas em **63 arquivos** de sub-componentes de campanha. O `CampaignsTab.tsx` principal ja esta limpo com a paleta Sonance, mas todos os componentes internos ainda usam cores semanticas hardcoded.
 
-Verificando o código atual, `STOP_WORDS` já não contém "PORTO" (contém apenas TODO, ASAP, CRM, ROI, KPI). No entanto, há um risco residual: se o texto contiver "PORTO" isolado (sem número), ele será extraído como entidade e não fará match com o projeto "PORTO 153". A correção adiciona lógica para, quando uma entidade upper-case for seguida de número no texto original, capturá-la como entidade composta.
+### Mapeamento de Substituicao
 
-**Ação:** Revisar a regex `upperRegex` para garantir que "PORTO 153" seja capturado como entidade única. A regex atual `(?:\s+\d+)?` deveria fazer isso, mas o `\b` final pode quebrar em certos contextos. Ajustar para usar lookahead ou captura explícita.
-
----
-
-## Bug 2 — PortalIntelligenceBlock com yellow hardcoded
-
-**Arquivo:** `src/components/client-portal/PortalIntelligenceBlock.tsx` (linhas 152-161)
-
-Os cards já usam `sc.risk()` e `sc.score()` corretamente. Porém o **alert banner** (linhas 155-161) ainda usa `bg-yellow-500/10`, `border-yellow-500/30` e `text-yellow-600` para o estado de "atenção". Isso viola a paleta Sonance.
-
-**Ação:** Substituir as referências yellow por tokens semânticos:
-- `bg-yellow-500/10` → `bg-muted`
-- `border-yellow-500/30` → `border-border`
-- `text-yellow-600` → `text-muted-foreground`
-
----
-
-## Bug 3 — Cores inconsistentes (152 arquivos, 2.423 ocorrências)
-
-Este é o bug de maior escopo. A padronização será feita em lotes seguindo o mapeamento do `plan.md` existente, aplicando as regras de substituição já definidas:
+A paleta SQUAD e estritamente **azul (#009CCA) + branco + cinza**. Vermelho reservado **apenas** para erros/destrutivo.
 
 ```text
-emerald-*  → primary (azul)
-green-*    → primary (azul)
-amber-*    → muted-foreground / muted
-yellow-*   → muted-foreground / muted
-orange-*   → muted-foreground / muted
-purple-*   → primary/70
-pink-*     → primary/50
-teal-*     → primary
-red-* (sucesso) → primary
-red-* (erro)    → destructive (manter)
+ANTES                    →  DEPOIS (Sonance)
+─────────────────────────────────────────────
+emerald-400/500          →  primary (azul)
+green-400/500            →  primary (azul)
+amber-400/500            →  muted-foreground (cinza)
+yellow-400/500           →  muted-foreground (cinza)
+orange-400/500           →  muted-foreground (cinza)
+purple-400/500           →  primary/70 (azul medio)
+violet-400/500           →  primary/70 (azul medio)
+pink-400/500             →  primary/50 (azul claro)
+teal-400/500             →  primary (azul)
+indigo-400/500           →  primary (azul)
+red-400/500 (sucesso)    →  primary (azul)
+red-400/500 (erro real)  →  destructive (manter)
 ```
 
-Dado o volume massivo, a implementação será feita em **lotes por área funcional**, priorizando:
+### Abordagem
 
-1. **Lote 1 — Páginas principais:** ClientesPage, Report360Page, ProjectsFinancePage
-2. **Lote 2 — Instagram Engine:** CampaignCompare, e demais sub-componentes
-3. **Lote 3 — Marketing Hub:** MkContentsPage, StudioCreativoPage
-4. **Lote 4 — Restante** (batches de ~20 arquivos por mensagem)
+Dado o volume (63 arquivos, 1328 ocorrencias), a refatoracao sera feita em **lotes por categoria** do mega-menu:
 
-Cada arquivo será tratado individualmente, distinguindo usos de vermelho como erro real (manter `destructive`) vs. vermelho decorativo (migrar para `primary`).
+1. **Producao** (6 componentes): Kanban, Approval, ApprovalPipeline, PublishQueue, FeedPreview, Timeline
+2. **Calendario** (6 componentes): Calendar, UnifiedCalendar, GanttTimeline, TimingOptimizer, HolidayCalendar, Seasonal
+3. **Analytics** (7 componentes): AnalyticsAdvanced, ROI, Heatmap, HealthScore, VelocityTracker, SentimentAnalysis, MoodTracker
+4. **Estrategia** (8 componentes): Goals, FunnelView, ContentFunnel, ContentMap, PersonaMap, CustomerJourney, StoryArc, DNA
+5. **IA Tools** (14 componentes): SmartAlerts, ResultsSimulator, AutoPlanner, BriefingGenerator, AdsCopy, Spin, Hashtags, HashtagIntel, ABTesting, ABTestFramework, RiskScore, ContentGap, PitchDeck, BudgetAllocator
+6. **Colaboracao** (5 componentes): Collaboration, CollaborationBoard, ClientReview, WarRoom, AudienceHeatmap
+7. **Exportar** (16 componentes): PDFReport, Compare, CrossComparator, PostMortem, Autopsy, Cloner, SwipeFiles, RepostAutomation, ContentRecycling, SplitContent, CompetitorTracker, CompetitorShadow, MicroBlitz, MoodBoard, Alerts, Changelog
 
----
+### Regras de Substituicao
 
-### Detalhes Técnicos
+Para cada arquivo:
+- `text-emerald-*` / `bg-emerald-*` → `text-primary` / `bg-primary/15`
+- `text-green-*` / `bg-green-*` → `text-primary` / `bg-primary/15`
+- `text-amber-*` / `bg-amber-*` → `text-muted-foreground` / `bg-muted`
+- `text-yellow-*` / `bg-yellow-*` → `text-muted-foreground` / `bg-muted`
+- `text-red-*` / `bg-red-*` para estados de erro/rejeicao → `text-destructive` / `bg-destructive/15` (manter)
+- `text-red-*` / `bg-red-*` para intensidade/climax → `text-primary` / `bg-primary/20`
+- `text-purple-*` / `bg-purple-*` → `text-primary/70` / `bg-primary/10`
+- `border-emerald-*` → `border-primary/30`
+- `border-amber-*` → `border-border`
+- `border-red-*` → `border-destructive/30`
 
-- Nenhuma dependência nova
-- Todas as cores de substituição já existem como CSS variables
-- O utilitário `sc` de `src/lib/colors.ts` será usado onde aplicável (scores, risks, statuses)
-- Badges com variantes como `"amber" | "emerald"` serão migradas para variantes existentes no design system
+### Prioridade
+
+Iniciar pelos componentes mais vistos (Dashboard, Kanban, Analytics, Goals) e avancar para os menos frequentes. Todos os 63 arquivos serao tratados para eliminar completamente a poluicao visual.
+
+### Detalhes Tecnicos
+
+- Nenhuma dependencia nova necessaria
+- Todas as cores de substituicao ja existem como CSS variables em `index.css`
+- O `StatusBadge` do squad-ui ja segue o padrao correto e pode ser reutilizado onde badges aparecem nos sub-componentes
 
