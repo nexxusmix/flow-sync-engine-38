@@ -437,7 +437,7 @@ export default function ContractDetailPage() {
                       description: 'O contrato será cancelado. Essa ação pode ser revertida.'
                     })}
                   >
-                    <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                    <XCircle className="w-4 h-4 mr-2 text-destructive" />
                     Cancelar
                   </DropdownMenuItem>
                 )}
