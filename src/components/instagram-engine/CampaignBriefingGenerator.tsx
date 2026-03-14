@@ -148,8 +148,8 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-pink-500/15 flex items-center justify-center">
-          <FileSpreadsheet className="w-4 h-4 text-pink-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <FileSpreadsheet className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Gerador de Briefing</h4>
