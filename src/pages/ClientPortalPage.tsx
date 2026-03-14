@@ -294,10 +294,10 @@ export default function ClientPortalPage() {
 
         {/* Payment Block Alert */}
         {hasPaymentBlock && (
-          <div className="glass-card rounded-2xl p-6 border-amber-500/30 bg-amber-500/5 mb-6">
+          <div className="glass-card rounded-2xl p-6 border-destructive/30 bg-destructive/5 mb-6">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <Lock className="w-5 h-5 text-amber-500" />
+              <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+                <Lock className="w-5 h-5 text-destructive" />
               </div>
               <div>
                 <h3 className="font-bold text-foreground">Projeto Bloqueado por Inadimplência</h3>
