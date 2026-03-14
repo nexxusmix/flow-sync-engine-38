@@ -372,7 +372,7 @@ function PortalInlineCommentComponent({
                             {format(new Date(c.created_at), "dd/MM HH:mm", { locale: ptBR })}
                           </span>
                           {c.status === 'revision_requested' && (
-                            <Badge className="bg-amber-500/20 text-amber-400 text-[10px]">
+                            <Badge className="bg-muted text-muted-foreground text-[10px]">
                               Ajuste
                             </Badge>
                           )}
