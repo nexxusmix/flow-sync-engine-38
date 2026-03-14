@@ -64,9 +64,9 @@ interface PortalInlineCommentProps {
 }
 
 const PRIORITIES: { id: Priority; label: string; color: string }[] = [
-  { id: 'normal', label: 'Normal', color: 'bg-gray-600' },
-  { id: 'high', label: 'Alta', color: 'bg-amber-500' },
-  { id: 'urgent', label: 'Urgente', color: 'bg-red-500' },
+  { id: 'normal', label: 'Normal', color: 'bg-muted-foreground' },
+  { id: 'high', label: 'Alta', color: 'bg-muted-foreground' },
+  { id: 'urgent', label: 'Urgente', color: 'bg-destructive' },
 ];
 
 function PortalInlineCommentComponent({
