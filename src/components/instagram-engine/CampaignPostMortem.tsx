@@ -141,7 +141,7 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                <Lightbulb className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-[10px] font-semibold text-foreground">Padrões de Sucesso</span>
               </div>
               {report.patterns_of_success.map((p, i) => (
