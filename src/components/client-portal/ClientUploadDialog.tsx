@@ -38,7 +38,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type UploadType = 'youtube' | 'link' | 'file';
+type UploadType = 'youtube' | 'link' | 'file' | 'drive';
 type ItemStatus = 'queued' | 'uploading' | 'success' | 'error';
 
 export interface QueuedItem {
