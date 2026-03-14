@@ -7,9 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const severityConfig = {
-  critical: { icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10' },
-  warning: { icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  info: { icon: Info, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  critical: { icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
+  warning: { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted' },
+  info: { icon: Info, color: 'text-primary', bg: 'bg-primary/10' },
 };
 
 export function AlertsOverviewCard() {
