@@ -448,7 +448,7 @@ export default function ContractDetailPage() {
                     description: 'O contrato será arquivado e não aparecerá mais na listagem principal.'
                   })}
                 >
-                  <Archive className="w-4 h-4 mr-2 text-slate-500" />
+                  <Archive className="w-4 h-4 mr-2 text-muted-foreground" />
                   Arquivar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
