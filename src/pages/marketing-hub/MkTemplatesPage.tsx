@@ -490,7 +490,7 @@ export default function MkTemplatesPage() {
                       )}
                       {generation.script.cta && (
                         <div>
-                          <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-medium">CTA</span>
+                          <span className="text-[9px] uppercase tracking-wider text-primary/70 font-medium">CTA</span>
                           <p className="mt-0.5">{generation.script.cta}</p>
                         </div>
                       )}
