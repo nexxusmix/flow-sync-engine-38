@@ -39,7 +39,7 @@ export function LandingHero() {
   const textExitY = useSpring(useTransform(scrollYProgress, [0.7, 1], [0, -80]), sp);
 
   return (
-    <section ref={sectionRef} className="relative z-10 min-h-[200vh] md:min-h-[250vh]">
+    <section ref={sectionRef} className="relative z-10 min-h-[160vh] md:min-h-[200vh]">
       {/* Hero with video card */}
       <motion.div
         className="sticky top-0 left-0 w-full h-[100dvh] flex flex-col items-center justify-center z-20 px-4 md:px-6"
