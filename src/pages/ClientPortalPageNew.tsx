@@ -24,6 +24,9 @@ import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/Portal
 import { PortalFilesTab } from "@/components/client-portal/portal-tabs/PortalFilesTab";
 import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
 import { PortalActivityTab } from "@/components/client-portal/portal-tabs/PortalActivityTab";
+import { PortalDocumentsTab } from "@/components/client-portal/portal-tabs/PortalDocumentsTab";
+import { PortalFinancialTab } from "@/components/client-portal/portal-tabs/PortalFinancialTab";
+import { PortalMessagesTab } from "@/components/client-portal/portal-tabs/PortalMessagesTab";
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
 import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
 import { toast } from "sonner";
@@ -519,6 +522,34 @@ export default function ClientPortalPage() {
               </AnimatePresence>
             </TabsContent>
 
+            {/* Messages Tab */}
+            <TabsContent value="messages" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="messages"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalMessagesTab
+                    comments={comments}
+                    timelineEvents={timelineEvents}
+                    onSendMessage={(data) => {
+                      // Use addComment as message channel
+                      if (!deliverables[0]?.id) return;
+                      addComment({
+                        deliverableId: deliverables[0].id,
+                        authorName: data.authorName,
+                        content: data.content,
+                      });
+                    }}
+                    isSending={isAddingComment}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
             {/* Tasks Tab */}
             <TabsContent value="tasks" className="mt-8">
               <AnimatePresence mode="wait">
@@ -567,6 +598,36 @@ export default function ClientPortalPage() {
                       setActiveTab('materials');
                     }}
                   />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
+            {/* Documents Tab */}
+            <TabsContent value="documents" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="documents"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalDocumentsTab files={files} deliverables={deliverables} />
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
+            {/* Financial Tab */}
+            <TabsContent value="financial" className="mt-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="financial"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PortalFinancialTab project={project} />
                 </motion.div>
               </AnimatePresence>
             </TabsContent>

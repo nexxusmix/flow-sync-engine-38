@@ -25,9 +25,12 @@ interface PortalTabsPremiumProps {
 const tabs = [
   { id: "overview", label: "Visão Geral" },
   { id: "materials", label: "Materiais" },
+  { id: "messages", label: "Mensagens" },
   { id: "tasks", label: "Tarefas" },
   { id: "activity", label: "Atividades" },
   { id: "revisions", label: "Revisões" },
+  { id: "documents", label: "Documentos" },
+  { id: "financial", label: "Financeiro" },
   { id: "files", label: "Arquivos" },
   { id: "schedule", label: "Cronograma" },
 ];
@@ -44,11 +47,11 @@ const tabsListVariants = {
 const getBadgeStyles = (variant: TabBadge['variant'] = 'default') => {
   switch (variant) {
     case 'warning':
-      return 'bg-amber-500 text-white';
+      return 'bg-destructive text-destructive-foreground';
     case 'success':
-      return 'bg-emerald-500 text-white';
+      return 'bg-primary text-primary-foreground';
     default:
-      return 'bg-cyan-500 text-white';
+      return 'bg-primary text-primary-foreground';
   }
 };
 
