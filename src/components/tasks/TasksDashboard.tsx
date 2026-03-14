@@ -153,7 +153,7 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Status Bar Chart */}
-        <Card className="glass-card p-5 lg:col-span-2">
+        <Card className="glass-card p-3 md:p-5 lg:col-span-2">
           <h3 className="text-sm font-medium text-foreground mb-4">Tarefas por Status</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={statusData} layout="vertical">
