@@ -78,9 +78,9 @@ export default function OwnerDailyReport() {
   };
 
   const severityColors = {
-    high: 'text-red-500 bg-red-500/10 border-red-500/30',
-    medium: 'text-amber-500 bg-amber-500/10 border-amber-500/30',
-    low: 'text-blue-500 bg-blue-500/10 border-blue-500/30',
+    high: 'text-destructive bg-destructive/10 border-destructive/30',
+    medium: 'text-muted-foreground bg-muted border-border',
+    low: 'text-primary bg-primary/10 border-primary/30',
   };
 
   if (loading) {
