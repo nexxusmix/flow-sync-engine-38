@@ -413,7 +413,7 @@ export default function ContractDetailPage() {
                       description: 'O contrato será marcado como concluído. Essa ação pode ser revertida.'
                     })}
                   >
-                    <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" />
+                    <CheckCircle2 className="w-4 h-4 mr-2 text-primary" />
                     Concluir
                   </DropdownMenuItem>
                 )}
