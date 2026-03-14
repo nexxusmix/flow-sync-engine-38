@@ -104,7 +104,7 @@ function PortalDeliverablesPremiumComponent({
               onClick={() => onSelectMaterial(deliverable.id)}
               className={cn(
                 "bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-5 cursor-pointer transition-colors",
-                isSelected && "bg-cyan-500/5 border-l-2 border-cyan-500"
+                isSelected && "bg-primary/5 border-l-2 border-primary"
               )}
             >
               <div className="flex items-start justify-between gap-3 mb-3">
