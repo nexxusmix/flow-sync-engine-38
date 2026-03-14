@@ -623,13 +623,11 @@ export default function ClientPortalPage() {
               </AnimatePresence>
             </TabsContent>
           </PortalTabsPremium>
-        </ScrollReveal>
+        </div>
       </div>
 
       {/* Footer */}
-      <ScrollReveal delay={0.5}>
-        <PortalFooterPremium />
-      </ScrollReveal>
+      <PortalFooterPremium />
     </div>
   );
 }
