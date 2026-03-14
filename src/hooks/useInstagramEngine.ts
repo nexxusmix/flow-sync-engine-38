@@ -592,7 +592,7 @@ export function useCampaignCompetitors(campaignId: string) {
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data || []) as CampaignCompetitor[];
+      return (data || []) as unknown as CampaignCompetitor[];
     },
     enabled: !!campaignId,
   });
