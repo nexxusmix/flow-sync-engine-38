@@ -461,9 +461,9 @@ export function ProjectTimelineDetailed({
                         <div
                           className={cn(
                             "h-full rounded-full",
-                            segment.status === "done" && "bg-emerald-500",
-                            segment.status === "in_progress" && "bg-primary",
-                            segment.status === "blocked" && "bg-red-500",
+                            segment.status === "done" && "bg-primary",
+                            segment.status === "in_progress" && "bg-primary/60",
+                            segment.status === "blocked" && "bg-destructive",
                             segment.status === "not_started" && "bg-muted-foreground/30"
                           )}
                           style={{ width: `${segment.progress}%` }}
