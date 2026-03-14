@@ -173,7 +173,7 @@ export default function MarketingPage() {
             title="Atrasados"
             value={stats.overdue}
             icon={AlertTriangle}
-            color={stats.overdue > 0 ? "text-red-500" : "text-muted-foreground"}
+            color={stats.overdue > 0 ? "text-destructive" : "text-muted-foreground"}
             onClick={() => navigate('/marketing/pipeline')}
           />
           <StatCard
