@@ -85,9 +85,9 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
   const hasResults = results && results.length > 0;
 
   const riskColors: Record<string, string> = {
-    low: 'bg-green-500/10 text-green-500 border-green-500/20',
-    medium: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    high: 'bg-red-500/10 text-red-500 border-red-500/20',
+    low: 'bg-primary/10 text-primary border-primary/20',
+    medium: 'bg-muted text-muted-foreground border-border',
+    high: 'bg-destructive/10 text-destructive border-destructive/20',
   };
 
   return (
@@ -135,7 +135,7 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                 className={cn(
                   'text-xs rounded-lg p-2.5 flex items-center gap-2 border',
                   errorCount === 0
-                    ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                    ? 'bg-primary/10 border-primary/20 text-primary'
                     : 'bg-destructive/10 border-destructive/20 text-destructive'
                 )}
               >
@@ -174,8 +174,8 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                     <div
                       className={cn(
                         'flex items-center gap-2 p-2 rounded-lg text-xs transition-all',
-                        status === 'success' && 'bg-green-500/5',
-                        status === 'error' && 'bg-red-500/5',
+                        status === 'success' && 'bg-primary/5',
+                        status === 'error' && 'bg-destructive/5',
                         isCurrentStep && 'bg-primary/10 ring-1 ring-primary/20 animate-pulse',
                         hasError && 'cursor-pointer',
                       )}
@@ -185,7 +185,7 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                         <Loader2 className="w-4 h-4 text-primary animate-spin" />
                       ) : status === 'success' ? (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400 }}>
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          <CheckCircle2 className="w-4 h-4 text-primary" />
                         </motion.div>
                       ) : status === 'error' ? (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>

@@ -1,32 +1,65 @@
 
 
-# Correção de Bugs Visuais e Duplicação
+## Padronizacao de Cores — Campanhas Instagram
 
-## 1. Remover `ClientPortalPage.tsx` (antigo)
-Apenas `ClientPortalPageNew.tsx` é usado (importado em `App.tsx` como `ClientPortalPage`). Deletar `src/pages/ClientPortalPage.tsx`.
+### Diagnostico
 
-## 2. CRMPage.tsx — Live Sync indicator (linhas 148-149)
-- `bg-emerald-500` → `bg-primary`
-- `text-emerald-500` → `text-primary`
-- `text-amber-500` (temperature "Morno", linha 187) → `text-muted-foreground`
-- `text-red-500` (temperature "Quente", linha 186) → `text-primary` (não é erro)
+**1.328 ocorrencias** de cores poluidas (`emerald`, `amber`, `red`, `green`, `purple`, `teal`, etc.) espalhadas em **63 arquivos** de sub-componentes de campanha. O `CampaignsTab.tsx` principal ja esta limpo com a paleta Sonance, mas todos os componentes internos ainda usam cores semanticas hardcoded.
 
-## 3. ExecutionPlanView.tsx — Risk colors e status colors
-- `riskColors` (linhas 87-91): low → `bg-primary/10 text-primary border-primary/20`, medium → `bg-muted text-muted-foreground border-border`, high → `bg-destructive/10 text-destructive border-destructive/20`
-- Success summary (linha 138): `bg-green-500/10 border-green-500/20 text-green-400` → `bg-primary/10 border-primary/20 text-primary`
-- Step success bg (linha 177): `bg-green-500/5` → `bg-primary/5`
-- Step error bg (linha 178): `bg-red-500/5` → `bg-destructive/5`
-- Success icon (linha 188): `text-green-500` → `text-primary`
+### Mapeamento de Substituicao
 
-## 4. ContractClientPage.tsx — Cores de assinatura
-- Linha 274: `text-amber-500` → `text-muted-foreground`
-- Linhas 293, 298: `bg-emerald-500/10 text-emerald-500`, `bg-emerald-500/20 text-emerald-500` → `bg-primary/10 text-primary`, `bg-primary/20 text-primary`
-- Linha 343: `bg-emerald-600 hover:bg-emerald-700` → `bg-primary hover:bg-primary/90`
+A paleta SQUAD e estritamente **azul (#009CCA) + branco + cinza**. Vermelho reservado **apenas** para erros/destrutivo.
 
-## 5. MessageDraftModal.tsx
-Busca não encontrou emerald nesse arquivo — pode já ter sido corrigido. Verificarei novamente na implementação e corrigirei se necessário.
+```text
+ANTES                    →  DEPOIS (Sonance)
+─────────────────────────────────────────────
+emerald-400/500          →  primary (azul)
+green-400/500            →  primary (azul)
+amber-400/500            →  muted-foreground (cinza)
+yellow-400/500           →  muted-foreground (cinza)
+orange-400/500           →  muted-foreground (cinza)
+purple-400/500           →  primary/70 (azul medio)
+violet-400/500           →  primary/70 (azul medio)
+pink-400/500             →  primary/50 (azul claro)
+teal-400/500             →  primary (azul)
+indigo-400/500           →  primary (azul)
+red-400/500 (sucesso)    →  primary (azul)
+red-400/500 (erro real)  →  destructive (manter)
+```
 
----
+### Abordagem
 
-5 arquivos afetados, todas substituições mecânicas de cores seguindo a paleta Sonance (azul/cinza/destructive).
+Dado o volume (63 arquivos, 1328 ocorrencias), a refatoracao sera feita em **lotes por categoria** do mega-menu:
+
+1. **Producao** (6 componentes): Kanban, Approval, ApprovalPipeline, PublishQueue, FeedPreview, Timeline
+2. **Calendario** (6 componentes): Calendar, UnifiedCalendar, GanttTimeline, TimingOptimizer, HolidayCalendar, Seasonal
+3. **Analytics** (7 componentes): AnalyticsAdvanced, ROI, Heatmap, HealthScore, VelocityTracker, SentimentAnalysis, MoodTracker
+4. **Estrategia** (8 componentes): Goals, FunnelView, ContentFunnel, ContentMap, PersonaMap, CustomerJourney, StoryArc, DNA
+5. **IA Tools** (14 componentes): SmartAlerts, ResultsSimulator, AutoPlanner, BriefingGenerator, AdsCopy, Spin, Hashtags, HashtagIntel, ABTesting, ABTestFramework, RiskScore, ContentGap, PitchDeck, BudgetAllocator
+6. **Colaboracao** (5 componentes): Collaboration, CollaborationBoard, ClientReview, WarRoom, AudienceHeatmap
+7. **Exportar** (16 componentes): PDFReport, Compare, CrossComparator, PostMortem, Autopsy, Cloner, SwipeFiles, RepostAutomation, ContentRecycling, SplitContent, CompetitorTracker, CompetitorShadow, MicroBlitz, MoodBoard, Alerts, Changelog
+
+### Regras de Substituicao
+
+Para cada arquivo:
+- `text-emerald-*` / `bg-emerald-*` → `text-primary` / `bg-primary/15`
+- `text-green-*` / `bg-green-*` → `text-primary` / `bg-primary/15`
+- `text-amber-*` / `bg-amber-*` → `text-muted-foreground` / `bg-muted`
+- `text-yellow-*` / `bg-yellow-*` → `text-muted-foreground` / `bg-muted`
+- `text-red-*` / `bg-red-*` para estados de erro/rejeicao → `text-destructive` / `bg-destructive/15` (manter)
+- `text-red-*` / `bg-red-*` para intensidade/climax → `text-primary` / `bg-primary/20`
+- `text-purple-*` / `bg-purple-*` → `text-primary/70` / `bg-primary/10`
+- `border-emerald-*` → `border-primary/30`
+- `border-amber-*` → `border-border`
+- `border-red-*` → `border-destructive/30`
+
+### Prioridade
+
+Iniciar pelos componentes mais vistos (Dashboard, Kanban, Analytics, Goals) e avancar para os menos frequentes. Todos os 63 arquivos serao tratados para eliminar completamente a poluicao visual.
+
+### Detalhes Tecnicos
+
+- Nenhuma dependencia nova necessaria
+- Todas as cores de substituicao ja existem como CSS variables em `index.css`
+- O `StatusBadge` do squad-ui ja segue o padrao correto e pode ser reutilizado onde badges aparecem nos sub-componentes
 

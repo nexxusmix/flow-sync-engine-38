@@ -145,8 +145,8 @@ export default function CRMPage() {
             Pipeline <span className="squad-logo-text font-normal text-muted-foreground">Comercial</span>
           </h1>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Live Sync</span>
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-black text-primary uppercase tracking-wider">Live Sync</span>
           </div>
         </div>
 
@@ -183,8 +183,8 @@ export default function CRMPage() {
             {/* Temperature Filters */}
             <div className="flex items-center gap-1">
               {[
-                { key: 'hot', label: 'Quente', icon: Flame, color: 'text-red-500' },
-                { key: 'warm', label: 'Morno', icon: ThermometerSun, color: 'text-amber-500' },
+                { key: 'hot', label: 'Quente', icon: Flame, color: 'text-primary' },
+                { key: 'warm', label: 'Morno', icon: ThermometerSun, color: 'text-muted-foreground' },
                 { key: 'cold', label: 'Frio', icon: Snowflake, color: 'text-blue-400' },
               ].map(t => (
                 <button
