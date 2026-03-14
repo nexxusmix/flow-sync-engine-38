@@ -121,28 +121,28 @@ export default function Dashboard() {
     <DashboardLayout title="Dashboard">
       <OnboardingDialog open={shouldShow} onClose={dismiss} />
       
-      <div className="space-y-10 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
+      <div className="space-y-6 md:space-y-10 max-w-[1600px] 2xl:max-w-[1800px] mx-auto">
         {/* Header Title */}
         <motion.div 
-          className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6"
+          className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 md:gap-6"
           initial={{ opacity: 0, y: -20, filter: "blur(4px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.8, type: "spring", stiffness: 80 }}
         >
           <motion.div 
-            className="flex items-center gap-4"
+            className="flex items-center gap-3 md:gap-4"
             whileHover={{ scale: 1.02 }}
           >
             <motion.img 
               src={squadLogo} 
               alt="SQUAD Hub" 
-              className="w-10 h-10 object-contain"
+              className="w-8 h-8 md:w-10 md:h-10 object-contain"
               initial={{ opacity: 0, scale: 0.5, filter: "blur(4px)" }}
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               transition={{ type: "spring" as const, stiffness: 150, damping: 15, delay: 0.1 }}
             />
             <motion.h1 
-              className="text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground"
+              className="text-2xl sm:text-4xl md:text-6xl font-normal uppercase tracking-tighter text-foreground"
               initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
               animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
               transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
