@@ -918,14 +918,14 @@ export default function ContractDetailPage() {
               ) : (
                 <div className="space-y-3">
                   {signatures.map((sig) => (
-                    <div key={sig.id} className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <div key={sig.id} className="p-4 rounded-lg bg-primary/10 border border-primary/30">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Check className="w-4 h-4 text-emerald-500" />
-                          <span className="font-medium text-emerald-500">Assinado</span>
+                          <Check className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-primary">Assinado</span>
                         </div>
                         {(sig as any).provider === 'govbr' && (
-                          <Badge className="bg-emerald-500/20 text-emerald-500 text-xs">
+                          <Badge className="bg-primary/20 text-primary text-xs">
                             gov.br (ICP-Brasil)
                           </Badge>
                         )}
