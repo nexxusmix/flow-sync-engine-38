@@ -181,7 +181,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
             <h2 className="text-2xl font-bold text-foreground mb-6">💡 Aprendizados</h2>
             <div className="space-y-4 flex-1 flex flex-col justify-center">
               <Card className="p-4 bg-card/50 border-border/30">
-                <h4 className="text-sm font-semibold text-emerald-400 mb-2">✅ O que funcionou</h4>
+                <h4 className="text-sm font-semibold text-primary mb-2">✅ O que funcionou</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   {Object.entries(pillars).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k, v]) => (
                     <li key={k}>• Pilar "{PILLARS.find(p => p.key === k)?.label || k}" com {v} posts</li>
