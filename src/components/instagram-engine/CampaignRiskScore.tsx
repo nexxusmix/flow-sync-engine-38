@@ -147,11 +147,11 @@ export function CampaignRiskScore({ campaign, posts }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {item.score === 0 ? (
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
                   ) : item.score >= 50 ? (
-                    <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                    <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />
                   ) : (
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                   )}
                   <span className="text-xs font-medium text-foreground truncate">{item.postTitle}</span>
                 </div>

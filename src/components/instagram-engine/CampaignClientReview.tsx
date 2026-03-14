@@ -201,9 +201,9 @@ export function CampaignClientReview({ campaign, posts }: Props) {
               return (
                 <div key={postId} className="flex items-center gap-2">
                   {review.status === 'approved' ? (
-                    <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <CheckCircle className="w-3 h-3 text-primary shrink-0" />
                   ) : (
-                    <XCircle className="w-3 h-3 text-red-400 shrink-0" />
+                    <XCircle className="w-3 h-3 text-destructive shrink-0" />
                   )}
                   <span className="text-xs text-foreground truncate flex-1">{post?.title || postId}</span>
                   {review.comment && (

@@ -265,11 +265,11 @@ export function CampaignCollaboration({ campaign, posts }: Props) {
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="outline" className="text-[9px] h-6 gap-1"
                       onClick={() => handleSendComment('approval')} disabled={sending}>
-                      <ThumbsUp className="w-3 h-3 text-emerald-400" /> Aprovar
+                      <ThumbsUp className="w-3 h-3 text-primary" /> Aprovar
                     </Button>
                     <Button size="sm" variant="outline" className="text-[9px] h-6 gap-1"
                       onClick={() => handleSendComment('revision')} disabled={sending}>
-                      <ThumbsDown className="w-3 h-3 text-amber-400" /> Revisão
+                      <ThumbsDown className="w-3 h-3 text-muted-foreground" /> Revisão
                     </Button>
                   </div>
                   <Button size="sm" className="text-[9px] h-6 gap-1" onClick={() => handleSendComment()} disabled={!commentText.trim() || sending}>

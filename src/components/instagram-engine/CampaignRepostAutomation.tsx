@@ -201,8 +201,8 @@ export function CampaignRepostAutomation({ campaign, posts }: Props) {
                   <AnimatePresence>
                     {variation && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-2 mb-2">
-                        <div className="p-2 bg-teal-500/5 rounded-lg border border-teal-500/20">
-                          <span className="text-[7px] text-teal-400 uppercase">Nova variação</span>
+                        <div className="p-2 bg-primary/5 rounded-lg border border-primary/20">
+                          <span className="text-[7px] text-primary uppercase">Nova variação</span>
                           <p className="text-[9px] text-foreground/80 font-medium">{variation.hook}</p>
                           <p className="text-[8px] text-foreground/60 mt-1">{variation.caption}</p>
                         </div>
