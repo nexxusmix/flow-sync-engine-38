@@ -222,6 +222,34 @@ export const instagramAbTest = lightAction(
   'content_item',
 );
 
+export const instagramFetchInsights = lightAction(
+  'instagram.fetchInsights',
+  'Buscar Insights Instagram',
+  'Coleta métricas e insights de posts publicados',
+  'instagram_post',
+);
+
+export const instagramScrapeProfile = lightAction(
+  'instagram.scrapeProfile',
+  'Analisar Perfil Instagram',
+  'Extrai dados e métricas de um perfil do Instagram',
+  'instagram_profile',
+);
+
+export const instagramExportPost = lightAction(
+  'instagram.exportPost',
+  'Exportar Post Instagram',
+  'Gera arquivo exportável do post com copy e mídia',
+  'instagram_post',
+);
+
+export const instagramPublish = lightAction(
+  'instagram.publish',
+  'Publicar no Instagram',
+  'Publica conteúdo diretamente no Instagram via Graph API',
+  'instagram_post',
+);
+
 // --- Tasks ---
 export const tasksDailySummary = lightAction(
   'tasks.dailySummary',
@@ -251,6 +279,55 @@ export const tasksDetectDuplicates = lightAction(
   'tasks',
 );
 
+export const tasksGenerateAutomations = lightAction(
+  'tasks.generateAutomations',
+  'Gerar Automações de Tarefa',
+  'Cria regras de automação baseadas no padrão de uso',
+  'task',
+);
+
+export const tasksGenerateTemplates = lightAction(
+  'tasks.generateTemplates',
+  'Gerar Templates de Tarefa',
+  'Cria templates reutilizáveis baseados em tarefas existentes',
+  'tasks',
+);
+
+export const tasksFromText = lightAction(
+  'tasks.fromText',
+  'Tarefas de Texto Livre',
+  'Extrai e cria tarefas a partir de texto não estruturado',
+  'tasks',
+);
+
+export const tasksSuggestDeadline = lightAction(
+  'tasks.suggestDeadline',
+  'Sugerir Prazo',
+  'Sugere deadline ideal baseado em complexidade e histórico',
+  'task',
+);
+
+export const tasksSuggestPriorities = lightAction(
+  'tasks.suggestPriorities',
+  'Sugerir Prioridades',
+  'Reavalia e sugere prioridades para lista de tarefas',
+  'tasks',
+);
+
+export const tasksAnalyze = lightAction(
+  'tasks.analyze',
+  'Analisar Tarefas',
+  'Análise inteligente de carga, gargalos e distribuição',
+  'tasks',
+);
+
+export const tasksSearch = lightAction(
+  'tasks.search',
+  'Busca Inteligente de Tarefas',
+  'Busca semântica com IA em todas as tarefas',
+  'tasks',
+);
+
 // --- Projects ---
 export const projectsExtractDocument = lightAction(
   'projects.extractDocument',
@@ -263,6 +340,48 @@ export const projectsGenerateInsights = lightAction(
   'projects.generateInsights',
   'Insights do Projeto',
   'Gera análise de saúde, riscos e recomendações para o projeto',
+  'project',
+);
+
+export const projectsGenerateArt = lightAction(
+  'projects.generateArt',
+  'Gerar Arte do Projeto',
+  'Cria arte visual / thumbnail para o projeto',
+  'project',
+);
+
+export const projectsRepurpose = lightAction(
+  'projects.repurpose',
+  'Reprocessar Projeto',
+  'Gera derivações e aproveitamentos de um projeto existente',
+  'project',
+);
+
+export const projectsAutoUpdate = lightAction(
+  'projects.autoUpdate',
+  'Atualização Automática',
+  'Preenche campos do projeto automaticamente com IA',
+  'project',
+);
+
+export const projectsExecutionPlan = lightAction(
+  'projects.executionPlan',
+  'Plano de Execução',
+  'Gera plano de execução com blocos e cronograma',
+  'project',
+);
+
+export const projectsExecutionBlocks = lightAction(
+  'projects.executionBlocks',
+  'Blocos de Execução',
+  'Gera blocos de trabalho detalhados para o projeto',
+  'project',
+);
+
+export const projectsNextSteps = lightAction(
+  'projects.nextSteps',
+  'Próximos Passos',
+  'Sugere próximos passos baseado no estado atual do projeto',
   'project',
 );
 
@@ -281,6 +400,20 @@ export const contractsExtractFromFile = lightAction(
   'contract',
 );
 
+export const contractsGenerateMilestones = lightAction(
+  'contracts.generateMilestones',
+  'Gerar Milestones de Contrato',
+  'Cria marcos e entregas baseados no escopo do contrato',
+  'contract',
+);
+
+export const contractsScanSignatures = lightAction(
+  'contracts.scanSignatures',
+  'Verificar Assinaturas',
+  'Escaneia documento em busca de assinaturas válidas',
+  'contract',
+);
+
 // --- CRM ---
 export const crmScoreLead = lightAction(
   'crm.scoreLead',
@@ -293,6 +426,27 @@ export const crmGenerateMessage = lightAction(
   'crm.generateMessage',
   'Gerar Mensagem para Cliente',
   'Gera mensagem personalizada para envio ao cliente',
+  'client',
+);
+
+export const crmInteractionSummary = lightAction(
+  'crm.interactionSummary',
+  'Resumo de Interações',
+  'Resume histórico de interações com o cliente',
+  'client',
+);
+
+export const crmClientFromProject = lightAction(
+  'crm.clientFromProject',
+  'Cliente a partir de Projeto',
+  'Cria registro de cliente com dados extraídos do projeto',
+  'project',
+);
+
+export const crmScrapeUrl = lightAction(
+  'crm.scrapeUrl',
+  'Analisar Site do Cliente',
+  'Extrai dados de negócio do site/URL do cliente',
   'client',
 );
 
@@ -311,6 +465,55 @@ export const creativeStoryboard = lightAction(
   'content_item',
 );
 
+export const creativeScript = lightAction(
+  'creative.script',
+  'Gerar Roteiro',
+  'Gera roteiro completo com shotlist e variações de legenda',
+  'content_item',
+);
+
+export const creativeCaptions = lightAction(
+  'creative.captions',
+  'Gerar Legendas',
+  'Gera variações de legenda otimizadas para engajamento',
+  'content_item',
+);
+
+export const creativeStudioBlock = lightAction(
+  'creative.studioBlock',
+  'Gerar Bloco Criativo',
+  'Gera bloco individual do pacote criativo (brief, copy, roteiro)',
+  'creative_block',
+);
+
+export const creativeLogoVariations = lightAction(
+  'creative.logoVariations',
+  'Variações de Logo',
+  'Gera variações e adaptações do logo para diferentes formatos',
+  'brand',
+);
+
+export const creativeExtractVisualAssets = lightAction(
+  'creative.extractVisualAssets',
+  'Extrair Assets Visuais',
+  'Extrai e cataloga assets visuais de arquivos enviados',
+  'project',
+);
+
+export const creativeGenerateImage = lightAction(
+  'creative.generateImage',
+  'Gerar Imagem IA',
+  'Gera imagem a partir de prompt textual',
+  'content_item',
+);
+
+export const creativeTranscribeMedia = lightAction(
+  'creative.transcribeMedia',
+  'Transcrever Mídia',
+  'Transcreve áudio/vídeo para texto editável',
+  'media',
+);
+
 // --- Marketing ---
 export const marketingGenerate30DayPlan = lightAction(
   'marketing.generate30DayPlan',
@@ -324,6 +527,34 @@ export const marketingGenerateFromTemplate = lightAction(
   'Gerar de Template',
   'Gera conteúdo a partir de template existente',
   'content_item',
+);
+
+export const marketingContentSuggestions = lightAction(
+  'marketing.contentSuggestions',
+  'Sugestões de Conteúdo',
+  'Gera sugestões de conteúdo baseadas em tendências e histórico',
+  'content_plan',
+);
+
+export const marketingContentAi = lightAction(
+  'marketing.contentAi',
+  'Conteúdo com IA',
+  'Geração inteligente de conteúdo completo para publicação',
+  'content_item',
+);
+
+export const marketingExportCampaignPdf = lightAction(
+  'marketing.exportCampaignPdf',
+  'Exportar Campanha PDF',
+  'Gera PDF completo do planejamento de campanha',
+  'campaign',
+);
+
+export const marketingGenerateProposal = lightAction(
+  'marketing.generateProposal',
+  'Gerar Proposta',
+  'Gera proposta comercial completa com escopo e valores',
+  'proposal',
 );
 
 // --- Knowledge ---
@@ -340,6 +571,94 @@ export const prospectingGenerate = lightAction(
   'Gerar Prospecção',
   'Gera lista de prospects e mensagens de abordagem com IA',
   'prospect',
+);
+
+export const prospectingTts = lightAction(
+  'prospecting.tts',
+  'Áudio de Prospecção',
+  'Gera áudio personalizado para abordagem de prospect',
+  'prospect',
+);
+
+export const prospectingScoutCopy = lightAction(
+  'prospecting.scoutCopy',
+  'Copy de Scout',
+  'Gera texto de prospecção otimizado para conversão',
+  'prospect',
+);
+
+// --- Alerts ---
+export const alertsComposeAi = lightAction(
+  'alerts.composeAi',
+  'Compor Alerta IA',
+  'Gera alerta inteligente baseado em eventos do sistema',
+  'alert',
+);
+
+export const alertsGenerateWhatsapp = lightAction(
+  'alerts.generateWhatsapp',
+  'Gerar WhatsApp de Alerta',
+  'Cria mensagem WhatsApp formatada a partir de alerta',
+  'alert',
+);
+
+export const alertsGenerateActionMessage = lightAction(
+  'alerts.generateActionMessage',
+  'Mensagem de Ação',
+  'Gera mensagem de ação baseada no contexto do alerta',
+  'action_item',
+);
+
+// --- Finance ---
+export const financeSyncProject = lightAction(
+  'finance.syncProject',
+  'Sincronizar Finanças',
+  'Sincroniza dados financeiros do projeto automaticamente',
+  'project',
+);
+
+export const financeExecInsights = lightAction(
+  'finance.execInsights',
+  'Insights Executivos',
+  'Gera análise executiva de performance financeira',
+  'workspace',
+);
+
+// --- Files ---
+export const filesClassify = lightAction(
+  'files.classify',
+  'Classificar Arquivo',
+  'Classifica tipo e conteúdo de arquivo enviado com IA',
+  'file',
+);
+
+export const filesFillMaterials = lightAction(
+  'files.fillMaterials',
+  'Preencher Materiais',
+  'Auto-preenche lista de materiais a partir de arquivos do projeto',
+  'project',
+);
+
+export const filesTemplateFields = lightAction(
+  'files.templateFields',
+  'Detectar Campos de Template',
+  'Identifica campos variáveis em templates de documento',
+  'template',
+);
+
+// --- Agent / Copilot ---
+export const agentChat = lightAction(
+  'agent.chat',
+  'Chat com Copilot',
+  'Conversa livre com o assistente IA do workspace',
+  'conversation',
+);
+
+export const agentExecute = lightAction(
+  'agent.execute',
+  'Executar Ação do Copilot',
+  'Executa plano de ação gerado pelo copilot',
+  'agent_run',
 );
 
 // ============================================
