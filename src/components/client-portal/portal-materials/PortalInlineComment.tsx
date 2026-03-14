@@ -305,12 +305,12 @@ function PortalInlineCommentComponent({
               size="sm"
               className={cn(
                 "h-8 text-xs",
-                mode === 'approve' && "bg-emerald-500 hover:bg-emerald-600",
+                mode === 'approve' && "bg-primary hover:bg-primary/90",
                 mode === 'revision' && priority === 'urgent' 
-                  ? "bg-red-500 hover:bg-red-600"
+                  ? "bg-destructive hover:bg-destructive/90"
                   : mode === 'revision' && priority === 'high'
-                    ? "bg-amber-500 hover:bg-amber-600"
-                    : mode === 'revision' && "bg-cyan-500 hover:bg-cyan-600"
+                    ? "bg-muted-foreground hover:bg-muted-foreground/90"
+                    : mode === 'revision' && "bg-primary hover:bg-primary/90"
               )}
               onClick={handleSubmit}
               disabled={isPending || !authorName.trim() || (mode !== 'approve' && !comment.trim())}
