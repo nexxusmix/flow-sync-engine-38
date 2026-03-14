@@ -435,7 +435,12 @@ function ClientUploadDialogComponent({
               <AnimatePresence>
                 {linkMode && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                    <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder={linkMode === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://drive.google.com/...'} className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500" />
+                    <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder={linkMode === 'youtube' ? 'https://youtube.com/watch?v=...' : linkMode === 'drive' ? 'https://drive.google.com/file/d/...' : 'https://...'} className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500" />
+                    {linkMode === 'drive' && linkUrl && isGoogleDriveUrl(linkUrl) && getDriveThumbnail(linkUrl) && (
+                      <div className="w-full h-24 rounded overflow-hidden bg-white/5 border border-green-500/20">
+                        <img src={getDriveThumbnail(linkUrl)!} alt="Preview" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <Input value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Título (opcional)" className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500 flex-1" />
                       <Button size="sm" onClick={addLink} className="bg-cyan-500 hover:bg-cyan-600 text-black rounded-none shrink-0">
