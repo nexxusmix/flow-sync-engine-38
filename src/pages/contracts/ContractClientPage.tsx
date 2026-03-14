@@ -271,7 +271,7 @@ export default function ContractClientPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h1 className="text-xl font-medium text-foreground mb-2">
             {error || "Contrato não encontrado"}
           </h1>
