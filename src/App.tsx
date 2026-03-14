@@ -127,6 +127,7 @@ import MkIdeasPage from "./pages/marketing-hub/MkIdeasPage";
 import InstagramEnginePage from "./pages/InstagramEnginePage";
 import AgencyAutomationsPage from "./pages/AgencyAutomationsPage";
 import AIGovernanceDashboardPage from "./pages/AIGovernanceDashboardPage";
+import PlaybooksPage from "./pages/PlaybooksPage";
 
 const queryClient = new QueryClient();
 
