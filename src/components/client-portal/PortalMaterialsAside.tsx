@@ -148,8 +148,8 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
               file.file_url && "cursor-pointer"
             )}
           >
-            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-purple-400" style={{ fontSize: 20 }}>
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary/70" style={{ fontSize: 20 }}>
                 folder_zip
               </span>
             </div>
