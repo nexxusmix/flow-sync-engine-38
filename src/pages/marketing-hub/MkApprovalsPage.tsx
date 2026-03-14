@@ -243,7 +243,7 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
 
   const statusVariant = item.status === "approved" ? "emerald"
-    : item.status === "review" ? "amber"
+    : item.status === "review" ? "slate"
     : item.status === "editing" ? "blue"
     : "slate";
 

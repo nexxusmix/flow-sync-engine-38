@@ -572,10 +572,10 @@ function ContentDetailDialog({ item, onClose }: { item: ContentItem | null; onCl
 
           {/* Best time suggestion */}
           {bestTimes && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 flex items-start gap-3">
-              <Sparkles className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+            <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3 flex items-start gap-3">
+              <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <div>
-                <span className="text-xs font-medium text-amber-400">Melhor horário para {channel?.name}</span>
+                <span className="text-xs font-medium text-primary">Melhor horário para {channel?.name}</span>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   Horários com maior engajamento: <strong className="text-foreground/70">{bestTimes.label}</strong>
                 </p>

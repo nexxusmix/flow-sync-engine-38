@@ -593,7 +593,7 @@ function OutputCard({ title, icon, children, onCopy, copied }: {
           onClick={onCopy}
           className="flex items-center gap-1 text-[9px] text-white/20 hover:text-white/50 transition-colors"
         >
-          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
           {copied ? "Copiado" : "Copiar"}
         </button>
       </div>
