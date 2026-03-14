@@ -76,7 +76,7 @@ function DeliverableCard({
               </Badge>
             )}
             {isApproved && (
-              <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 text-mono">
+              <Badge variant="outline" className="text-primary border-primary/30 text-mono">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Aprovado
               </Badge>
