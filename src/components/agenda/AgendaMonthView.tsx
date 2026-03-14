@@ -79,11 +79,14 @@ export function AgendaMonthView({ currentDate, events, onDateClick, onEventClick
                 {dayEvents.slice(0, 3).map(event => (
                   <div
                     key={event.id}
-                    className="text-[10px] px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80"
+                    className="text-[10px] px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 flex items-center gap-0.5"
                     style={{ backgroundColor: event.color + "20", color: event.color, borderLeft: `2px solid ${event.color}` }}
                     onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
                   >
-                    {event.title}
+                    {event.source === "google" && (
+                      <span className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-blue-500/20 text-blue-600 text-[7px] font-bold flex-shrink-0" title="Google Calendar">G</span>
+                    )}
+                    <span className="truncate">{event.title}</span>
                   </div>
                 ))}
                 {dayEvents.length > 3 && (

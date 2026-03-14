@@ -22,6 +22,8 @@ export interface DBCalendarEvent {
   workspace_id: string;
   created_at: string | null;
   updated_at: string | null;
+  source?: string;
+  google_event_id?: string | null;
 }
 
 export interface CreateEventInput {

@@ -161,9 +161,18 @@ export default function AgendaPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/configuracoes/integracoes")}>
+            <Button variant="outline" size="sm" onClick={async () => {
+              try {
+                const { data, error } = await (await import("@/integrations/supabase/client")).supabase.functions.invoke("google-calendar-sync", { body: { action: "sync" } });
+                if (error) throw error;
+                refetch();
+                (await import("sonner")).toast.success("Google Calendar sincronizado!");
+              } catch {
+                (await import("sonner")).toast.error("Erro ao sincronizar. Verifique a conexão em Integrações.");
+              }
+            }}>
               <RefreshCw className="w-4 h-4 mr-1" />
-              Google Sync
+              Sincronizar Google
             </Button>
             <Button size="sm" onClick={() => { setEditingEvent(null); setSelectedDate(new Date()); setShowEventForm(true); }}>
               <Plus className="w-4 h-4 mr-1" />
