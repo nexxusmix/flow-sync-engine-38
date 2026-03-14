@@ -474,7 +474,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                     <button
                       onClick={handleSaveValue}
                       disabled={isSavingValue}
-                      className="text-emerald-500 hover:text-emerald-400 p-0.5"
+                      className="text-primary hover:text-primary/80 p-0.5"
                     >
                       {isSavingValue ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                     </button>
