@@ -1,82 +1,65 @@
 
 
-# IA — Registry, Daily Summary Actions e Dashboard de Consumo
+## Padronizacao de Cores — Campanhas Instagram
 
-## Situação Atual
+### Diagnostico
 
-- **AI_ACTIONS_REGISTRY** tem apenas 3 ações (`marketing.generateCopy`, `marketing.generateIdeas`, `projects.generateBrief`), mas existem **~60 Edge Functions de IA** que chamam o shared `ai-client.ts` sem registro.
-- **Daily Summary** é read-only — gera texto resumo mas não oferece ações executáveis.
-- **Dashboard de Governança** (`/ai-governance`) já existe com métricas de `ai_runs` + `ai_usage_events`, mas é voltado para admin/auditoria, não para o usuário ver seus próprios créditos.
+**1.328 ocorrencias** de cores poluidas (`emerald`, `amber`, `red`, `green`, `purple`, `teal`, etc.) espalhadas em **63 arquivos** de sub-componentes de campanha. O `CampaignsTab.tsx` principal ja esta limpo com a paleta Sonance, mas todos os componentes internos ainda usam cores semanticas hardcoded.
 
-## Plano
+### Mapeamento de Substituicao
 
-### 1. Registrar Edge Functions no AI_ACTIONS_REGISTRY
+A paleta SQUAD e estritamente **azul (#009CCA) + branco + cinza**. Vermelho reservado **apenas** para erros/destrutivo.
 
-Adicionar definições para as principais categorias de IA que ainda não estão no registry. Isso alimenta o dashboard de governança, histórico e auditoria.
+```text
+ANTES                    →  DEPOIS (Sonance)
+─────────────────────────────────────────────
+emerald-400/500          →  primary (azul)
+green-400/500            →  primary (azul)
+amber-400/500            →  muted-foreground (cinza)
+yellow-400/500           →  muted-foreground (cinza)
+orange-400/500           →  muted-foreground (cinza)
+purple-400/500           →  primary/70 (azul medio)
+violet-400/500           →  primary/70 (azul medio)
+pink-400/500             →  primary/50 (azul claro)
+teal-400/500             →  primary (azul)
+indigo-400/500           →  primary (azul)
+red-400/500 (sucesso)    →  primary (azul)
+red-400/500 (erro real)  →  destructive (manter)
+```
 
-**Novas ações a registrar em `src/ai/actions.ts`:**
+### Abordagem
 
-| Key | Edge Function | Descrição |
-|-----|--------------|-----------|
-| `instagram.generateCampaign` | `instagram-ai` (action: generate_campaign) | Gerar estratégia de campanha |
-| `instagram.generatePost` | `generate-content-ai` | Gerar conteúdo de post |
-| `instagram.abTest` | `instagram-ai` (action: ab_test) | Teste A/B de copy |
-| `tasks.dailySummary` | `daily-task-summary` | Resumo diário de tarefas |
-| `tasks.suggestPlan` | `suggest-daily-plan` | Plano do dia IA |
-| `tasks.refine` | `refine-task-ai` | Refinar tarefa com IA |
-| `tasks.detectDuplicates` | `detect-duplicate-tasks` | Detectar duplicatas |
-| `projects.extractDocument` | `extract-project-from-document` | Extrair projeto de documento |
-| `projects.generateInsights` | `generate-project-insights` | Insights do projeto |
-| `contracts.generateText` | `generate-contract-text` | Gerar texto de contrato |
-| `contracts.extractFromFile` | `extract-contract-from-file` | Extrair contrato de arquivo |
-| `crm.scoreLead` | `score-lead` | Scoring de lead |
-| `crm.generateMessage` | `generate-client-message` | Gerar mensagem para cliente |
-| `creative.studio` | `creative-studio` | Pacote criativo |
-| `creative.storyboard` | `generate-storyboard-ai` | Gerar storyboard |
-| `marketing.generate30DayPlan` | `generate-30day-plan` | Plano 30 dias |
-| `marketing.generateFromTemplate` | `generate-from-template` | Gerar de template |
-| `knowledge.assistant` | `knowledge-assistant` | Assistente de conhecimento |
-| `prospecting.generate` | `prospect-ai-generate` | Gerar prospecção |
+Dado o volume (63 arquivos, 1328 ocorrencias), a refatoracao sera feita em **lotes por categoria** do mega-menu:
 
-Também atualizar `ACTION_PROMPTS` e `ACTION_TOOLS` no `ai-run/index.ts` para as novas ações que devem ser roteadas pelo handler unificado.
+1. **Producao** (6 componentes): Kanban, Approval, ApprovalPipeline, PublishQueue, FeedPreview, Timeline
+2. **Calendario** (6 componentes): Calendar, UnifiedCalendar, GanttTimeline, TimingOptimizer, HolidayCalendar, Seasonal
+3. **Analytics** (7 componentes): AnalyticsAdvanced, ROI, Heatmap, HealthScore, VelocityTracker, SentimentAnalysis, MoodTracker
+4. **Estrategia** (8 componentes): Goals, FunnelView, ContentFunnel, ContentMap, PersonaMap, CustomerJourney, StoryArc, DNA
+5. **IA Tools** (14 componentes): SmartAlerts, ResultsSimulator, AutoPlanner, BriefingGenerator, AdsCopy, Spin, Hashtags, HashtagIntel, ABTesting, ABTestFramework, RiskScore, ContentGap, PitchDeck, BudgetAllocator
+6. **Colaboracao** (5 componentes): Collaboration, CollaborationBoard, ClientReview, WarRoom, AudienceHeatmap
+7. **Exportar** (16 componentes): PDFReport, Compare, CrossComparator, PostMortem, Autopsy, Cloner, SwipeFiles, RepostAutomation, ContentRecycling, SplitContent, CompetitorTracker, CompetitorShadow, MicroBlitz, MoodBoard, Alerts, Changelog
 
-### 2. Daily Summary — Ações Autônomas
+### Regras de Substituicao
 
-Expandir o componente `TaskAIDailySummary` e a Edge Function `daily-task-summary` para retornar **ações sugeridas** além do texto resumo.
+Para cada arquivo:
+- `text-emerald-*` / `bg-emerald-*` → `text-primary` / `bg-primary/15`
+- `text-green-*` / `bg-green-*` → `text-primary` / `bg-primary/15`
+- `text-amber-*` / `bg-amber-*` → `text-muted-foreground` / `bg-muted`
+- `text-yellow-*` / `bg-yellow-*` → `text-muted-foreground` / `bg-muted`
+- `text-red-*` / `bg-red-*` para estados de erro/rejeicao → `text-destructive` / `bg-destructive/15` (manter)
+- `text-red-*` / `bg-red-*` para intensidade/climax → `text-primary` / `bg-primary/20`
+- `text-purple-*` / `bg-purple-*` → `text-primary/70` / `bg-primary/10`
+- `border-emerald-*` → `border-primary/30`
+- `border-amber-*` → `border-border`
+- `border-red-*` → `border-destructive/30`
 
-**Mudanças na Edge Function `daily-task-summary`:**
-- Adicionar ao prompt que a IA deve retornar um array `suggested_actions` com tipo, label, e dados (ex: `{ type: 'send_message', label: 'Cobrar cliente X', data: { client_id, template } }`)
-- Tipos de ações: `send_message` (WhatsApp), `schedule_meeting` (criar evento), `generate_proposal` (gerar proposta), `create_task` (criar tarefa), `mark_done` (concluir tarefa)
+### Prioridade
 
-**Mudanças no componente `TaskAIDailySummary.tsx`:**
-- Renderizar botões de ação abaixo do resumo
-- Cada botão executa a ação correspondente (invocar edge function, navegar, ou abrir modal)
-- Ícones contextuais por tipo de ação (MessageSquare, Calendar, FileText, CheckCircle)
+Iniciar pelos componentes mais vistos (Dashboard, Kanban, Analytics, Goals) e avancar para os menos frequentes. Todos os 63 arquivos serao tratados para eliminar completamente a poluicao visual.
 
-**Novas Edge Functions / reutilização:**
-- `send_message` → reutiliza `generate-alert-whatsapp`
-- `schedule_meeting` → cria entrada na tabela de eventos/tarefas com tipo "reunião"
-- `generate_proposal` → reutiliza `generate-proposal`
-- `create_task` / `mark_done` → operações diretas no Supabase client
+### Detalhes Tecnicos
 
-### 3. Dashboard de Consumo para o Usuário
-
-Criar uma seção acessível em `/configuracoes` (ou dentro do painel de IA existente) com visão simplificada do consumo pessoal.
-
-**Novo componente `AIUsageDashboardUser.tsx`:**
-- Cards: total de chamadas no mês, tokens consumidos, custo estimado
-- Gráfico de barras simples (uso diário nos últimos 30 dias)
-- Lista das últimas 20 ações executadas com status
-- Filtro por `user_id` do usuário logado (diferente do admin que vê tudo)
-
-**Integração:** Adicionar como nova aba ou card na página de configurações ou como sub-rota `/configuracoes/meu-uso-ia`.
-
----
-
-**Arquivos principais afetados:**
-- `src/ai/actions.ts` — ~18 novas definições
-- `supabase/functions/daily-task-summary/index.ts` — prompt expandido + actions
-- `src/components/tasks/TaskAIDailySummary.tsx` — botões de ação
-- Novo: `src/components/settings/AIUsageDashboardUser.tsx`
-- `src/pages/settings/` — integração da nova view
+- Nenhuma dependencia nova necessaria
+- Todas as cores de substituicao ja existem como CSS variables em `index.css`
+- O `StatusBadge` do squad-ui ja segue o padrao correto e pode ser reutilizado onde badges aparecem nos sub-componentes
 

@@ -6,8 +6,9 @@ import { ptBR } from "date-fns/locale";
 import {
   Brain, Clock, CheckCircle2, XCircle, Zap, TrendingUp,
   BarChart3, Activity, Loader2, RotateCcw, Search, Filter,
-  ArrowUpDown, Copy, Eye, ChevronRight
+  ArrowUpDown, Copy, Eye, ChevronRight, User, Users
 } from "lucide-react";
+import { getAiActionLabel } from "@/ai/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,14 @@ export default function AiUsageDashboardPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [periodDays, setPeriodDays] = useState(30);
   const [selectedRun, setSelectedRun] = useState<AiRun | null>(null);
+  const [viewMode, setViewMode] = useState<"mine" | "all">("mine");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
 
   useEffect(() => {
     fetchRuns();
@@ -80,22 +89,28 @@ export default function AiUsageDashboardPage() {
     setIsLoading(false);
   };
 
+  // Filter by user when in "mine" mode
+  const scopedRuns = useMemo(() => {
+    if (viewMode === "all" || !currentUserId) return runs;
+    return runs.filter(r => r.user_id === currentUserId);
+  }, [runs, viewMode, currentUserId]);
+
   // ─── Computed Stats ──────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const total = runs.length;
-    const success = runs.filter(r => r.status === "success").length;
-    const errors = runs.filter(r => r.status === "error").length;
-    const durations = runs.filter(r => r.duration_ms).map(r => r.duration_ms!);
+    const total = scopedRuns.length;
+    const success = scopedRuns.filter(r => r.status === "success").length;
+    const errors = scopedRuns.filter(r => r.status === "error").length;
+    const durations = scopedRuns.filter(r => r.duration_ms).map(r => r.duration_ms!);
     const avgDuration = durations.length
       ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
       : 0;
-    const totalInputTokens = runs.reduce((s, r) => s + estimateTokens(r.input_json), 0);
-    const totalOutputTokens = runs.reduce((s, r) => s + estimateTokens(r.output_json), 0);
+    const totalInputTokens = scopedRuns.reduce((s, r) => s + estimateTokens(r.input_json), 0);
+    const totalOutputTokens = scopedRuns.reduce((s, r) => s + estimateTokens(r.output_json), 0);
     const totalTokens = totalInputTokens + totalOutputTokens;
     const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
 
     return { total, success, errors, avgDuration, totalTokens, totalInputTokens, totalOutputTokens, successRate };
-  }, [runs]);
+  }, [scopedRuns]);
 
   // ─── Daily Chart Data ────────────────────────────────────────────────
   const dailyData = useMemo(() => {
@@ -105,7 +120,7 @@ export default function AiUsageDashboardPage() {
       const d = startOfDay(subDays(new Date(), i));
       buckets.push({ date: format(d, "dd/MM"), count: 0, tokens: 0, errors: 0 });
     }
-    runs.forEach(r => {
+    scopedRuns.forEach(r => {
       const dayIdx = days - 1 - differenceInCalendarDays(new Date(), parseISO(r.created_at));
       if (dayIdx >= 0 && dayIdx < buckets.length) {
         buckets[dayIdx].count++;
@@ -114,7 +129,7 @@ export default function AiUsageDashboardPage() {
       }
     });
     return buckets;
-  }, [runs, periodDays]);
+  }, [scopedRuns, periodDays]);
 
   const maxCount = Math.max(...dailyData.map(d => d.count), 1);
   const maxTokens = Math.max(...dailyData.map(d => d.tokens), 1);
@@ -122,7 +137,7 @@ export default function AiUsageDashboardPage() {
   // ─── Actions Breakdown ───────────────────────────────────────────────
   const actionBreakdown = useMemo(() => {
     const map = new Map<string, { count: number; tokens: number; errors: number; avgMs: number }>();
-    runs.forEach(r => {
+    scopedRuns.forEach(r => {
       const existing = map.get(r.action_key) || { count: 0, tokens: 0, errors: 0, avgMs: 0 };
       existing.count++;
       existing.tokens += estimateTokens(r.input_json) + estimateTokens(r.output_json);
@@ -131,13 +146,13 @@ export default function AiUsageDashboardPage() {
       map.set(r.action_key, existing);
     });
     return [...map.entries()]
-      .map(([key, v]) => ({ key, ...v, avgMs: v.count > 0 ? Math.round(v.avgMs / v.count) : 0 }))
+      .map(([key, v]) => ({ key, label: getAiActionLabel(key), ...v, avgMs: v.count > 0 ? Math.round(v.avgMs / v.count) : 0 }))
       .sort((a, b) => b.count - a.count);
-  }, [runs]);
+  }, [scopedRuns]);
 
   // ─── Filtered Runs ───────────────────────────────────────────────────
   const filteredRuns = useMemo(() => {
-    let result = runs;
+    let result = scopedRuns;
     if (filterAction !== "all") result = result.filter(r => r.action_key === filterAction);
     if (filterStatus !== "all") result = result.filter(r => r.status === filterStatus);
     if (search) {
@@ -148,9 +163,9 @@ export default function AiUsageDashboardPage() {
       );
     }
     return result;
-  }, [runs, filterAction, filterStatus, search]);
+  }, [scopedRuns, filterAction, filterStatus, search]);
 
-  const uniqueActions = useMemo(() => [...new Set(runs.map(r => r.action_key))], [runs]);
+  const uniqueActions = useMemo(() => [...new Set(scopedRuns.map(r => r.action_key))], [scopedRuns]);
 
   return (
     <DashboardLayout title="Uso de IA">
@@ -165,6 +180,24 @@ export default function AiUsageDashboardPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Consumo, performance e histórico de ações de inteligência artificial</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-lg border border-border/30 p-0.5">
+              <Button
+                variant={viewMode === "mine" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("mine")}
+                className="gap-1 text-xs h-7 px-2.5"
+              >
+                <User className="w-3 h-3" /> Meu uso
+              </Button>
+              <Button
+                variant={viewMode === "all" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("all")}
+                className="gap-1 text-xs h-7 px-2.5"
+              >
+                <Users className="w-3 h-3" /> Todos
+              </Button>
+            </div>
             <Select value={String(periodDays)} onValueChange={v => setPeriodDays(Number(v))}>
               <SelectTrigger className="w-32 h-8 text-xs">
                 <SelectValue />
@@ -289,7 +322,7 @@ export default function AiUsageDashboardPage() {
                     return (
                       <div key={a.key} className="space-y-1">
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="font-mono text-foreground/80 truncate flex-1">{a.key}</span>
+                          <span className="font-mono text-foreground/80 truncate flex-1" title={a.key}>{a.label}</span>
                           <span className="text-muted-foreground/50 font-mono text-[10px]">{a.count}×</span>
                           <span className="text-muted-foreground/40 font-mono text-[10px]">{formatNumber(a.tokens)} tok</span>
                           <span className="text-muted-foreground/40 font-mono text-[10px]">{(a.avgMs / 1000).toFixed(1)}s</span>
