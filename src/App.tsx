@@ -123,6 +123,7 @@ import MkInstagramPage from "./pages/marketing-hub/MkInstagramPage";
 import MkTemplatesPage from "./pages/marketing-hub/MkTemplatesPage";
 import MkIdeasPage from "./pages/marketing-hub/MkIdeasPage";
 import InstagramEnginePage from "./pages/InstagramEnginePage";
+import AgencyAutomationsPage from "./pages/AgencyAutomationsPage";
 
 
 const queryClient = new QueryClient();
