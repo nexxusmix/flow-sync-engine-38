@@ -21,7 +21,9 @@ import {
   File as FileIcon,
   RotateCcw,
   AlertCircle,
+  HardDrive,
 } from "lucide-react";
+import { isGoogleDriveUrl, getDriveThumbnail } from "@/lib/google-drive-utils";
 import {
   Dialog,
   DialogContent,
