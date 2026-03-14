@@ -289,7 +289,7 @@ export default function Dashboard() {
           </div>
 
           {/* Timeline 30D & Capacity Monitor */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {/* Timeline 30D */}
             <div className="bg-muted/20 rounded-xl p-4 min-h-[180px]">
               <div className="flex items-center gap-2 mb-3">
