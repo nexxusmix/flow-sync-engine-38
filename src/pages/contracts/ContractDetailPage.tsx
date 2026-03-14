@@ -469,8 +469,8 @@ export default function ContractDetailPage() {
         </div>
 
         {isLocked && (
-          <Card className="p-4 bg-amber-500/10 border-amber-500/30">
-            <p className="text-amber-500 text-sm">
+          <Card className="p-4 bg-muted border-border">
+            <p className="text-muted-foreground text-sm">
               Este contrato foi assinado e não pode ser editado. Crie um aditivo para alterações.
             </p>
           </Card>
