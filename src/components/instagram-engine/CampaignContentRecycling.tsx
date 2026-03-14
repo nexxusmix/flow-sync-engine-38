@@ -145,7 +145,7 @@ Sugira um formato diferente se fizer sentido.`,
                     </div>
                     <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {c.daysSince} dias atrás</span>
-                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-400" /> Score: {c.score}</span>
+                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-primary" /> Score: {c.score}</span>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1">{c.reason}</p>
                   </div>
