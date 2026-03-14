@@ -263,6 +263,7 @@ function AppRoutes() {
       <Route path="/m/automacoes" element={<ProtectedRoute><MkAutomationsPage /></ProtectedRoute>} />
       <Route path="/m/configuracoes" element={<ProtectedRoute><MkSettingsPage /></ProtectedRoute>} />
       <Route path="/instagram-engine" element={<ProtectedRoute><InstagramEnginePage /></ProtectedRoute>} />
+      <Route path="/instalar" element={<InstallPage />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
