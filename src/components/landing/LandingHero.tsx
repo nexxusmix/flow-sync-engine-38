@@ -30,124 +30,127 @@ export function LandingHero() {
     offset: ["start start", "end start"],
   });
 
-  const videoScale = useSpring(useTransform(scrollYProgress, [0, 0.45], [1, 0.55]), sp);
-  const videoBorderRadius = useTransform(scrollYProgress, [0, 0.45], [0, 24]);
-  const videoOpacity = useSpring(useTransform(scrollYProgress, [0.35, 0.55], [1, 0.15]), sp);
+  const videoY = useSpring(useTransform(scrollYProgress, [0, 0.5], [0, -60]), sp);
+  const videoOpacity = useSpring(useTransform(scrollYProgress, [0.4, 0.6], [1, 0]), sp);
 
-  const textOpacity = useSpring(useTransform(scrollYProgress, [0.2, 0.45], [0, 1]), sp);
-  const textY = useSpring(useTransform(scrollYProgress, [0.2, 0.5], [60, 0]), sp);
+  const textOpacity = useSpring(useTransform(scrollYProgress, [0.25, 0.45], [0, 1]), sp);
+  const textY = useSpring(useTransform(scrollYProgress, [0.25, 0.5], [60, 0]), sp);
   const textExitOpacity = useSpring(useTransform(scrollYProgress, [0.7, 1], [1, 0]), sp);
   const textExitY = useSpring(useTransform(scrollYProgress, [0.7, 1], [0, -80]), sp);
 
   return (
     <section ref={sectionRef} className="relative z-10 min-h-[250vh]">
-      {/* Fullscreen video overlay */}
+      {/* Hero with video card */}
       <motion.div
-        className="sticky top-0 left-0 w-full h-screen flex items-center justify-center overflow-hidden pointer-events-none z-20"
+        className="sticky top-0 left-0 w-full h-screen flex flex-col items-center justify-center z-20 px-6"
         style={{ opacity: videoOpacity }}
       >
+        {/* Text content */}
         <motion.div
-          className="w-full h-full overflow-hidden"
-          style={{ scale: videoScale, borderRadius: videoBorderRadius }}
+          className="text-center max-w-5xl mb-10"
+          style={{ y: videoY }}
         >
-          <video
-            src="/videos/hero-demo.mp4"
-            autoPlay loop muted playsInline
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+          <motion.div
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <span className="text-xs text-white font-medium uppercase tracking-wider">
+              CRM · Projetos · Financeiro · Portal · IA · Automação — Tudo em um
+            </span>
+          </motion.div>
+
+          <motion.h1
+            className="text-4xl md:text-6xl lg:text-[5.5rem] font-light text-white tracking-tight leading-[1.08]"
+            variants={maskContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <span className="overflow-hidden block">
+              <motion.span variants={maskChild} className="inline-block">
+                O sistema operacional
+              </motion.span>
+            </span>
+            <span className="overflow-hidden block">
+              <motion.span variants={maskChild} className="inline-block">
+                da <span className="text-primary font-normal">agência moderna.</span>
+              </motion.span>
+            </span>
+          </motion.h1>
+
+          <motion.p
+            className="text-lg md:text-xl text-white/60 font-light mt-6 max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.4, duration: 0.6 }}
+          >
+            Centralize operação, clientes, projetos, financeiro e automações.
+            <br className="hidden md:block" />
+            Menos caos. Mais controle e crescimento.
+          </motion.p>
 
           <motion.div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ opacity: useTransform(scrollYProgress, [0, 0.2], [1, 0]) }}
+            className="flex flex-wrap justify-center gap-4 mt-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.8, duration: 0.6 }}
           >
-            <div className="text-center px-6 max-w-5xl">
-              <motion.div
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                <span className="text-xs text-white font-medium uppercase tracking-wider">
-                  CRM · Projetos · Financeiro · Portal · IA · Automação — Tudo em um
-                </span>
-              </motion.div>
+            <Button
+              size="lg"
+              onClick={() => navigate("/login")}
+              className="gap-2 bg-primary hover:bg-primary/90 h-14 px-10 text-base pointer-events-auto hover-invert"
+            >
+              Agendar Demonstração <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="gap-2 border-white/20 text-white hover:bg-white/10 h-14 px-8 pointer-events-auto"
+            >
+              <Play className="w-3.5 h-3.5" /> Ver Como Funciona
+            </Button>
+          </motion.div>
+        </motion.div>
 
-              <motion.h1
-                className="text-4xl md:text-6xl lg:text-[5.5rem] font-light text-white tracking-tight leading-[1.08]"
-                variants={maskContainer}
-                initial="hidden"
-                animate="visible"
-              >
-                <span className="overflow-hidden block">
-                  <motion.span variants={maskChild} className="inline-block">
-                    O sistema operacional
-                  </motion.span>
-                </span>
-                <span className="overflow-hidden block">
-                  <motion.span variants={maskChild} className="inline-block">
-                    da <span className="text-primary font-normal">agência moderna.</span>
-                  </motion.span>
-                </span>
-              </motion.h1>
+        {/* Video card with rounded borders */}
+        <motion.div
+          className="w-full max-w-5xl"
+          style={{ y: videoY }}
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_80px_-20px_hsl(var(--primary)/0.25)] aspect-video bg-black">
+            <video
+              src="/videos/hero-demo.mp4"
+              autoPlay loop muted playsInline
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
+          </div>
+        </motion.div>
 
-              <motion.p
-                className="text-lg md:text-xl text-white/60 font-light mt-6 max-w-2xl mx-auto leading-relaxed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.4, duration: 0.6 }}
-              >
-                Centralize operação, clientes, projetos, financeiro e automações.
-                <br className="hidden md:block" />
-                Menos caos. Mais controle e crescimento.
-              </motion.p>
-
-              <motion.div
-                className="flex flex-wrap justify-center gap-4 mt-10"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.8, duration: 0.6 }}
-              >
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/login")}
-                  className="gap-2 bg-primary hover:bg-primary/90 h-14 px-10 text-base pointer-events-auto hover-invert"
-                >
-                  Agendar Demonstração <ArrowRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="gap-2 border-white/20 text-white hover:bg-white/10 h-14 px-8 pointer-events-auto"
-                >
-                  <Play className="w-3.5 h-3.5" /> Ver Como Funciona
-                </Button>
-              </motion.div>
-
-              {/* Scroll indicator */}
-              <motion.div
-                className="mt-16"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2.2 }}
-              >
-                <motion.div
-                  className="w-5 h-8 rounded-full border-2 border-white/30 mx-auto flex items-start justify-center p-1"
-                  animate={{ opacity: [0.3, 0.8, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <motion.div
-                    className="w-1 h-2 bg-white/60 rounded-full"
-                    animate={{ y: [0, 8, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                </motion.div>
-              </motion.div>
-            </div>
+        {/* Scroll indicator */}
+        <motion.div
+          className="absolute bottom-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2.4 }}
+        >
+          <motion.div
+            className="w-5 h-8 rounded-full border-2 border-white/30 flex items-start justify-center p-1"
+            animate={{ opacity: [0.3, 0.8, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <motion.div
+              className="w-1 h-2 bg-white/60 rounded-full"
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            />
           </motion.div>
         </motion.div>
       </motion.div>
-
       {/* Content revealed behind the video */}
       <div className="relative z-10 pt-[110vh]">
         <motion.div
