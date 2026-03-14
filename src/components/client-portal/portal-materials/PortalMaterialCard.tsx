@@ -143,19 +143,41 @@ function PortalMaterialCardComponent({
           )}
         </div>
 
-        {/* Quick Revision Button - Visible on hover */}
-        {onRequestRevision && !isApproved && (
-          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Quick action buttons - Visible on hover */}
+        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
+          {/* Quick Download */}
+          {material.file_url && (
             <Button
               size="sm"
-              className="h-8 bg-cyan-500/90 hover:bg-cyan-500 text-white text-xs shadow-lg"
+              variant="secondary"
+              className="h-8 text-xs shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                const a = document.createElement("a");
+                a.href = material.file_url!;
+                a.setAttribute("download", material.title || "download");
+                a.setAttribute("target", "_blank");
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              }}
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              Baixar
+            </Button>
+          )}
+          {/* Request Revision */}
+          {onRequestRevision && !isApproved && (
+            <Button
+              size="sm"
+              className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground text-xs shadow-lg"
               onClick={handleRequestRevision}
             >
               <Edit3 className="w-3.5 h-3.5 mr-1.5" />
               Solicitar Ajuste
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Content */}
