@@ -109,17 +109,17 @@ Retorne JSON com:
 
   const getSeverityIcon = (s: string) => {
     switch (s) {
-      case 'critical': return <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
-      case 'moderate': return <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
-      default: return <Lightbulb className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
+      case 'critical': return <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />;
+      case 'moderate': return <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />;
+      default: return <Lightbulb className="w-3.5 h-3.5 text-primary shrink-0" />;
     }
   };
 
   const getSeverityColor = (s: string) => {
     switch (s) {
-      case 'critical': return 'bg-red-400/10 text-red-400';
-      case 'moderate': return 'bg-amber-400/10 text-amber-400';
-      default: return 'bg-blue-400/10 text-blue-400';
+      case 'critical': return 'bg-destructive/10 text-destructive';
+      case 'moderate': return 'bg-muted text-muted-foreground';
+      default: return 'bg-primary/10 text-primary';
     }
   };
 
