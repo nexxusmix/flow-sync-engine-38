@@ -152,7 +152,7 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
           <h5 className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Pilares por Campanha</h5>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[8px] text-blue-400 font-semibold mb-1">{currentCampaign.name}</p>
+              <p className="text-[8px] text-primary font-semibold mb-1">{currentCampaign.name}</p>
               {PILLARS.filter(p => currentPosts.some(post => post.pillar === p.key)).map(p => (
                 <div key={p.key} className="flex items-center justify-between py-0.5">
                   <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} /><span className="text-[8px] text-foreground">{p.label}</span></div>
