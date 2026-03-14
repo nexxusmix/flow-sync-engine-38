@@ -3555,6 +3555,53 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_automation_rules: {
+        Row: {
+          action_config: Json
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          id: string
+          name: string
+          trigger_config: Json
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          action_config?: Json
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          name: string
+          trigger_config?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          action_config?: Json
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          trigger_config?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_automation_rules_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instagram_bio_history: {
         Row: {
           active_from: string | null
@@ -3631,6 +3678,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "instagram_campaign_goals_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_campaign_tasks: {
+        Row: {
+          assignee: string | null
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          position: number | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          assignee?: string | null
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          position?: number | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          assignee?: string | null
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          position?: number | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_campaign_tasks_campaign_id_fkey"
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "instagram_campaigns"
@@ -3748,6 +3848,50 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      instagram_competitors: {
+        Row: {
+          analysis: Json | null
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          handle: string | null
+          id: string
+          name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          analysis?: Json | null
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          handle?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          analysis?: Json | null
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          handle?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_competitors_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       instagram_connections: {
         Row: {
@@ -3903,6 +4047,115 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      instagram_mood_items: {
+        Row: {
+          campaign_id: string
+          color: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string | null
+          note: string | null
+          position: number | null
+          type: string
+          url: string | null
+          workspace_id: string
+        }
+        Insert: {
+          campaign_id: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          note?: string | null
+          position?: number | null
+          type?: string
+          url?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          campaign_id?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          note?: string | null
+          position?: number | null
+          type?: string
+          url?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_mood_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_personas: {
+        Row: {
+          age_range: string | null
+          ai_generated: boolean | null
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          desire: string | null
+          funnel_stage: string
+          id: string
+          linked_posts: string[] | null
+          name: string
+          objection: string | null
+          pain: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          age_range?: string | null
+          ai_generated?: boolean | null
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          desire?: string | null
+          funnel_stage?: string
+          id?: string
+          linked_posts?: string[] | null
+          name: string
+          objection?: string | null
+          pain?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          age_range?: string | null
+          ai_generated?: boolean | null
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          desire?: string | null
+          funnel_stage?: string
+          id?: string
+          linked_posts?: string[] | null
+          name?: string
+          objection?: string | null
+          pain?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_personas_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       instagram_post_metrics: {
         Row: {
