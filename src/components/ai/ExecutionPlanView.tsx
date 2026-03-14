@@ -174,8 +174,8 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                     <div
                       className={cn(
                         'flex items-center gap-2 p-2 rounded-lg text-xs transition-all',
-                        status === 'success' && 'bg-green-500/5',
-                        status === 'error' && 'bg-red-500/5',
+                        status === 'success' && 'bg-primary/5',
+                        status === 'error' && 'bg-destructive/5',
                         isCurrentStep && 'bg-primary/10 ring-1 ring-primary/20 animate-pulse',
                         hasError && 'cursor-pointer',
                       )}
