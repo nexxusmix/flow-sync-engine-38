@@ -51,6 +51,7 @@ const mainMenuItems: MenuItem[] = [
   { name: "Propostas", href: "/propostas", icon: "request_quote" },
   { name: "Contratos", href: "/contratos", icon: "gavel" },
   { name: "Relatórios", href: "/relatorios", icon: "bar_chart" },
+  { name: "Billing", href: "/billing", icon: "credit_card" },
   { name: "Avisos", href: "/avisos", icon: "notifications_active" },
 ];
 
