@@ -128,6 +128,7 @@ import InstagramEnginePage from "./pages/InstagramEnginePage";
 import AgencyAutomationsPage from "./pages/AgencyAutomationsPage";
 import AIGovernanceDashboardPage from "./pages/AIGovernanceDashboardPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
+import BillingPage from "./pages/BillingPage";
 
 const queryClient = new QueryClient();
 
