@@ -1,65 +1,77 @@
 
 
-## Padronizacao de Cores — Campanhas Instagram
+# Dados / Backend — RLS, Mock Migration, Meta API e Google Calendar
 
-### Diagnostico
+## 1. Auditoria RLS — Problemas Encontrados
 
-**1.328 ocorrencias** de cores poluidas (`emerald`, `amber`, `red`, `green`, `purple`, `teal`, etc.) espalhadas em **63 arquivos** de sub-componentes de campanha. O `CampaignsTab.tsx` principal ja esta limpo com a paleta Sonance, mas todos os componentes internos ainda usam cores semanticas hardcoded.
+### Tabelas com `USING (true)` — acesso aberto a qualquer autenticado (23 tabelas)
+Essas tabelas usam `qual: true` o que significa que qualquer usuário logado vê TODOS os registros, sem filtro por workspace ou user_id:
 
-### Mapeamento de Substituicao
+| Tabela | Risco |
+|--------|-------|
+| `action_items`, `ai_outbox`, `alert_actions`, `alert_events`, `alert_rules`, `alerts` | Dados de alertas de outros usuários visíveis |
+| `automation_rules`, `automation_suggestions` | Automações de outros workspaces visíveis |
+| `client_onboardings`, `onboarding_*` (4 tabelas) | Dados de clientes expostos |
+| `playbooks`, `playbook_*` (4 tabelas) | Templates de playbook compartilhados — pode ser intencional |
+| `content_assets`, `project_media_items`, `reference_links` | Assets de projetos de outros usuários |
+| `billing_addons`, `billing_plans` | OK se forem catálogos públicos |
 
-A paleta SQUAD e estritamente **azul (#009CCA) + branco + cinza**. Vermelho reservado **apenas** para erros/destrutivo.
+### Tabelas Instagram com `auth.uid() IS NOT NULL` (sem filtro workspace)
+Estas tabelas permitem que qualquer usuário autenticado veja dados de QUALQUER workspace:
+- `instagram_automation_rules`, `instagram_campaign_tasks`, `instagram_competitors`, `instagram_connections`, `instagram_mood_items`, `instagram_personas`, `instagram_posts`
 
-```text
-ANTES                    →  DEPOIS (Sonance)
-─────────────────────────────────────────────
-emerald-400/500          →  primary (azul)
-green-400/500            →  primary (azul)
-amber-400/500            →  muted-foreground (cinza)
-yellow-400/500           →  muted-foreground (cinza)
-orange-400/500           →  muted-foreground (cinza)
-purple-400/500           →  primary/70 (azul medio)
-violet-400/500           →  primary/70 (azul medio)
-pink-400/500             →  primary/50 (azul claro)
-teal-400/500             →  primary (azul)
-indigo-400/500           →  primary (azul)
-red-400/500 (sucesso)    →  primary (azul)
-red-400/500 (erro real)  →  destructive (manter)
-```
+**Correção**: Alterar para `is_workspace_member(auth.uid(), workspace_id)` nas tabelas que têm coluna `workspace_id`, ou `auth.uid() = user_id` onde aplicável.
 
-### Abordagem
+### Ação planejada
+- Atualizar ~15 tabelas críticas de `USING (true)` para `is_workspace_member(auth.uid(), workspace_id)` ou `auth.uid() = created_by`
+- Atualizar ~7 tabelas Instagram de `auth.uid() IS NOT NULL` para usar `is_workspace_member`
+- Manter `billing_plans`/`billing_addons` e `playbooks` como públicas (catálogo)
 
-Dado o volume (63 arquivos, 1328 ocorrencias), a refatoracao sera feita em **lotes por categoria** do mega-menu:
+## 2. Mock Data — Instagram Engine
 
-1. **Producao** (6 componentes): Kanban, Approval, ApprovalPipeline, PublishQueue, FeedPreview, Timeline
-2. **Calendario** (6 componentes): Calendar, UnifiedCalendar, GanttTimeline, TimingOptimizer, HolidayCalendar, Seasonal
-3. **Analytics** (7 componentes): AnalyticsAdvanced, ROI, Heatmap, HealthScore, VelocityTracker, SentimentAnalysis, MoodTracker
-4. **Estrategia** (8 componentes): Goals, FunnelView, ContentFunnel, ContentMap, PersonaMap, CustomerJourney, StoryArc, DNA
-5. **IA Tools** (14 componentes): SmartAlerts, ResultsSimulator, AutoPlanner, BriefingGenerator, AdsCopy, Spin, Hashtags, HashtagIntel, ABTesting, ABTestFramework, RiskScore, ContentGap, PitchDeck, BudgetAllocator
-6. **Colaboracao** (5 componentes): Collaboration, CollaborationBoard, ClientReview, WarRoom, AudienceHeatmap
-7. **Exportar** (16 componentes): PDFReport, Compare, CrossComparator, PostMortem, Autopsy, Cloner, SwipeFiles, RepostAutomation, ContentRecycling, SplitContent, CompetitorTracker, CompetitorShadow, MicroBlitz, MoodBoard, Alerts, Changelog
+Não há dados mock hardcoded nos componentes do Instagram Engine. Os componentes já usam tabelas reais (`instagram_campaigns`, `instagram_posts`, etc.). O único problema é o uso extensivo de `as any` (~32 arquivos) para tabelas que **existem** no banco mas **não estão no types.ts gerado** (`instagram_campaign_goals`, `instagram_campaign_templates`). Isso não requer migração de mock — requer apenas regeneração dos types.
 
-### Regras de Substituicao
+**Ação**: Nenhuma migração de dados mock necessária. Forçar regeneração do `types.ts` para incluir tabelas faltantes e eliminar `as any`.
 
-Para cada arquivo:
-- `text-emerald-*` / `bg-emerald-*` → `text-primary` / `bg-primary/15`
-- `text-green-*` / `bg-green-*` → `text-primary` / `bg-primary/15`
-- `text-amber-*` / `bg-amber-*` → `text-muted-foreground` / `bg-muted`
-- `text-yellow-*` / `bg-yellow-*` → `text-muted-foreground` / `bg-muted`
-- `text-red-*` / `bg-red-*` para estados de erro/rejeicao → `text-destructive` / `bg-destructive/15` (manter)
-- `text-red-*` / `bg-red-*` para intensidade/climax → `text-primary` / `bg-primary/20`
-- `text-purple-*` / `bg-purple-*` → `text-primary/70` / `bg-primary/10`
-- `border-emerald-*` → `border-primary/30`
-- `border-amber-*` → `border-border`
-- `border-red-*` → `border-destructive/30`
+## 3. Instagram/Meta API — End-to-End
 
-### Prioridade
+A Edge Function `publish-to-instagram` já existe e suporta IMAGE, CAROUSEL e REELS via Graph API v21.0. O hook `useInstagramEngine.ts` já chama `supabase.functions.invoke('publish-to-instagram')`.
 
-Iniciar pelos componentes mais vistos (Dashboard, Kanban, Analytics, Goals) e avancar para os menos frequentes. Todos os 63 arquivos serao tratados para eliminar completamente a poluicao visual.
+**Gaps identificados**:
+- **Sem OAuth real com Meta**: A conexão atual é manual (usuário digita username). Falta o fluxo OAuth com Facebook Login para obter `access_token` e `ig_user_id` reais.
+- **Sem secrets configurados**: `FACEBOOK_APP_ID` e `FACEBOOK_APP_SECRET` não estão nos secrets.
+- **Publish function hardcoda workspace**: Usa `'00000000-0000-0000-0000-000000000000'` fixo.
 
-### Detalhes Tecnicos
+**Ação planejada**:
+- Criar Edge Function `instagram-oauth` com fluxo OAuth Facebook/Instagram (gerar URL, callback, trocar code por token)
+- Atualizar UI de conexão Instagram na página de integrações para usar OAuth real
+- Solicitar secrets `FACEBOOK_APP_ID` e `FACEBOOK_APP_SECRET` ao usuário
+- Corrigir query de workspace hardcoded no publish function
 
-- Nenhuma dependencia nova necessaria
-- Todas as cores de substituicao ja existem como CSS variables em `index.css`
-- O `StatusBadge` do squad-ui ja segue o padrao correto e pode ser reutilizado onde badges aparecem nos sub-componentes
+## 4. Google Calendar Sync — UI Incompleta
+
+A Edge Function `google-calendar-sync` está **completa** (OAuth, callback, sync bidirecional, disconnect). A tabela `calendar_events` tem colunas `google_event_id`, `source`, `owner_user_id`. Os secrets `GOOGLE_CALENDAR_CLIENT_ID` e `GOOGLE_CALENDAR_CLIENT_SECRET` **não estão configurados**.
+
+**Gaps na UI**:
+- `IntegrationsSettingsPage.tsx` tem o fluxo completo (connect, sync, disconnect)
+- `IntegrationsPage.tsx` (outra página) também tem fluxo duplicado
+- O calendário principal (`useCalendar.tsx`) não mostra indicação visual de eventos vindos do Google
+- Sem botão de "Sincronizar agora" na view do calendário (só na página de integrações)
+- Sem auto-sync periódico
+
+**Ação planejada**:
+- Adicionar badge "Google" em eventos com `source = 'google'` no calendário
+- Adicionar botão "Sincronizar Google" na toolbar do calendário
+- Solicitar secrets `GOOGLE_CALENDAR_CLIENT_ID` e `GOOGLE_CALENDAR_CLIENT_SECRET`
+- Consolidar as duas páginas de integração duplicadas
+
+---
+
+## Resumo de Execução
+
+1. **Migration SQL**: ~25 políticas RLS a corrigir (15 tabelas `USING(true)` + 7 Instagram `auth.uid() IS NOT NULL`)
+2. **Edge Function**: Nova `instagram-oauth` para fluxo Meta OAuth
+3. **UI Calendar**: Badge Google + botão sync na toolbar
+4. **Secrets necessários**: `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET`
+5. **Consolidação**: Remover duplicação entre `IntegrationsPage` e `IntegrationsSettingsPage`
 
