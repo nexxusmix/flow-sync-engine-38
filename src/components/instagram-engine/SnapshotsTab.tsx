@@ -295,11 +295,11 @@ function GrowthCard({ label, icon, delta, percent, current, suffix = '' }: {
         {isNeutral ? (
           <Minus className="w-3 h-3 text-muted-foreground" />
         ) : isPositive ? (
-          <TrendingUp className="w-3 h-3 text-emerald-400" />
+          <TrendingUp className="w-3 h-3 text-primary" />
         ) : (
           <TrendingDown className="w-3 h-3 text-destructive" />
         )}
-        <span className={`text-[11px] font-medium ${isNeutral ? 'text-muted-foreground' : isPositive ? 'text-emerald-400' : 'text-destructive'}`}>
+        <span className={`text-[11px] font-medium ${isNeutral ? 'text-muted-foreground' : isPositive ? 'text-primary' : 'text-destructive'}`}>
           {isPositive ? '+' : ''}{suffix === '%' ? delta.toFixed(2) + suffix : delta.toLocaleString()}
           {percent !== 0 && ` (${percent > 0 ? '+' : ''}${percent.toFixed(1)}%)`}
         </span>

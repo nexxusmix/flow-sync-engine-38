@@ -198,7 +198,7 @@ Retorne JSON com:
                   )}
                   <p className="text-[10px] text-muted-foreground line-clamp-2">{post.caption_short}</p>
                   {post.cta && (
-                    <div className="text-[9px] text-amber-400 mt-1">📣 {post.cta}</div>
+                    <div className="text-[9px] text-muted-foreground mt-1">📣 {post.cta}</div>
                   )}
                 </Card>
               </div>

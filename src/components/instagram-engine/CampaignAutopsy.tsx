@@ -133,7 +133,7 @@ Retorne JSON com:
             <div className="space-y-1.5">
               {autopsy.what_failed.map((item: string, i: number) => (
                 <div key={i} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
-                  <span className="text-red-400 shrink-0">✗</span> {item}
+                  <span className="text-destructive shrink-0">✗</span> {item}
                 </div>
               ))}
             </div>

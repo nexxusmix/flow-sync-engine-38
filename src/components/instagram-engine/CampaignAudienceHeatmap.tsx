@@ -211,7 +211,7 @@ Retorne JSON com:
               <div className="space-y-2">
                 {aiResult.dead_zone_actions.map((action: any, i: number) => (
                   <div key={i} className="flex items-start gap-2 p-2 bg-background/40 rounded">
-                    <Badge className={`text-[7px] shrink-0 ${action.priority === 'high' ? 'bg-red-400/10 text-red-400' : 'bg-amber-400/10 text-amber-400'}`}>
+                    <Badge className={`text-[7px] shrink-0 ${action.priority === 'high' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
                       {action.priority}
                     </Badge>
                     <div>

@@ -147,7 +147,7 @@ Escreva em português BR, tom profissional e analítico, com dados concretos.`,
                 {g.achieved ? <Trophy className="w-3 h-3 text-primary" /> : <AlertTriangle className="w-3 h-3 text-muted-foreground" />}
                 <span className="text-[11px] text-foreground flex-1">{g.title}</span>
                 <span className="text-[10px] text-muted-foreground">{g.current}/{g.target} {g.unit}</span>
-                <Badge variant="outline" className={`text-[9px] ${g.achieved ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <Badge variant="outline" className={`text-[9px] ${g.achieved ? 'text-primary' : 'text-muted-foreground'}`}>
                   {g.pct}%
                 </Badge>
               </div>

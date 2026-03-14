@@ -109,12 +109,12 @@ export function ProjectionsTab() {
 
           {/* Quick Wins */}
           {projections.quick_wins?.length > 0 && (
-            <Card className="glass-card p-5 border-emerald-500/20">
-              <h4 className="text-xs font-medium text-emerald-400 mb-3">⚡ Quick Wins</h4>
+            <Card className="glass-card p-5 border-primary/20">
+              <h4 className="text-xs font-medium text-primary mb-3">⚡ Quick Wins</h4>
               <ul className="space-y-2">
                 {projections.quick_wins.map((qw: string, i: number) => (
                   <li key={i} className="text-sm text-foreground/80 flex items-start gap-2">
-                    <span className="text-emerald-400 mt-0.5">✓</span> {qw}
+                    <span className="text-primary mt-0.5">✓</span> {qw}
                   </li>
                 ))}
               </ul>

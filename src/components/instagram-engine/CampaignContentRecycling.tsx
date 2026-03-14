@@ -170,8 +170,8 @@ Sugira um formato diferente se fizer sentido.`,
                 {suggestion && (
                   <div className="mt-3 pt-3 border-t border-border/20">
                     <div className="flex items-center gap-2 mb-2">
-                      <ArrowRight className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[10px] font-semibold text-emerald-400">Versão Reciclada</span>
+                      <ArrowRight className="w-3 h-3 text-primary" />
+                      <span className="text-[10px] font-semibold text-primary">Versão Reciclada</span>
                     </div>
                     <div className="space-y-1 text-xs text-muted-foreground">
                       {suggestion.title && <p><span className="text-foreground font-medium">Título:</span> {suggestion.title}</p>}
