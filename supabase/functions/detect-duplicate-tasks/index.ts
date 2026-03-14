@@ -68,7 +68,18 @@ Se não houver duplicatas, retorne {"duplicates": []}`;
 
     const rawText = aiResult.choices?.[0]?.message?.content || "{}";
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { duplicates: [] };
+    let result = { duplicates: [] };
+    if (jsonMatch) {
+      try {
+        // Clean common AI JSON issues: trailing commas, control chars
+        const cleaned = jsonMatch[0]
+          .replace(/,\s*([\]}])/g, '$1')
+          .replace(/[\x00-\x1F\x7F]/g, ' ');
+        result = JSON.parse(cleaned);
+      } catch (e) {
+        console.warn("JSON parse failed, returning empty:", e);
+      }
+    }
 
     // Enrich with task titles
     const taskMap = Object.fromEntries(tasks.map(t => [t.id, t]));
