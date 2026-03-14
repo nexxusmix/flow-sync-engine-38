@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,10 @@ export function LandingNav() {
 
         <div className="hidden md:flex items-center gap-8">
           {[
-            { label: "Módulos", id: "solucao" },
+            { label: "Produto", id: "produto" },
+            { label: "Benefícios", id: "beneficios" },
+            { label: "Como Funciona", id: "como-funciona" },
+            { label: "Para Quem", id: "para-quem" },
             { label: "Planos", id: "planos" },
             { label: "FAQ", id: "faq" },
           ].map((item) => (
@@ -51,7 +54,7 @@ export function LandingNav() {
             onClick={() => navigate("/login")}
             className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs uppercase tracking-wider h-9 px-5 hover-invert"
           >
-            Começar
+            Agendar Demo
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </div>

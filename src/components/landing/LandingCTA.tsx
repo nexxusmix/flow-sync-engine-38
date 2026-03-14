@@ -31,10 +31,11 @@ export function LandingCTA() {
         </motion.div>
 
         <h2 className="text-4xl md:text-6xl lg:text-7xl font-light text-foreground tracking-tight leading-[1.1]">
-          Pare de <span className="text-primary font-normal">improvisar</span>
+          Estruture sua agência<br />
+          como uma <span className="text-primary font-normal">operação de verdade.</span>
         </h2>
         <p className="text-base md:text-lg text-muted-foreground mt-4 mb-12 max-w-xl mx-auto leading-relaxed">
-          Estruture sua operação criativa como empresa de verdade.<br className="hidden md:block" />
+          Centralize operação, automatize processos e ganhe escala.<br className="hidden md:block" />
           Comece em menos de 2 minutos.
         </p>
 
@@ -44,7 +45,15 @@ export function LandingCTA() {
             onClick={() => navigate("/login")}
             className="gap-2 bg-primary hover:bg-primary/90 h-14 px-12 text-base hover-invert"
           >
-            Começar Agora — Grátis <ArrowRight className="w-4 h-4" />
+            Agendar Demonstração <ArrowRight className="w-4 h-4" />
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => navigate("/login")}
+            className="gap-2 h-14 px-10 text-base border-border/50 hover:border-primary/20 hover:bg-primary/5"
+          >
+            Solicitar Acesso
           </Button>
         </div>
 
