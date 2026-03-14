@@ -177,8 +177,8 @@ export function CampaignCollaboration({ campaign, posts }: Props) {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Badge className={`${status?.color} text-[7px]`}>{status?.label}</Badge>
-                    {p.hasApproval && <ThumbsUp className="w-2.5 h-2.5 text-emerald-400" />}
-                    {p.hasRevision && <AlertCircle className="w-2.5 h-2.5 text-amber-400" />}
+                    {p.hasApproval && <ThumbsUp className="w-2.5 h-2.5 text-primary" />}
+                    {p.hasRevision && <AlertCircle className="w-2.5 h-2.5 text-muted-foreground" />}
                   </div>
                 </motion.div>
               );
