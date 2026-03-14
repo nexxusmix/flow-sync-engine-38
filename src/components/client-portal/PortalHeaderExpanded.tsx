@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { sc } from "@/lib/colors";
 import squadHubLogo from "@/assets/squad-hub-logo.png";
 import type { ProjectInfo } from "@/hooks/useClientPortalEnhanced";
 
