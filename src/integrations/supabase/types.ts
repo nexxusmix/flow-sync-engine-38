@@ -3698,6 +3698,48 @@ export type Database = {
           },
         ]
       }
+      entity_dependencies: {
+        Row: {
+          created_at: string
+          dependency_type: string
+          id: string
+          is_resolved: boolean
+          related_project_id: string | null
+          resolved_at: string | null
+          source_entity_id: string
+          source_entity_type: string
+          target_entity_id: string
+          target_entity_type: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          dependency_type?: string
+          id?: string
+          is_resolved?: boolean
+          related_project_id?: string | null
+          resolved_at?: string | null
+          source_entity_id: string
+          source_entity_type: string
+          target_entity_id: string
+          target_entity_type: string
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          dependency_type?: string
+          id?: string
+          is_resolved?: boolean
+          related_project_id?: string | null
+          resolved_at?: string | null
+          source_entity_id?: string
+          source_entity_type?: string
+          target_entity_id?: string
+          target_entity_type?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       event_logs: {
         Row: {
           action: string
@@ -8940,6 +8982,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      timeline_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          actor_type: string | null
+          created_at: string
+          description: string | null
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          parent_entity_id: string | null
+          parent_entity_type: string | null
+          related_project_id: string | null
+          status_from: string | null
+          status_to: string | null
+          title: string
+          visibility: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_type?: string | null
+          created_at?: string
+          description?: string | null
+          entity_id: string
+          entity_type: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          parent_entity_id?: string | null
+          parent_entity_type?: string | null
+          related_project_id?: string | null
+          status_from?: string | null
+          status_to?: string | null
+          title: string
+          visibility?: string
+          workspace_id?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_type?: string | null
+          created_at?: string
+          description?: string | null
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          parent_entity_id?: string | null
+          parent_entity_type?: string | null
+          related_project_id?: string | null
+          status_from?: string | null
+          status_to?: string | null
+          title?: string
+          visibility?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       ui_state: {
         Row: {
