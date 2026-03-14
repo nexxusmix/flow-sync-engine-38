@@ -43,7 +43,7 @@ export function LandingDifferentials() {
   const row2 = items.slice(5);
 
   return (
-    <ScrollLinked className="relative z-10 py-24 md:py-32" yIn={40} yOut={-20}>
+    <ScrollLinked className="relative z-10 py-7 md:py-10" yIn={40} yOut={-20}>
       <div className="max-w-5xl mx-auto px-6 md:px-12">
         <div className="text-center mb-14 md:mb-16">
           <motion.div

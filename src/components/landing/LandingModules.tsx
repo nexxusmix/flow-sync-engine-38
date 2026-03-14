@@ -48,7 +48,7 @@ function ModuleCard({ icon: Icon, name, desc, index }: {
 
 export function LandingModules() {
   return (
-    <ScrollLinked id="produto" className="relative z-10 px-6 md:px-12 py-24 md:py-32">
+    <ScrollLinked id="produto" className="relative z-10 px-6 md:px-12 py-7 md:py-10">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14 md:mb-16">
           <motion.div

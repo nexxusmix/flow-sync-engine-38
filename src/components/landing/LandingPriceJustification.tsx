@@ -41,7 +41,7 @@ export function LandingPriceJustification() {
   const priceOpacity = useSpring(useTransform(scrollYProgress, [0, 0.5], [0, 1]), springCfg);
 
   return (
-    <ScrollLinked className="relative z-10 px-6 md:px-12 py-24 md:py-32">
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-7 md:py-10">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-14 md:mb-16">
           <h2 className="text-3xl md:text-5xl font-light text-foreground tracking-tight leading-[1.1]">
