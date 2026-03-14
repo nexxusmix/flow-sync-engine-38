@@ -53,7 +53,7 @@ export function LandingProblem() {
             Sua agência ainda opera<br />
             no <span className="text-destructive font-normal">modo improviso?</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-xl mx-auto leading-relaxed">
             Ferramentas desconectadas, processos manuais e falta de visibilidade
             são o cenário de 90% das agências.
           </p>
