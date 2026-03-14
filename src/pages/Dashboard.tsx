@@ -363,7 +363,7 @@ export default function Dashboard() {
 
         {/* Key Metrics Row */}
         <motion.div 
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4"
           initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-80px" }}
