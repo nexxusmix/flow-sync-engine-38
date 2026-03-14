@@ -87,11 +87,11 @@ function IdeaCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-[#111114] border-white/10">
             <DropdownMenuItem onClick={onPromote} className="text-xs text-white/60">
-              <ArrowRight className="w-3 h-3 mr-2 text-emerald-400" />
+              <ArrowRight className="w-3 h-3 mr-2 text-primary" />
               Promover para Produção
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onLinkReference} className="text-xs text-white/60">
-              <Instagram className="w-3 h-3 mr-2 text-purple-400" />
+              <Instagram className="w-3 h-3 mr-2 text-primary/70" />
               Vincular Referência
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onDelete} className="text-xs text-red-400 focus:text-red-400">
