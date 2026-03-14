@@ -14,7 +14,7 @@ export function LandingCTA() {
   const opacity = useSpring(useTransform(scrollYProgress, [0, 0.5], [0, 1]), springCfg);
 
   return (
-    <section className="relative z-10 px-6 md:px-12 py-28 md:py-40">
+    <section className="relative z-10 px-6 md:px-12 py-24 md:py-32">
       <motion.div
         ref={ref}
         className="max-w-4xl mx-auto text-center"
