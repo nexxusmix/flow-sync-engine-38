@@ -165,7 +165,7 @@ function PortalInlineCommentComponent({
               <div className="flex-1">
                 {hasTimecode && (
                   <div className="flex items-center gap-2">
-                    <Play className="w-3.5 h-3.5 text-cyan-500" />
+                    <Play className="w-3.5 h-3.5 text-primary" />
                     <span className="text-sm text-white font-mono">{currentTimecode}</span>
                   </div>
                 )}
