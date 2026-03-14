@@ -158,13 +158,19 @@ function ClientUploadDialogComponent({
 
   const addLink = () => {
     if (!linkMode || !linkUrl.trim()) { setError('Preencha o link'); return; }
-    const title = linkTitle.trim() || (linkMode === 'youtube' ? 'Vídeo YouTube' : 'Link externo');
+    if (linkMode === 'drive' && !isGoogleDriveUrl(linkUrl.trim())) {
+      setError('Insira um link válido do Google Drive');
+      return;
+    }
+    const title = linkTitle.trim() || (linkMode === 'youtube' ? 'Vídeo YouTube' : linkMode === 'drive' ? 'Arquivo Google Drive' : 'Link externo');
+    const driveThumb = linkMode === 'drive' ? getDriveThumbnail(linkUrl.trim()) : undefined;
     setQueue(prev => [...prev, {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       type: linkMode,
       title,
       description: linkDesc,
       url: linkUrl.trim(),
+      preview: driveThumb || undefined,
       status: 'queued' as ItemStatus,
     }]);
     setLinkUrl('');
