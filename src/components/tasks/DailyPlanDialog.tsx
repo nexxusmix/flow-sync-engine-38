@@ -97,7 +97,7 @@ export function DailyPlanDialog({ open, onOpenChange, tasks, onApply }: DailyPla
 
   const priorityColors: Record<string, string> = {
     urgent: 'bg-destructive/10 text-destructive',
-    high: 'bg-amber-500/10 text-amber-600',
+    high: 'bg-muted text-muted-foreground',
     normal: 'bg-muted text-muted-foreground',
     low: 'bg-muted text-muted-foreground',
   };
