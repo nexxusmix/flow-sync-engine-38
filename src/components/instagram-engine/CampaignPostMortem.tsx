@@ -83,8 +83,8 @@ export function CampaignPostMortem({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-violet-500/15 flex items-center justify-center">
-          <BookOpen className="w-4 h-4 text-violet-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <BookOpen className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Post-Mortem Inteligente</h4>
