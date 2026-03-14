@@ -245,7 +245,7 @@ export default function MkCalendarPage() {
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-4 h-4 text-amber-400" />
+            <Zap className="w-4 h-4 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               Sem data agendada ({unscheduledCount})
             </span>
