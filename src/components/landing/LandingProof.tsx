@@ -90,7 +90,7 @@ export function LandingProof() {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-28">
+        <div className="grid md:grid-cols-3 gap-4 mb-20">
           {testimonials.map((t, i) => (
             <TestimonialCard key={i} {...t} />
           ))}
