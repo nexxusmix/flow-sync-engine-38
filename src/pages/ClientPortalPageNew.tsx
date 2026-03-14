@@ -365,7 +365,6 @@ export default function ClientPortalPage() {
       
       {/* Animated Background - desktop only */}
       <div className="hidden md:block">
-        <CursorGlow />
         <BackgroundParticles />
       </div>
       
