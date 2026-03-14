@@ -385,9 +385,9 @@ export function ContractAiUpdateDialog({
             </div>
 
             {!extracted.total_value && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <p className="text-xs text-amber-700 dark:text-amber-400">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted border border-border">
+                <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
                   Valor não identificado. Preencha manualmente se necessário.
                 </p>
               </div>
