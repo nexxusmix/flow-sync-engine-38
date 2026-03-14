@@ -287,7 +287,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate, onDelete }
 
           {/* Modal */}
           <motion.div
-            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-background/95 backdrop-blur-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] overscroll-contain"
+            className="relative z-10 w-full max-w-2xl max-h-[90vh] md:max-h-[90vh] h-full md:h-auto overflow-y-auto rounded-none md:rounded-2xl border-0 md:border border-white/[0.08] bg-background/95 backdrop-blur-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] overscroll-contain"
             initial={{ scale: 0.8, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.85, opacity: 0, y: 10 }}
