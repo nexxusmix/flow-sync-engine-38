@@ -496,7 +496,7 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
       portalLinkId: string;
       title: string;
       description?: string;
-      type: 'youtube' | 'link' | 'file';
+      type: 'youtube' | 'link' | 'file' | 'drive';
       url?: string;
       clientName?: string;
     }) => {
