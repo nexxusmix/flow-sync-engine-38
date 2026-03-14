@@ -456,9 +456,9 @@ export default function ClientPortalPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <StaggerContainer className="grid lg:grid-cols-12 gap-6" staggerDelay={0.08}>
+                  <StaggerContainer className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6" staggerDelay={0.08}>
                     {/* Main Content */}
-                    <StaggerItem className="lg:col-span-8 xl:col-span-9 space-y-6">
+                    <StaggerItem className="lg:col-span-8 xl:col-span-9 space-y-4 md:space-y-6">
                       <PortalOverviewPremium 
                         project={project} 
                         stages={stages}
