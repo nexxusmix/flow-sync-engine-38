@@ -62,7 +62,7 @@ function DeliverableCard({
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-medium text-foreground truncate">{deliverable.title}</h4>
             {isApproved && (
-              <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
             )}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -70,13 +70,13 @@ function DeliverableCard({
           </p>
           <div className="flex items-center gap-2 mt-2">
             {needsReview && (
-              <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-mono">
+              <Badge variant="outline" className="text-muted-foreground border-border text-mono">
                 <Clock className="w-3 h-3 mr-1" />
                 Aguardando Revisão
               </Badge>
             )}
             {isApproved && (
-              <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 text-mono">
+              <Badge variant="outline" className="text-primary border-primary/30 text-mono">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Aprovado
               </Badge>
@@ -147,7 +147,7 @@ export function PortalDeliverables({ project, deliverables }: PortalDeliverables
               ))
             ) : (
               <div className="glass-card rounded-xl p-8 text-center min-h-[120px] flex flex-col items-center justify-center">
-                <CheckCircle className="w-10 h-10 text-emerald-500 mb-3" />
+                <CheckCircle className="w-10 h-10 text-primary mb-3" />
                 <p className="text-sm text-muted-foreground font-light">Nenhum item pendente de revisão</p>
                 <p className="text-xs text-muted-foreground/60 mt-1">Todas as entregas foram revisadas</p>
               </div>

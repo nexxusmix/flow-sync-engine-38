@@ -25,9 +25,9 @@ interface MeetingsListProps {
 
 const typeConfig = {
   reuniao: { icon: Video, label: 'Reunião', color: 'text-primary' },
-  pedido_cliente: { icon: FileText, label: 'Pedido', color: 'text-amber-500' },
-  mensagem_cliente: { icon: MessageSquare, label: 'Mensagem', color: 'text-emerald-500' },
-  alinhamento_interno: { icon: Users, label: 'Alinhamento', color: 'text-violet-500' },
+  pedido_cliente: { icon: FileText, label: 'Pedido', color: 'text-muted-foreground' },
+  mensagem_cliente: { icon: MessageSquare, label: 'Mensagem', color: 'text-primary' },
+  alinhamento_interno: { icon: Users, label: 'Alinhamento', color: 'text-primary/70' },
 };
 
 const sourceConfig: Record<string, { icon: React.ElementType; label: string }> = {

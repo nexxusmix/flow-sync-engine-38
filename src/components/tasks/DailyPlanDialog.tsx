@@ -97,7 +97,7 @@ export function DailyPlanDialog({ open, onOpenChange, tasks, onApply }: DailyPla
 
   const priorityColors: Record<string, string> = {
     urgent: 'bg-destructive/10 text-destructive',
-    high: 'bg-amber-500/10 text-amber-600',
+    high: 'bg-muted text-muted-foreground',
     normal: 'bg-muted text-muted-foreground',
     low: 'bg-muted text-muted-foreground',
   };
@@ -107,7 +107,7 @@ export function DailyPlanDialog({ open, onOpenChange, tasks, onApply }: DailyPla
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-amber-500" />
+            <Lightbulb className="w-5 h-5 text-primary" />
             Plano do Dia
           </DialogTitle>
         </DialogHeader>

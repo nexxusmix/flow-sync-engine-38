@@ -32,8 +32,8 @@ interface ActionItemsPanelProps {
 
 const statusConfig = {
   aberto: { icon: Circle, label: 'Aberto', color: 'text-muted-foreground' },
-  em_andamento: { icon: Clock, label: 'Em Andamento', color: 'text-amber-500' },
-  concluido: { icon: CheckCircle2, label: 'Concluído', color: 'text-emerald-500' },
+  em_andamento: { icon: Clock, label: 'Em Andamento', color: 'text-muted-foreground' },
+  concluido: { icon: CheckCircle2, label: 'Concluído', color: 'text-primary' },
 };
 
 export function ActionItemsPanel({ actionItems, projectId }: ActionItemsPanelProps) {
@@ -96,7 +96,7 @@ export function ActionItemsPanel({ actionItems, projectId }: ActionItemsPanelPro
                       className={cn(
                         "bg-muted/30 border p-3 transition-all",
                         isOverdue ? "border-destructive/50 bg-destructive/5" :
-                        isDueToday ? "border-amber-500/50 bg-amber-500/5" :
+                        isDueToday ? "border-muted-foreground/50 bg-muted/50" :
                         "border-border"
                       )}
                     >
@@ -121,7 +121,7 @@ export function ActionItemsPanel({ actionItems, projectId }: ActionItemsPanelPro
                               <span className={cn(
                                 "flex items-center gap-1",
                                 isOverdue && "text-destructive",
-                                isDueToday && "text-amber-500"
+                                isDueToday && "text-muted-foreground"
                               )}>
                                 <Clock className="w-3 h-3" />
                                 {format(new Date(item.due_date), "dd MMM", { locale: ptBR })}

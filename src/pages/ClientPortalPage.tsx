@@ -127,9 +127,9 @@ export default function ClientPortalPage() {
         <div className="glass-card rounded-3xl p-8 max-w-md text-center space-y-4">
           <div className={cn(
             "w-16 h-16 rounded-full flex items-center justify-center mx-auto",
-            isInactive ? "bg-muted" : isExpired ? "bg-amber-500/20" : "bg-destructive/20"
+            isInactive ? "bg-muted" : isExpired ? "bg-muted" : "bg-destructive/20"
           )}>
-            {isInactive ? <Lock className="w-8 h-8 text-muted-foreground" /> : <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-amber-500" : "text-destructive")} />}
+            {isInactive ? <Lock className="w-8 h-8 text-muted-foreground" /> : <AlertTriangle className={cn("w-8 h-8", isExpired ? "text-muted-foreground" : "text-destructive")} />}
           </div>
           <h1 className="text-xl font-bold text-foreground">
             {isInactive ? 'Portal Desativado' : isExpired ? 'Link Expirado' : 'Link Inválido'}
@@ -236,10 +236,10 @@ export default function ClientPortalPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-violet-500" />
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-[9px] font-medium text-violet-500 uppercase">Valor</span>
+                <span className="text-[9px] font-medium text-primary uppercase">Valor</span>
               </div>
               <p className="text-lg font-medium text-foreground truncate">
                 {project.contract_value ? formatCurrency(project.contract_value) : '--'}
@@ -249,15 +249,15 @@ export default function ClientPortalPage() {
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-emerald-500" />
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Activity className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-[9px] font-medium text-emerald-500 uppercase">Saúde</span>
+                <span className="text-[9px] font-medium text-primary uppercase">Saúde</span>
               </div>
               <p className={cn(
                 "text-lg font-medium truncate",
-                (project.health_score || 0) >= 90 ? 'text-emerald-500' :
-                (project.health_score || 0) >= 70 ? 'text-amber-500' : 'text-red-500'
+                (project.health_score || 0) >= 90 ? 'text-primary' :
+                (project.health_score || 0) >= 70 ? 'text-muted-foreground' : 'text-destructive'
               )}>
                 {project.health_score ?? 100}%
               </p>
@@ -279,10 +279,10 @@ export default function ClientPortalPage() {
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                  <User className="w-4 h-4 text-amber-500" />
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                  <User className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <span className="text-[9px] font-bold text-amber-500 uppercase">Responsável</span>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase">Responsável</span>
               </div>
               <p className="text-sm font-bold text-foreground truncate">
                 {project.owner_name || '--'}
@@ -294,10 +294,10 @@ export default function ClientPortalPage() {
 
         {/* Payment Block Alert */}
         {hasPaymentBlock && (
-          <div className="glass-card rounded-2xl p-6 border-amber-500/30 bg-amber-500/5 mb-6">
+          <div className="glass-card rounded-2xl p-6 border-destructive/30 bg-destructive/5 mb-6">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <Lock className="w-5 h-5 text-amber-500" />
+              <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+                <Lock className="w-5 h-5 text-destructive" />
               </div>
               <div>
                 <h3 className="font-bold text-foreground">Projeto Bloqueado por Inadimplência</h3>
@@ -439,10 +439,10 @@ export default function ClientPortalPage() {
 
             {/* Approval Status */}
             {fileApproval ? (
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  <p className="text-emerald-500 font-semibold">Aprovado por {fileApproval.approved_by_name}</p>
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                  <p className="text-primary font-semibold">Aprovado por {fileApproval.approved_by_name}</p>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   {format(new Date(fileApproval.approved_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
@@ -482,7 +482,7 @@ export default function ClientPortalPage() {
                   <Button 
                     onClick={handleRequestRevision} 
                     variant="outline"
-                    className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
+                    className="border-muted-foreground text-muted-foreground hover:bg-muted"
                     disabled={!commentForm.name || !commentForm.content || isRequestingRevision}
                   >
                     <Zap className="w-4 h-4 mr-2" />
@@ -491,14 +491,14 @@ export default function ClientPortalPage() {
                   <Button 
                     onClick={handleApprove} 
                     disabled={!commentForm.name || isApproving || hasPaymentBlock} 
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     {isApproving ? 'Aprovando...' : 'Aprovar Entrega'}
                   </Button>
                 </div>
                 {hasPaymentBlock && (
-                  <p className="text-xs text-amber-500">
+                  <p className="text-xs text-destructive">
                     * A aprovação está bloqueada devido a pendência financeira.
                   </p>
                 )}
@@ -516,14 +516,14 @@ export default function ClientPortalPage() {
                     <div key={comment.id} className={cn(
                       "p-3 rounded-xl",
                       comment.status === 'revision_requested' 
-                        ? "bg-amber-500/10 border border-amber-500/20" 
+                        ? "bg-muted border border-border" 
                         : "bg-muted/50"
                     )}>
                       <div className="flex justify-between mb-1">
                         <span className="font-medium text-sm">{comment.author_name}</span>
                         <div className="flex items-center gap-2">
                           {comment.status === 'revision_requested' && (
-                            <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500">
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground border-border">
                               Revisão
                             </Badge>
                           )}

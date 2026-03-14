@@ -15,8 +15,8 @@ interface Suggestion {
 }
 
 const PRIORITY_ICONS: Record<string, { icon: typeof Flame; className: string; label: string }> = {
-  urgent: { icon: Flame, className: "text-red-400", label: "Urgente" },
-  high: { icon: ArrowUp, className: "text-orange-400", label: "Alta" },
+  urgent: { icon: Flame, className: "text-destructive", label: "Urgente" },
+  high: { icon: ArrowUp, className: "text-muted-foreground", label: "Alta" },
   normal: { icon: Minus, className: "text-muted-foreground", label: "Normal" },
   low: { icon: ArrowDown, className: "text-muted-foreground/50", label: "Baixa" },
 };
@@ -134,7 +134,7 @@ export function TaskAIPrioritySuggestions({ externalOpen, onExternalOpenChange }
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => rejectSuggestion(s.id)}>
                         <X className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-emerald-500" onClick={() => acceptSuggestion(s)}>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-primary" onClick={() => acceptSuggestion(s)}>
                         <Check className="w-3 h-3" />
                       </Button>
                     </div>

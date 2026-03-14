@@ -53,9 +53,9 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
   };
 
   const getMaterialColor = (material: PortalDeliverable): { bg: string; text: string } => {
-    if (material.youtube_url) return { bg: 'bg-red-500/20', text: 'text-red-400' };
-    if (material.file_url) return { bg: 'bg-blue-500/20', text: 'text-blue-400' };
-    return { bg: 'bg-cyan-500/20', text: 'text-cyan-400' };
+    if (material.youtube_url) return { bg: 'bg-destructive/20', text: 'text-destructive' };
+    if (material.file_url) return { bg: 'bg-primary/20', text: 'text-primary' };
+    return { bg: 'bg-primary/20', text: 'text-primary' };
   };
 
   const hasMaterials = materials.length > 0 || visibleFiles.length > 0;
@@ -72,7 +72,7 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
         variants={itemVariants}
       >
         <h3 className="text-sm font-light text-white">Materiais & Vídeos</h3>
-        <span className="material-symbols-outlined text-cyan-400" style={{ fontSize: 16 }}>
+        <span className="material-symbols-outlined text-primary" style={{ fontSize: 16 }}>
           auto_awesome
         </span>
       </motion.div>
@@ -122,7 +122,7 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
+                <p className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
                   {material.title}
                 </p>
                 <p className="text-xs text-gray-500">
@@ -130,7 +130,7 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
                 </p>
               </div>
               {url && (
-                <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
+                <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-primary transition-colors" />
               )}
             </motion.div>
           );
@@ -148,19 +148,19 @@ function PortalMaterialsAsideComponent({ deliverables, files }: PortalMaterialsA
               file.file_url && "cursor-pointer"
             )}
           >
-            <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-purple-400" style={{ fontSize: 20 }}>
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary/70" style={{ fontSize: 20 }}>
                 folder_zip
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors truncate">
+              <p className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
                 {file.name}
               </p>
               <p className="text-xs text-gray-500">{file.folder || 'Arquivo'}</p>
             </div>
             {file.file_url && (
-              <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
+              <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-primary transition-colors" />
             )}
           </motion.div>
         ))}

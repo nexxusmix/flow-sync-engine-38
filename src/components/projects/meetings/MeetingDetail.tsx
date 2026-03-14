@@ -45,9 +45,9 @@ interface MeetingDetailProps {
 
 const typeConfig = {
   reuniao: { icon: Video, label: 'Reunião', color: 'text-primary' },
-  pedido_cliente: { icon: FileText, label: 'Pedido do Cliente', color: 'text-amber-500' },
-  mensagem_cliente: { icon: MessageSquare, label: 'Mensagem do Cliente', color: 'text-emerald-500' },
-  alinhamento_interno: { icon: Users, label: 'Alinhamento Interno', color: 'text-violet-500' },
+  pedido_cliente: { icon: FileText, label: 'Pedido do Cliente', color: 'text-muted-foreground' },
+  mensagem_cliente: { icon: MessageSquare, label: 'Mensagem do Cliente', color: 'text-primary' },
+  alinhamento_interno: { icon: Users, label: 'Alinhamento Interno', color: 'text-primary/70' },
 };
 
 export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetailProps) {
@@ -243,7 +243,7 @@ export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetail
             {summary.decisions.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                   Decisões
                 </h4>
                 <ul className="space-y-1">
@@ -260,7 +260,7 @@ export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetail
             {summary.action_items.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                   Ações / Próximos Passos
                 </h4>
                 <ul className="space-y-1">
@@ -268,7 +268,7 @@ export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetail
                     <li key={i} className="text-sm text-muted-foreground pl-5">
                       {item.title}
                       {item.assignee && <span className="text-primary"> → {item.assignee}</span>}
-                      {item.due_date && <span className="text-amber-500"> (até {item.due_date})</span>}
+                      {item.due_date && <span className="text-muted-foreground"> (até {item.due_date})</span>}
                     </li>
                   ))}
                 </ul>

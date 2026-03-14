@@ -82,7 +82,7 @@ export function TaskAIDailySummary() {
                     </span>
                   )}
                   {data.stats.dueToday > 0 && (
-                    <span className="flex items-center gap-1 text-amber-500/70">
+                    <span className="flex items-center gap-1 text-muted-foreground">
                       <CheckCircle2 className="w-2.5 h-2.5" /> {data.stats.dueToday} para hoje
                     </span>
                   )}

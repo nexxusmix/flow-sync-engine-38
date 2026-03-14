@@ -56,7 +56,7 @@ function PortalDeliverablesPremiumComponent({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <h2 className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-medium border-l-2 border-cyan-400 pl-4">
+        <h2 className="text-xs uppercase tracking-[0.3em] text-primary font-medium border-l-2 border-primary pl-4">
           Entregas Contratadas
         </h2>
         <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-12 text-center">
@@ -75,7 +75,7 @@ function PortalDeliverablesPremiumComponent({
       animate={{ opacity: 1 }}
     >
       <motion.h2 
-        className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-medium border-l-2 border-cyan-400 pl-4"
+        className="text-xs uppercase tracking-[0.3em] text-primary font-medium border-l-2 border-primary pl-4"
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
@@ -104,13 +104,13 @@ function PortalDeliverablesPremiumComponent({
               onClick={() => onSelectMaterial(deliverable.id)}
               className={cn(
                 "bg-[#0a0a0a] border border-[#1a1a1a] rounded-2xl p-5 cursor-pointer transition-colors",
-                isSelected && "bg-cyan-500/5 border-l-2 border-cyan-500"
+                isSelected && "bg-primary/5 border-l-2 border-primary"
               )}
             >
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2">
                   {isApproved ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                   ) : (
                     <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
                   )}
@@ -121,9 +121,9 @@ function PortalDeliverablesPremiumComponent({
                 <span className={cn(
                   "text-caption px-2 py-0.5 uppercase tracking-wider font-medium",
                   isApproved 
-                    ? "bg-emerald-500/20 text-emerald-400" 
+                    ? "bg-primary/20 text-primary" 
                     : deliverable.awaiting_approval 
-                      ? "bg-amber-500/20 text-amber-400"
+                      ? "bg-muted text-muted-foreground"
                       : "border border-[#1a1a1a] text-gray-500"
                 )}>
                   {isApproved ? 'Aprovado' : deliverable.awaiting_approval ? 'Aguardando' : 'Pendente'}

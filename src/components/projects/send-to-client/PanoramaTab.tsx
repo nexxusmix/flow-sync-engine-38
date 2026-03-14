@@ -266,7 +266,7 @@ export function PanoramaTab({ project }: PanoramaTabProps) {
       )}
 
       {/* WhatsApp send */}
-      <Button onClick={handleSendWhatsApp} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+      <Button onClick={handleSendWhatsApp} className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
         <Send className="w-4 h-4" /> Enviar via WhatsApp
       </Button>
 

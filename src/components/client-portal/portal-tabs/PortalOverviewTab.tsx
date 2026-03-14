@@ -117,10 +117,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
 
         <div className="glass-card rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-amber-500" />
+            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+              <Zap className="w-4 h-4 text-muted-foreground" />
             </div>
-            <span className="text-caption font-bold text-amber-500 uppercase">Etapa</span>
+            <span className="text-caption font-bold text-muted-foreground uppercase">Etapa</span>
           </div>
           <p className="text-lg font-bold text-foreground truncate">{currentStageName}</p>
           <p className="text-mono text-muted-foreground">Etapa Atual</p>

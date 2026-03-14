@@ -173,7 +173,7 @@ export function MessageDraftModal({ item, open, onClose }: Props) {
                   <button
                     onClick={markAsSent}
                     disabled={markedSent}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-[10px] font-mono uppercase"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-[10px] font-mono uppercase"
                   >
                     <Send className="w-3 h-3" />
                     {markedSent ? "Enviado ✓" : "Marcar Enviado"}

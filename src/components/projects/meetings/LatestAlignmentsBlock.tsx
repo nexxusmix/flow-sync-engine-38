@@ -113,7 +113,7 @@ export function LatestAlignmentsBlock({ projectId }: LatestAlignmentsBlockProps)
                     <Circle className={cn(
                       "w-3 h-3 mt-1",
                       isOverdue ? "text-destructive" :
-                      isDueToday ? "text-amber-500" :
+                      isDueToday ? "text-muted-foreground" :
                       "text-muted-foreground"
                     )} />
                     <div className="flex-1 min-w-0">
@@ -124,7 +124,7 @@ export function LatestAlignmentsBlock({ projectId }: LatestAlignmentsBlockProps)
                         <span className={cn(
                           "text-xs",
                           isOverdue ? "text-destructive" :
-                          isDueToday ? "text-amber-500" :
+                          isDueToday ? "text-muted-foreground" :
                           "text-muted-foreground"
                         )}>
                           {isOverdue ? 'Atrasado: ' : isDueToday ? 'Hoje: ' : ''}

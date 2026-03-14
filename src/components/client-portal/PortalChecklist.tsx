@@ -29,13 +29,13 @@ export function PortalChecklist({ project }: PortalChecklistProps) {
         </div>
         <div className="flex items-center gap-4 text-xs">
           {pendingCount > 0 && (
-            <span className="text-amber-500">{pendingCount} pendente(s)</span>
+            <span className="text-muted-foreground">{pendingCount} pendente(s)</span>
           )}
           {submittedCount > 0 && (
-            <span className="text-blue-500">{submittedCount} enviado(s)</span>
+            <span className="text-primary/70">{submittedCount} enviado(s)</span>
           )}
           {approvedCount > 0 && (
-            <span className="text-emerald-500">{approvedCount} aprovado(s)</span>
+            <span className="text-primary">{approvedCount} aprovado(s)</span>
           )}
         </div>
       </div>
@@ -46,20 +46,20 @@ export function PortalChecklist({ project }: PortalChecklistProps) {
             key={item.id}
             className={`
               flex items-start gap-4 p-4 rounded-xl transition-colors
-              ${item.status === 'aprovado' ? 'bg-emerald-500/5 border border-emerald-500/20' : ''}
-              ${item.status === 'enviado' ? 'bg-blue-500/5 border border-blue-500/20' : ''}
+              ${item.status === 'aprovado' ? 'bg-primary/5 border border-primary/20' : ''}
+              ${item.status === 'enviado' ? 'bg-primary/5 border border-primary/10' : ''}
               ${item.status === 'pendente' ? 'bg-muted/30' : ''}
             `}
           >
             {/* Status Icon */}
             <div className={`
               w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-              ${item.status === 'aprovado' ? 'bg-emerald-500/20' : ''}
-              ${item.status === 'enviado' ? 'bg-blue-500/20' : ''}
+              ${item.status === 'aprovado' ? 'bg-primary/20' : ''}
+              ${item.status === 'enviado' ? 'bg-primary/10' : ''}
               ${item.status === 'pendente' ? 'bg-muted' : ''}
             `}>
-              {item.status === 'aprovado' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
-              {item.status === 'enviado' && <Clock className="w-4 h-4 text-blue-500" />}
+              {item.status === 'aprovado' && <CheckCircle className="w-4 h-4 text-primary" />}
+              {item.status === 'enviado' && <Clock className="w-4 h-4 text-primary/70" />}
               {item.status === 'pendente' && <Upload className="w-4 h-4 text-muted-foreground" />}
             </div>
 
@@ -83,12 +83,12 @@ export function PortalChecklist({ project }: PortalChecklistProps) {
               </Button>
             )}
             {item.status === 'enviado' && (
-              <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded">
+              <span className="text-xs text-primary/70 bg-primary/10 px-2 py-1 rounded">
                 Aguardando aprovação
               </span>
             )}
             {item.status === 'aprovado' && (
-              <span className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">
+              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
                 Aprovado
               </span>
             )}

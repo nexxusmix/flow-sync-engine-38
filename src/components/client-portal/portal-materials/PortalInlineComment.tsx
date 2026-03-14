@@ -64,9 +64,9 @@ interface PortalInlineCommentProps {
 }
 
 const PRIORITIES: { id: Priority; label: string; color: string }[] = [
-  { id: 'normal', label: 'Normal', color: 'bg-gray-600' },
-  { id: 'high', label: 'Alta', color: 'bg-amber-500' },
-  { id: 'urgent', label: 'Urgente', color: 'bg-red-500' },
+  { id: 'normal', label: 'Normal', color: 'bg-muted-foreground' },
+  { id: 'high', label: 'Alta', color: 'bg-muted-foreground' },
+  { id: 'urgent', label: 'Urgente', color: 'bg-destructive' },
 ];
 
 function PortalInlineCommentComponent({
@@ -165,7 +165,7 @@ function PortalInlineCommentComponent({
               <div className="flex-1">
                 {hasTimecode && (
                   <div className="flex items-center gap-2">
-                    <Play className="w-3.5 h-3.5 text-cyan-500" />
+                    <Play className="w-3.5 h-3.5 text-primary" />
                     <span className="text-sm text-white font-mono">{currentTimecode}</span>
                   </div>
                 )}
@@ -264,7 +264,7 @@ function PortalInlineCommentComponent({
                     size="sm"
                     className={cn(
                       "h-8 text-xs",
-                      mode === 'approve' && "bg-emerald-500/20 text-emerald-400"
+                      mode === 'approve' && "bg-primary/20 text-primary"
                     )}
                     onClick={() => setMode('approve')}
                   >
@@ -276,7 +276,7 @@ function PortalInlineCommentComponent({
                     size="sm"
                     className={cn(
                       "h-8 text-xs",
-                      mode === 'revision' && "bg-amber-500/20 text-amber-400"
+                      mode === 'revision' && "bg-muted text-muted-foreground"
                     )}
                     onClick={() => setMode('revision')}
                   >
@@ -305,12 +305,12 @@ function PortalInlineCommentComponent({
               size="sm"
               className={cn(
                 "h-8 text-xs",
-                mode === 'approve' && "bg-emerald-500 hover:bg-emerald-600",
+                mode === 'approve' && "bg-primary hover:bg-primary/90",
                 mode === 'revision' && priority === 'urgent' 
-                  ? "bg-red-500 hover:bg-red-600"
+                  ? "bg-destructive hover:bg-destructive/90"
                   : mode === 'revision' && priority === 'high'
-                    ? "bg-amber-500 hover:bg-amber-600"
-                    : mode === 'revision' && "bg-cyan-500 hover:bg-cyan-600"
+                    ? "bg-muted-foreground hover:bg-muted-foreground/90"
+                    : mode === 'revision' && "bg-primary hover:bg-primary/90"
               )}
               onClick={handleSubmit}
               disabled={isPending || !authorName.trim() || (mode !== 'approve' && !comment.trim())}
@@ -372,7 +372,7 @@ function PortalInlineCommentComponent({
                             {format(new Date(c.created_at), "dd/MM HH:mm", { locale: ptBR })}
                           </span>
                           {c.status === 'revision_requested' && (
-                            <Badge className="bg-amber-500/20 text-amber-400 text-[10px]">
+                            <Badge className="bg-muted text-muted-foreground text-[10px]">
                               Ajuste
                             </Badge>
                           )}
@@ -390,10 +390,10 @@ function PortalInlineCommentComponent({
 
       {/* Approved Badge */}
       {isApproved && (
-        <div className="border-t border-[#1a1a1a] p-3 bg-emerald-500/5">
+        <div className="border-t border-border p-3 bg-primary/5">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span className="text-xs text-emerald-400">
+            <CheckCircle2 className="w-4 h-4 text-primary" />
+            <span className="text-xs text-primary">
               Aprovado por {approval.approved_by_name}
             </span>
             <span className="text-[10px] text-gray-600 ml-auto">

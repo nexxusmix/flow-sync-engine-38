@@ -209,7 +209,7 @@ export function AddVersionDialog({
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-3">
             Nova Versão
-            <Badge className="bg-cyan-500/20 text-cyan-400 font-mono">
+            <Badge className="bg-primary/20 text-primary font-mono">
               V{String(nextVersion).padStart(2, '0')}
             </Badge>
           </DialogTitle>
@@ -227,13 +227,13 @@ export function AddVersionDialog({
                 className={cn(
                   "flex-1 p-3 rounded-lg border transition-all flex flex-col items-center gap-2",
                   materialType === type
-                    ? "border-cyan-500 bg-cyan-500/10"
+                    ? "border-primary bg-primary/10"
                     : "border-[#2a2a2a] hover:border-[#3a3a3a]"
                 )}
               >
                 <Icon className={cn(
                   "w-5 h-5",
-                  materialType === type ? "text-cyan-400" : "text-gray-500"
+                  materialType === type ? "text-primary" : "text-gray-500"
                 )} />
                 <span className={cn(
                   "text-xs",
@@ -258,7 +258,7 @@ export function AddVersionDialog({
               />
               {selectedFile ? (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-[#111] border border-[#2a2a2a]">
-                  <FileVideo className="w-8 h-8 text-cyan-500" />
+                  <FileVideo className="w-8 h-8 text-primary" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{selectedFile.name}</p>
                     <p className="text-xs text-gray-500">

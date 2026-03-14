@@ -119,7 +119,7 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
                 </h2>
                 <div className="flex items-center gap-2">
                   {canUndo && (
-                    <Button variant="ghost" size="sm" onClick={undoLastAction} disabled={isExecuting} className="gap-1.5 text-amber-500 hover:text-amber-400">
+                    <Button variant="ghost" size="sm" onClick={undoLastAction} disabled={isExecuting} className="gap-1.5 text-muted-foreground hover:text-foreground">
                       <Undo2 className="w-4 h-4" /> Desfazer
                     </Button>
                   )}
@@ -161,8 +161,8 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
                     )}
 
                     {analysis.dormant.count > 0 && (
-                      <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-1">
-                        <p className="text-sm font-semibold text-amber-500 flex items-center gap-1.5">
+                      <div className="p-3 rounded-xl border border-border bg-muted/50 space-y-1">
+                        <p className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
                           <Clock className="w-4 h-4" /> {analysis.dormant.count} tarefas dormentes (+7d)
                         </p>
                         <ul className="text-xs text-muted-foreground space-y-0.5">
@@ -267,8 +267,8 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
 
                     {/* Last Result */}
                     {lastResult && (
-                      <div className="p-3 rounded-xl border border-green-500/20 bg-green-500/5">
-                        <p className="text-sm text-green-400 flex items-center gap-1.5">
+                      <div className="p-3 rounded-xl border border-primary/20 bg-primary/5">
+                        <p className="text-sm text-primary flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4" /> {lastResult}
                         </p>
                       </div>
@@ -308,12 +308,12 @@ export function TaskAnalysisPanel({ tasks, externalOpen, onExternalOpenChange }:
                     {analysis.recommendations.length > 0 && (
                       <div className="space-y-2">
                         <p className="flex items-center gap-1 text-xs font-semibold uppercase text-muted-foreground">
-                          <Target className="w-3 h-3 text-emerald-400" /> Recomendações
+                          <Target className="w-3 h-3 text-primary" /> Recomendações
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {analysis.recommendations.map((rec, i) => (
-                            <div key={`r-${i}`} className="flex items-start gap-3 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
-                              <Target className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            <div key={`r-${i}`} className="flex items-start gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
+                              <Target className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                               <p className="text-sm text-foreground leading-snug">{rec}</p>
                             </div>
                           ))}

@@ -15,9 +15,9 @@ export function MessageHistory({ projectId, onBack }: MessageHistoryProps) {
 
   const statusColors: Record<string, string> = {
     draft: 'text-muted-foreground',
-    sent: 'text-emerald-400',
-    failed: 'text-red-400',
-    queued: 'text-amber-400',
+    sent: 'text-primary',
+    failed: 'text-destructive',
+    queued: 'text-muted-foreground',
   };
 
   return (

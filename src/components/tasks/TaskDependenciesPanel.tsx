@@ -42,7 +42,7 @@ export function TaskDependenciesPanel({ taskId, allTasks }: TaskDependenciesPane
       <Label className="text-xs flex items-center gap-1 mb-2">
         <Link2 className="w-3 h-3" /> Depende de
         {hasUnresolved && (
-          <span className="text-[9px] text-amber-400 flex items-center gap-0.5 ml-1">
+          <span className="text-[9px] text-destructive flex items-center gap-0.5 ml-1">
             <AlertTriangle className="w-2.5 h-2.5" /> bloqueada
           </span>
         )}
@@ -53,9 +53,9 @@ export function TaskDependenciesPanel({ taskId, allTasks }: TaskDependenciesPane
           {depTasks.map(d => (
             <div key={d.id} className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/30 text-xs">
               {d.task?.status === 'done' ? (
-                <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                <CheckCircle2 className="w-3 h-3 text-primary flex-shrink-0" />
               ) : (
-                <AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                <AlertTriangle className="w-3 h-3 text-destructive flex-shrink-0" />
               )}
               <span className={cn("flex-1 truncate", d.task?.status === 'done' && "line-through text-muted-foreground")}>
                 {d.task?.title || 'Tarefa removida'}

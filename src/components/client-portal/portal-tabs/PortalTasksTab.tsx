@@ -35,9 +35,9 @@ function PortalTasksTabComponent({ tasks = [] }: PortalTasksTabProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'done':
-        return <CheckSquare className="w-4 h-4 text-emerald-500" />;
+        return <CheckSquare className="w-4 h-4 text-primary" />;
       case 'in_progress':
-        return <Clock className="w-4 h-4 text-amber-500" />;
+        return <Clock className="w-4 h-4 text-muted-foreground" />;
       default:
         return <Square className="w-4 h-4 text-muted-foreground" />;
     }
@@ -59,7 +59,7 @@ function PortalTasksTabComponent({ tasks = [] }: PortalTasksTabProps) {
       case 'urgent':
         return <Badge variant="destructive" className="text-[10px]">Urgente</Badge>;
       case 'high':
-        return <Badge className="bg-amber-500 text-[10px]">Alta</Badge>;
+        return <Badge className="bg-muted-foreground text-[10px]">Alta</Badge>;
       case 'low':
         return <Badge variant="secondary" className="text-[10px]">Baixa</Badge>;
       default:
@@ -129,11 +129,11 @@ function PortalTasksTabComponent({ tasks = [] }: PortalTasksTabProps) {
           <p className="text-[10px] text-muted-foreground">A fazer</p>
         </div>
         <div className="glass-card rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-amber-500">{inProgressTasks.length}</p>
+          <p className="text-2xl font-bold text-muted-foreground">{inProgressTasks.length}</p>
           <p className="text-[10px] text-muted-foreground">Em andamento</p>
         </div>
         <div className="glass-card rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-emerald-500">{doneTasks.length}</p>
+          <p className="text-2xl font-bold text-primary">{doneTasks.length}</p>
           <p className="text-[10px] text-muted-foreground">Concluídas</p>
         </div>
       </div>

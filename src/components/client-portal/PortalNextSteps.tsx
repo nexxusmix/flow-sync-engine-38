@@ -81,19 +81,19 @@ function PortalNextStepsComponent({ stages, currentStageKey }: PortalNextStepsPr
                   isCurrent 
                     ? 'bg-primary/10 border border-primary/30' 
                     : isCompleted 
-                      ? 'bg-emerald-500/5 border border-emerald-500/20'
+                      ? 'bg-primary/5 border border-primary/20'
                       : 'bg-muted/30 border border-transparent'
                 }`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   isCompleted 
-                    ? 'bg-emerald-500/20' 
+                    ? 'bg-primary/20' 
                     : isCurrent 
                       ? 'bg-primary/20' 
                       : 'bg-muted/50'
                 }`}>
                   {isCompleted ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
                   ) : isCurrent ? (
                     <Clock className="w-4 h-4 text-primary animate-pulse" />
                   ) : (
@@ -102,7 +102,7 @@ function PortalNextStepsComponent({ stages, currentStageKey }: PortalNextStepsPr
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${
-                    isCurrent ? 'text-primary' : isCompleted ? 'text-emerald-400' : 'text-muted-foreground'
+                    isCurrent ? 'text-primary' : isCompleted ? 'text-primary/70' : 'text-muted-foreground'
                   }`}>
                     {stageName}
                   </p>
