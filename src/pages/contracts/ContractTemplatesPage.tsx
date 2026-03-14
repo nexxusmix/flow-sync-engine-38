@@ -259,7 +259,7 @@ export default function ContractTemplatesPage() {
                       <h3 className="font-medium text-foreground flex items-center gap-2">
                         {template.name}
                         {template.is_default && (
-                          <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          <Star className="w-3 h-3 text-primary fill-primary" />
                         )}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
