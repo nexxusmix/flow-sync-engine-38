@@ -63,7 +63,7 @@ function PortalProjectStagesComponent({ stages, currentStageKey }: PortalProject
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
+        return <CheckCircle2 className="w-5 h-5 text-primary" />;
       case 'in_progress':
         return <Loader2 className="w-5 h-5 text-primary animate-spin" />;
       default:
