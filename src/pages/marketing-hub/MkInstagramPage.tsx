@@ -418,7 +418,7 @@ function MetricsView() {
                   <motion.div
                     className={cn(
                       "h-full rounded-lg",
-                      time.score >= 90 ? "bg-gradient-to-r from-amber-500/40 to-amber-400/60" :
+                      time.score >= 90 ? "bg-gradient-to-r from-primary/40 to-primary/60" :
                       time.score >= 70 ? "bg-gradient-to-r from-[hsl(195,100%,40%)]/40 to-[hsl(195,100%,50%)]/60" :
                       "bg-white/[0.08]"
                     )}
