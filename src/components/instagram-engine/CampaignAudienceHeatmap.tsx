@@ -184,7 +184,7 @@ Retorne JSON com:
                   <div key={i} className="p-3 bg-background/40 rounded-lg">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-semibold text-foreground">{seg.name}</span>
-                      <Badge className={`text-[8px] ${seg.engagement_level === 'high' ? 'bg-emerald-400/10 text-emerald-400' : seg.engagement_level === 'medium' ? 'bg-amber-400/10 text-amber-400' : 'bg-red-400/10 text-red-400'}`}>
+                      <Badge className={`text-[8px] ${seg.engagement_level === 'high' ? 'bg-primary/10 text-primary' : seg.engagement_level === 'medium' ? 'bg-muted text-muted-foreground' : 'bg-destructive/10 text-destructive'}`}>
                         {seg.engagement_level}
                       </Badge>
                     </div>
