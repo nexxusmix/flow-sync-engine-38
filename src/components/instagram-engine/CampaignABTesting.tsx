@@ -163,10 +163,10 @@ export function CampaignABTesting({ campaign, posts }: Props) {
         </Card>
 
         {/* Post B */}
-        <Card className={`glass-card p-4 transition-all ${result?.winner === 'B' ? 'ring-2 ring-emerald-500/50' : ''}`}>
+        <Card className={`glass-card p-4 transition-all ${result?.winner === 'B' ? 'ring-2 ring-primary/50' : ''}`}>
           <div className="flex items-center justify-between mb-2">
-            <Badge className="bg-amber-500/15 text-amber-400 text-[9px]">Versão B</Badge>
-            {result?.winner === 'B' && <Trophy className="w-4 h-4 text-emerald-400" />}
+            <Badge className="bg-muted text-muted-foreground text-[9px]">Versão B</Badge>
+            {result?.winner === 'B' && <Trophy className="w-4 h-4 text-primary" />}
           </div>
           <Select value={postB} onValueChange={setPostB}>
             <SelectTrigger className="text-[10px] h-8 mb-2">
