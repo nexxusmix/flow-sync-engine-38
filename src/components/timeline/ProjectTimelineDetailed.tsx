@@ -351,11 +351,11 @@ export function ProjectTimelineDetailed({
                         className={cn(
                           "h-full rounded-lg transition-all duration-300",
                           segment.status === "done"
-                            ? "bg-emerald-500/30"
-                            : segment.status === "in_progress"
                             ? "bg-primary/30"
+                            : segment.status === "in_progress"
+                            ? "bg-primary/20"
                             : segment.status === "blocked"
-                            ? "bg-red-500/30"
+                            ? "bg-destructive/30"
                             : "bg-muted/30"
                         )}
                         style={{ width: `${segment.progress}%` }}
