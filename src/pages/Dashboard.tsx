@@ -231,7 +231,7 @@ export default function Dashboard() {
 
         {/* Visual Board Section - PROJETOS */}
         <motion.div 
-          className="glass-card rounded-[2rem] p-6 min-h-[400px]"
+          className="glass-card rounded-xl md:rounded-[2rem] p-4 md:p-6 min-h-[300px] md:min-h-[400px]"
           initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
           whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "-80px" }}
