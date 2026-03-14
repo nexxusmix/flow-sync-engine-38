@@ -43,15 +43,15 @@ import { toast } from "sonner";
 
 const STATUS_CONFIG = {
   draft: { label: 'Rascunho', color: 'bg-muted' },
-  active: { label: 'Ativo', color: 'bg-emerald-500' },
+  active: { label: 'Ativo', color: 'bg-primary' },
   completed: { label: 'Concluído', color: 'bg-primary' },
-  cancelled: { label: 'Cancelado', color: 'bg-red-500' },
+  cancelled: { label: 'Cancelado', color: 'bg-destructive' },
 };
 
 const MILESTONE_STATUS_CONFIG = {
-  pending: { label: 'Pendente', color: 'bg-amber-500' },
-  paid: { label: 'Pago', color: 'bg-emerald-500' },
-  overdue: { label: 'Vencido', color: 'bg-red-500' },
+  pending: { label: 'Pendente', color: 'bg-muted-foreground' },
+  paid: { label: 'Pago', color: 'bg-primary' },
+  overdue: { label: 'Vencido', color: 'bg-destructive' },
 };
 
 export default function ContractsPage() {
