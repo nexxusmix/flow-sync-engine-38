@@ -319,7 +319,7 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
                     <Users className="w-3.5 h-3.5 text-primary" />
                     <span className="text-[10px] text-muted-foreground uppercase tracking-[0.1em]">Aprovação do Cliente</span>
                   </div>
-                  <SendToClientApproval item={item} onSent={() => { fetchContentItems(); }} />
+                  <SendToClientApproval item={item} onSent={onRefresh} />
                 </div>
 
                 {/* Content Preview */}
