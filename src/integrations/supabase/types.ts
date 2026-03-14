@@ -1826,14 +1826,18 @@ export type Database = {
           client_name: string | null
           comment: string | null
           created_at: string
+          cycle_number: number | null
           entity_id: string | null
           entity_type: string
+          feedback_context: string | null
           id: string
           portal_link_id: string | null
+          previous_rating: number | null
           project_id: string | null
           rating: number
           status: string
           submitted_at: string
+          trend_direction: string | null
           updated_at: string
           workspace_id: string
         }
@@ -1842,14 +1846,18 @@ export type Database = {
           client_name?: string | null
           comment?: string | null
           created_at?: string
+          cycle_number?: number | null
           entity_id?: string | null
           entity_type?: string
+          feedback_context?: string | null
           id?: string
           portal_link_id?: string | null
+          previous_rating?: number | null
           project_id?: string | null
           rating: number
           status?: string
           submitted_at?: string
+          trend_direction?: string | null
           updated_at?: string
           workspace_id?: string
         }
@@ -1858,14 +1866,18 @@ export type Database = {
           client_name?: string | null
           comment?: string | null
           created_at?: string
+          cycle_number?: number | null
           entity_id?: string | null
           entity_type?: string
+          feedback_context?: string | null
           id?: string
           portal_link_id?: string | null
+          previous_rating?: number | null
           project_id?: string | null
           rating?: number
           status?: string
           submitted_at?: string
+          trend_direction?: string | null
           updated_at?: string
           workspace_id?: string
         }
