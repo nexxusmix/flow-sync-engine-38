@@ -240,6 +240,7 @@ function AppRoutes() {
       <Route path="/configuracoes/equipe" element={<ProtectedRoute><TeamSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/auditoria" element={<ProtectedRoute><AuditSettingsPage /></ProtectedRoute>} />
       <Route path="/configuracoes/danger-zone" element={<ProtectedRoute><DangerZoneSettingsPage /></ProtectedRoute>} />
+      <Route path="/configuracoes/ai-usage" element={<ProtectedRoute><AiUsageDashboardPage /></ProtectedRoute>} />
       <Route path="/plataforma" element={<Navigate to="/" replace />} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />
       <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
