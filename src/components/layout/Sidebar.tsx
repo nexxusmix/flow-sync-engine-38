@@ -22,6 +22,7 @@ interface MenuItem {
 
 const mainMenuItems: MenuItem[] = [
   { name: "Overview", href: "/", icon: "space_dashboard" },
+  { name: "Command Center", href: "/command-center", icon: "terminal" },
   { name: "Executivo", href: "/executivo", icon: "monitoring" },
   { name: "Projetos", href: "/projetos", icon: "movie_filter", badge: 8 },
   { name: "Tarefas", href: "/tarefas", icon: "checklist" },
