@@ -129,6 +129,7 @@ import AgencyAutomationsPage from "./pages/AgencyAutomationsPage";
 import AIGovernanceDashboardPage from "./pages/AIGovernanceDashboardPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
 import BillingPage from "./pages/BillingPage";
+import OnboardingPage from "./pages/OnboardingPage";
 
 const queryClient = new QueryClient();
 
@@ -169,6 +170,7 @@ function AppRoutes() {
       <Route path="/ia-governanca" element={<ProtectedRoute><AIGovernanceDashboardPage /></ProtectedRoute>} />
       <Route path="/playbooks" element={<ProtectedRoute><PlaybooksPage /></ProtectedRoute>} />
       <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
+      <Route path="/onboarding-clientes" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CRMPage /></ProtectedRoute>} />
       <Route path="/clientes" element={<ProtectedRoute><ClientesPage /></ProtectedRoute>} />
       <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
