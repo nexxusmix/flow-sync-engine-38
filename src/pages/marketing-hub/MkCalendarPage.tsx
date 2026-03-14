@@ -136,7 +136,7 @@ export default function MkCalendarPage() {
             className={cn(
               "px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 border transition-all duration-300",
               showBestTimes
-                ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                ? "bg-primary/15 text-primary border-primary/30"
                 : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border"
             )}
             whileTap={{ scale: 0.95 }}
@@ -181,10 +181,10 @@ export default function MkCalendarPage() {
             transition={{ duration: 0.25 }}
             className="overflow-hidden mb-6"
           >
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-4">
+            <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-amber-400">Melhores Horários por Canal</span>
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-primary">Melhores Horários por Canal</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {CONTENT_CHANNELS.map(ch => {
@@ -197,7 +197,7 @@ export default function MkCalendarPage() {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {best?.hours.map(h => (
-                          <span key={h} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono">
+                          <span key={h} className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono">
                             {h}h
                           </span>
                         ))}
@@ -245,7 +245,7 @@ export default function MkCalendarPage() {
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-4 h-4 text-amber-400" />
+            <Zap className="w-4 h-4 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               Sem data agendada ({unscheduledCount})
             </span>
@@ -477,8 +477,8 @@ function ContentChip({ item, compact = false, draggable = false, onDragStart, on
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
 
   const statusColor = item.status === "published" ? "bg-primary/20 text-primary"
-    : item.status === "approved" || item.status === "scheduled" ? "bg-emerald-500/20 text-emerald-400"
-    : item.status === "review" ? "bg-amber-500/20 text-amber-400"
+    : item.status === "approved" || item.status === "scheduled" ? "bg-primary/20 text-primary"
+    : item.status === "review" ? "bg-muted text-muted-foreground"
     : "bg-muted/30 text-muted-foreground";
 
   return (
@@ -572,10 +572,10 @@ function ContentDetailDialog({ item, onClose }: { item: ContentItem | null; onCl
 
           {/* Best time suggestion */}
           {bestTimes && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 flex items-start gap-3">
-              <Sparkles className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+            <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3 flex items-start gap-3">
+              <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <div>
-                <span className="text-xs font-medium text-amber-400">Melhor horário para {channel?.name}</span>
+                <span className="text-xs font-medium text-primary">Melhor horário para {channel?.name}</span>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   Horários com maior engajamento: <strong className="text-foreground/70">{bestTimes.label}</strong>
                 </p>

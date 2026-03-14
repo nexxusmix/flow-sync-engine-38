@@ -81,8 +81,8 @@ export function CampaignClientReview({ campaign, posts }: Props) {
           <h3 className="text-sm font-semibold text-foreground">Client Review Portal</h3>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className="bg-emerald-400/10 text-emerald-400 text-[9px]">✅ {approvedCount}</Badge>
-          <Badge className="bg-red-400/10 text-red-400 text-[9px]">❌ {rejectedCount}</Badge>
+          <Badge className="bg-primary/10 text-primary text-[9px]">✅ {approvedCount}</Badge>
+          <Badge className="bg-destructive/10 text-destructive text-[9px]">❌ {rejectedCount}</Badge>
           <Badge variant="outline" className="text-[9px]">{reviewablePosts.length - approvedCount - rejectedCount} pendentes</Badge>
         </div>
       </div>
@@ -116,7 +116,7 @@ export function CampaignClientReview({ campaign, posts }: Props) {
               <Badge variant="outline" className="text-[9px]">{FORMATS.find(f => f.key === currentPost.format)?.label || currentPost.format}</Badge>
               {currentPost.pillar && <Badge variant="outline" className="text-[9px]">{PILLARS.find(p => p.key === currentPost.pillar)?.label || currentPost.pillar}</Badge>}
               {currentReview && (
-                <Badge className={currentReview.status === 'approved' ? 'bg-emerald-400/10 text-emerald-400 text-[9px]' : 'bg-red-400/10 text-red-400 text-[9px]'}>
+                <Badge className={currentReview.status === 'approved' ? 'bg-primary/10 text-primary text-[9px]' : 'bg-destructive/10 text-destructive text-[9px]'}>
                   {currentReview.status === 'approved' ? '✅ Aprovado' : '❌ Rejeitado'}
                 </Badge>
               )}
@@ -152,8 +152,8 @@ export function CampaignClientReview({ campaign, posts }: Props) {
             )}
 
             {currentPost.cta && (
-              <div className="p-2 bg-amber-400/5 rounded-lg border border-amber-400/10">
-                <span className="text-[10px] text-amber-400">📣 CTA: {currentPost.cta}</span>
+              <div className="p-2 bg-muted/10 rounded-lg border border-border/20">
+                <span className="text-[10px] text-muted-foreground">📣 CTA: {currentPost.cta}</span>
               </div>
             )}
 
@@ -175,7 +175,7 @@ export function CampaignClientReview({ campaign, posts }: Props) {
               className="text-xs min-h-[60px]"
             />
             <div className="flex gap-2">
-              <Button className="flex-1 gap-1.5 text-xs h-9 bg-emerald-500 hover:bg-emerald-600" onClick={() => handleReview('approved')}>
+              <Button className="flex-1 gap-1.5 text-xs h-9 bg-primary hover:bg-primary/90" onClick={() => handleReview('approved')}>
                 <CheckCircle className="w-4 h-4" /> Aprovar
               </Button>
               <Button variant="destructive" className="flex-1 gap-1.5 text-xs h-9" onClick={() => handleReview('rejected')}>
@@ -201,9 +201,9 @@ export function CampaignClientReview({ campaign, posts }: Props) {
               return (
                 <div key={postId} className="flex items-center gap-2">
                   {review.status === 'approved' ? (
-                    <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <CheckCircle className="w-3 h-3 text-primary shrink-0" />
                   ) : (
-                    <XCircle className="w-3 h-3 text-red-400 shrink-0" />
+                    <XCircle className="w-3 h-3 text-destructive shrink-0" />
                   )}
                   <span className="text-xs text-foreground truncate flex-1">{post?.title || postId}</span>
                   {review.comment && (

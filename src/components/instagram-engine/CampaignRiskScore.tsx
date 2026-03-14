@@ -101,16 +101,16 @@ export function CampaignRiskScore({ campaign, posts }: Props) {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'text-red-400 bg-red-400/10';
-      case 'medium': return 'text-amber-400 bg-amber-400/10';
+      case 'high': return 'text-destructive bg-destructive/10';
+      case 'medium': return 'text-muted-foreground bg-muted/20';
       default: return 'text-muted-foreground bg-muted/20';
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 50) return 'text-red-400';
-    if (score >= 20) return 'text-amber-400';
-    return 'text-emerald-400';
+    if (score >= 50) return 'text-destructive';
+    if (score >= 20) return 'text-muted-foreground';
+    return 'text-primary';
   };
 
   return (
@@ -127,11 +127,11 @@ export function CampaignRiskScore({ campaign, posts }: Props) {
           <div className="text-[10px] text-muted-foreground">Risco Médio</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
-          <div className="text-lg font-bold text-red-400">{highRiskCount}</div>
+          <div className="text-lg font-bold text-destructive">{highRiskCount}</div>
           <div className="text-[10px] text-muted-foreground">Alto Risco</div>
         </Card>
         <Card className="p-3 bg-card/50 border-border/30 text-center">
-          <div className="text-lg font-bold text-emerald-400">{cleanCount}</div>
+          <div className="text-lg font-bold text-primary">{cleanCount}</div>
           <div className="text-[10px] text-muted-foreground">Sem Risco</div>
         </Card>
       </div>
@@ -147,11 +147,11 @@ export function CampaignRiskScore({ campaign, posts }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {item.score === 0 ? (
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
                   ) : item.score >= 50 ? (
-                    <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                    <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />
                   ) : (
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                   )}
                   <span className="text-xs font-medium text-foreground truncate">{item.postTitle}</span>
                 </div>

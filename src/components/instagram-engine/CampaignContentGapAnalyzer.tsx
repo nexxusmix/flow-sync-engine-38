@@ -109,17 +109,17 @@ Retorne JSON com:
 
   const getSeverityIcon = (s: string) => {
     switch (s) {
-      case 'critical': return <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
-      case 'moderate': return <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
-      default: return <Lightbulb className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
+      case 'critical': return <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />;
+      case 'moderate': return <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />;
+      default: return <Lightbulb className="w-3.5 h-3.5 text-primary shrink-0" />;
     }
   };
 
   const getSeverityColor = (s: string) => {
     switch (s) {
-      case 'critical': return 'bg-red-400/10 text-red-400';
-      case 'moderate': return 'bg-amber-400/10 text-amber-400';
-      default: return 'bg-blue-400/10 text-blue-400';
+      case 'critical': return 'bg-destructive/10 text-destructive';
+      case 'moderate': return 'bg-muted text-muted-foreground';
+      default: return 'bg-primary/10 text-primary';
     }
   };
 
@@ -141,7 +141,7 @@ Retorne JSON com:
         <h4 className="text-xs font-semibold text-foreground">🔍 Lacunas Detectadas ({localGaps.length})</h4>
         {localGaps.length === 0 ? (
           <Card className="p-4 bg-card/50 border-border/30 text-center">
-            <CheckCircle className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+            <CheckCircle className="w-6 h-6 text-primary mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Nenhuma lacuna crítica detectada!</p>
           </Card>
         ) : (
@@ -200,7 +200,7 @@ Retorne JSON com:
             <Card className="p-4 bg-card/50 border-border/30">
               {Array.isArray(aiGaps.quick_wins) && (
                 <div className="mb-3">
-                  <h4 className="text-xs font-semibold text-emerald-400 mb-1.5">⚡ Quick Wins</h4>
+                  <h4 className="text-xs font-semibold text-primary mb-1.5">⚡ Quick Wins</h4>
                   <ul className="space-y-1">
                     {aiGaps.quick_wins.map((w: string, i: number) => (
                       <li key={i} className="text-xs text-muted-foreground">• {w}</li>
@@ -210,10 +210,10 @@ Retorne JSON com:
               )}
               {Array.isArray(aiGaps.missing_angles) && (
                 <div className="mb-3">
-                  <h4 className="text-xs font-semibold text-amber-400 mb-1.5">📐 Ângulos Faltantes</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-1.5">📐 Ângulos Faltantes</h4>
                   <div className="flex flex-wrap gap-1">
                     {aiGaps.missing_angles.map((a: string, i: number) => (
-                      <Badge key={i} className="bg-amber-400/10 text-amber-400 text-[9px]">{a}</Badge>
+                      <Badge key={i} className="bg-muted text-muted-foreground text-[9px]">{a}</Badge>
                     ))}
                   </div>
                 </div>

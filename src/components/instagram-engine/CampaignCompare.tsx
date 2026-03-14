@@ -85,7 +85,7 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
           <p className="text-[9px] text-muted-foreground">{statsA.total} posts</p>
         </Card>
         <Card className="glass-card p-3">
-          <Badge className="bg-amber-500/15 text-amber-400 text-[8px] mb-1">Campanha B</Badge>
+          <Badge className="bg-muted text-muted-foreground text-[8px] mb-1">Campanha B</Badge>
           <Select value={compareId} onValueChange={setCompareId}>
             <SelectTrigger className="text-[10px] h-7">
               <SelectValue placeholder="Selecione para comparar..." />
@@ -116,9 +116,9 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
                     <span className="text-[9px] text-muted-foreground">{m.label}</span>
                   </div>
                   <div className="flex items-center gap-4 text-[9px]">
-                    <span className={`font-semibold ${winner === 'A' ? 'text-emerald-400' : 'text-blue-400'}`}>{m.a}</span>
+                    <span className={`font-semibold ${winner === 'A' ? 'text-primary' : 'text-primary/60'}`}>{m.a}</span>
                     {m.b !== undefined ? (
-                      <span className={`font-semibold ${winner === 'B' ? 'text-emerald-400' : 'text-amber-400'}`}>{m.b}</span>
+                      <span className={`font-semibold ${winner === 'B' ? 'text-primary' : 'text-muted-foreground'}`}>{m.b}</span>
                     ) : (
                       <span className="text-muted-foreground/30">—</span>
                     )}
@@ -127,13 +127,13 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
                 {statsB && (
                   <div className="flex gap-1 h-1.5 rounded-full overflow-hidden">
                     <motion.div
-                      className="bg-blue-500 rounded-l-full"
+                      className="bg-primary rounded-l-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${aNum + bNum > 0 ? (aNum / (aNum + bNum)) * 100 : 50}%` }}
                       transition={{ duration: 0.6, delay: 0.1 + i * 0.05 }}
                     />
                     <motion.div
-                      className="bg-amber-500 rounded-r-full"
+                      className="bg-muted-foreground rounded-r-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${aNum + bNum > 0 ? (bNum / (aNum + bNum)) * 100 : 50}%` }}
                       transition={{ duration: 0.6, delay: 0.1 + i * 0.05 }}
@@ -152,7 +152,7 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
           <h5 className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Pilares por Campanha</h5>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[8px] text-blue-400 font-semibold mb-1">{currentCampaign.name}</p>
+              <p className="text-[8px] text-primary font-semibold mb-1">{currentCampaign.name}</p>
               {PILLARS.filter(p => currentPosts.some(post => post.pillar === p.key)).map(p => (
                 <div key={p.key} className="flex items-center justify-between py-0.5">
                   <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} /><span className="text-[8px] text-foreground">{p.label}</span></div>
@@ -161,7 +161,7 @@ export function CampaignCompare({ campaign: currentCampaign, posts: currentPosts
               ))}
             </div>
             <div>
-              <p className="text-[8px] text-amber-400 font-semibold mb-1">{compareCampaign?.name}</p>
+              <p className="text-[8px] text-muted-foreground font-semibold mb-1">{compareCampaign?.name}</p>
               {PILLARS.filter(p => comparePosts.some(post => post.pillar === p.key)).map(p => (
                 <div key={p.key} className="flex items-center justify-between py-0.5">
                   <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} /><span className="text-[8px] text-foreground">{p.label}</span></div>

@@ -53,9 +53,9 @@ function formatTimecode(ms: number): string {
 }
 
 const PRIORITIES: { id: Priority; label: string; color: string }[] = [
-  { id: 'normal', label: 'Normal', color: 'bg-gray-500' },
-  { id: 'high', label: 'Alta', color: 'bg-amber-500' },
-  { id: 'urgent', label: 'Urgente', color: 'bg-red-500' },
+  { id: 'normal', label: 'Normal', color: 'bg-muted-foreground' },
+  { id: 'high', label: 'Alta', color: 'bg-muted-foreground' },
+  { id: 'urgent', label: 'Urgente', color: 'bg-destructive' },
 ];
 
 function RevisionFormComponent({
@@ -102,7 +102,7 @@ function RevisionFormComponent({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-500" />
+          <AlertTriangle className="w-4 h-4 text-muted-foreground" />
           <div>
             <h3 className="text-sm font-medium text-white">Solicitar Ajuste</h3>
             <p className="text-xs text-gray-500">{materialTitle}</p>
@@ -155,7 +155,7 @@ function RevisionFormComponent({
               )}
               {hasScreenshot && (
                 <div className="flex items-center gap-2">
-                  <ImageIcon className="w-3.5 h-3.5 text-emerald-500" />
+                  <ImageIcon className="w-3.5 h-3.5 text-primary" />
                   <span className="text-xs text-gray-400">
                     Anotação visual anexada
                   </span>
@@ -231,10 +231,10 @@ function RevisionFormComponent({
           className={cn(
             "transition-colors",
             priority === 'urgent'
-              ? "bg-red-500 hover:bg-red-600"
+              ? "bg-destructive hover:bg-destructive/90"
               : priority === 'high'
-                ? "bg-amber-500 hover:bg-amber-600"
-                : "bg-cyan-500 hover:bg-cyan-600"
+                ? "bg-muted-foreground hover:bg-muted-foreground/90"
+                : "bg-primary hover:bg-primary/90"
           )}
           onClick={handleSubmit}
           disabled={!isValid || isSubmitting}

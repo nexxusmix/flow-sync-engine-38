@@ -120,7 +120,7 @@ Sugira um formato diferente se fizer sentido.`,
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-2">
-        <Recycle className="w-5 h-5 text-emerald-400" />
+        <Recycle className="w-5 h-5 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Reciclagem Inteligente de Conteúdo</h3>
         <Badge variant="outline" className="text-[10px]">{candidates.length} candidatos</Badge>
       </div>

@@ -133,7 +133,7 @@ function MaterialCard({
             className="w-full h-full object-cover"
           />
         ) : vimeoId ? (
-          <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
             <Play className="w-10 h-10 text-white" />
           </div>
         ) : material.thumbnail_url ? (
@@ -188,7 +188,7 @@ function MaterialCard({
           variant={isApproved ? "default" : material.awaiting_approval ? "outline" : "secondary"} 
           className={cn(
             "text-[10px] shrink-0",
-            material.awaiting_approval && !isApproved && "border-amber-500 text-amber-500"
+            material.awaiting_approval && !isApproved && "border-muted-foreground text-muted-foreground"
           )}
         >
           {isApproved ? (

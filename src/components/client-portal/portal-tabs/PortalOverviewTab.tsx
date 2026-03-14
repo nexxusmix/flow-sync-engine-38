@@ -128,10 +128,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
 
         <div className="glass-card rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-violet-500" />
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-caption font-bold text-violet-500 uppercase">Valor</span>
+            <span className="text-caption font-bold text-primary uppercase">Valor</span>
           </div>
           <p className="text-lg font-bold text-foreground">{formatCurrency(project.contract_value || 0)}</p>
           <p className="text-mono text-muted-foreground">Valor do Contrato</p>
@@ -230,10 +230,10 @@ function PortalOverviewTabComponent({ project, stages, hasPaymentBlock }: Portal
           </p>
         </div>
 
-        <div className="glass-card rounded-xl p-4 border-l-2 border-amber-500">
+        <div className="glass-card rounded-xl p-4 border-l-2 border-primary">
           <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-4 h-4 text-amber-500" />
-            <span className="text-[8px] font-bold text-amber-500 uppercase">Cliente</span>
+            <Zap className="w-4 h-4 text-primary" />
+            <span className="text-[8px] font-bold text-primary uppercase">Cliente</span>
           </div>
           <p className="text-[10px] text-muted-foreground mb-1">Nome do Cliente</p>
           <p className="text-sm font-bold text-foreground truncate">{project.client_name || '--'}</p>

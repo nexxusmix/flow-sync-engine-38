@@ -43,15 +43,15 @@ import { toast } from "sonner";
 
 const STATUS_CONFIG = {
   draft: { label: 'Rascunho', color: 'bg-muted' },
-  active: { label: 'Ativo', color: 'bg-emerald-500' },
+  active: { label: 'Ativo', color: 'bg-primary' },
   completed: { label: 'Concluído', color: 'bg-primary' },
-  cancelled: { label: 'Cancelado', color: 'bg-red-500' },
+  cancelled: { label: 'Cancelado', color: 'bg-destructive' },
 };
 
 const MILESTONE_STATUS_CONFIG = {
-  pending: { label: 'Pendente', color: 'bg-amber-500' },
-  paid: { label: 'Pago', color: 'bg-emerald-500' },
-  overdue: { label: 'Vencido', color: 'bg-red-500' },
+  pending: { label: 'Pendente', color: 'bg-muted-foreground' },
+  paid: { label: 'Pago', color: 'bg-primary' },
+  overdue: { label: 'Vencido', color: 'bg-destructive' },
 };
 
 export default function ContractsPage() {
@@ -301,10 +301,10 @@ export default function ContractsPage() {
                                   key={milestone.id}
                                   className="flex items-center justify-between p-3 rounded-lg bg-background/50"
                                 >
-                                  <div className="flex items-center gap-3">
+                                   <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full ${
-                                      milestone.status === 'paid' ? 'bg-emerald-500' :
-                                      isOverdue ? 'bg-red-500' : 'bg-amber-500'
+                                      milestone.status === 'paid' ? 'bg-primary' :
+                                      isOverdue ? 'bg-destructive' : 'bg-muted-foreground'
                                     }`} />
                                     <div>
                                       <p className="text-sm font-medium text-foreground">{milestone.title}</p>
@@ -312,7 +312,7 @@ export default function ContractsPage() {
                                         <Calendar className="w-3 h-3" />
                                         {new Date(milestone.due_date).toLocaleDateString('pt-BR')}
                                         {isOverdue && !milestone.paid_date && (
-                                          <AlertTriangle className="w-3 h-3 text-red-500 ml-1" />
+                                          <AlertTriangle className="w-3 h-3 text-destructive ml-1" />
                                         )}
                                       </p>
                                     </div>
@@ -332,7 +332,7 @@ export default function ContractsPage() {
                                       </Button>
                                     )}
                                     {milestone.status === 'paid' && (
-                                      <Badge className="bg-emerald-500">Pago</Badge>
+                                      <Badge className="bg-primary">Pago</Badge>
                                     )}
                                   </div>
                                 </div>

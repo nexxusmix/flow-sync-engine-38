@@ -61,15 +61,15 @@ function IdeaCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           {idea.score > 0 && (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-              <span className="text-[9px] font-mono text-amber-400">{idea.score}</span>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+              <Star className="w-3 h-3 text-primary fill-primary" />
+              <span className="text-[9px] font-mono text-primary">{idea.score}</span>
             </div>
           )}
           {referenceCount > 0 && (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20">
-              <Instagram className="w-2.5 h-2.5 text-purple-400" />
-              <span className="text-[9px] font-mono text-purple-400">{referenceCount}</span>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+              <Instagram className="w-2.5 h-2.5 text-primary/70" />
+              <span className="text-[9px] font-mono text-primary/70">{referenceCount}</span>
             </div>
           )}
           {idea.ai_generated && (
@@ -87,14 +87,14 @@ function IdeaCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-[#111114] border-white/10">
             <DropdownMenuItem onClick={onPromote} className="text-xs text-white/60">
-              <ArrowRight className="w-3 h-3 mr-2 text-emerald-400" />
+              <ArrowRight className="w-3 h-3 mr-2 text-primary" />
               Promover para Produção
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onLinkReference} className="text-xs text-white/60">
-              <Instagram className="w-3 h-3 mr-2 text-purple-400" />
+              <Instagram className="w-3 h-3 mr-2 text-primary/70" />
               Vincular Referência
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-xs text-red-400 focus:text-red-400">
+            <DropdownMenuItem onClick={onDelete} className="text-xs text-destructive focus:text-destructive">
               <Trash2 className="w-3 h-3 mr-2" />
               Excluir
             </DropdownMenuItem>
@@ -134,7 +134,7 @@ function IdeaCard({
       {/* Promote CTA */}
       <button
         onClick={onPromote}
-        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[10px] uppercase tracking-wider font-medium opacity-0 group-hover:opacity-100 transition-all hover:bg-emerald-500/10"
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md border border-primary/20 bg-primary/5 text-primary text-[10px] uppercase tracking-wider font-medium opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/10"
       >
         <ArrowRight className="w-3 h-3" />
         Produzir

@@ -134,8 +134,8 @@ export function CampaignCollaboration({ campaign, posts }: Props) {
 
   const TYPE_ICONS = {
     comment: <MessageSquare className="w-3 h-3" />,
-    approval: <ThumbsUp className="w-3 h-3 text-emerald-400" />,
-    revision: <ThumbsDown className="w-3 h-3 text-amber-400" />,
+    approval: <ThumbsUp className="w-3 h-3 text-primary" />,
+    revision: <ThumbsDown className="w-3 h-3 text-muted-foreground" />,
     note: <FileText className="w-3 h-3 text-primary" />,
   };
 
@@ -177,8 +177,8 @@ export function CampaignCollaboration({ campaign, posts }: Props) {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Badge className={`${status?.color} text-[7px]`}>{status?.label}</Badge>
-                    {p.hasApproval && <ThumbsUp className="w-2.5 h-2.5 text-emerald-400" />}
-                    {p.hasRevision && <AlertCircle className="w-2.5 h-2.5 text-amber-400" />}
+                    {p.hasApproval && <ThumbsUp className="w-2.5 h-2.5 text-primary" />}
+                    {p.hasRevision && <AlertCircle className="w-2.5 h-2.5 text-muted-foreground" />}
                   </div>
                 </motion.div>
               );
@@ -265,11 +265,11 @@ export function CampaignCollaboration({ campaign, posts }: Props) {
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="outline" className="text-[9px] h-6 gap-1"
                       onClick={() => handleSendComment('approval')} disabled={sending}>
-                      <ThumbsUp className="w-3 h-3 text-emerald-400" /> Aprovar
+                      <ThumbsUp className="w-3 h-3 text-primary" /> Aprovar
                     </Button>
                     <Button size="sm" variant="outline" className="text-[9px] h-6 gap-1"
                       onClick={() => handleSendComment('revision')} disabled={sending}>
-                      <ThumbsDown className="w-3 h-3 text-amber-400" /> Revisão
+                      <ThumbsDown className="w-3 h-3 text-muted-foreground" /> Revisão
                     </Button>
                   </div>
                   <Button size="sm" className="text-[9px] h-6 gap-1" onClick={() => handleSendComment()} disabled={!commentText.trim() || sending}>

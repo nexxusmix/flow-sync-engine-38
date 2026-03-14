@@ -413,7 +413,7 @@ export default function ContractDetailPage() {
                       description: 'O contrato será marcado como concluído. Essa ação pode ser revertida.'
                     })}
                   >
-                    <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" />
+                    <CheckCircle2 className="w-4 h-4 mr-2 text-primary" />
                     Concluir
                   </DropdownMenuItem>
                 )}
@@ -437,7 +437,7 @@ export default function ContractDetailPage() {
                       description: 'O contrato será cancelado. Essa ação pode ser revertida.'
                     })}
                   >
-                    <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                    <XCircle className="w-4 h-4 mr-2 text-destructive" />
                     Cancelar
                   </DropdownMenuItem>
                 )}
@@ -448,7 +448,7 @@ export default function ContractDetailPage() {
                     description: 'O contrato será arquivado e não aparecerá mais na listagem principal.'
                   })}
                 >
-                  <Archive className="w-4 h-4 mr-2 text-slate-500" />
+                  <Archive className="w-4 h-4 mr-2 text-muted-foreground" />
                   Arquivar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -469,8 +469,8 @@ export default function ContractDetailPage() {
         </div>
 
         {isLocked && (
-          <Card className="p-4 bg-amber-500/10 border-amber-500/30">
-            <p className="text-amber-500 text-sm">
+          <Card className="p-4 bg-muted border-border">
+            <p className="text-muted-foreground text-sm">
               Este contrato foi assinado e não pode ser editado. Crie um aditivo para alterações.
             </p>
           </Card>
@@ -522,7 +522,7 @@ export default function ContractDetailPage() {
                       </p>
                       <Badge
                         variant="outline"
-                        className={cn("text-xs", rev.status === 'received' ? 'text-emerald-500 border-emerald-500' : 'text-amber-500 border-amber-500')}
+                        className={cn("text-xs", rev.status === 'received' ? 'text-primary border-primary' : 'text-muted-foreground border-border')}
                       >
                         {rev.status === 'received' ? 'Recebido' : 'Pendente'}
                       </Badge>
@@ -918,14 +918,14 @@ export default function ContractDetailPage() {
               ) : (
                 <div className="space-y-3">
                   {signatures.map((sig) => (
-                    <div key={sig.id} className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <div key={sig.id} className="p-4 rounded-lg bg-primary/10 border border-primary/30">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Check className="w-4 h-4 text-emerald-500" />
-                          <span className="font-medium text-emerald-500">Assinado</span>
+                          <Check className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-primary">Assinado</span>
                         </div>
                         {(sig as any).provider === 'govbr' && (
-                          <Badge className="bg-emerald-500/20 text-emerald-500 text-xs">
+                          <Badge className="bg-primary/20 text-primary text-xs">
                             gov.br (ICP-Brasil)
                           </Badge>
                         )}
@@ -960,7 +960,7 @@ export default function ContractDetailPage() {
                       </div>
 
                       {(sig as any).document_hash && (
-                        <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                        <div className="mt-3 pt-3 border-t border-primary/20">
                           <span className="text-muted-foreground text-xs">Hash SHA-256:</span>
                           <p className="text-foreground font-mono text-xs break-all mt-1">
                             {(sig as any).document_hash}

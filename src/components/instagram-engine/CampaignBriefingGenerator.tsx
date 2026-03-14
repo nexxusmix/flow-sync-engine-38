@@ -148,8 +148,8 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-pink-500/15 flex items-center justify-center">
-          <FileSpreadsheet className="w-4 h-4 text-pink-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <FileSpreadsheet className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Gerador de Briefing</h4>
@@ -192,7 +192,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Visual Direction */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Layout className="w-3.5 h-3.5 text-pink-400" />
+                <Layout className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Direção Visual</span>
               </div>
               <p className="text-[10px] text-foreground/80 leading-relaxed">{briefing.visual_direction}</p>
@@ -201,7 +201,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Color Palette */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Palette className="w-3.5 h-3.5 text-pink-400" />
+                <Palette className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Paleta de Cores</span>
               </div>
               <div className="flex gap-2">
@@ -217,7 +217,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Typography */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Type className="w-3.5 h-3.5 text-pink-400" />
+                <Type className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Tipografia</span>
               </div>
               <p className="text-[10px] text-foreground/80">{briefing.typography}</p>
@@ -226,7 +226,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Shotlist */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Camera className="w-3.5 h-3.5 text-pink-400" />
+                <Camera className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Shotlist</span>
               </div>
               <div className="space-y-1">
@@ -242,7 +242,7 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Soundtrack */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Music className="w-3.5 h-3.5 text-pink-400" />
+                <Music className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Trilha Sonora</span>
               </div>
               <p className="text-[10px] text-foreground/80">{briefing.soundtrack_mood}</p>
@@ -251,13 +251,13 @@ export function CampaignBriefingGenerator({ campaign, posts }: Props) {
             {/* Recording tips */}
             <Card className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Camera className="w-3.5 h-3.5 text-pink-400" />
+                <Camera className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[10px] font-semibold text-foreground">Dicas de Gravação</span>
               </div>
               <div className="space-y-1">
                 {briefing.recording_tips.map((tip, i) => (
                   <div key={i} className="text-[9px] text-foreground/80 flex items-center gap-1.5">
-                    <span className="text-pink-400">▸</span> {tip}
+                    <span className="text-primary">▸</span> {tip}
                   </div>
                 ))}
               </div>

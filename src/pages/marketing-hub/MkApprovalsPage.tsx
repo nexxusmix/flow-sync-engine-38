@@ -194,7 +194,7 @@ export default function MkApprovalsPage() {
         <DialogContent className="bg-[#111114] border-white/[0.08] text-white max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-white/90 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-amber-400" />
+              <XCircle className="w-5 h-5 text-muted-foreground" />
               Solicitar Alteração
             </DialogTitle>
           </DialogHeader>
@@ -214,7 +214,7 @@ export default function MkApprovalsPage() {
                 Cancelar
               </button>
               <button onClick={confirmReject}
-                className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors">
+                className="flex-1 py-2.5 rounded-xl bg-muted-foreground text-white text-sm font-medium hover:bg-muted-foreground/80 transition-colors">
                 Devolver para Edição
               </button>
             </div>
@@ -243,7 +243,7 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
   const stage = CONTENT_ITEM_STAGES.find(s => s.type === item.status);
 
   const statusVariant = item.status === "approved" ? "emerald"
-    : item.status === "review" ? "amber"
+    : item.status === "review" ? "slate"
     : item.status === "editing" ? "blue"
     : "slate";
 
@@ -284,12 +284,12 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
             {item.status === "review" && (
               <>
                 <button onClick={e => { e.stopPropagation(); onApprove(); }}
-                  className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                  className="p-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                   title="Aprovar">
                   <CheckCircle className="w-5 h-5" />
                 </button>
                 <button onClick={e => { e.stopPropagation(); onReject(); }}
-                  className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+                  className="p-2.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
                   title="Solicitar alteração">
                   <XCircle className="w-5 h-5" />
                 </button>
@@ -381,8 +381,8 @@ function ApprovalCard({ item, index, expanded, onToggle, onApprove, onReject, co
                         comments.map((c: any) => (
                           <div key={c.id} className={cn(
                             "rounded-lg p-3 text-xs",
-                            c.text.startsWith('✅') ? "bg-emerald-500/10 border border-emerald-500/10"
-                              : c.text.startsWith('🔄') ? "bg-amber-500/10 border border-amber-500/10"
+                            c.text.startsWith('✅') ? "bg-primary/10 border border-primary/10"
+                              : c.text.startsWith('🔄') ? "bg-muted border border-border"
                               : "bg-white/[0.03] border border-white/[0.06]"
                           )}>
                             <div className="flex items-center justify-between mb-1">

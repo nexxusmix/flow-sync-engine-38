@@ -17,23 +17,23 @@ const FUNNEL_CONFIG: Record<FunnelStage, { label: string; description: string; c
     label: 'TOPO (Awareness)',
     description: 'Alcance e descoberta',
     color: 'text-blue-400',
-    bg: 'bg-blue-500/15',
+    bg: 'bg-primary/15',
     icon: <Eye className="w-5 h-5" />,
     pillars: ['educacao', 'bastidores', 'autoridade'],
   },
   mofu: {
     label: 'MEIO (Consideração)',
     description: 'Engajamento e confiança',
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/15',
+    color: 'text-primary/70',
+    bg: 'bg-primary/10',
     icon: <Heart className="w-5 h-5" />,
     pillars: ['autoridade', 'social_proof', 'portfolio'],
   },
   bofu: {
     label: 'FUNDO (Conversão)',
     description: 'Decisão e venda',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/15',
+    color: 'text-primary',
+    bg: 'bg-primary/15',
     icon: <ShoppingBag className="w-5 h-5" />,
     pillars: ['venda', 'social_proof'],
   },
@@ -79,8 +79,8 @@ export function CampaignFunnelView({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-          <TrendingUp className="w-4 h-4 text-indigo-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <TrendingUp className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Funil de Conversão</h4>
@@ -90,10 +90,10 @@ export function CampaignFunnelView({ campaign, posts }: Props) {
 
       {/* Issues */}
       {funnelData.issues.length > 0 && (
-        <Card className="glass-card p-3 border-amber-500/20">
+        <Card className="glass-card p-3 border-border">
           <div className="flex items-center gap-2 mb-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[10px] font-medium text-amber-400">Alertas do Funil</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-[10px] font-medium text-muted-foreground">Alertas do Funil</span>
           </div>
           <div className="space-y-1">
             {funnelData.issues.map((issue, i) => (

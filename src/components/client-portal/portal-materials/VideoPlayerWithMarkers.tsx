@@ -224,7 +224,7 @@ function VideoPlayerWithMarkersComponent({
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs border-[#2a2a2a] text-amber-400 hover:text-amber-300 hover:border-amber-500/50"
+            className="h-7 text-xs border-[#2a2a2a] text-muted-foreground hover:text-foreground hover:border-border"
             onClick={onRequestRevision}
           >
             <AlertCircle className="w-3.5 h-3.5 mr-1.5" />
@@ -301,7 +301,7 @@ function VideoPlayerWithMarkersComponent({
               {commentMarkers.map((marker, idx) => (
                 <button
                   key={idx}
-                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-amber-500 hover:scale-150 transition-transform z-10"
+                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-primary hover:scale-150 transition-transform z-10"
                   style={{ left: `${(marker.seconds / duration) * 100}%` }}
                   onClick={() => handleMarkerClick(marker.seconds)}
                   title={`${formatTime(marker.seconds)} - ${marker.comment.author_name}`}
@@ -433,7 +433,7 @@ function VideoPlayerWithMarkersComponent({
                   {commentMarkers.slice(0, 5).map((marker, idx) => (
                     <button
                       key={idx}
-                      className="text-[10px] text-amber-400 hover:underline"
+                      className="text-[10px] text-primary hover:underline"
                       onClick={() => handleMarkerClick(marker.seconds)}
                     >
                       {formatTime(marker.seconds)}

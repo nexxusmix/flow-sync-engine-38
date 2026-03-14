@@ -90,7 +90,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
                 <div className="text-sm text-muted-foreground mt-1">Total Posts</div>
               </Card>
               <Card className="p-6 bg-card/50 border-border/30 text-center">
-                <div className="text-4xl font-bold text-emerald-400">{published}</div>
+                <div className="text-4xl font-bold text-primary">{published}</div>
                 <div className="text-sm text-muted-foreground mt-1">Publicados</div>
               </Card>
               <Card className="p-6 bg-card/50 border-border/30 text-center">
@@ -98,7 +98,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
                 <div className="text-sm text-muted-foreground mt-1">Conclusão</div>
               </Card>
               <Card className="p-6 bg-card/50 border-border/30 text-center">
-                <div className="text-4xl font-bold text-amber-400">{Object.keys(pillars).length}</div>
+                <div className="text-4xl font-bold text-primary/70">{Object.keys(pillars).length}</div>
                 <div className="text-sm text-muted-foreground mt-1">Pilares</div>
               </Card>
             </div>
@@ -181,7 +181,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
             <h2 className="text-2xl font-bold text-foreground mb-6">💡 Aprendizados</h2>
             <div className="space-y-4 flex-1 flex flex-col justify-center">
               <Card className="p-4 bg-card/50 border-border/30">
-                <h4 className="text-sm font-semibold text-emerald-400 mb-2">✅ O que funcionou</h4>
+                <h4 className="text-sm font-semibold text-primary mb-2">✅ O que funcionou</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   {Object.entries(pillars).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k, v]) => (
                     <li key={k}>• Pilar "{PILLARS.find(p => p.key === k)?.label || k}" com {v} posts</li>
@@ -192,7 +192,7 @@ export function CampaignPitchDeck({ campaign, posts }: Props) {
                 </ul>
               </Card>
               <Card className="p-4 bg-card/50 border-border/30">
-                <h4 className="text-sm font-semibold text-amber-400 mb-2">⚠️ Oportunidades</h4>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2">⚠️ Oportunidades</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   {PILLARS.filter(p => !pillars[p.key]).slice(0, 2).map(p => (
                     <li key={p.key}>• Pilar "{p.label}" não utilizado — considerar na próxima campanha</li>

@@ -123,7 +123,7 @@ function RequestItem({ request }: { request: ChangeRequest }) {
             <div className="mt-3 pt-3 border-t border-border/50">
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{request.description}</p>
               {request.resolved_at && request.resolved_by && (
-                <p className="text-[10px] text-emerald-500 mt-2">
+                <p className="text-[10px] text-primary mt-2">
                   ✓ Resolvido por {request.resolved_by} em {format(new Date(request.resolved_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </p>
               )}
@@ -250,7 +250,7 @@ export function PortalChangeRequests({
       <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
         {requests.length === 0 ? (
           <div className="text-center py-8">
-            <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500/30 mb-2" />
+            <CheckCircle2 className="w-10 h-10 mx-auto text-primary/30 mb-2" />
             <p className="text-sm text-muted-foreground">Nenhum ajuste solicitado</p>
             <p className="text-[10px] text-muted-foreground/60">
               Tudo certo com os materiais até agora

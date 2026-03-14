@@ -26,12 +26,12 @@ interface Suggestion {
 }
 
 const RULE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
-  stale_draft: { icon: FileWarning, color: "text-amber-400", bg: "bg-amber-500/10", label: "Rascunho Parado" },
-  calendar_gap: { icon: CalendarX, color: "text-red-400", bg: "bg-red-500/10", label: "Gap no Calendário" },
-  repost_opportunity: { icon: Repeat2, color: "text-emerald-400", bg: "bg-emerald-500/10", label: "Repostar" },
-  channel_diversify: { icon: Layers, color: "text-purple-400", bg: "bg-purple-500/10", label: "Diversificação" },
-  missing_pillars: { icon: Compass, color: "text-blue-400", bg: "bg-blue-500/10", label: "Pilares" },
-  onboarding: { icon: Sparkles, color: "text-[hsl(195,100%,55%)]", bg: "bg-[hsl(195,100%,55%)]/10", label: "Início" },
+  stale_draft: { icon: FileWarning, color: "text-muted-foreground", bg: "bg-muted", label: "Rascunho Parado" },
+  calendar_gap: { icon: CalendarX, color: "text-destructive", bg: "bg-destructive/10", label: "Gap no Calendário" },
+  repost_opportunity: { icon: Repeat2, color: "text-primary", bg: "bg-primary/10", label: "Repostar" },
+  channel_diversify: { icon: Layers, color: "text-primary/70", bg: "bg-primary/10", label: "Diversificação" },
+  missing_pillars: { icon: Compass, color: "text-primary", bg: "bg-primary/10", label: "Pilares" },
+  onboarding: { icon: Sparkles, color: "text-primary", bg: "bg-primary/10", label: "Início" },
 };
 
 const DEFAULT_RULE = { icon: Zap, color: "text-[hsl(195,100%,55%)]", bg: "bg-[hsl(195,100%,55%)]/10", label: "Sugestão" };
@@ -166,7 +166,7 @@ export default function MkAutomationsPage() {
                         <div className="flex gap-2 shrink-0 mt-1">
                           <button
                             onClick={() => applySuggestion(s.id)}
-                            className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                            className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                             title="Aplicar"
                           >
                             <Check className="w-4 h-4" />
@@ -196,7 +196,7 @@ export default function MkAutomationsPage() {
                   const config = RULE_CONFIG[s.rule_key] || DEFAULT_RULE;
                   return (
                     <MkCard key={s.id} className="flex items-center gap-3 py-3 opacity-50">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <Check className="w-4 h-4 text-primary shrink-0" />
                       <span className={cn("text-[9px] uppercase tracking-[0.1em] font-mono shrink-0", config.color)}>
                         {config.label}
                       </span>

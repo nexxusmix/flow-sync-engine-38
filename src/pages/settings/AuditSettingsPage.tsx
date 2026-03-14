@@ -13,12 +13,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
-  create: { label: 'Criado', color: 'bg-emerald-500/10 text-emerald-500' },
-  update: { label: 'Atualizado', color: 'bg-blue-500/10 text-blue-500' },
-  delete: { label: 'Excluído', color: 'bg-red-500/10 text-red-500' },
-  sign: { label: 'Assinado', color: 'bg-violet-500/10 text-violet-500' },
-  accept: { label: 'Aceito', color: 'bg-amber-500/10 text-amber-500' },
-  send: { label: 'Enviado', color: 'bg-cyan-500/10 text-cyan-500' },
+  create: { label: 'Criado', color: 'bg-primary/10 text-primary' },
+  update: { label: 'Atualizado', color: 'bg-primary/10 text-primary' },
+  delete: { label: 'Excluído', color: 'bg-destructive/10 text-destructive' },
+  sign: { label: 'Assinado', color: 'bg-primary/10 text-primary' },
+  accept: { label: 'Aceito', color: 'bg-muted text-muted-foreground' },
+  send: { label: 'Enviado', color: 'bg-primary/10 text-primary' },
 };
 
 const ENTITY_LABELS: Record<string, string> = {

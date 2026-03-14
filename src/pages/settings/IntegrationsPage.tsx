@@ -124,7 +124,7 @@ export default function IntegrationsPage() {
                     </div>
                   </div>
                   {googleConnected ? (
-                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30 text-[10px]">
+                    <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px]">
                       <Check className="w-3 h-3 mr-1" /> Conectado
                     </Badge>
                   ) : (
@@ -164,15 +164,15 @@ export default function IntegrationsPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                      <Webhook className="w-5 h-5 text-emerald-500" />
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Webhook className="w-5 h-5 text-primary" />
                     </div>
                     <div>
                       <CardTitle className="text-base font-medium">Webhooks</CardTitle>
                       <p className="text-xs text-muted-foreground">Conecte com n8n, Zapier e mais</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-emerald-500 border-emerald-500/20">
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-primary border-primary/20">
                     Ativo
                   </Badge>
                 </div>

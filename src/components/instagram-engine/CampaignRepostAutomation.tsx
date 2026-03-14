@@ -148,8 +148,8 @@ export function CampaignRepostAutomation({ campaign, posts }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-teal-500/15 flex items-center justify-center">
-          <RefreshCw className="w-4 h-4 text-teal-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+          <RefreshCw className="w-4 h-4 text-primary" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-foreground">Automação de Repostagem</h4>
@@ -177,7 +177,7 @@ export function CampaignRepostAutomation({ campaign, posts }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[11px] font-semibold text-foreground truncate">{s.post.title}</span>
-                        <Badge className="bg-teal-500/15 text-teal-400 text-[7px] shrink-0">Score {s.score}</Badge>
+                        <Badge className="bg-primary/15 text-primary text-[7px] shrink-0">Score {s.score}</Badge>
                       </div>
                       <div className="flex items-center gap-2 text-[8px] text-muted-foreground">
                         <Clock className="w-3 h-3" />
@@ -201,8 +201,8 @@ export function CampaignRepostAutomation({ campaign, posts }: Props) {
                   <AnimatePresence>
                     {variation && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-2 mb-2">
-                        <div className="p-2 bg-teal-500/5 rounded-lg border border-teal-500/20">
-                          <span className="text-[7px] text-teal-400 uppercase">Nova variação</span>
+                        <div className="p-2 bg-primary/5 rounded-lg border border-primary/20">
+                          <span className="text-[7px] text-primary uppercase">Nova variação</span>
                           <p className="text-[9px] text-foreground/80 font-medium">{variation.hook}</p>
                           <p className="text-[8px] text-foreground/60 mt-1">{variation.caption}</p>
                         </div>

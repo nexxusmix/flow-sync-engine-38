@@ -419,7 +419,7 @@ export default function MkTemplatesPage() {
               Shotlist / Decupagem
             </div>
             <div className="flex items-center gap-2 text-[10px] text-white/30">
-              <div className="w-1 h-1 rounded-full bg-purple-400" />
+              <div className="w-1 h-1 rounded-full bg-primary/50" />
               Prompt de Design
             </div>
           </div>
@@ -490,7 +490,7 @@ export default function MkTemplatesPage() {
                       )}
                       {generation.script.cta && (
                         <div>
-                          <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-medium">CTA</span>
+                          <span className="text-[9px] uppercase tracking-wider text-primary/70 font-medium">CTA</span>
                           <p className="mt-0.5">{generation.script.cta}</p>
                         </div>
                       )}
@@ -508,7 +508,7 @@ export default function MkTemplatesPage() {
                 {generation.captions && generation.captions.length > 0 && (
                   <OutputCard
                     title="Legendas (3 variações)"
-                    icon={<MessageSquare className="w-3.5 h-3.5 text-amber-400" />}
+                    icon={<MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />}
                     onCopy={() => copyToClipboard(
                       generation.captions!.map(c => `[${c.tone}]\n${c.text}`).join("\n\n---\n\n"),
                       "captions"
@@ -518,7 +518,7 @@ export default function MkTemplatesPage() {
                     <div className="space-y-3">
                       {generation.captions.map((c, i) => (
                         <div key={i} className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
-                          <span className="text-[9px] uppercase tracking-wider text-amber-400/60 font-medium">{c.tone}</span>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 font-medium">{c.tone}</span>
                           <p className="text-[11px] text-white/55 mt-1 whitespace-pre-wrap leading-relaxed">{c.text}</p>
                         </div>
                       ))}
@@ -558,7 +558,7 @@ export default function MkTemplatesPage() {
                 {generation.design_prompt && (
                   <OutputCard
                     title="Prompt de Design"
-                    icon={<Palette className="w-3.5 h-3.5 text-purple-400" />}
+                    icon={<Palette className="w-3.5 h-3.5 text-primary/70" />}
                     onCopy={() => copyToClipboard(generation.design_prompt!, "design")}
                     copied={copiedKey === "design"}
                   >
@@ -593,7 +593,7 @@ function OutputCard({ title, icon, children, onCopy, copied }: {
           onClick={onCopy}
           className="flex items-center gap-1 text-[9px] text-white/20 hover:text-white/50 transition-colors"
         >
-          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
           {copied ? "Copiado" : "Copiar"}
         </button>
       </div>
