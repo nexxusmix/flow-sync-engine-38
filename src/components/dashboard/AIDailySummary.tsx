@@ -96,9 +96,11 @@ function extractEntities(text: string): string[] {
   while ((m = quoteRegex.exec(text)) !== null) entities.push(m[1]);
   // Uppercase words (project-like names) — at least 2 consecutive uppercase words or uppercase+number
   const upperRegex = /\b([A-ZÀ-Ú][A-ZÀ-Ú0-9]+(?:\s+[A-ZÀ-Ú0-9]+)*(?:\s+\d+)?)\b/g;
+  // Only exclude pure generic acronyms (not combined with numbers/other words)
+  const STOP_WORDS = new Set(['TODO', 'ASAP', 'CRM', 'ROI', 'KPI']);
   while ((m = upperRegex.exec(text)) !== null) {
     const val = m[1].trim();
-    if (val.length > 2 && !['PORTO', 'TODO', 'ASAP', 'CRM', 'ROI', 'KPI'].includes(val) && !entities.includes(val)) {
+    if (val.length > 2 && !STOP_WORDS.has(val) && !entities.includes(val)) {
       entities.push(val);
     }
   }
