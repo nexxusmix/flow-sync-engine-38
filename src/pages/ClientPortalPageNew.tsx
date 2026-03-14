@@ -486,10 +486,10 @@ export default function ClientPortalPage() {
                         <PortalProjectRoadmap
                           stages={stages.map(s => ({
                             id: s.id,
-                            name: s.stage_name || s.stage_key,
+                            name: s.title || s.stage_key,
                             status: s.status as any,
                             plannedEnd: s.planned_end || undefined,
-                            progress: s.progress || 0,
+                            progress: s.status === 'done' ? 100 : s.status === 'in_progress' ? 50 : 0,
                           }))}
                           projectName={project.name}
                           dueDate={project.due_date}
