@@ -58,6 +58,6 @@ export default function OnboardingPage() {
           </Tabs>
         )}
       </div>
-    </AppLayout>
+    </AppLayoutStandard>
   );
 }
