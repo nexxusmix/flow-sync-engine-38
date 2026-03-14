@@ -378,23 +378,21 @@ export default function ClientPortalPage() {
       />
 
       <div className="world-stage max-w-[1400px] xl:max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8 relative z-10 pb-8">
-        {/* Header with animations */}
-        <ScrollReveal direction="down" delay={0.1}>
-          <PortalHeaderPremium
-            project={project}
-            shareToken={shareToken || ''}
-            onExportPdf={handleExportPdf}
-            isExporting={isExporting}
-          />
-        </ScrollReveal>
+        {/* Header */}
+        <PortalHeaderPremium
+          project={project}
+          shareToken={shareToken || ''}
+          onExportPdf={handleExportPdf}
+          isExporting={isExporting}
+        />
 
         {/* Metrics Grid */}
-        <ScrollReveal delay={0.2} className="mt-4 md:mt-8">
+        <div className="mt-4 md:mt-8">
           <PortalMetricsGrid project={project} />
-        </ScrollReveal>
+        </div>
 
-        {/* Tabs with Tab Content Animation */}
-        <ScrollReveal delay={0.3} className="mt-6 md:mt-12">
+        {/* Tabs */}
+        <div className="mt-6 md:mt-12">
           <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab} badges={tabBadges}>
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-8">
