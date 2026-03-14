@@ -332,7 +332,7 @@ export default function ContractsPage() {
                                       </Button>
                                     )}
                                     {milestone.status === 'paid' && (
-                                      <Badge className="bg-emerald-500">Pago</Badge>
+                                      <Badge className="bg-primary">Pago</Badge>
                                     )}
                                   </div>
                                 </div>

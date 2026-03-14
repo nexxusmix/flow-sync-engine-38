@@ -242,7 +242,7 @@ export default function InstagramPage() {
         ) : (
           /* Not Connected State */
           <Card className="glass-card p-12 text-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/60 to-primary flex items-center justify-center mx-auto mb-6">
               <Instagram className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-xl font-medium text-foreground mb-2">Conecte seu Instagram</h2>

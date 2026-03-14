@@ -326,9 +326,9 @@ function TimelineView({ projects }: { projects: ProjectWithStages[] }) {
   });
 
   const getProgressColor = (healthScore: number) => {
-    if (healthScore >= 80) return 'bg-emerald-500';
-    if (healthScore >= 60) return 'bg-amber-500';
-    return 'bg-red-500';
+    if (healthScore >= 80) return 'bg-primary';
+    if (healthScore >= 60) return 'bg-muted-foreground';
+    return 'bg-destructive';
   };
 
   // Calculate timeline range (simplified mock)
@@ -370,13 +370,13 @@ function TimelineView({ projects }: { projects: ProjectWithStages[] }) {
         <h3 className="text-sm font-medium text-foreground uppercase tracking-wide">Timeline de Projetos</h3>
         <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-emerald-500" /> On Track
+            <div className="w-3 h-3 rounded bg-primary" /> On Track
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-amber-500" /> Em Risco
+            <div className="w-3 h-3 rounded bg-muted-foreground" /> Em Risco
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-red-500" /> Atrasado
+            <div className="w-3 h-3 rounded bg-destructive" /> Atrasado
           </span>
         </div>
       </div>

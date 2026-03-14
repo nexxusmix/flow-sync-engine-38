@@ -201,12 +201,12 @@ export default function RevenuesPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    revenue.status === 'received' ? 'bg-emerald-500/10' : 
-                    isOverdue ? 'bg-red-500/10' : 'bg-amber-500/10'
+                    revenue.status === 'received' ? 'bg-primary/10' : 
+                    isOverdue ? 'bg-destructive/10' : 'bg-muted'
                   }`}>
                     <TrendingUp className={`w-5 h-5 ${
-                      revenue.status === 'received' ? 'text-emerald-500' : 
-                      isOverdue ? 'text-red-500' : 'text-amber-500'
+                      revenue.status === 'received' ? 'text-primary' : 
+                      isOverdue ? 'text-destructive' : 'text-muted-foreground'
                     }`} />
                   </div>
                   <div>
@@ -217,7 +217,7 @@ export default function RevenuesPage() {
                         Venc: {new Date(revenue.due_date).toLocaleDateString('pt-BR')}
                       </span>
                       {revenue.received_date && (
-                        <span className="text-xs text-emerald-500 flex items-center gap-1">
+                        <span className="text-xs text-primary flex items-center gap-1">
                           <Check className="w-3 h-3" />
                           Rec: {new Date(revenue.received_date).toLocaleDateString('pt-BR')}
                         </span>

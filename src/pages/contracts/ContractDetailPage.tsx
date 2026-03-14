@@ -960,7 +960,7 @@ export default function ContractDetailPage() {
                       </div>
 
                       {(sig as any).document_hash && (
-                        <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                        <div className="mt-3 pt-3 border-t border-primary/20">
                           <span className="text-muted-foreground text-xs">Hash SHA-256:</span>
                           <p className="text-foreground font-mono text-xs break-all mt-1">
                             {(sig as any).document_hash}

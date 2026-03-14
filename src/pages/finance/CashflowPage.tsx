@@ -142,12 +142,12 @@ export default function CashflowPage() {
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      entry.type === 'revenue' ? 'bg-emerald-500/10' : 'bg-red-500/10'
+                      entry.type === 'revenue' ? 'bg-primary/10' : 'bg-muted'
                     }`}>
                       {entry.type === 'revenue' ? (
-                        <ArrowUpRight className="w-5 h-5 text-emerald-500" />
+                        <ArrowUpRight className="w-5 h-5 text-primary" />
                       ) : (
-                        <ArrowDownRight className="w-5 h-5 text-red-500" />
+                        <ArrowDownRight className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
                     <div>
@@ -169,7 +169,7 @@ export default function CashflowPage() {
 
                   <div className="text-right">
                     <p className={`font-semibold ${
-                      entry.type === 'revenue' ? 'text-emerald-500' : 'text-red-500'
+                      entry.type === 'revenue' ? 'text-primary' : 'text-muted-foreground'
                     }`}>
                       {entry.type === 'revenue' ? '+' : '-'}{formatCurrency(entry.amount)}
                     </p>

@@ -272,7 +272,7 @@ export default function ContractTemplatesPage() {
                           variant="outline" 
                           className={cn(
                             "text-[9px]",
-                            template.is_active ? "text-emerald-500 border-emerald-500" : "text-muted-foreground"
+                            template.is_active ? "text-primary border-primary" : "text-muted-foreground"
                           )}
                         >
                           {template.is_active ? "Ativo" : "Inativo"}

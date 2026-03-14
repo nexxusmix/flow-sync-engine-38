@@ -172,7 +172,7 @@ export default function IntegrationsPage() {
                       <p className="text-xs text-muted-foreground">Conecte com n8n, Zapier e mais</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-emerald-500 border-emerald-500/20">
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-primary border-primary/20">
                     Ativo
                   </Badge>
                 </div>

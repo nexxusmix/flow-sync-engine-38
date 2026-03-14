@@ -25,8 +25,8 @@ const settingsSections = [
     description: 'Membros, convites e papéis do workspace',
     icon: UsersRound,
     path: '/configuracoes/equipe',
-    color: 'text-teal-500',
-    bgColor: 'bg-teal-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
     adminOnly: false,
   },
   {
