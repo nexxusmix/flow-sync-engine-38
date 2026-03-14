@@ -508,7 +508,7 @@ export default function MkTemplatesPage() {
                 {generation.captions && generation.captions.length > 0 && (
                   <OutputCard
                     title="Legendas (3 variações)"
-                    icon={<MessageSquare className="w-3.5 h-3.5 text-amber-400" />}
+                    icon={<MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />}
                     onCopy={() => copyToClipboard(
                       generation.captions!.map(c => `[${c.tone}]\n${c.text}`).join("\n\n---\n\n"),
                       "captions"
