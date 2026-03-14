@@ -94,7 +94,7 @@ Retorne JSON com:
           </Badge>
         </div>
         {autopsy.overall_score !== undefined && (
-          <div className={`text-2xl font-bold ${autopsy.overall_score >= 70 ? 'text-emerald-400' : autopsy.overall_score >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
+          <div className={`text-2xl font-bold ${autopsy.overall_score >= 70 ? 'text-primary' : autopsy.overall_score >= 40 ? 'text-muted-foreground' : 'text-destructive'}`}>
             {autopsy.overall_score}/100
           </div>
         )}
