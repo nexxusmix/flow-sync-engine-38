@@ -85,7 +85,7 @@ export function LandingNav() {
           </div>
 
           {/* Mobile: CTA + hamburger */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2">
             <Button
               size="sm"
               onClick={() => navigate("/login")}
