@@ -264,7 +264,7 @@ function PortalInlineCommentComponent({
                     size="sm"
                     className={cn(
                       "h-8 text-xs",
-                      mode === 'approve' && "bg-emerald-500/20 text-emerald-400"
+                      mode === 'approve' && "bg-primary/20 text-primary"
                     )}
                     onClick={() => setMode('approve')}
                   >
