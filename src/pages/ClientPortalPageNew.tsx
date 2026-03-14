@@ -1,13 +1,12 @@
 /**
- * ClientPortalPage - Portal do Cliente Premium com animações impactantes
- * Scroll reveal, parallax, 3D effects, magnetic interactions
+ * ClientPortalPage - Portal do Cliente Premium (otimizado)
  */
 
 import { useParams } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
-import { Loader2, Lock, AlertTriangle, Sparkles } from "lucide-react";
+import { Lock, AlertTriangle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientPortalEnhanced } from "@/hooks/useClientPortalEnhanced";
 import { PortalHeaderPremium } from "@/components/client-portal/PortalHeaderPremium";
@@ -30,75 +29,26 @@ import { PortalMessagesTab } from "@/components/client-portal/portal-tabs/Portal
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
 import { PortalFeedbackWidget } from "@/components/client-portal/PortalFeedbackWidget";
 import { PortalProjectRoadmap } from "@/components/timeline/PortalProjectRoadmap";
-import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
+import { Floating } from "@/components/client-portal/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Cursor follower component
-function CursorGlow() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
+// Lightweight background particles (reduced from 20 to 6)
+const PARTICLE_POSITIONS = [
+  { left: '15%', top: '20%' }, { left: '75%', top: '10%' }, { left: '45%', top: '60%' },
+  { left: '85%', top: '45%' }, { left: '25%', top: '80%' }, { left: '60%', top: '35%' },
+];
 
-  useEffect(() => {
-    const updateMousePosition = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-      setIsVisible(true);
-    };
-
-    const handleMouseLeave = () => setIsVisible(false);
-    const handleMouseEnter = () => setIsVisible(true);
-
-    window.addEventListener('mousemove', updateMousePosition);
-    document.body.addEventListener('mouseleave', handleMouseLeave);
-    document.body.addEventListener('mouseenter', handleMouseEnter);
-
-    return () => {
-      window.removeEventListener('mousemove', updateMousePosition);
-      document.body.removeEventListener('mouseleave', handleMouseLeave);
-      document.body.removeEventListener('mouseenter', handleMouseEnter);
-    };
-  }, []);
-
-  return (
-    <motion.div
-      className="fixed pointer-events-none z-0 w-96 h-96 rounded-full"
-      style={{
-        background: 'radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%)',
-        left: mousePosition.x - 192,
-        top: mousePosition.y - 192,
-      }}
-      animate={{
-        opacity: isVisible ? 1 : 0,
-        scale: isVisible ? 1 : 0.8,
-      }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-    />
-  );
-}
-
-// Animated background particles
 function BackgroundParticles() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {[...Array(20)].map((_, i) => (
+      {PARTICLE_POSITIONS.map((pos, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 rounded-full bg-primary/20"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0.2, 0.5, 0.2],
-            scale: [1, 1.5, 1],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 2,
-            ease: "easeInOut",
-          }}
+          style={pos}
+          animate={{ y: [0, -30, 0], opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 4 + i * 0.5, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
         />
       ))}
     </div>
@@ -414,7 +364,6 @@ export default function ClientPortalPage() {
       
       {/* Animated Background - desktop only */}
       <div className="hidden md:block">
-        <CursorGlow />
         <BackgroundParticles />
       </div>
       
@@ -428,23 +377,21 @@ export default function ClientPortalPage() {
       />
 
       <div className="world-stage max-w-[1400px] xl:max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-8 relative z-10 pb-8">
-        {/* Header with animations */}
-        <ScrollReveal direction="down" delay={0.1}>
-          <PortalHeaderPremium
-            project={project}
-            shareToken={shareToken || ''}
-            onExportPdf={handleExportPdf}
-            isExporting={isExporting}
-          />
-        </ScrollReveal>
+        {/* Header */}
+        <PortalHeaderPremium
+          project={project}
+          shareToken={shareToken || ''}
+          onExportPdf={handleExportPdf}
+          isExporting={isExporting}
+        />
 
         {/* Metrics Grid */}
-        <ScrollReveal delay={0.2} className="mt-4 md:mt-8">
+        <div className="mt-4 md:mt-8">
           <PortalMetricsGrid project={project} />
-        </ScrollReveal>
+        </div>
 
-        {/* Tabs with Tab Content Animation */}
-        <ScrollReveal delay={0.3} className="mt-6 md:mt-12">
+        {/* Tabs */}
+        <div className="mt-6 md:mt-12">
           <PortalTabsPremium activeTab={activeTab} onTabChange={setActiveTab} badges={tabBadges}>
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-8">
@@ -456,9 +403,9 @@ export default function ClientPortalPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <StaggerContainer className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6" staggerDelay={0.08}>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
                     {/* Main Content */}
-                    <StaggerItem className="lg:col-span-8 xl:col-span-9 space-y-4 md:space-y-6">
+                    <div className="lg:col-span-8 xl:col-span-9 space-y-4 md:space-y-6">
                       <PortalOverviewPremium 
                         project={project} 
                         stages={stages}
@@ -469,51 +416,38 @@ export default function ClientPortalPage() {
                           setActiveTab("materials");
                         }}
                       />
-                      
-                      <ScrollReveal delay={0.4}>
-                        <PortalClientUploads
-                          clientUploads={clientUploads}
-                          onUpload={handleClientUpload}
-                          isUploading={isUploadingMaterial}
-                        />
-                      </ScrollReveal>
-                    </StaggerItem>
+                      <PortalClientUploads
+                        clientUploads={clientUploads}
+                        onUpload={handleClientUpload}
+                        isUploading={isUploadingMaterial}
+                      />
+                    </div>
                     
                     {/* Sidebar */}
-                    <StaggerItem className="lg:col-span-4 xl:col-span-3 space-y-4 md:space-y-6">
-                      <GlowCard glowColor="rgba(6, 182, 212, 0.2)">
-                        <PortalMaterialsAside deliverables={deliverables} files={files} />
-                      </GlowCard>
-                      <ScrollReveal delay={0.35}>
-                        <PortalProjectRoadmap
-                          stages={stages.map(s => ({
-                            id: s.id,
-                            name: s.title || s.stage_key,
-                            status: s.status as any,
-                            plannedEnd: s.planned_end || undefined,
-                            progress: s.status === 'done' ? 100 : s.status === 'in_progress' ? 50 : 0,
-                          }))}
-                          projectName={project.name}
-                          dueDate={project.due_date}
-                        />
-                      </ScrollReveal>
-                      <ScrollReveal delay={0.4}>
-                        <PortalNextSteps stages={stages} currentStageKey={project.stage_current} />
-                      </ScrollReveal>
-                      <ScrollReveal delay={0.5}>
-                        <PortalAuditBadge />
-                      </ScrollReveal>
-                      <ScrollReveal delay={0.6}>
-                        <PortalFeedbackWidget
-                          portalLinkId={portal.id}
-                          projectId={project.id}
-                          entityType="general"
-                          title="Como está sua experiência?"
-                          subtitle="Sua opinião nos ajuda a melhorar."
-                        />
-                      </ScrollReveal>
-                    </StaggerItem>
-                  </StaggerContainer>
+                    <div className="lg:col-span-4 xl:col-span-3 space-y-4 md:space-y-6">
+                      <PortalMaterialsAside deliverables={deliverables} files={files} />
+                      <PortalProjectRoadmap
+                        stages={stages.map(s => ({
+                          id: s.id,
+                          name: s.title || s.stage_key,
+                          status: s.status as any,
+                          plannedEnd: s.planned_end || undefined,
+                          progress: s.status === 'done' ? 100 : s.status === 'in_progress' ? 50 : 0,
+                        }))}
+                        projectName={project.name}
+                        dueDate={project.due_date}
+                      />
+                      <PortalNextSteps stages={stages} currentStageKey={project.stage_current} />
+                      <PortalAuditBadge />
+                      <PortalFeedbackWidget
+                        portalLinkId={portal.id}
+                        projectId={project.id}
+                        entityType="general"
+                        title="Como está sua experiência?"
+                        subtitle="Sua opinião nos ajuda a melhorar."
+                      />
+                    </div>
+                  </div>
                 </motion.div>
               </AnimatePresence>
             </TabsContent>
@@ -688,13 +622,11 @@ export default function ClientPortalPage() {
               </AnimatePresence>
             </TabsContent>
           </PortalTabsPremium>
-        </ScrollReveal>
+        </div>
       </div>
 
       {/* Footer */}
-      <ScrollReveal delay={0.5}>
-        <PortalFooterPremium />
-      </ScrollReveal>
+      <PortalFooterPremium />
     </div>
   );
 }

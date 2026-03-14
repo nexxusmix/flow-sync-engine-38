@@ -234,7 +234,7 @@ export function useClientPortalEnhanced(shareToken: string | undefined) {
     },
     enabled: !!shareToken,
     retry: false,
-    staleTime: 30000, // 30 seconds
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Enable realtime updates
