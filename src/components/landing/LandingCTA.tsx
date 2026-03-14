@@ -14,14 +14,14 @@ export function LandingCTA() {
   const opacity = useSpring(useTransform(scrollYProgress, [0, 0.5], [0, 1]), springCfg);
 
   return (
-    <section className="relative z-10 px-6 md:px-12 py-28 md:py-40">
+    <section className="relative z-10 px-6 md:px-12 py-24 md:py-32">
       <motion.div
         ref={ref}
         className="max-w-4xl mx-auto text-center"
         style={{ scale, opacity }}
       >
         <motion.div
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 mb-6"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 mb-5"
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
@@ -34,7 +34,7 @@ export function LandingCTA() {
           Estruture sua agência<br />
           como uma <span className="text-primary font-normal">operação de verdade.</span>
         </h2>
-        <p className="text-base md:text-lg text-muted-foreground mt-4 mb-12 max-w-xl mx-auto leading-relaxed">
+        <p className="text-base md:text-lg text-muted-foreground mt-5 mb-10 max-w-xl mx-auto leading-relaxed">
           Centralize operação, automatize processos e ganhe escala.<br className="hidden md:block" />
           Comece em menos de 2 minutos.
         </p>

@@ -37,11 +37,11 @@ function PainItem({ text, emoji }: { text: string; emoji: string }) {
 
 export function LandingProblem() {
   return (
-    <ScrollLinked className="relative z-10 px-6 md:px-12 py-28 md:py-40">
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-24 md:py-32">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-20">
+        <div className="text-center mb-14 md:mb-16">
           <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/8 border border-destructive/15 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/8 border border-destructive/15 mb-5"
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -53,13 +53,13 @@ export function LandingProblem() {
             Sua agência ainda opera<br />
             no <span className="text-destructive font-normal">modo improviso?</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-xl mx-auto leading-relaxed">
             Ferramentas desconectadas, processos manuais e falta de visibilidade
             são o cenário de 90% das agências.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-16">
           {painPoints.map((point, i) => (
             <PainItem key={i} text={point.text} emoji={point.icon} />
           ))}

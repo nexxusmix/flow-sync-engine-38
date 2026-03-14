@@ -80,7 +80,7 @@ export function LandingHero() {
           </motion.h1>
 
           <motion.p
-            className="text-base md:text-xl text-white/60 font-light mt-4 md:mt-6 max-w-2xl mx-auto leading-relaxed px-2"
+            className="text-base md:text-xl text-white/60 font-light mt-5 md:mt-7 max-w-2xl mx-auto leading-relaxed px-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.6 }}
@@ -91,7 +91,7 @@ export function LandingHero() {
           </motion.p>
 
           <motion.div
-            className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-4 mt-8 md:mt-10 px-4 sm:px-0"
+            className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-4 mt-8 md:mt-9 px-4 sm:px-0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.8, duration: 0.6 }}
@@ -171,7 +171,7 @@ export function LandingHero() {
                 <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.08]">
                   Sua agência ainda opera<br className="hidden sm:block" />
                   em <span className="text-primary font-normal">mil ferramentas?</span>
-                  <span className="text-base md:text-xl text-muted-foreground font-light block mt-3 md:mt-4">
+                  <span className="text-base md:text-xl text-muted-foreground font-light block mt-4 md:mt-5">
                     Centralize tudo em uma única plataforma inteligente.
                   </span>
                 </h2>

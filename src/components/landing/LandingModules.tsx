@@ -48,11 +48,11 @@ function ModuleCard({ icon: Icon, name, desc, index }: {
 
 export function LandingModules() {
   return (
-    <ScrollLinked id="produto" className="relative z-10 px-6 md:px-12 py-28 md:py-40">
+    <ScrollLinked id="produto" className="relative z-10 px-6 md:px-12 py-24 md:py-32">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-20">
+        <div className="text-center mb-14 md:mb-16">
           <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 mb-5"
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -63,7 +63,7 @@ export function LandingModules() {
             Não são ferramentas soltas.<br />
             É um <span className="text-primary">sistema operacional integrado.</span>
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-2xl mx-auto leading-relaxed">
             12 módulos que conversam entre si para criar uma operação previsível, escalável e inteligente.
           </p>
         </div>

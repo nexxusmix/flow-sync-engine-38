@@ -41,13 +41,13 @@ export function LandingPriceJustification() {
   const priceOpacity = useSpring(useTransform(scrollYProgress, [0, 0.5], [0, 1]), springCfg);
 
   return (
-    <ScrollLinked className="relative z-10 px-6 md:px-12 py-28 md:py-40">
+    <ScrollLinked className="relative z-10 px-6 md:px-12 py-24 md:py-32">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-14 md:mb-16">
           <h2 className="text-3xl md:text-5xl font-light text-foreground tracking-tight leading-[1.1]">
             Por que o preço é <span className="text-primary">justo</span>?
           </h2>
-          <p className="text-base text-muted-foreground mt-4">Se você contratasse cada ferramenta separadamente:</p>
+          <p className="text-base md:text-lg text-muted-foreground mt-5 leading-relaxed">Se você contratasse cada ferramenta separadamente:</p>
         </div>
 
         <div className="max-w-md mx-auto mb-12 rounded-2xl border border-border/20 bg-card p-6">
