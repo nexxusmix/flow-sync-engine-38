@@ -44,7 +44,7 @@ export function AlertsOverviewCard() {
       {/* Chips */}
       <div className="flex flex-wrap gap-2">
         {criticalCount > 0 && (
-          <span className="px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-[10px] font-medium">
+          <span className="px-2 py-1 rounded-md bg-destructive/10 text-destructive text-[10px] font-medium">
             {criticalCount} críticos
           </span>
         )}
