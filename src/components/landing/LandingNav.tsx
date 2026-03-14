@@ -60,7 +60,7 @@ export function LandingNav() {
           </div>
 
           {/* Desktop action buttons */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             <Button
               variant="ghost"
               onClick={() => navigate("/login")}
@@ -85,7 +85,7 @@ export function LandingNav() {
           </div>
 
           {/* Mobile: CTA + hamburger */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2">
             <Button
               size="sm"
               onClick={() => navigate("/login")}
@@ -107,7 +107,7 @@ export function LandingNav() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl pt-20 px-6 md:hidden"
+            className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl pt-20 px-6 lg:hidden"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
