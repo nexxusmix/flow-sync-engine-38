@@ -183,8 +183,8 @@ export default function CRMPage() {
             {/* Temperature Filters */}
             <div className="flex items-center gap-1">
               {[
-                { key: 'hot', label: 'Quente', icon: Flame, color: 'text-red-500' },
-                { key: 'warm', label: 'Morno', icon: ThermometerSun, color: 'text-amber-500' },
+                { key: 'hot', label: 'Quente', icon: Flame, color: 'text-primary' },
+                { key: 'warm', label: 'Morno', icon: ThermometerSun, color: 'text-muted-foreground' },
                 { key: 'cold', label: 'Frio', icon: Snowflake, color: 'text-blue-400' },
               ].map(t => (
                 <button

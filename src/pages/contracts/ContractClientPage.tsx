@@ -340,7 +340,7 @@ export default function ContractClientPage() {
             <div className="text-center">
               <Button
                 size="lg"
-                className="text-lg px-8 py-6 bg-emerald-600 hover:bg-emerald-700"
+                className="text-lg px-8 py-6 bg-primary hover:bg-primary/90"
                 onClick={handleGovBrSign}
                 disabled={signingViaGovBr}
               >

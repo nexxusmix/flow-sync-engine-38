@@ -185,7 +185,7 @@ export function ExecutionPlanView({ plan, results, isExecuting, onConfirm, onCan
                         <Loader2 className="w-4 h-4 text-primary animate-spin" />
                       ) : status === 'success' ? (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400 }}>
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          <CheckCircle2 className="w-4 h-4 text-primary" />
                         </motion.div>
                       ) : status === 'error' ? (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
