@@ -24,6 +24,9 @@ import { PortalScheduleTab } from "@/components/client-portal/portal-tabs/Portal
 import { PortalFilesTab } from "@/components/client-portal/portal-tabs/PortalFilesTab";
 import { PortalTasksTab } from "@/components/client-portal/portal-tabs/PortalTasksTab";
 import { PortalActivityTab } from "@/components/client-portal/portal-tabs/PortalActivityTab";
+import { PortalDocumentsTab } from "@/components/client-portal/portal-tabs/PortalDocumentsTab";
+import { PortalFinancialTab } from "@/components/client-portal/portal-tabs/PortalFinancialTab";
+import { PortalMessagesTab } from "@/components/client-portal/portal-tabs/PortalMessagesTab";
 import { PortalMaterialsTab } from "@/components/client-portal/portal-materials";
 import { ScrollReveal, StaggerContainer, StaggerItem, Floating, GlowCard } from "@/components/client-portal/animations";
 import { toast } from "sonner";
