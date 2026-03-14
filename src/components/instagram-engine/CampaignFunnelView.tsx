@@ -17,7 +17,7 @@ const FUNNEL_CONFIG: Record<FunnelStage, { label: string; description: string; c
     label: 'TOPO (Awareness)',
     description: 'Alcance e descoberta',
     color: 'text-blue-400',
-    bg: 'bg-blue-500/15',
+    bg: 'bg-primary/15',
     icon: <Eye className="w-5 h-5" />,
     pillars: ['educacao', 'bastidores', 'autoridade'],
   },
