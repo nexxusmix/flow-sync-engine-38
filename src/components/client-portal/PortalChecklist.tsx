@@ -46,20 +46,20 @@ export function PortalChecklist({ project }: PortalChecklistProps) {
             key={item.id}
             className={`
               flex items-start gap-4 p-4 rounded-xl transition-colors
-              ${item.status === 'aprovado' ? 'bg-emerald-500/5 border border-emerald-500/20' : ''}
-              ${item.status === 'enviado' ? 'bg-blue-500/5 border border-blue-500/20' : ''}
+              ${item.status === 'aprovado' ? 'bg-primary/5 border border-primary/20' : ''}
+              ${item.status === 'enviado' ? 'bg-primary/5 border border-primary/10' : ''}
               ${item.status === 'pendente' ? 'bg-muted/30' : ''}
             `}
           >
             {/* Status Icon */}
             <div className={`
               w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-              ${item.status === 'aprovado' ? 'bg-emerald-500/20' : ''}
-              ${item.status === 'enviado' ? 'bg-blue-500/20' : ''}
+              ${item.status === 'aprovado' ? 'bg-primary/20' : ''}
+              ${item.status === 'enviado' ? 'bg-primary/10' : ''}
               ${item.status === 'pendente' ? 'bg-muted' : ''}
             `}>
-              {item.status === 'aprovado' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
-              {item.status === 'enviado' && <Clock className="w-4 h-4 text-blue-500" />}
+              {item.status === 'aprovado' && <CheckCircle className="w-4 h-4 text-primary" />}
+              {item.status === 'enviado' && <Clock className="w-4 h-4 text-primary/70" />}
               {item.status === 'pendente' && <Upload className="w-4 h-4 text-muted-foreground" />}
             </div>
 
