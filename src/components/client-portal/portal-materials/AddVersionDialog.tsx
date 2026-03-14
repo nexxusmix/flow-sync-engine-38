@@ -227,13 +227,13 @@ export function AddVersionDialog({
                 className={cn(
                   "flex-1 p-3 rounded-lg border transition-all flex flex-col items-center gap-2",
                   materialType === type
-                    ? "border-cyan-500 bg-cyan-500/10"
+                    ? "border-primary bg-primary/10"
                     : "border-[#2a2a2a] hover:border-[#3a3a3a]"
                 )}
               >
                 <Icon className={cn(
                   "w-5 h-5",
-                  materialType === type ? "text-cyan-400" : "text-gray-500"
+                  materialType === type ? "text-primary" : "text-gray-500"
                 )} />
                 <span className={cn(
                   "text-xs",
