@@ -327,7 +327,7 @@ function MetricsView() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold text-white/90">30.8k</span>
-            <span className="text-xs text-emerald-400 flex items-center gap-0.5">
+            <span className="text-xs text-primary flex items-center gap-0.5">
               <TrendingUp className="w-3 h-3" />+18%
             </span>
           </div>
