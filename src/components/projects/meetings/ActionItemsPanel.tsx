@@ -121,7 +121,7 @@ export function ActionItemsPanel({ actionItems, projectId }: ActionItemsPanelPro
                               <span className={cn(
                                 "flex items-center gap-1",
                                 isOverdue && "text-destructive",
-                                isDueToday && "text-amber-500"
+                                isDueToday && "text-muted-foreground"
                               )}>
                                 <Clock className="w-3 h-3" />
                                 {format(new Date(item.due_date), "dd MMM", { locale: ptBR })}

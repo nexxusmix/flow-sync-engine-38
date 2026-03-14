@@ -91,7 +91,7 @@ export function ReportAsidePanel({
                   onClick={handleCopyPix}
                 >
                   {copied ? (
-                    <Check className="w-3 h-3 text-emerald-500" />
+                    <Check className="w-3 h-3 text-primary" />
                   ) : (
                     <Copy className="w-3 h-3" />
                   )}

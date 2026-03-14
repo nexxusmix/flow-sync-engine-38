@@ -124,7 +124,7 @@ export function LatestAlignmentsBlock({ projectId }: LatestAlignmentsBlockProps)
                         <span className={cn(
                           "text-xs",
                           isOverdue ? "text-destructive" :
-                          isDueToday ? "text-amber-500" :
+                          isDueToday ? "text-muted-foreground" :
                           "text-muted-foreground"
                         )}>
                           {isOverdue ? 'Atrasado: ' : isDueToday ? 'Hoje: ' : ''}

@@ -292,7 +292,7 @@ export function PortalTab({ project }: PortalTabProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {portalLink.blocked_by_payment ? (
-                <Lock className="w-5 h-5 text-amber-500" />
+                <Lock className="w-5 h-5 text-muted-foreground" />
               ) : (
                 <Unlock className="w-5 h-5 text-muted-foreground" />
               )}

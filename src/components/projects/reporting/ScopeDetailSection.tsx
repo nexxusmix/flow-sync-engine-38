@@ -84,7 +84,7 @@ export function ScopeDetailSection({
           <div className="space-y-3">
             {responsibilityItems.map((item, idx) => (
               <div key={idx} className="flex items-center gap-3">
-                <Info className="w-4 h-4 text-amber-500 shrink-0" />
+                <Info className="w-4 h-4 text-muted-foreground shrink-0" />
                 <span className="text-sm text-foreground">{item}</span>
               </div>
             ))}

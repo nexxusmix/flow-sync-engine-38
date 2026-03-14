@@ -268,7 +268,7 @@ export function MeetingDetail({ interaction, projectId, onClose }: MeetingDetail
                     <li key={i} className="text-sm text-muted-foreground pl-5">
                       {item.title}
                       {item.assignee && <span className="text-primary"> → {item.assignee}</span>}
-                      {item.due_date && <span className="text-amber-500"> (até {item.due_date})</span>}
+                      {item.due_date && <span className="text-muted-foreground"> (até {item.due_date})</span>}
                     </li>
                   ))}
                 </ul>

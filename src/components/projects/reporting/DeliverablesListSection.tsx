@@ -41,7 +41,7 @@ const STATUS_CONFIG = {
   },
   completed: { 
     label: 'Concluído', 
-    className: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30',
+    className: 'bg-primary/20 text-primary border-primary/30',
     icon: CheckCircle2 
   },
   blocked: { 

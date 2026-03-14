@@ -82,7 +82,7 @@ export function ProjectTabs({ project, activeTab, onTabChange }: ProjectTabsProp
               {tab.id === 'revisions' && pendingCount > 0 && (
                 <span className={cn(
                   "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1",
-                  "bg-amber-500 text-white"
+                  "bg-destructive text-destructive-foreground"
                 )}>
                   {pendingCount > 99 ? '99+' : pendingCount}
                 </span>

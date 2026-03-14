@@ -69,8 +69,8 @@ function setCache(projectId: string, data: ProjectInsights) {
 
 const severityStyles: Record<string, { bg: string; border: string; text: string; dot: string }> = {
   red: { bg: "bg-destructive/10", border: "border-destructive/30", text: "text-destructive", dot: "🔴" },
-  yellow: { bg: "bg-yellow-500/10", border: "border-yellow-500/30", text: "text-yellow-600", dot: "🟡" },
-  green: { bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-600", dot: "🟢" },
+  yellow: { bg: "bg-muted", border: "border-border", text: "text-muted-foreground", dot: "🟡" },
+  green: { bg: "bg-primary/10", border: "border-primary/30", text: "text-primary", dot: "🟢" },
 };
 
 export function ProjectAIAnalysis({ project, tasks, revenues }: Props) {
