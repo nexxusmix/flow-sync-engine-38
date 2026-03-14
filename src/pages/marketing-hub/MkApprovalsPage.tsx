@@ -214,7 +214,7 @@ export default function MkApprovalsPage() {
                 Cancelar
               </button>
               <button onClick={confirmReject}
-                className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors">
+                className="flex-1 py-2.5 rounded-xl bg-muted-foreground text-white text-sm font-medium hover:bg-muted-foreground/80 transition-colors">
                 Devolver para Edição
               </button>
             </div>
