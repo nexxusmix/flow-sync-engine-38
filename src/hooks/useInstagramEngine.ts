@@ -521,7 +521,7 @@ export function useCampaignTasks(campaignId: string) {
         .eq('campaign_id', campaignId)
         .order('position', { ascending: true });
       if (error) throw error;
-      return (data || []) as CampaignTask[];
+      return (data || []) as unknown as CampaignTask[];
     },
     enabled: !!campaignId,
   });
