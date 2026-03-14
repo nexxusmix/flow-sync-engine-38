@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailySummaryMetrics } from '@/hooks/useDailySummaryMetrics';
+import { useTasksUnified } from '@/hooks/useTasksUnified';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   Sparkles, RefreshCw, AlertTriangle, TrendingUp, Users, Calendar as CalendarIcon,
   DollarSign, CheckCircle, Clock, Mail, FileText, Target, CircleDot,
-  MessageSquare, Copy, ExternalLink, Phone, Pause, X, Check
+  MessageSquare, Copy, ExternalLink, Phone, Pause, X, Check, Plus, ListTodo
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -34,16 +35,16 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const statusColors: Record<string, { bg: string; text: string; border: string }> = {
-  positive: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  warning: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-  negative: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
+  positive: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' },
+  warning: { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border' },
+  negative: { bg: 'bg-destructive/10', text: 'text-destructive', border: 'border-destructive/20' },
   neutral: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' },
 };
 
 const urgencyColors: Record<string, { bg: string; text: string }> = {
-  high: { bg: 'bg-red-500/15', text: 'text-red-400' },
-  medium: { bg: 'bg-amber-500/15', text: 'text-amber-400' },
-  low: { bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
+  high: { bg: 'bg-destructive/15', text: 'text-destructive' },
+  medium: { bg: 'bg-muted', text: 'text-muted-foreground' },
+  low: { bg: 'bg-primary/15', text: 'text-primary' },
 };
 
 interface SummaryHighlight {
@@ -86,6 +87,215 @@ function hashKey(type: string, text: string): string {
   return `sa_${Math.abs(h).toString(36)}`;
 }
 
+// ── Entity extraction ──
+function extractEntities(text: string): string[] {
+  const entities: string[] = [];
+  // Names in quotes
+  const quoteRegex = /"([^"]+)"/g;
+  let m;
+  while ((m = quoteRegex.exec(text)) !== null) entities.push(m[1]);
+  // Uppercase words (project-like names) — at least 2 consecutive uppercase words or uppercase+number
+  const upperRegex = /\b([A-ZÀ-Ú][A-ZÀ-Ú0-9]+(?:\s+[A-ZÀ-Ú0-9]+)*(?:\s+\d+)?)\b/g;
+  while ((m = upperRegex.exec(text)) !== null) {
+    const val = m[1].trim();
+    if (val.length > 2 && !['PORTO', 'TODO', 'ASAP', 'CRM', 'ROI', 'KPI'].includes(val) && !entities.includes(val)) {
+      entities.push(val);
+    }
+  }
+  return entities;
+}
+
+interface ProjectMatch { id: string; name: string; }
+
+// ── Quick Task Creator ──
+function QuickTaskCreator({ actionText, onCreated }: {
+  actionText: string;
+  onCreated: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const { createTasksFromAI } = useTasksUnified();
+
+  // Fetch projects for matching
+  const { data: projects } = useQuery({
+    queryKey: ['projects-names-for-tasks'],
+    queryFn: async () => {
+      const { data } = await supabase.from('projects').select('id, name');
+      return (data || []) as ProjectMatch[];
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const entities = useMemo(() => extractEntities(actionText), [actionText]);
+
+  const matchedProjects = useMemo(() => {
+    if (!projects || entities.length === 0) return [];
+    return entities
+      .map(entity => {
+        const match = projects.find(p =>
+          p.name.toLowerCase().includes(entity.toLowerCase()) ||
+          entity.toLowerCase().includes(p.name.toLowerCase())
+        );
+        return match ? { entity, project: match } : { entity, project: null };
+      })
+      .filter(m => m !== null);
+  }, [entities, projects]);
+
+  const createSingleTask = async () => {
+    setCreating(true);
+    try {
+      const projectMatch = matchedProjects.find(m => m.project);
+      await createTasksFromAI([{
+        title: actionText.length > 120 ? actionText.slice(0, 117) + '...' : actionText,
+        description: actionText,
+        status: 'today',
+        category: 'operacao',
+        tags: ['polo-ai'],
+        priority: 'high',
+        due_date: new Date().toISOString().split('T')[0],
+        position: 0,
+        ...(projectMatch?.project ? { project_id: projectMatch.project.id } : {}),
+      } as any]);
+      toast.success('Tarefa criada com sucesso!', { description: 'Adicionada ao "Hoje"' });
+      setOpen(false);
+      onCreated();
+    } catch {
+      toast.error('Erro ao criar tarefa');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const createEntityTask = async (entity: string) => {
+    setCreating(true);
+    try {
+      const match = matchedProjects.find(m => m.entity === entity);
+      await createTasksFromAI([{
+        title: `Acompanhar ${entity}`,
+        description: `Ação recomendada pela IA: ${actionText}`,
+        status: 'today',
+        category: 'operacao',
+        tags: ['polo-ai'],
+        priority: 'high',
+        due_date: new Date().toISOString().split('T')[0],
+        position: 0,
+        ...(match?.project ? { project_id: match.project.id } : {}),
+      } as any]);
+      toast.success(`Tarefa criada: ${entity}`, { description: 'Adicionada ao "Hoje"' });
+      // Don't close if there are more entities
+      if (entities.length <= 1) {
+        setOpen(false);
+        onCreated();
+      }
+    } catch {
+      toast.error('Erro ao criar tarefa');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const createAllTasks = async () => {
+    setCreating(true);
+    try {
+      const tasks = entities.map((entity, i) => {
+        const match = matchedProjects.find(m => m.entity === entity);
+        return {
+          title: `Acompanhar ${entity}`,
+          description: `Ação recomendada pela IA: ${actionText}`,
+          status: 'today' as const,
+          category: 'operacao' as const,
+          tags: ['polo-ai'],
+          priority: 'high',
+          due_date: new Date().toISOString().split('T')[0],
+          position: i,
+          ...(match?.project ? { project_id: match.project.id } : {}),
+        };
+      });
+      await createTasksFromAI(tasks as any);
+      toast.success(`${tasks.length} tarefas criadas!`, { description: 'Adicionadas ao "Hoje"' });
+      setOpen(false);
+      onCreated();
+    } catch {
+      toast.error('Erro ao criar tarefas');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-1.5 text-primary hover:text-primary/80 hover:bg-primary/10"
+          title="Criar tarefa"
+        >
+          <Plus className="w-3 h-3" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-2" align="end" side="top">
+        <div className="space-y-1">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2 py-1">
+            Criar como tarefa
+          </p>
+
+          {/* Single task option */}
+          <button
+            onClick={createSingleTask}
+            disabled={creating}
+            className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-muted/50 transition-colors text-left"
+          >
+            <ListTodo className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            <span className="truncate">Tarefa única</span>
+          </button>
+
+          {/* Individual entity tasks */}
+          {entities.length > 0 && (
+            <>
+              <div className="h-px bg-border/50 mx-1" />
+              {entities.map((entity, i) => {
+                const match = matchedProjects.find(m => m.entity === entity);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => createEntityTask(entity)}
+                    disabled={creating}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <Target className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <span className="truncate block">Acompanhar {entity}</span>
+                      {match?.project && (
+                        <span className="text-[10px] text-muted-foreground">→ {match.project.name}</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+
+              {entities.length > 1 && (
+                <>
+                  <div className="h-px bg-border/50 mx-1" />
+                  <button
+                    onClick={createAllTasks}
+                    disabled={creating}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-primary font-medium hover:bg-primary/10 transition-colors text-left"
+                  >
+                    <Plus className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>Criar todas ({entities.length})</span>
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ── Metrics text builder ──
 function buildMetricsText(m: ReturnType<typeof useDailySummaryMetrics>): string {
   const dealsOverdueText = m.dealsActionOverdue.length > 0
     ? m.dealsActionOverdue.map(d => `${d.name} - ${d.next_action}`).join(', ')
@@ -135,6 +345,8 @@ FINANCEIRO:
 - A receber próximos 7d: R$${m.pendingPayments7d.toLocaleString('pt-BR')}
 - Atrasados: R$${m.overduePaymentsTotal.toLocaleString('pt-BR')} (${m.overduePayments} parcelas)
 - Pipeline aberto total: R$${m.pipelineOpenTotal.toLocaleString('pt-BR')}
+
+IMPORTANTE: Ao mencionar projetos ou clientes específicos nas ações recomendadas, coloque os nomes entre aspas duplas para facilitar a extração. Ex: Priorizar "PORTO 153" e "Fazenda da Matta".
 
 Gere o resumo executivo com highlights, ações e mensagens sugeridas para clientes que precisam de atenção.`;
 }
@@ -194,7 +406,7 @@ function ActionButtons({ actionKey, actionType, actionText, metadata, onDecided 
       <Button
         variant="ghost"
         size="sm"
-        className="h-6 px-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+        className="h-6 px-1.5 text-primary hover:text-primary/80 hover:bg-primary/10"
         onClick={() => mutation.mutate({ decision: 'done' })}
         disabled={mutation.isPending}
         title="Marcar como feito"
@@ -207,7 +419,7 @@ function ActionButtons({ actionKey, actionType, actionText, metadata, onDecided 
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+            className="h-6 px-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
             disabled={mutation.isPending}
             title="Adiar (Stand By)"
           >
@@ -235,7 +447,7 @@ function ActionButtons({ actionKey, actionType, actionText, metadata, onDecided 
       <Button
         variant="ghost"
         size="sm"
-        className="h-6 px-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        className="h-6 px-1.5 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
         onClick={() => mutation.mutate({ decision: 'dismissed' })}
         disabled={mutation.isPending}
         title="Recusar"
@@ -410,7 +622,7 @@ export function AIDailySummary() {
         </div>
       ) : error ? (
         <div className="flex items-start gap-2 text-xs text-muted-foreground">
-          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
           <p>
             {isCreditsError
               ? 'Créditos de IA esgotados. Adicione créditos ao workspace para reativar o resumo diário.'
@@ -453,7 +665,7 @@ export function AIDailySummary() {
             })}
           </div>
 
-          {/* Action Items with buttons */}
+          {/* Action Items with buttons + Quick Task Creator */}
           {(visibleActionItems.length > 0 || completedActions > 0) && (
             <motion.div
               className="space-y-1.5"
@@ -470,7 +682,7 @@ export function AIDailySummary() {
                 )}
               </div>
               <AnimatePresence>
-                {visibleActionItems.map((item, i) => {
+                {visibleActionItems.map((item) => {
                   const key = hashKey('action_item', item);
                   return (
                     <motion.div
@@ -484,7 +696,11 @@ export function AIDailySummary() {
                         <CheckCircle className="w-3 h-3 text-primary flex-shrink-0 mt-0.5" />
                         <span>{item}</span>
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 flex items-center gap-0.5">
+                        <QuickTaskCreator
+                          actionText={item}
+                          onCreated={() => markDecided(key)}
+                        />
                         <ActionButtons
                           actionKey={key}
                           actionType="action_item"
@@ -513,7 +729,7 @@ export function AIDailySummary() {
               </div>
 
               <AnimatePresence>
-                {visibleClientActions.map((action, i) => {
+                {visibleClientActions.map((action) => {
                   const key = hashKey('client_action', `${action.client_name}:${action.reason}`);
                   const urgency = urgencyColors[action.urgency] || urgencyColors.medium;
                   return (
@@ -533,6 +749,10 @@ export function AIDailySummary() {
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="text-caption text-muted-foreground capitalize mr-1">{action.channel}</span>
+                          <QuickTaskCreator
+                            actionText={`Contatar ${action.client_name}: ${action.reason}`}
+                            onCreated={() => markDecided(key)}
+                          />
                           <ActionButtons
                             actionKey={key}
                             actionType="client_action"
@@ -562,7 +782,7 @@ export function AIDailySummary() {
                             href={getWhatsAppLink(undefined, action.suggested_message)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-mono text-emerald-400 hover:text-emerald-300 transition-colors"
+                            className="flex items-center gap-1 text-mono text-primary hover:text-primary/80 transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" />
                             WhatsApp
@@ -578,7 +798,7 @@ export function AIDailySummary() {
         </div>
       ) : rawSummary && !summary ? (
         <div className="flex items-start gap-2 text-xs text-muted-foreground">
-          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
           <p>Formato inesperado. Clique em atualizar para tentar novamente.</p>
         </div>
       ) : (
