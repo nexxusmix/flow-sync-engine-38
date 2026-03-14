@@ -13,10 +13,10 @@ interface Props {
 type JourneyStage = 'discovery' | 'engagement' | 'trust' | 'conversion';
 
 const STAGES: { key: JourneyStage; label: string; description: string; icon: React.ReactNode; color: string; bg: string; pillars: string[] }[] = [
-  { key: 'discovery', label: 'Descoberta', description: 'O seguidor encontra você', icon: <Eye className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-500/15', pillars: ['educacao', 'bastidores'] },
-  { key: 'engagement', label: 'Engajamento', description: 'Interage com o conteúdo', icon: <Heart className="w-5 h-5" />, color: 'text-rose-400', bg: 'bg-rose-500/15', pillars: ['autoridade', 'educacao'] },
-  { key: 'trust', label: 'Confiança', description: 'Passa a confiar na marca', icon: <MessageSquare className="w-5 h-5" />, color: 'text-amber-400', bg: 'bg-amber-500/15', pillars: ['social_proof', 'portfolio', 'bastidores'] },
-  { key: 'conversion', label: 'Conversão', description: 'Toma a decisão de compra', icon: <ShoppingBag className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-500/15', pillars: ['venda', 'social_proof'] },
+  { key: 'discovery', label: 'Descoberta', description: 'O seguidor encontra você', icon: <Eye className="w-5 h-5" />, color: 'text-primary', bg: 'bg-primary/15', pillars: ['educacao', 'bastidores'] },
+  { key: 'engagement', label: 'Engajamento', description: 'Interage com o conteúdo', icon: <Heart className="w-5 h-5" />, color: 'text-primary/80', bg: 'bg-primary/10', pillars: ['autoridade', 'educacao'] },
+  { key: 'trust', label: 'Confiança', description: 'Passa a confiar na marca', icon: <MessageSquare className="w-5 h-5" />, color: 'text-muted-foreground', bg: 'bg-muted', pillars: ['social_proof', 'portfolio', 'bastidores'] },
+  { key: 'conversion', label: 'Conversão', description: 'Toma a decisão de compra', icon: <ShoppingBag className="w-5 h-5" />, color: 'text-primary', bg: 'bg-primary/20', pillars: ['venda', 'social_proof'] },
 ];
 
 function classifyJourneyStage(post: InstagramPost): JourneyStage {
