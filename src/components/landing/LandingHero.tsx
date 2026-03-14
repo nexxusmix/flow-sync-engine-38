@@ -153,7 +153,7 @@ export function LandingHero() {
       </motion.div>
 
       {/* Content revealed behind the video */}
-      <div className="relative z-10 pt-[80dvh] md:pt-[90vh]">
+      <div className="relative z-10 pt-[70dvh] md:pt-[75vh]">
         <motion.div
           className="sticky top-0 min-h-[100dvh] flex items-center px-4 md:px-12"
           style={{ opacity: textExitOpacity, y: textExitY }}
