@@ -216,9 +216,9 @@ export default function InstagramPage() {
             </div>
 
             {/* API Configuration Info */}
-            <Card className="glass-card p-6 border-amber-500/30">
+            <Card className="glass-card p-6 border-border">
               <div className="flex items-start gap-4">
-                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-foreground">Configuração da API</h4>
                   <p className="text-sm text-muted-foreground mt-1">
