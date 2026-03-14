@@ -773,6 +773,213 @@ export type Database = {
           },
         ]
       }
+      automation_actions: {
+        Row: {
+          action_config: Json
+          action_label: string | null
+          action_type: string
+          automation_id: string
+          created_at: string
+          id: string
+          require_approval: boolean
+          step_order: number
+        }
+        Insert: {
+          action_config?: Json
+          action_label?: string | null
+          action_type: string
+          automation_id: string
+          created_at?: string
+          id?: string
+          require_approval?: boolean
+          step_order?: number
+        }
+        Update: {
+          action_config?: Json
+          action_label?: string | null
+          action_type?: string
+          automation_id?: string
+          created_at?: string
+          id?: string
+          require_approval?: boolean
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_actions_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_approvals: {
+        Row: {
+          action_step: number
+          action_type: string
+          approver_id: string | null
+          automation_id: string
+          context_data: Json | null
+          created_at: string
+          decided_at: string | null
+          decision_note: string | null
+          execution_id: string
+          id: string
+          preview_text: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          action_step: number
+          action_type: string
+          approver_id?: string | null
+          automation_id: string
+          context_data?: Json | null
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          execution_id: string
+          id?: string
+          preview_text?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Update: {
+          action_step?: number
+          action_type?: string
+          approver_id?: string | null
+          automation_id?: string
+          context_data?: Json | null
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          execution_id?: string
+          id?: string
+          preview_text?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_approvals_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_approvals_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "automation_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_execution_logs: {
+        Row: {
+          action_label: string | null
+          action_type: string
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          execution_id: string
+          id: string
+          input_data: Json | null
+          output_data: Json | null
+          status: string
+          step_order: number
+        }
+        Insert: {
+          action_label?: string | null
+          action_type: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          execution_id: string
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          status?: string
+          step_order?: number
+        }
+        Update: {
+          action_label?: string | null
+          action_type?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          execution_id?: string
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          status?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_execution_logs_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "automation_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_executions: {
+        Row: {
+          automation_id: string
+          completed_at: string | null
+          created_by: string | null
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          retry_count: number
+          started_at: string
+          status: string
+          trigger_data: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          automation_id: string
+          completed_at?: string | null
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          retry_count?: number
+          started_at?: string
+          status?: string
+          trigger_data?: Json | null
+          workspace_id?: string
+        }
+        Update: {
+          automation_id?: string
+          completed_at?: string | null
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          retry_count?: number
+          started_at?: string
+          status?: string
+          trigger_data?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_executions_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_rules: {
         Row: {
           config_json: Json | null
@@ -850,6 +1057,84 @@ export type Database = {
           status?: string
           suggestion_json?: Json | null
           title?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      automations: {
+        Row: {
+          approval_config: Json | null
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          execution_count: number
+          id: string
+          is_template: boolean
+          last_executed_at: string | null
+          max_retries: number
+          module: string
+          name: string
+          require_approval: boolean
+          responsible_id: string | null
+          retry_enabled: boolean
+          status: string
+          success_count: number
+          template_key: string | null
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          approval_config?: Json | null
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          execution_count?: number
+          id?: string
+          is_template?: boolean
+          last_executed_at?: string | null
+          max_retries?: number
+          module?: string
+          name: string
+          require_approval?: boolean
+          responsible_id?: string | null
+          retry_enabled?: boolean
+          status?: string
+          success_count?: number
+          template_key?: string | null
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Update: {
+          approval_config?: Json | null
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          execution_count?: number
+          id?: string
+          is_template?: boolean
+          last_executed_at?: string | null
+          max_retries?: number
+          module?: string
+          name?: string
+          require_approval?: boolean
+          responsible_id?: string | null
+          retry_enabled?: boolean
+          status?: string
+          success_count?: number
+          template_key?: string | null
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
+          version?: number
           workspace_id?: string
         }
         Relationships: []
