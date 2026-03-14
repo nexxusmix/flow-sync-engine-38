@@ -209,7 +209,7 @@ export default function FinancePage() {
               Timeline_Ref<br />
               <strong>{monthRef}</strong> / <strong>{yearRef}</strong>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => navigate('/financeiro/receitas')} className="border-white/10 text-white/50 hover:text-white hover:border-white/20 text-[10px] uppercase tracking-widest">
                 Receitas
               </Button>
