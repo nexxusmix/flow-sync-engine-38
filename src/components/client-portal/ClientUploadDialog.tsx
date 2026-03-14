@@ -21,7 +21,9 @@ import {
   File as FileIcon,
   RotateCcw,
   AlertCircle,
+  HardDrive,
 } from "lucide-react";
+import { isGoogleDriveUrl, getDriveThumbnail } from "@/lib/google-drive-utils";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +38,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type UploadType = 'youtube' | 'link' | 'file';
+type UploadType = 'youtube' | 'link' | 'file' | 'drive';
 type ItemStatus = 'queued' | 'uploading' | 'success' | 'error';
 
 export interface QueuedItem {
@@ -101,7 +103,7 @@ function ClientUploadDialogComponent({
   isUploading = false,
 }: ClientUploadDialogProps) {
   const [queue, setQueue] = useState<QueuedItem[]>([]);
-  const [linkMode, setLinkMode] = useState<'youtube' | 'link' | null>(null);
+  const [linkMode, setLinkMode] = useState<'youtube' | 'link' | 'drive' | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
   const [linkDesc, setLinkDesc] = useState('');
@@ -156,13 +158,19 @@ function ClientUploadDialogComponent({
 
   const addLink = () => {
     if (!linkMode || !linkUrl.trim()) { setError('Preencha o link'); return; }
-    const title = linkTitle.trim() || (linkMode === 'youtube' ? 'Vídeo YouTube' : 'Link externo');
+    if (linkMode === 'drive' && !isGoogleDriveUrl(linkUrl.trim())) {
+      setError('Insira um link válido do Google Drive');
+      return;
+    }
+    const title = linkTitle.trim() || (linkMode === 'youtube' ? 'Vídeo YouTube' : linkMode === 'drive' ? 'Arquivo Google Drive' : 'Link externo');
+    const driveThumb = linkMode === 'drive' ? getDriveThumbnail(linkUrl.trim()) : undefined;
     setQueue(prev => [...prev, {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       type: linkMode,
       title,
       description: linkDesc,
       url: linkUrl.trim(),
+      preview: driveThumb || undefined,
       status: 'queued' as ItemStatus,
     }]);
     setLinkUrl('');
@@ -405,11 +413,16 @@ function ClientUploadDialogComponent({
               <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} accept="*/*" />
 
               {/* Add link buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button onClick={() => setLinkMode('youtube')}
                   className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
                     linkMode === 'youtube' ? "border-red-500/40 bg-red-500/10 text-red-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
                   <Youtube className="w-3.5 h-3.5" /> YouTube
+                </button>
+                <button onClick={() => setLinkMode('drive')}
+                  className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
+                    linkMode === 'drive' ? "border-green-500/40 bg-green-500/10 text-green-400" : "border-[#1a1a1a] text-gray-500 hover:border-gray-600")}>
+                  <HardDrive className="w-3.5 h-3.5" /> Google Drive
                 </button>
                 <button onClick={() => setLinkMode('link')}
                   className={cn("flex items-center gap-1.5 px-3 py-1.5 border text-xs uppercase tracking-wider transition-colors",
@@ -422,7 +435,12 @@ function ClientUploadDialogComponent({
               <AnimatePresence>
                 {linkMode && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2 overflow-hidden">
-                    <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder={linkMode === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://drive.google.com/...'} className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500" />
+                    <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder={linkMode === 'youtube' ? 'https://youtube.com/watch?v=...' : linkMode === 'drive' ? 'https://drive.google.com/file/d/...' : 'https://...'} className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500" />
+                    {linkMode === 'drive' && linkUrl && isGoogleDriveUrl(linkUrl) && getDriveThumbnail(linkUrl) && (
+                      <div className="w-full h-24 rounded overflow-hidden bg-white/5 border border-green-500/20">
+                        <img src={getDriveThumbnail(linkUrl)!} alt="Preview" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <Input value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Título (opcional)" className="bg-[#0a0a0a] border-[#1a1a1a] rounded-none focus:border-cyan-500 flex-1" />
                       <Button size="sm" onClick={addLink} className="bg-cyan-500 hover:bg-cyan-600 text-black rounded-none shrink-0">
@@ -471,7 +489,7 @@ function ClientUploadDialogComponent({
               </div>
 
               {queue.map((item, i) => {
-                const Icon = item.file ? getFileIcon(item.file) : item.type === 'youtube' ? Youtube : Link2;
+                const Icon = item.file ? getFileIcon(item.file) : item.type === 'youtube' ? Youtube : item.type === 'drive' ? HardDrive : Link2;
                 const isItemSending = item.status === 'uploading';
                 const isItemDone = item.status === 'success';
                 const isItemFailed = item.status === 'error';
@@ -496,7 +514,7 @@ function ClientUploadDialogComponent({
                         {item.preview ? (
                           <img src={item.preview} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-destructive' : 'text-primary')} />
+                          <Icon className={cn("w-5 h-5", item.type === 'youtube' ? 'text-destructive' : item.type === 'drive' ? 'text-green-500' : 'text-primary')} />
                         )}
                         {/* Status overlay */}
                         {isItemSending && (
