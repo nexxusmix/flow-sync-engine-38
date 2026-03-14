@@ -100,7 +100,7 @@ export function TasksDashboard({ tasks }: TasksDashboardProps) {
     <div className="space-y-6">
       {/* Daily Plan Widget */}
       <DailyPlanWidget todayTasks={todayTasks} plans={plans} getPlanForTask={getPlanForTask} />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
