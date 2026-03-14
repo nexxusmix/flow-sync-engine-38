@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { AppLayoutStandard } from "@/components/layout/AppLayoutStandard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { OnboardingList } from "@/components/onboarding/OnboardingList";
 import { OnboardingDetail } from "@/components/onboarding/OnboardingDetail";
