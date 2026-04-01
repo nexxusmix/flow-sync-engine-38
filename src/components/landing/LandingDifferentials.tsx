@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { Sparkles, Upload, Video, Undo2, FileText, Eye, Moon, Shield, Gem, Mic } from "lucide-react";
 import { ScrollLinked } from "./ScrollLinked";
+import { TiltCard, TextRevealByChar } from "@/components/landing/effects";
 
 const items = [
   { icon: Sparkles, text: "IA que executa tarefas" },
@@ -20,12 +21,14 @@ const springCfg = { stiffness: 80, damping: 30 };
 
 function DiffCard({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
-    <div className="flex items-center gap-4 px-6 py-5 rounded-xl border border-border/15 bg-card group hover:border-primary/15 transition-all duration-400 shrink-0 min-w-[240px]">
-      <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center shrink-0 group-hover:bg-primary/12 transition-colors">
-        <Icon className="w-4 h-4 text-primary" />
+    <TiltCard>
+      <div className="flex items-center gap-4 px-6 py-5 rounded-xl border border-border/15 bg-card group hover:border-primary/15 transition-all duration-400 shrink-0 min-w-[240px]">
+        <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center shrink-0 group-hover:bg-primary/12 transition-colors">
+          <Icon className="w-4 h-4 text-primary" />
+        </div>
+        <span className="text-sm text-foreground/80 whitespace-nowrap font-medium">{text}</span>
       </div>
-      <span className="text-sm text-foreground/80 whitespace-nowrap font-medium">{text}</span>
-    </div>
+    </TiltCard>
   );
 }
 
@@ -55,10 +58,15 @@ export function LandingDifferentials() {
             <Gem className="w-3 h-3 text-primary" />
             <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-medium">Diferenciais</span>
           </motion.div>
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.1]">
-            Não é só gestão.<br />
-            É <span className="text-primary">inteligência operacional</span>
-          </h2>
+          <TextRevealByChar
+            text="Não é só gestão. É inteligência operacional"
+            as="h2"
+            effect="blur"
+            className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.1]"
+            highlightWords={["inteligência operacional"]}
+            highlightClassName="text-primary"
+            delay={0.3}
+          />
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import {
   Zap, Brain, Megaphone, LayoutDashboard, BookOpen, Compass,
 } from "lucide-react";
 import { ScrollLinked } from "./ScrollLinked";
+import { TiltCard, HoverSound, GlitchText } from "@/components/landing/effects";
 
 const springCfg = { stiffness: 120, damping: 30 };
 
@@ -30,18 +31,24 @@ function ModuleCard({ icon: Icon, name, desc, index }: {
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "center center"] });
   const scale = useSpring(useTransform(scrollYProgress, [0, 1], [0.9, 1]), springCfg);
   const opacity = useSpring(useTransform(scrollYProgress, [0, 0.6], [0, 1]), springCfg);
+  const pitch = 600 + index * 50;
 
   return (
     <motion.div
       ref={ref}
-      className="rounded-2xl border border-border/15 bg-card p-6 group hover:border-primary/20 transition-all duration-500"
       style={{ scale, opacity }}
     >
-      <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-4 group-hover:bg-primary/12 transition-colors">
-        <Icon className="w-5 h-5 text-primary" />
-      </div>
-      <h3 className="text-sm font-medium text-foreground mb-1.5">{name}</h3>
-      <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+      <TiltCard>
+        <HoverSound pitch={pitch}>
+          <div className="rounded-2xl border border-border/15 bg-card p-6 group hover:border-primary/20 transition-all duration-500">
+            <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-4 group-hover:bg-primary/12 transition-colors">
+              <Icon className="w-5 h-5 text-primary" />
+            </div>
+            <h3 className="text-sm font-medium text-foreground mb-1.5">{name}</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+          </div>
+        </HoverSound>
+      </TiltCard>
     </motion.div>
   );
 }
@@ -59,10 +66,12 @@ export function LandingModules() {
           >
             <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-medium">Plataforma completa</span>
           </motion.div>
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.1]">
-            Não são ferramentas soltas.<br />
-            É um <span className="text-primary">sistema operacional integrado.</span>
-          </h2>
+          <GlitchText>
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.1]">
+              Não são ferramentas soltas.<br />
+              É um <span className="text-primary">sistema operacional integrado.</span>
+            </h2>
+          </GlitchText>
           <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-2xl mx-auto leading-relaxed">
             12 módulos que conversam entre si para criar uma operação previsível, escalável e inteligente.
           </p>

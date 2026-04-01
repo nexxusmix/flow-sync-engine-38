@@ -1,59 +1,114 @@
-import { useEffect, RefObject } from "react";
+import { useEffect, RefObject, useCallback, useRef } from "react";
+
+type EasingFunction = (t: number) => number;
+
+const easingFunctions: Record<string, EasingFunction> = {
+  linear: (t) => t,
+  easeInQuad: (t) => t * t,
+  easeOutQuad: (t) => t * (2 - t),
+  easeInOutQuad: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+  easeInCubic: (t) => t * t * t,
+  easeOutCubic: (t) => (--t) * t * t + 1,
+  easeInOutCubic: (t) =>
+    t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * (t - 2)) * (2 * (t - 2)) + 1,
+};
+
+interface ScrollToOptions {
+  duration?: number;
+  easing?: keyof typeof easingFunctions;
+}
 
 /**
- * Inertial smooth scroll hook using requestAnimationFrame + lerp.
+ * Inertial smooth scroll hook with optional easing and scrollTo function.
  * Applies to a scrollable container element for a luxurious, weighted feel.
  */
-export function useSmoothScroll(containerRef: RefObject<HTMLElement>, factor = 0.08) {
+export function useSmoothScroll(
+  containerRef: RefObject<HTMLElement>,
+  factor = 0.08
+) {
+  const animationFrameRef = useRef<number>();
+  const startTimeRef = useRef<number>(0);
+  const startScrollRef = useRef<number>(0);
+  const targetScrollRef = useRef<number>(0);
+  const isRunningRef = useRef(false);
+
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+  const scrollTo = useCallback(
+    (target: number, options: ScrollToOptions = {}) => {
+      const { duration = 800, easing = "easeInOutCubic" } = options;
+      const el = containerRef.current;
+      if (!el) return;
+
+      const easingFn = easingFunctions[easing];
+      const startScroll = el.scrollTop;
+      const startTime = Date.now();
+
+      const animateScrollTo = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easingFn(progress);
+
+        el.scrollTop = startScroll + (target - startScroll) * easedProgress;
+
+        if (progress < 1) {
+          animationFrameRef.current = requestAnimationFrame(animateScrollTo);
+        }
+      };
+
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animateScrollTo);
+    },
+    [containerRef]
+  );
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
-    let targetScroll = el.scrollTop;
+    targetScrollRef.current = el.scrollTop;
     let currentScroll = el.scrollTop;
-    let rafId: number;
-    let isRunning = false;
-
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
     const animate = () => {
-      currentScroll = lerp(currentScroll, targetScroll, factor);
+      currentScroll = lerp(currentScroll, targetScrollRef.current, factor);
 
-      // Stop if close enough
-      if (Math.abs(currentScroll - targetScroll) < 0.5) {
-        currentScroll = targetScroll;
+      if (Math.abs(currentScroll - targetScrollRef.current) < 0.5) {
+        currentScroll = targetScrollRef.current;
         el.scrollTop = currentScroll;
-        isRunning = false;
+        isRunningRef.current = false;
         return;
       }
 
       el.scrollTop = currentScroll;
-      rafId = requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(animate);
     };
 
     const startAnimation = () => {
-      if (!isRunning) {
-        isRunning = true;
-        rafId = requestAnimationFrame(animate);
+      if (!isRunningRef.current) {
+        isRunningRef.current = true;
+        animationFrameRef.current = requestAnimationFrame(animate);
       }
     };
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      targetScroll = Math.max(
+      targetScrollRef.current = Math.max(
         0,
         Math.min(
-          targetScroll + e.deltaY,
+          targetScrollRef.current + e.deltaY,
           el.scrollHeight - el.clientHeight
         )
       );
       startAnimation();
     };
 
-    // Sync on manual scroll (touch, keyboard)
     const onScroll = () => {
-      if (!isRunning) {
-        targetScroll = el.scrollTop;
+      if (!isRunningRef.current) {
+        targetScrollRef.current = el.scrollTop;
         currentScroll = el.scrollTop;
       }
     };
@@ -64,7 +119,11 @@ export function useSmoothScroll(containerRef: RefObject<HTMLElement>, factor = 0
     return () => {
       el.removeEventListener("wheel", onWheel);
       el.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(rafId);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [containerRef, factor]);
+
+  return { scrollTo };
 }

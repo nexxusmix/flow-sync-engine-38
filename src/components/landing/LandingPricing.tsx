@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Star, Clapperboard, Palette, Zap } from "lucide-react";
 import { ScrollLinked } from "./ScrollLinked";
+import { HoverSound, MagneticElement, DepthBlur } from "@/components/landing/effects";
 
 interface PlanCardProps {
   icon: React.ElementType;
@@ -26,7 +27,7 @@ function PlanCard({ icon: Icon, emoji, name, ideal, price, originalPrice, featur
   const y = useSpring(useTransform(scrollYProgress, [0, 1], [parallaxSpeed * 40, parallaxSpeed * -40]), springCfg);
   const opacity = useSpring(useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0.6]), springCfg);
 
-  return (
+  const cardContent = (
     <motion.div
       ref={ref}
       className={`relative rounded-2xl border overflow-hidden flex flex-col bg-card transition-all duration-500 ${
@@ -62,16 +63,30 @@ function PlanCard({ icon: Icon, emoji, name, ideal, price, originalPrice, featur
             </li>
           ))}
         </ul>
-        <Button
-          className={`w-full gap-2 h-12 hover-invert ${recommended ? "bg-primary hover:bg-primary/90" : ""}`}
-          variant={recommended ? "default" : "outline"}
-          onClick={() => navigate("/login")}
-        >
-          Começar Agora <ArrowRight className="w-4 h-4" />
-        </Button>
+        <MagneticElement strength={0.25}>
+          <HoverSound pitch={700}>
+            <Button
+              className={`w-full gap-2 h-12 hover-invert ${recommended ? "bg-primary hover:bg-primary/90" : ""}`}
+              variant={recommended ? "default" : "outline"}
+              onClick={() => navigate("/login")}
+            >
+              Começar Agora <ArrowRight className="w-4 h-4" />
+            </Button>
+          </HoverSound>
+        </MagneticElement>
         <p className="text-[10px] text-muted-foreground/40 text-center mt-3">Sem cartão. Cancele quando quiser.</p>
       </div>
     </motion.div>
+  );
+
+  if (recommended) {
+    return cardContent;
+  }
+
+  return (
+    <DepthBlur depth={0.6}>
+      {cardContent}
+    </DepthBlur>
   );
 }
 

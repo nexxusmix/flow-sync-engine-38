@@ -4,20 +4,7 @@ import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
 import { AnimatedCounter } from "./AnimatedCounter";
-
-const maskContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.8 } },
-};
-
-const maskChild = {
-  hidden: { y: "100%", opacity: 0 },
-  visible: {
-    y: "0%",
-    opacity: 1,
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
-  },
-};
+import { TextRevealByChar, MagneticElement, HoverSound, DepthBlur, ParallaxLayer } from "@/components/landing/effects";
 
 const sp = { stiffness: 100, damping: 30 };
 
@@ -61,23 +48,15 @@ export function LandingHero() {
             </span>
           </motion.div>
 
-          <motion.h1
+          <TextRevealByChar
+            text="O sistema operacional da agência moderna."
+            as="h1"
+            effect="rise"
             className="text-3xl sm:text-4xl md:text-6xl lg:text-[5.5rem] font-light text-white tracking-tight leading-[1.08]"
-            variants={maskContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            <span className="overflow-hidden block">
-              <motion.span variants={maskChild} className="inline-block">
-                O sistema operacional
-              </motion.span>
-            </span>
-            <span className="overflow-hidden block">
-              <motion.span variants={maskChild} className="inline-block">
-                da <span className="text-primary font-normal">agência moderna.</span>
-              </motion.span>
-            </span>
-          </motion.h1>
+            highlightWords={["agência moderna"]}
+            highlightClassName="text-primary font-normal"
+            delay={0.3}
+          />
 
           <motion.p
             className="text-base md:text-xl text-white/60 font-light mt-5 md:mt-7 max-w-2xl mx-auto leading-relaxed px-2"
@@ -96,40 +75,50 @@ export function LandingHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.8, duration: 0.6 }}
           >
-            <Button
-              size="lg"
-              onClick={() => navigate("/login")}
-              className="gap-2 bg-primary hover:bg-primary/90 h-12 md:h-14 px-8 md:px-10 text-sm md:text-base pointer-events-auto hover-invert w-full sm:w-auto"
-            >
-              Agendar Demonstração <ArrowRight className="w-4 h-4" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="gap-2 border-white/20 text-white hover:bg-white/10 h-12 md:h-14 px-6 md:px-8 pointer-events-auto w-full sm:w-auto"
-            >
-              <Play className="w-3.5 h-3.5" /> Ver Como Funciona
-            </Button>
+            <MagneticElement strength={0.3}>
+              <HoverSound pitch={800}>
+                <Button
+                  size="lg"
+                  onClick={() => navigate("/login")}
+                  className="gap-2 bg-primary hover:bg-primary/90 h-12 md:h-14 px-8 md:px-10 text-sm md:text-base pointer-events-auto hover-invert w-full sm:w-auto"
+                >
+                  Agendar Demonstração <ArrowRight className="w-4 h-4" />
+                </Button>
+              </HoverSound>
+            </MagneticElement>
+            <MagneticElement strength={0.3}>
+              <HoverSound pitch={600}>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="gap-2 border-white/20 text-white hover:bg-white/10 h-12 md:h-14 px-6 md:px-8 pointer-events-auto w-full sm:w-auto"
+                >
+                  <Play className="w-3.5 h-3.5" /> Ver Como Funciona
+                </Button>
+              </HoverSound>
+            </MagneticElement>
           </motion.div>
         </motion.div>
 
         {/* Video card */}
-        <motion.div
-          className="w-full max-w-5xl hidden md:block"
-          style={{ y: videoY }}
-          initial={{ opacity: 0, y: 40, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_80px_-20px_hsl(var(--primary)/0.25)] aspect-video bg-black">
-            <video
-              src="/videos/hero-demo.mp4"
-              autoPlay loop muted playsInline
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
-          </div>
-        </motion.div>
+        <DepthBlur depth={0.3}>
+          <motion.div
+            className="w-full max-w-5xl hidden md:block"
+            style={{ y: videoY }}
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_80px_-20px_hsl(var(--primary)/0.25)] aspect-video bg-black">
+              <video
+                src="/videos/hero-demo.mp4"
+                autoPlay loop muted playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
+            </div>
+          </motion.div>
+        </DepthBlur>
 
         {/* Scroll indicator */}
         <motion.div

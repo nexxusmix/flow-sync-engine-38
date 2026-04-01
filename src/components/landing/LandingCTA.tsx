@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { TextRevealByChar, GlitchText, MagneticElement, HoverSound } from "@/components/landing/effects";
 
 const springCfg = { stiffness: 120, damping: 30 };
 
@@ -30,23 +31,32 @@ export function LandingCTA() {
           <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-medium">Próximo passo</span>
         </motion.div>
 
-        <h2 className="text-4xl md:text-6xl lg:text-7xl font-light text-foreground tracking-tight leading-[1.1]">
-          Estruture sua agência<br />
-          como uma <span className="text-primary font-normal">operação de verdade.</span>
-        </h2>
+        <TextRevealByChar
+          text="Estruture sua agência como uma operação de verdade."
+          as="h2"
+          effect="scale"
+          className="text-4xl md:text-6xl lg:text-7xl font-light text-foreground tracking-tight leading-[1.1]"
+          highlightWords={["operação de verdade"]}
+          highlightClassName="text-primary font-normal"
+          delay={0.2}
+        />
         <p className="text-base md:text-lg text-muted-foreground mt-5 mb-10 max-w-xl mx-auto leading-relaxed">
           Centralize operação, automatize processos e ganhe escala.<br className="hidden md:block" />
-          Comece em menos de 2 minutos.
+          <GlitchText>Comece em menos de 2 minutos.</GlitchText>
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
-          <Button
-            size="lg"
-            onClick={() => navigate("/login")}
-            className="gap-2 bg-primary hover:bg-primary/90 h-14 px-12 text-base hover-invert"
-          >
-            Agendar Demonstração <ArrowRight className="w-4 h-4" />
-          </Button>
+          <MagneticElement strength={0.3}>
+            <HoverSound pitch={750}>
+              <Button
+                size="lg"
+                onClick={() => navigate("/login")}
+                className="gap-2 bg-primary hover:bg-primary/90 h-14 px-12 text-base hover-invert"
+              >
+                Agendar Demonstração <ArrowRight className="w-4 h-4" />
+              </Button>
+            </HoverSound>
+          </MagneticElement>
           <Button
             size="lg"
             variant="outline"

@@ -4,6 +4,7 @@ import {
   Target, TrendingUp, Eye, Zap, Users, BarChart3,
 } from "lucide-react";
 import { ScrollLinked } from "./ScrollLinked";
+import { TextRevealByChar, TiltCard, MagneticElement } from "@/components/landing/effects";
 
 const springCfg = { stiffness: 120, damping: 30 };
 
@@ -49,14 +50,17 @@ function BenefitCard({ icon: Icon, title, desc }: { icon: React.ElementType; tit
   return (
     <motion.div
       ref={ref}
-      className="p-6 rounded-2xl border border-border/15 bg-card group hover:border-primary/15 transition-all duration-500"
       style={{ scale, opacity }}
     >
-      <div className="w-12 h-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/12 transition-colors">
-        <Icon className="w-5 h-5 text-primary" />
-      </div>
-      <h3 className="text-base font-medium text-foreground mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+      <TiltCard>
+        <div className="p-6 rounded-2xl border border-border/15 bg-card group hover:border-primary/15 transition-all duration-500">
+          <div className="w-12 h-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/12 transition-colors">
+            <Icon className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="text-base font-medium text-foreground mb-2">{title}</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+        </div>
+      </TiltCard>
     </motion.div>
   );
 }
@@ -74,10 +78,15 @@ export function LandingBenefits() {
           >
             <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-medium">Por que adotar</span>
           </motion.div>
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.1]">
-            Não é só gestão.<br />
-            É <span className="text-primary">inteligência operacional.</span>
-          </h2>
+          <TextRevealByChar
+            text="Não é só gestão. É inteligência operacional."
+            as="h2"
+            effect="blur"
+            className="text-3xl md:text-5xl lg:text-6xl font-light text-foreground tracking-tight leading-[1.1]"
+            highlightWords={["inteligência operacional"]}
+            highlightClassName="text-primary"
+            delay={0.3}
+          />
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
