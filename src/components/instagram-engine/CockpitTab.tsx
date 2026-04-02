@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useInstagramPosts, useProfileConfig, useProfileSnapshots, useSaveProfileConfig, useSaveSnapshot, PILLARS, POST_STATUSES } from '@/hooks/useInstagramEngine';
+import { useInstagramPosts, useProfileConfig, useProfileSnapshots, useSaveProfileConfig, useSaveSnapshot, PILLARS, POST_STATUSES, InstagramPost } from '@/hooks/useInstagramEngine';
 import { Loader2, AlertTriangle, CheckCircle2, Clock, Zap, Save, Pencil } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { InstagramMetaConnect } from './InstagramMetaConnect';
@@ -15,7 +15,7 @@ import { InstagramFeedPreview } from './InstagramFeedPreview';
 import { toast } from 'sonner';
 
 interface CockpitTabProps {
-  onViewPost?: (post: any) => void;
+  onViewPost?: (post: InstagramPost) => void;
 }
 
 export function CockpitTab({ onViewPost }: CockpitTabProps = {}) {

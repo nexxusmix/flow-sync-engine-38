@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 
 // Types
 export interface InstagramPost {
@@ -19,19 +21,20 @@ export interface InstagramPost {
   caption_long: string | null;
   cta: string | null;
   pinned_comment: string | null;
-  hashtags: string[];
+  hashtags: string[] | null;
   cover_suggestion: string | null;
-  carousel_slides: any[];
-  story_sequence: any[];
-  checklist: any[];
-  ai_generated: boolean;
+  carousel_slides: Json | null;
+  story_sequence: Json | null;
+  checklist: Json | null;
+  ai_generated: boolean | null;
   project_id: string | null;
   campaign_id: string | null;
   post_url: string | null;
   thumbnail_url: string | null;
-  position: number;
-  created_at: string;
-  updated_at: string;
+  position: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  workspace_id: string;
 }
 
 export interface InstagramHook {
@@ -39,11 +42,12 @@ export interface InstagramHook {
   hook_text: string;
   category: string | null;
   format: string | null;
-  hook_score: number;
-  score_breakdown: any;
-  times_used: number;
-  ai_generated: boolean;
-  created_at: string;
+  hook_score: number | null;
+  score_breakdown: Json | null;
+  times_used: number | null;
+  ai_generated: boolean | null;
+  created_at: string | null;
+  workspace_id: string;
 }
 
 export interface ProfileConfig {
@@ -54,27 +58,29 @@ export interface ProfileConfig {
   sub_niche: string | null;
   target_audience: string | null;
   brand_voice: string | null;
-  competitors: any[];
-  content_pillars: any[];
-  posting_frequency: any;
+  competitors: Json | null;
+  content_pillars: Json | null;
+  posting_frequency: Json | null;
   bio_current: string | null;
-  bio_suggestions: any[];
-  profile_score: number;
-  profile_analysis: any;
-  strategic_briefing: any;
-  autopilot_enabled: boolean;
+  bio_suggestions: Json | null;
+  profile_score: number | null;
+  profile_analysis: Json | null;
+  strategic_briefing: Json | null;
+  autopilot_enabled: boolean | null;
   avatar_url: string | null;
+  workspace_id: string;
 }
 
 export interface ProfileSnapshot {
   id: string;
-  followers: number;
-  following: number;
-  posts_count: number;
-  avg_engagement: number;
-  avg_reach: number;
+  followers: number | null;
+  following: number | null;
+  posts_count: number | null;
+  avg_engagement: number | null;
+  avg_reach: number | null;
   best_posting_time: string | null;
-  snapshot_date: string;
+  snapshot_date: string | null;
+  workspace_id: string;
 }
 
 export interface InstagramCampaign {
@@ -85,12 +91,13 @@ export interface InstagramCampaign {
   start_date: string | null;
   end_date: string | null;
   budget: number | null;
-  status: string;
-  key_messages: any[];
-  content_plan: any[];
-  kpis: any;
-  result_report: any;
-  created_at: string;
+  status: string | null;
+  key_messages: Json | null;
+  content_plan: Json | null;
+  kpis: Json | null;
+  result_report: Json | null;
+  created_at: string | null;
+  workspace_id: string;
 }
 
 export const POST_STATUSES = [
@@ -127,6 +134,7 @@ export function useInstagramPosts() {
       const { data, error } = await supabase
         .from('instagram_posts')
         .select('*')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('position', { ascending: true })
         .limit(500);
       if (error) throw error;
@@ -142,6 +150,7 @@ export function useInstagramHooks() {
       const { data, error } = await supabase
         .from('instagram_hooks')
         .select('*')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('hook_score', { ascending: false })
         .limit(200);
       if (error) throw error;
@@ -157,6 +166,7 @@ export function useProfileConfig() {
       const { data, error } = await supabase
         .from('instagram_profile_config')
         .select('*')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .limit(1)
         .maybeSingle();
       if (error) throw error;
@@ -172,6 +182,7 @@ export function useProfileSnapshots() {
       const { data, error } = await supabase
         .from('instagram_profile_snapshots')
         .select('*')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('snapshot_date', { ascending: false })
         .limit(30);
       if (error) throw error;
@@ -187,6 +198,7 @@ export function useInstagramCampaigns() {
       const { data, error } = await supabase
         .from('instagram_campaigns')
         .select('*')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -202,11 +214,11 @@ export function useCreatePost() {
     mutationFn: async (post: Partial<InstagramPost>) => {
       const { data, error } = await supabase
         .from('instagram_posts')
-        .insert(post as any)
+        .insert({ ...post, workspace_id: DEFAULT_WORKSPACE_ID } as any)
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as InstagramPost;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['instagram-posts'] });
@@ -223,7 +235,8 @@ export function useUpdatePost() {
       const { error } = await supabase
         .from('instagram_posts')
         .update(updates as any)
-        .eq('id', id);
+        .eq('id', id)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['instagram-posts'] }),
@@ -238,7 +251,8 @@ export function useDeletePost() {
       const { error } = await supabase
         .from('instagram_posts')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -256,6 +270,7 @@ export function useSaveProfileConfig() {
       const { data: existing } = await supabase
         .from('instagram_profile_config')
         .select('id')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .limit(1)
         .maybeSingle();
 
@@ -263,12 +278,13 @@ export function useSaveProfileConfig() {
         const { error } = await supabase
           .from('instagram_profile_config')
           .update(config as any)
-          .eq('id', existing.id);
+          .eq('id', existing.id)
+          .eq('workspace_id', DEFAULT_WORKSPACE_ID);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('instagram_profile_config')
-          .insert(config as any);
+          .insert({ ...config, workspace_id: DEFAULT_WORKSPACE_ID } as any);
         if (error) throw error;
       }
     },
@@ -286,7 +302,7 @@ export function useSaveSnapshot() {
     mutationFn: async (snapshot: Partial<ProfileSnapshot>) => {
       const { error } = await supabase
         .from('instagram_profile_snapshots')
-        .insert(snapshot as any);
+        .insert({ ...snapshot, workspace_id: DEFAULT_WORKSPACE_ID } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -301,9 +317,10 @@ export function useSaveHooks() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (hooks: Partial<InstagramHook>[]) => {
+      const rows = hooks.map(h => ({ ...h, workspace_id: DEFAULT_WORKSPACE_ID }));
       const { error } = await supabase
         .from('instagram_hooks')
-        .insert(hooks as any);
+        .insert(rows as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -483,6 +500,20 @@ export function useSaveAIPerformance() {
 }
 
 // AI Memory: query memory entries
+export interface AIMemoryEntry {
+  id: string;
+  memory_type: string | null;
+  category: string | null;
+  format: string | null;
+  topic: string | null;
+  field_name: string | null;
+  was_accepted: boolean | null;
+  engagement_score: number | null;
+  style_tags: string[] | null;
+  tone: string | null;
+  created_at: string | null;
+}
+
 export function useAIMemory() {
   return useQuery({
     queryKey: ['instagram-ai-memory'],
@@ -490,10 +521,11 @@ export function useAIMemory() {
       const { data, error } = await supabase
         .from('instagram_ai_memory' as any)
         .select('id, memory_type, category, format, topic, field_name, was_accepted, engagement_score, style_tags, tone, created_at')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data || []) as any[];
+      return (data || []) as unknown as AIMemoryEntry[];
     },
   });
 }
