@@ -28,7 +28,7 @@ export interface WorkspaceInvite {
   expires_at: string;
 }
 
-const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
+import { DEFAULT_WORKSPACE_ID_ID } from '@/constants/workspace';
 
 export function useWorkspaceMembers() {
   const { user } = useAuth();
@@ -40,7 +40,7 @@ export function useWorkspaceMembers() {
       const { data, error } = await supabase
         .from("workspace_members" as any)
         .select("*, profiles:user_id(full_name, email, avatar_url)")
-        .eq("workspace_id", DEFAULT_WORKSPACE)
+        .eq("workspace_id", DEFAULT_WORKSPACE_ID)
         .order("joined_at", { ascending: true });
 
       if (error) throw error;
@@ -55,7 +55,7 @@ export function useWorkspaceMembers() {
       const { data, error } = await supabase
         .from("workspace_invites" as any)
         .select("*")
-        .eq("workspace_id", DEFAULT_WORKSPACE)
+        .eq("workspace_id", DEFAULT_WORKSPACE_ID)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
@@ -70,7 +70,7 @@ export function useWorkspaceMembers() {
       const { error } = await supabase
         .from("workspace_invites" as any)
         .insert({
-          workspace_id: DEFAULT_WORKSPACE,
+          workspace_id: DEFAULT_WORKSPACE_ID,
           email,
           role,
           invited_by: user?.id,

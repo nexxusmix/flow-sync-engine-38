@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 import { TaskTimer, formatTime } from './TaskTimer';
 import { exportFocusPDF } from '@/services/pdfExportService';
 import type { Task } from '@/hooks/useTasksUnified';
@@ -244,7 +245,7 @@ export function TaskExecutionGuide({ tasks, onComplete, externalOpen, onExternal
           color: blockColors[block.type] || '#007399',
           source: 'manual',
           provider: 'internal',
-          workspace_id: '00000000-0000-0000-0000-000000000000',
+          workspace_id: DEFAULT_WORKSPACE_ID,
         };
       });
 

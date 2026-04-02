@@ -2,13 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { AiGenerateOptions, AiGenerateResult } from "./types";
 import { getAiAction } from "./actions";
 import type { Json } from "@/integrations/supabase/types";
+import { DEFAULT_WORKSPACE_ID } from "@/constants/workspace";
 
 // ============================================
 // Unified AI Client
 // All AI operations go through this client
 // ============================================
-
-const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
 /**
  * Main AI client - handles all AI generation requests

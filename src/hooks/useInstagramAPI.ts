@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
+import { DEFAULT_WORKSPACE_ID_ID } from '@/constants/workspace';
 
 // Scrape public Instagram profile data via Firecrawl
 export function useScrapeInstagramProfile() {
@@ -45,7 +44,7 @@ export function useInstagramConnection() {
       const { data, error } = await supabase
         .from('instagram_connections')
         .select('*')
-        .eq('workspace_id', DEFAULT_WORKSPACE)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('connected_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -80,7 +79,7 @@ export function useConnectInstagramManual() {
       const { data: existing } = await supabase
         .from('instagram_connections')
         .select('id')
-        .eq('workspace_id', DEFAULT_WORKSPACE)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .eq('ig_username', username)
         .maybeSingle();
 
@@ -101,7 +100,7 @@ export function useConnectInstagramManual() {
       const { data, error } = await supabase
         .from('instagram_connections')
         .insert({
-          workspace_id: DEFAULT_WORKSPACE,
+          workspace_id: DEFAULT_WORKSPACE_ID,
           ig_username: username,
           ig_user_id: `manual_${username}`,
           access_token: 'manual',

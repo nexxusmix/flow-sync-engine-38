@@ -16,7 +16,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SendToClientApproval } from "@/components/marketing-hub/pipeline/SendToClientApproval";
 import { ContentStatusTimeline } from "@/components/marketing-hub/pipeline/ContentStatusTimeline";
 
-const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
+import { DEFAULT_WORKSPACE_ID_ID } from "@/constants/workspace";
 
 // Fetch comments for a specific content item
 function useItemComments(itemId: string | null) {

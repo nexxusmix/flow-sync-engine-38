@@ -272,7 +272,7 @@ export default function InstagramPage() {
                 <Input
                   value={connectUsername}
                   onChange={(e) => setConnectUsername(e.target.value.replace('@', ''))}
-                  placeholder="squadfilme"
+                  placeholder="squadfilme" // TODO: pre-fill from instagram_profile_config.profile_handle
                 />
               </div>
             </div>

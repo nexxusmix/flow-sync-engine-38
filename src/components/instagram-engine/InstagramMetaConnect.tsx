@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 
 export function InstagramMetaConnect() {
   const { data: connection, isLoading: loadingConn } = useInstagramConnection();
@@ -38,7 +39,7 @@ export function InstagramMetaConnect() {
         body: {
           action: 'get_auth_url',
           redirect_uri: `${window.location.origin}/integrations/instagram/callback`,
-          workspace_id: '00000000-0000-0000-0000-000000000000',
+          workspace_id: DEFAULT_WORKSPACE_ID,
         },
       });
 

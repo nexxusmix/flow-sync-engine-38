@@ -11,6 +11,7 @@ import { Shield, CheckCircle2, XCircle, Clock, ArrowRight, Lock, Unlock, Message
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 
 interface Props {
   campaign: InstagramCampaign;
@@ -69,7 +70,7 @@ export function CampaignApprovalPipeline({ campaign, posts }: Props) {
         action_type: action,
         entity_type: 'instagram_post_approval',
         entity_id: selectedPost.id,
-        user_id: user?.id || '00000000-0000-0000-0000-000000000000',
+        user_id: user?.id || DEFAULT_WORKSPACE_ID,
         after_snapshot: {
           action,
           feedback: feedback || null,

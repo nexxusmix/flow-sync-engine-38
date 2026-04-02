@@ -16,6 +16,7 @@ export function ProfileHealthTab() {
   const saveSnapshot = useSaveSnapshot();
   const aiMutation = useInstagramAI();
 
+  // Default from instagram_profile_config table; 'squadfilme' is the last-resort fallback
   const [handle, setHandle] = useState(config?.profile_handle || 'squadfilme');
   const [bio, setBio] = useState(config?.bio_current || 'Ei! Somos a SQUAD Film.\nUma produtora de fotos e vídeos com sede no DF/GO');
   const [followers, setFollowers] = useState(snapshots?.[0]?.followers?.toString() || '70');
@@ -85,7 +86,7 @@ export function ProfileHealthTab() {
           <div className="space-y-3">
             <div>
               <label className="text-[10px] text-muted-foreground mb-1 block">Handle</label>
-              <Input value={handle} onChange={e => setHandle(e.target.value)} placeholder="@squadfilme" className="text-sm" />
+              <Input value={handle} onChange={e => setHandle(e.target.value)} placeholder={`@${config?.profile_handle || 'squadfilme'}`} className="text-sm" />
             </div>
             <div>
               <label className="text-[10px] text-muted-foreground mb-1 block">Bio Atual</label>

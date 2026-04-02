@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { InstagramPost, useUpdatePost, useInstagramAI, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
+import { InstagramPost, useUpdatePost, useInstagramAI, useProfileConfig, PILLARS, FORMATS, POST_STATUSES } from '@/hooks/useInstagramEngine';
 import { Copy, Check, Download, CalendarPlus, ArrowLeft, Sparkles, Hash, Play, Layers, Image, BookOpen, FileText, Eye, Clock, ExternalLink, Package, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -61,6 +61,8 @@ function ContentSection({ title, icon, content, badge }: { title: string; icon: 
 }
 
 export function PostResultView({ post, onBack, onSchedule, onPostUpdated }: PostResultViewProps) {
+  const { data: profileConfig } = useProfileConfig();
+  const profileHandle = profileConfig?.profile_handle || 'squadfilme'; // default fallback from config
   const updatePost = useUpdatePost();
   const aiMutation = useInstagramAI();
   const [showSchedule, setShowSchedule] = useState(false);
@@ -354,7 +356,7 @@ export function PostResultView({ post, onBack, onSchedule, onPostUpdated }: Post
                   <span className="text-[8px] font-bold">SQ</span>
                 </div>
               </div>
-              <span className="text-xs font-semibold">squadfilme</span>
+              <span className="text-xs font-semibold">{profileHandle}</span>
             </div>
             <div className="aspect-square bg-muted/30 flex items-center justify-center" style={{ background: pillar ? `linear-gradient(135deg, ${pillar.color}11, ${pillar.color}22)` : undefined }}>
               {post.thumbnail_url ? (
@@ -368,7 +370,7 @@ export function PostResultView({ post, onBack, onSchedule, onPostUpdated }: Post
             </div>
             <div className="p-3 space-y-1">
               <p className="text-[11px] text-foreground leading-relaxed">
-                <span className="font-semibold">squadfilme </span>
+                <span className="font-semibold">{profileHandle} </span>
                 {(post.caption_short || post.caption_medium || post.caption_long || 'Legenda não gerada')?.substring(0, 150)}
                 {(post.caption_short || '').length > 150 && <span className="text-muted-foreground">...mais</span>}
               </p>

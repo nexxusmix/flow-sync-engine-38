@@ -441,7 +441,7 @@ export default function ContentDetailPage() {
                   <Input
                     value={formData.hashtags || ''}
                     onChange={(e) => setFormData({ ...formData, hashtags: e.target.value })}
-                    placeholder="#squadfilme #filmepremium"
+                    placeholder="#squadfilme #filmepremium" // TODO: derive default hashtag from instagram_profile_config.profile_handle
                   />
                 </div>
               </div>

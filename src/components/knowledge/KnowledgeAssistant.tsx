@@ -12,7 +12,7 @@ interface Message {
   content: string;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/knowledge-assistant`;
+const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/knowledge-assistant`;
 
 interface Props {
   articles: KnowledgeArticle[];
@@ -60,11 +60,20 @@ export function KnowledgeAssistant({ articles, onClose }: Props) {
 
     try {
       const allMsgs = [...messages, userMsg];
-      const resp = await fetch(CHAT_URL, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        upsertAssistant("❌ Sessão expirada. Faça login novamente.");
+        setIsLoading(false);
+        return;
+      }
+
+      const resp = await fetch(FUNCTION_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({
           messages: allMsgs.map(m => ({ role: m.role, content: m.content })),

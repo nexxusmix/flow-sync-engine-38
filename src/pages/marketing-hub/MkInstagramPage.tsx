@@ -20,8 +20,9 @@ import { ptBR } from "date-fns/locale";
 type TabView = "feed" | "metrics" | "publish" | "schedule";
 
 // ── Mock Data ────────────────────────────────────────
+// TODO: Replace mock data with real data from instagram_profile_config table
 const MOCK_PROFILE = {
-  username: "squadfilme",
+  username: "squadfilme", // should come from instagram_profile_config.profile_handle
   name: "Squad Filme",
   bio: "Produtora audiovisual 🎬 | Conteúdo que converte",
   avatar: null,

@@ -11,8 +11,7 @@ import type {
   AttachmentInfo,
 } from '@/types/agent';
 import type { Json } from '@/integrations/supabase/types';
-
-const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/polo-ai-chat`;
 
 export function useAgentChat() {

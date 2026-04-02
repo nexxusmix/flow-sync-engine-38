@@ -13,8 +13,7 @@ import type {
   CreativeBlockStatus,
   CreativeSource,
 } from '@/types/creative-works';
-
-const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 
 // ============================================
 // Creative Works Hook

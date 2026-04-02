@@ -19,8 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parseISO, startOfWeek, subDays, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
+import { DEFAULT_WORKSPACE_ID_ID } from "@/constants/workspace";
 const COLORS = ["hsl(var(--primary))", "hsl(var(--primary) / 0.7)", "hsl(var(--primary) / 0.5)", "hsl(var(--primary) / 0.3)", "hsl(var(--accent))", "hsl(var(--muted-foreground))"];
 
 const fadeUp = (delay = 0) => ({
@@ -43,7 +42,7 @@ function usePublishedItems() {
       const { data, error } = await supabase
         .from('content_items')
         .select('id, title, channel, format, pillar, published_at, status')
-        .eq('workspace_id', DEFAULT_WORKSPACE)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .in('status', ['published', 'publicado'])
         .order('published_at', { ascending: false });
       if (error) throw error;
@@ -60,14 +59,14 @@ function useMetricsTimeline() {
       const { data: metrics, error: metricsErr } = await supabase
         .from('content_metrics')
         .select('content_item_id, views, likes, comments, shares, reach, collected_at, engagement_rate, performance_score')
-        .eq('workspace_id', DEFAULT_WORKSPACE)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('collected_at', { ascending: true });
       if (metricsErr) throw metricsErr;
 
       const { data: items, error: itemsErr } = await supabase
         .from('content_items')
         .select('id, title, channel, format, pillar')
-        .eq('workspace_id', DEFAULT_WORKSPACE);
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID);
       if (itemsErr) throw itemsErr;
 
       const itemMap = new Map((items || []).map(i => [i.id, i]));
@@ -85,7 +84,7 @@ function useCalendarAdherence() {
       const { data, error } = await supabase
         .from('content_items')
         .select('id, status, scheduled_at, published_at, due_at')
-        .eq('workspace_id', DEFAULT_WORKSPACE)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .gte('created_at', thirtyDaysAgo);
       if (error) throw error;
       const items = data || [];
@@ -142,7 +141,7 @@ export default function MkReportsPage() {
 
       const { error } = await supabase.from('content_metrics').insert({
         content_item_id: selectedItem,
-        workspace_id: DEFAULT_WORKSPACE,
+        workspace_id: DEFAULT_WORKSPACE_ID,
         views, likes, comments, shares, reach,
         engagement_rate: engagementRate,
         performance_score: performanceScore,

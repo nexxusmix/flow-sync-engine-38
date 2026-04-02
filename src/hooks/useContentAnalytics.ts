@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-
-const DEFAULT_WORKSPACE = "00000000-0000-0000-0000-000000000000";
+import { DEFAULT_WORKSPACE_ID_ID } from '@/constants/workspace';
 
 export interface ContentKPIs {
   totalItems: number;
@@ -41,7 +40,7 @@ export function useContentAnalytics() {
       const { data: items, error: itemsErr } = await supabase
         .from('content_items')
         .select('id, title, channel, status, published_at, scheduled_at, created_at, due_at')
-        .eq('workspace_id', DEFAULT_WORKSPACE)
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('created_at', { ascending: false });
 
       if (itemsErr) throw itemsErr;
@@ -51,7 +50,7 @@ export function useContentAnalytics() {
       const { data: metrics, error: metricsErr } = await supabase
         .from('content_metrics')
         .select('content_item_id, views, likes, comments, shares, reach')
-        .eq('workspace_id', DEFAULT_WORKSPACE);
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID);
 
       if (metricsErr) throw metricsErr;
       const allMetrics = metrics || [];

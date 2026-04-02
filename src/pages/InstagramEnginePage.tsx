@@ -328,7 +328,7 @@ export default function InstagramEnginePage() {
                   <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                     Instagram <span className="bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] bg-clip-text text-transparent">Engine</span>
                   </h1>
-                  <p className="text-xs text-muted-foreground">Sistema operacional de crescimento e posicionamento • @squadfilme</p>
+                  <p className="text-xs text-muted-foreground">Sistema operacional de crescimento e posicionamento • @{config?.profile_handle || 'squadfilme'}</p>
                 </div>
                 <Button
                   onClick={handleOpenSetup}
@@ -401,7 +401,7 @@ export default function InstagramEnginePage() {
               <Input
                 value={setupForm.handle}
                 onChange={e => setSetupForm(f => ({ ...f, handle: e.target.value }))}
-                placeholder="squadfilme"
+                placeholder={config?.profile_handle || "squadfilme"}
                 className="mt-1"
               />
             </div>
