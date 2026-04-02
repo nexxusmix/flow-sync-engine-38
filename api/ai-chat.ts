@@ -128,45 +128,58 @@ export default async function handler(req: Request): Promise<Response> {
 
     // --- Streaming ---
     if (body.stream && anthropicRes.body) {
-      const reader = anthropicRes.body.getReader();
-      const decoder = new TextDecoder();
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
       const encoder = new TextEncoder();
-      let buffer = "";
 
-      const stream = new ReadableStream({
-        async pull(controller) {
-          const { done, value } = await reader.read();
-          if (done) {
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-            return;
+      // Process Anthropic SSE in background
+      (async () => {
+        const reader = anthropicRes.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Anthropic SSE format: "event: type\ndata: json\n\n"
+            // Split on double newline to get complete events
+            const events = buffer.split("\n\n");
+            buffer = events.pop() || "";
+
+            for (const event of events) {
+              const dataLine = event.split("\n").find((l: string) => l.startsWith("data: "));
+              if (!dataLine) continue;
+              const jsonStr = dataLine.slice(6).trim();
+              if (!jsonStr) continue;
+
+              try {
+                const parsed = JSON.parse(jsonStr);
+                if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
+                  await writer.write(encoder.encode(`data: ${JSON.stringify({
+                    choices: [{ delta: { content: parsed.delta.text }, index: 0, finish_reason: null }],
+                  })}\n\n`));
+                } else if (parsed.type === "message_stop") {
+                  await writer.write(encoder.encode(`data: ${JSON.stringify({
+                    choices: [{ delta: {}, index: 0, finish_reason: "stop" }],
+                  })}\n\n`));
+                }
+              } catch { /* skip malformed */ }
+            }
           }
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          await writer.write(encoder.encode("data: [DONE]\n\n"));
+        } catch (e) {
+          console.error("Stream error:", e);
+        } finally {
+          await writer.close();
+        }
+      })();
 
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const jsonStr = line.slice(6).trim();
-            if (!jsonStr || jsonStr === "[DONE]") continue;
-            try {
-              const event = JSON.parse(jsonStr);
-              if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                  choices: [{ delta: { content: event.delta.text }, index: 0, finish_reason: null }],
-                })}\n\n`));
-              } else if (event.type === "message_stop") {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                  choices: [{ delta: {}, index: 0, finish_reason: "stop" }],
-                })}\n\n`));
-              }
-            } catch { /* skip */ }
-          }
-        },
-      });
-
-      return new Response(stream, {
-        headers: { ...CORS, "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+      return new Response(readable, {
+        headers: { ...CORS, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
       });
     }
 
