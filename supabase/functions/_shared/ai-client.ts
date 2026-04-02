@@ -1,6 +1,9 @@
 /**
  * Unified AI Client with multi-provider fallback
- * Priority: Gemini (direct) → OpenAI → Lovable AI Gateway (last resort)
+ * Priority: Anthropic Claude → Gemini → OpenAI → Lovable (last resort)
+ *
+ * All responses are normalized to OpenAI-compatible format so the rest
+ * of the system doesn't need to change.
  */
 
 interface ChatMessage {
@@ -34,7 +37,19 @@ interface ChatCompletionResult {
   provider: string;
 }
 
-// Model mapping: Lovable gateway names → native API names
+// --- Model mappings ---
+
+const ANTHROPIC_MODEL_MAP: Record<string, string> = {
+  "google/gemini-3-flash-preview": "claude-sonnet-4-20250514",
+  "google/gemini-2.5-flash": "claude-sonnet-4-20250514",
+  "google/gemini-2.5-pro": "claude-sonnet-4-20250514",
+  "openai/gpt-5": "claude-sonnet-4-20250514",
+  "gpt-4o": "claude-sonnet-4-20250514",
+  "gpt-4o-mini": "claude-sonnet-4-20250514",
+  "claude-sonnet-4-20250514": "claude-sonnet-4-20250514",
+  "claude-opus-4-20250514": "claude-opus-4-20250514",
+};
+
 const GEMINI_MODEL_MAP: Record<string, string> = {
   "google/gemini-2.5-flash": "gemini-2.5-flash",
   "google/gemini-2.5-pro": "gemini-2.5-pro",
@@ -55,6 +70,10 @@ const OPENAI_MODEL_MAP: Record<string, string> = {
   "gpt-4o-mini": "gpt-4o-mini",
 };
 
+function getAnthropicModel(model: string): string {
+  return ANTHROPIC_MODEL_MAP[model] || "claude-sonnet-4-20250514";
+}
+
 function getGeminiModel(model: string): string {
   return GEMINI_MODEL_MAP[model] || "gemini-2.5-flash";
 }
@@ -62,6 +81,211 @@ function getGeminiModel(model: string): string {
 function getOpenAIModel(model: string): string {
   return OPENAI_MODEL_MAP[model] || "gpt-4o-mini";
 }
+
+// --- Anthropic Claude ---
+
+function convertMessagesToAnthropic(messages: ChatMessage[]): {
+  system: string;
+  messages: Array<{ role: "user" | "assistant"; content: string | any[] }>;
+} {
+  let system = "";
+  const converted: Array<{ role: "user" | "assistant"; content: string | any[] }> = [];
+
+  for (const msg of messages) {
+    if (msg.role === "system") {
+      const text = typeof msg.content === "string"
+        ? msg.content
+        : msg.content.map((c) => c.text || "").join("\n");
+      system += (system ? "\n\n" : "") + text;
+    } else if (msg.role === "user" || msg.role === "assistant") {
+      if (typeof msg.content === "string") {
+        converted.push({ role: msg.role, content: msg.content });
+      } else if (Array.isArray(msg.content)) {
+        const parts: any[] = [];
+        for (const part of msg.content) {
+          if (part.type === "text" && part.text) {
+            parts.push({ type: "text", text: part.text });
+          } else if (part.type === "image_url" && part.image_url?.url) {
+            const url = part.image_url.url;
+            if (url.startsWith("data:")) {
+              const match = url.match(/^data:(image\/\w+);base64,(.+)$/);
+              if (match) {
+                parts.push({
+                  type: "image",
+                  source: { type: "base64", media_type: match[1], data: match[2] },
+                });
+              }
+            } else {
+              parts.push({ type: "image", source: { type: "url", url } });
+            }
+          }
+        }
+        converted.push({ role: msg.role, content: parts.length === 1 && parts[0].type === "text" ? parts[0].text : parts });
+      }
+    }
+  }
+
+  // Anthropic requires messages to start with a user message
+  if (converted.length > 0 && converted[0].role === "assistant") {
+    converted.unshift({ role: "user", content: "Continue." });
+  }
+
+  return { system, messages: converted };
+}
+
+function convertToolsToAnthropic(tools: any[]): any[] {
+  return tools.map((tool) => {
+    if (tool.type === "function" && tool.function) {
+      return {
+        name: tool.function.name,
+        description: tool.function.description || "",
+        input_schema: tool.function.parameters || { type: "object", properties: {} },
+      };
+    }
+    return tool;
+  });
+}
+
+function convertAnthropicResponseToOpenAI(data: any, provider: string): ChatCompletionResult {
+  const content = data.content || [];
+  let textContent = "";
+  const toolCalls: any[] = [];
+
+  for (const block of content) {
+    if (block.type === "text") {
+      textContent += block.text;
+    } else if (block.type === "tool_use") {
+      toolCalls.push({
+        id: block.id,
+        type: "function",
+        function: {
+          name: block.name,
+          arguments: typeof block.input === "string" ? block.input : JSON.stringify(block.input),
+        },
+      });
+    }
+  }
+
+  return {
+    choices: [
+      {
+        message: {
+          content: textContent || null,
+          ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
+        },
+      },
+    ],
+    provider,
+  } as ChatCompletionResult;
+}
+
+async function tryAnthropic(opts: ChatCompletionOptions): Promise<Response> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
+
+  const model = getAnthropicModel(opts.model || "claude-sonnet-4-20250514");
+  const { system, messages } = convertMessagesToAnthropic(opts.messages);
+
+  const body: Record<string, unknown> = {
+    model,
+    messages,
+    max_tokens: opts.max_tokens || 4096,
+  };
+
+  if (system) body.system = system;
+  if (opts.temperature !== undefined) body.temperature = opts.temperature;
+  if (opts.stream) body.stream = true;
+
+  if (opts.tools && opts.tools.length > 0) {
+    body.tools = convertToolsToAnthropic(opts.tools);
+    if (opts.tool_choice === "auto") {
+      body.tool_choice = { type: "auto" };
+    } else if (opts.tool_choice === "required") {
+      body.tool_choice = { type: "any" };
+    } else if (typeof opts.tool_choice === "object" && opts.tool_choice?.function?.name) {
+      body.tool_choice = { type: "tool", name: opts.tool_choice.function.name };
+    }
+  }
+
+  return await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Convert Anthropic SSE stream to OpenAI-compatible SSE stream.
+ * This allows the frontend to parse the stream without changes.
+ */
+function convertAnthropicStreamToOpenAI(anthropicResponse: Response): Response {
+  const reader = anthropicResponse.body!.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = "";
+
+  const stream = new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+        return;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr || jsonStr === "[DONE]") continue;
+
+          try {
+            const event = JSON.parse(jsonStr);
+
+            if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
+              const openAIChunk = {
+                choices: [{
+                  delta: { content: event.delta.text },
+                  index: 0,
+                  finish_reason: null,
+                }],
+              };
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAIChunk)}\n\n`));
+            } else if (event.type === "message_stop") {
+              const stopChunk = {
+                choices: [{
+                  delta: {},
+                  index: 0,
+                  finish_reason: "stop",
+                }],
+              };
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(stopChunk)}\n\n`));
+            }
+          } catch {
+            // Skip malformed JSON
+          }
+        }
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+// --- Gemini ---
 
 async function tryGemini(opts: ChatCompletionOptions): Promise<Response> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -94,13 +318,14 @@ async function tryGemini(opts: ChatCompletionOptions): Promise<Response> {
   );
 }
 
+// --- OpenAI ---
+
 async function tryOpenAI(opts: ChatCompletionOptions): Promise<Response> {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
   const model = getOpenAIModel(opts.model || "gpt-4o-mini");
 
-  // Filter out modalities (OpenAI doesn't support image generation this way)
   const body: Record<string, unknown> = {
     model,
     messages: opts.messages,
@@ -121,6 +346,8 @@ async function tryOpenAI(opts: ChatCompletionOptions): Promise<Response> {
     body: JSON.stringify(body),
   });
 }
+
+// --- Lovable Gateway (last resort) ---
 
 async function tryLovable(opts: ChatCompletionOptions): Promise<Response> {
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
@@ -148,12 +375,15 @@ async function tryLovable(opts: ChatCompletionOptions): Promise<Response> {
   });
 }
 
+// --- Main entry points ---
+
 /**
- * Main entry point: tries Gemini → OpenAI → Lovable with automatic fallback.
+ * Main entry point: tries Claude → Gemini → OpenAI → Lovable with automatic fallback.
  * Returns the parsed JSON response in OpenAI-compatible format.
  */
 export async function chatCompletion(opts: ChatCompletionOptions): Promise<ChatCompletionResult> {
-  const providers: { name: string; fn: (o: ChatCompletionOptions) => Promise<Response> }[] = [
+  const providers: { name: string; fn: (o: ChatCompletionOptions) => Promise<Response>; isAnthropic?: boolean }[] = [
+    { name: "anthropic", fn: tryAnthropic, isAnthropic: true },
     { name: "gemini", fn: tryGemini },
     { name: "openai", fn: tryOpenAI },
   ];
@@ -170,8 +400,13 @@ export async function chatCompletion(opts: ChatCompletionOptions): Promise<ChatC
 
       if (response.ok) {
         if (opts.stream) {
-          // For streaming, return a synthetic result with the raw response body
-          // The caller should handle the stream directly
+          if (provider.isAnthropic) {
+            return {
+              choices: [],
+              provider: provider.name,
+              _rawResponse: convertAnthropicStreamToOpenAI(response),
+            } as any;
+          }
           return {
             choices: [],
             provider: provider.name,
@@ -180,15 +415,12 @@ export async function chatCompletion(opts: ChatCompletionOptions): Promise<ChatC
         }
 
         const data = await response.json();
-        console.log(`[ai-client] ✓ Success via ${provider.name}`);
-        return { ...data, provider: provider.name };
-      }
+        console.log(`[ai-client] Success via ${provider.name}`);
 
-      // Don't fallback on 4xx client errors (except 429 rate limit and 402 payment)
-      if (response.status >= 400 && response.status < 500 && response.status !== 429 && response.status !== 402) {
-        const errText = await response.text();
-        console.error(`[ai-client] ${provider.name} client error ${response.status}: ${errText}`);
-        // Still try next provider - the request format might differ
+        if (provider.isAnthropic) {
+          return convertAnthropicResponseToOpenAI(data, provider.name);
+        }
+        return { ...data, provider: provider.name };
       }
 
       const errText = await response.text();
@@ -206,10 +438,12 @@ export async function chatCompletion(opts: ChatCompletionOptions): Promise<ChatC
 /**
  * Streaming version: returns the raw Response for SSE streaming.
  * Falls back through providers if one fails.
+ * Anthropic streams are automatically converted to OpenAI-compatible format.
  */
 export async function chatCompletionStream(opts: ChatCompletionOptions): Promise<{ response: Response; provider: string }> {
   const streamOpts = { ...opts, stream: true };
-  const providers: { name: string; fn: (o: ChatCompletionOptions) => Promise<Response> }[] = [
+  const providers: { name: string; fn: (o: ChatCompletionOptions) => Promise<Response>; isAnthropic?: boolean }[] = [
+    { name: "anthropic", fn: tryAnthropic, isAnthropic: true },
     { name: "gemini", fn: tryGemini },
     { name: "openai", fn: tryOpenAI },
   ];
@@ -225,7 +459,10 @@ export async function chatCompletionStream(opts: ChatCompletionOptions): Promise
       const response = await provider.fn(streamOpts);
 
       if (response.ok) {
-        console.log(`[ai-client-stream] ✓ Streaming via ${provider.name}`);
+        console.log(`[ai-client-stream] Streaming via ${provider.name}`);
+        if (provider.isAnthropic) {
+          return { response: convertAnthropicStreamToOpenAI(response), provider: provider.name };
+        }
         return { response, provider: provider.name };
       }
 
