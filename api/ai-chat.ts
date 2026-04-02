@@ -137,10 +137,9 @@ export default async function handler(req: Request): Promise<Response> {
     // Route: AI Chat (default)
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
-  }
+    }
 
-  try {
-    const body: RequestBody = await req.json();
+    const body2: RequestBody = body as RequestBody;
     const { system, msgs } = convertMessages(body.messages || []);
     const model = "claude-sonnet-4-20250514";
 
