@@ -79,8 +79,8 @@ export function LandingHero() {
       >
         <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_80px_-20px_hsl(var(--primary)/0.25)] aspect-video bg-black">
           <video
-            src="/videos/hero-demo.mp4"
-            poster="/images/hero-poster.webp"
+            src="/videos/squad-hub-demo.mp4"
+            poster="/videos/squad-hub-demo.mp4"
             autoPlay loop muted playsInline
             className="w-full h-full object-cover"
             onError={(e) => {
