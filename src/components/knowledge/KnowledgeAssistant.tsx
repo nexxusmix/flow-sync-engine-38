@@ -3,6 +3,7 @@ import { Sparkles, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import type { KnowledgeArticle } from "@/hooks/useKnowledge";
 import ReactMarkdown from "react-markdown";
 
