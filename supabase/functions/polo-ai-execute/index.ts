@@ -347,9 +347,12 @@ serve(async (req) => {
       });
     }
 
-    const { runId, plan, userId, workspaceId } = await req.json() as {
+    const { runId, plan, userId: _untrustedUserId, workspaceId } = await req.json() as {
       runId: string; plan: ExecutionPlan; userId: string; workspaceId: string;
     };
+
+    // Override body userId with the authenticated user's ID to prevent spoofing
+    const userId = user!.id;
 
     if (!runId || !plan || !userId) {
       return new Response(JSON.stringify({ error: "Dados incompletos" }), {

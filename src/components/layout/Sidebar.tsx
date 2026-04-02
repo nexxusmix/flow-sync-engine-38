@@ -332,7 +332,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <motion.aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-[#030303] border-r border-white/[0.04] flex flex-col",
+        "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-white/[0.04] flex flex-col",
         collapsed ? "w-[72px]" : "w-[280px]"
       )}
       initial={false}

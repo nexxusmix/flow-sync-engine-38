@@ -112,8 +112,12 @@ export function LandingHero() {
             <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_80px_-20px_hsl(var(--primary)/0.25)] aspect-video bg-black">
               <video
                 src="/videos/hero-demo.mp4"
+                poster="/images/hero-poster.webp"
                 autoPlay loop muted playsInline
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLVideoElement).style.display = "none";
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
             </div>
@@ -205,7 +209,15 @@ export function LandingHero() {
 
               <div className="relative hidden lg:block">
                 <div className="aspect-video rounded-2xl overflow-hidden border border-border/20 shadow-2xl bg-black relative">
-                  <video src="/videos/hero-demo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                  <video
+                    src="/videos/hero-demo.mp4"
+                    poster="/images/hero-poster.webp"
+                    autoPlay loop muted playsInline
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLVideoElement).style.display = "none";
+                    }}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent pointer-events-none" />
                 </div>
               </div>

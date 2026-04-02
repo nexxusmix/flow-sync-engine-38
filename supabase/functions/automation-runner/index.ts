@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': 'https://squad-hub-projeto.vercel.app',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-cron',
 };
 
 interface AutomationRule {
@@ -22,6 +22,42 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Auth: either valid JWT or cron secret header
+    const cronSecret = Deno.env.get('CRON_SECRET');
+    const cronHeader = req.headers.get('X-Supabase-Cron');
+    const authHeader = req.headers.get('Authorization');
+
+    let isAuthorized = false;
+
+    // Check cron secret
+    if (cronSecret && cronHeader === cronSecret) {
+      isAuthorized = true;
+    }
+
+    // Check JWT if not authorized via cron
+    if (!isAuthorized) {
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Não autorizado' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: 'Token inválido' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      isAuthorized = true;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('[automation-runner] Starting automation check...');
