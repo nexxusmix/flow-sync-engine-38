@@ -130,7 +130,7 @@ export default async function handler(req: Request): Promise<Response> {
     const body = await req.json();
 
     // Route: Instagram Connect
-    if (body._action === "instagram_connect") {
+    if (body._action === "instagram_connect" || body.action === "instagram_connect") {
       return handleInstagramConnect(body);
     }
 
