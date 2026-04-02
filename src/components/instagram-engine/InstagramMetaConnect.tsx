@@ -43,7 +43,8 @@ export function InstagramMetaConnect() {
         },
       });
 
-      if (error || !data?.url) {
+      const authUrl = data?.url || data?.auth_url;
+      if (error || !authUrl) {
         // OAuth not configured — fall back to manual
         toast.error('Integração Meta ainda não configurada. Use a conexão manual abaixo.');
         setConnectingOAuth(false);
@@ -51,8 +52,18 @@ export function InstagramMetaConnect() {
       }
 
       // Open Meta OAuth in new window
-      window.open(data.url, '_blank', 'width=600,height=700');
+      window.open(authUrl, '_blank', 'width=600,height=700');
       toast.info('Complete a autorização na janela do Facebook.');
+
+      // Listen for success message from callback popup
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === 'instagram-oauth-success') {
+          window.removeEventListener('message', handleMessage);
+          qc.invalidateQueries({ queryKey: ['instagram-connection'] });
+          toast.success('Instagram conectado com sucesso!');
+        }
+      };
+      window.addEventListener('message', handleMessage);
     } catch {
       toast.error('Erro ao iniciar autorização Meta.');
     } finally {

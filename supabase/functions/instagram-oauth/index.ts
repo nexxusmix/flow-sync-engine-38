@@ -118,7 +118,7 @@ serve(async (req) => {
         .upsert({
           workspace_id: wsId,
           ig_user_id: igUserId,
-          username: igUsername,
+          ig_username: igUsername,
           access_token: pageAccessToken,
           token_expires_at: new Date(Date.now() + expiresIn * 1000).toISOString(),
           profile_picture_url: profileData.profile_picture_url || null,

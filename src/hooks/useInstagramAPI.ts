@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { DEFAULT_WORKSPACE_ID_ID } from '@/constants/workspace';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 
 // Scrape public Instagram profile data via Firecrawl
 export function useScrapeInstagramProfile() {

@@ -31,6 +31,7 @@ const ClientesPage = lazy(() => import("./pages/ClientesPage"));
 const UnifiedInboxPage = lazy(() => import("./pages/UnifiedInboxPage"));
 const InstallPage = lazy(() => import("./pages/InstallPage"));
 const InstagramEnginePage = lazy(() => import("./pages/InstagramEnginePage"));
+const InstagramCallbackPage = lazy(() => import("./pages/InstagramCallbackPage"));
 const AgencyAutomationsPage = lazy(() => import("./pages/AgencyAutomationsPage"));
 const AIGovernanceDashboardPage = lazy(() => import("./pages/AIGovernanceDashboardPage"));
 const PlaybooksPage = lazy(() => import("./pages/PlaybooksPage"));
@@ -272,6 +273,8 @@ function AppRoutes() {
       <Route path="/configuracoes/ai-usage" element={<ProtectedRoute><AiUsageDashboardPage /></ProtectedRoute>} />
       <Route path="/plataforma" element={<Navigate to="/" replace />} />
       <Route path="/client/:shareToken" element={<ClientPortalPage />} />
+      {/* Instagram OAuth callback — public (popup window may lack session cookie) */}
+      <Route path="/integrations/instagram/callback" element={<InstagramCallbackPage />} />
       <Route path="/portal/:shareToken" element={<ClientPortalPage />} />
       {/* Marketing Hub — /m/* */}
       <Route path="/m" element={<ProtectedRoute><MkDashboardPage /></ProtectedRoute>} />
