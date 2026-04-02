@@ -24,6 +24,7 @@ import { SnapshotsTab } from '@/components/instagram-engine/SnapshotsTab';
 import { LibraryTab } from '@/components/instagram-engine/LibraryTab';
 import { PostResultView } from '@/components/instagram-engine/PostResultView';
 import { useInstagramAI, useCreatePost, useProfileConfig, useSaveProfileConfig, useSaveHooks, InstagramPost } from '@/hooks/useInstagramEngine';
+import type { Json } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { LayoutPicker, LAYOUT_OPTIONS, type ReferenceItem } from '@/components/instagram-engine/LayoutPicker';
 
