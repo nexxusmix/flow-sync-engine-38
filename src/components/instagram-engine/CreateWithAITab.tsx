@@ -6,9 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useInstagramAI, useCreatePost, PILLARS, FORMATS, type Json } from '@/hooks/useInstagramEngine';
+import { useInstagramAI, useCreatePost, PILLARS, FORMATS } from '@/hooks/useInstagramEngine';
 import { Loader2, Sparkles, Copy, Check, Save, Calendar, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface AIContentResult {
+  hook?: string;
+  script?: string;
+  caption_short?: string;
+  caption_medium?: string;
+  caption_long?: string;
+  cta?: string;
+  pinned_comment?: string;
+  hashtags?: string[];
+  cover_suggestion?: string;
+  carousel_slides?: Array<{ title?: string; body?: string }>;
+  story_sequence?: unknown[];
+}
 
 export function CreateWithAITab() {
   const aiMutation = useInstagramAI();
@@ -17,7 +31,7 @@ export function CreateWithAITab() {
   const [selectedFormat, setSelectedFormat] = useState('reel');
   const [selectedPillar, setSelectedPillar] = useState('autoridade');
   const [duration, setDuration] = useState('30');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<AIContentResult | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const handleGenerate = async () => {
@@ -41,19 +55,19 @@ export function CreateWithAITab() {
       format: selectedFormat,
       pillar: selectedPillar,
       status,
-      hook: result.hook,
-      script: result.script,
-      caption_short: result.caption_short,
-      caption_medium: result.caption_medium,
-      caption_long: result.caption_long,
-      cta: result.cta,
-      pinned_comment: result.pinned_comment,
-      hashtags: result.hashtags || [],
-      cover_suggestion: result.cover_suggestion,
-      carousel_slides: result.carousel_slides || [],
-      story_sequence: result.story_sequence || [],
+      hook: result.hook ?? null,
+      script: result.script ?? null,
+      caption_short: result.caption_short ?? null,
+      caption_medium: result.caption_medium ?? null,
+      caption_long: result.caption_long ?? null,
+      cta: result.cta ?? null,
+      pinned_comment: result.pinned_comment ?? null,
+      hashtags: result.hashtags ?? [],
+      cover_suggestion: result.cover_suggestion ?? null,
+      carousel_slides: (result.carousel_slides ?? []) as unknown as import('@/integrations/supabase/types').Json,
+      story_sequence: (result.story_sequence ?? []) as unknown as import('@/integrations/supabase/types').Json,
       ai_generated: true,
-    } as any);
+    });
     setResult(null);
     setTopic('');
   };
@@ -144,13 +158,13 @@ export function CreateWithAITab() {
             <Card className="glass-card p-4">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-medium text-foreground"># Hashtags</h4>
-                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyField('hashtags', result.hashtags.map((h: string) => `#${h.replace('#', '')}`).join(' '))}>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => copyField('hashtags', result.hashtags!.map((h) => `#${h.replace('#', '')}`).join(' '))}>
                   {copiedField === 'hashtags' ? <Check className="w-3 h-3 mr-1 text-emerald-400" /> : <Copy className="w-3 h-3 mr-1" />}
                   Copiar
                 </Button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {result.hashtags.map((h: string, i: number) => (
+                {result.hashtags.map((h, i) => (
                   <Badge key={i} variant="secondary" className="text-[10px]">#{h.replace('#', '')}</Badge>
                 ))}
               </div>
@@ -166,7 +180,7 @@ export function CreateWithAITab() {
             <Card className="glass-card p-4">
               <h4 className="text-xs font-medium text-foreground mb-3">📑 Slides do Carrossel</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {result.carousel_slides.map((slide: any, i: number) => (
+                {result.carousel_slides.map((slide, i) => (
                   <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border/30">
                     <p className="text-[10px] text-muted-foreground mb-1">Slide {i + 1}</p>
                     <p className="text-xs font-medium text-foreground">{slide.title}</p>

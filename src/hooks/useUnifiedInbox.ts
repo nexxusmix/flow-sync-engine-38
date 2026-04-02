@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { DEFAULT_WORKSPACE_ID } from "@/constants/workspace";
 
 // ── Types ──────────────────────────────────────────────────
 export type InboxPriority = "low" | "medium" | "high" | "critical";
@@ -111,6 +112,7 @@ export function useUnifiedInbox(filters: InboxFilters = {}) {
       let q = supabase
         .from("inbox_items")
         .select("*")
+        .eq("workspace_id", DEFAULT_WORKSPACE_ID)
         .order("pinned", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(200);
@@ -168,6 +170,7 @@ export function useUnifiedInbox(filters: InboxFilters = {}) {
       const { data, error } = await supabase
         .from("inbox_items")
         .select("status, priority, source_module, requires_approval, item_type")
+        .eq("workspace_id", DEFAULT_WORKSPACE_ID)
         .neq("status", "archived");
       if (error) throw error;
       const items = (data ?? []) as any[];

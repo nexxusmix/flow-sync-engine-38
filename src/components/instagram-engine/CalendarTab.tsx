@@ -91,7 +91,7 @@ export function CalendarTab() {
           hook: post.hook || null,
           script: post.brief || null,
           ai_generated: true,
-        } as any);
+        });
         created++;
       }
 
@@ -159,7 +159,7 @@ export function CalendarTab() {
       scheduled_at: selectedDay.toISOString(),
       campaign_id: newPost.campaign_id && newPost.campaign_id !== 'none' ? newPost.campaign_id : null,
       post_url: newPost.post_url.trim() || null,
-    } as any);
+    });
     setShowCreate(false);
     setNewPost({ title: '', format: 'reel', pillar: 'autoridade', status: 'planned', campaign_id: '', post_url: '' });
   };
@@ -492,7 +492,7 @@ export function CalendarTab() {
                           className="text-xs"
                           disabled={!tempPostUrl.trim()}
                           onClick={async () => {
-                            await updatePost.mutateAsync({ id: p.id, post_url: tempPostUrl.trim() } as any);
+                            await updatePost.mutateAsync({ id: p.id, post_url: tempPostUrl.trim() });
                             setEditingPostUrl(null);
                             setTempPostUrl('');
                           }}

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Copy, Check, Send, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { DEFAULT_WORKSPACE_ID } from "@/constants/workspace";
 
 interface Props {
   item: ActionItem | null;
@@ -45,6 +46,7 @@ export function MessageDraftModal({ item, open, onClose }: Props) {
 
       // Save as draft
       await supabase.from("message_drafts" as any).insert({
+        workspace_id: DEFAULT_WORKSPACE_ID,
         action_item_id: item.id,
         scope: item.scope,
         project_id: item.project_id,

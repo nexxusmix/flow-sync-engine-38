@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DEFAULT_WORKSPACE_ID } from "@/constants/workspace";
 
 export interface ActionItem {
   id: string;
@@ -45,6 +46,7 @@ async function fetchActionItems(projectId?: string): Promise<ActionItem[]> {
   let query = supabase
     .from("action_items" as any)
     .select("*")
+    .eq("workspace_id", DEFAULT_WORKSPACE_ID)
     .in("status", ["open", "snoozed"])
     .order("priority", { ascending: true })
     .order("due_at", { ascending: true, nullsFirst: false })
@@ -244,16 +246,27 @@ export async function generateActionItems() {
     // Insert actions avoiding duplicates (use upsert-like logic)
     for (const action of actions) {
       // Check if similar open action exists
-      const { data: existing } = await supabase
+      let dupQuery = supabase
         .from("action_items" as any)
         .select("id")
+        .eq("workspace_id", DEFAULT_WORKSPACE_ID)
         .eq("type", action.type!)
-        .eq("project_id", action.project_id || "")
         .in("status", ["open", "snoozed"])
         .limit(1);
 
+      if (action.project_id) {
+        dupQuery = dupQuery.eq("project_id", action.project_id);
+      } else {
+        dupQuery = dupQuery.is("project_id", null);
+      }
+
+      const { data: existing } = await dupQuery;
+
       if (!existing || existing.length === 0) {
-        await supabase.from("action_items" as any).insert(action as any);
+        await supabase.from("action_items" as any).insert({
+          ...action,
+          workspace_id: DEFAULT_WORKSPACE_ID,
+        } as any);
       }
     }
 

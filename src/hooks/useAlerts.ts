@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
+import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
 
 export interface Alert {
   id: string;
@@ -48,6 +49,7 @@ export function useAlerts(filters?: {
       let query = supabase
         .from('alerts')
         .select('*')
+        .eq('workspace_id', DEFAULT_WORKSPACE_ID)
         .order('created_at', { ascending: false });
 
       if (filters?.status) {
@@ -130,6 +132,7 @@ export function useAlerts(filters?: {
         .from('alerts')
         .insert([{
           ...rest,
+          workspace_id: DEFAULT_WORKSPACE_ID,
           created_by: user?.id,
         }])
         .select()
