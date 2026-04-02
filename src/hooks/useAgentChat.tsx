@@ -255,6 +255,7 @@ export function useAgentChat() {
             currentRoute,
             timestamp: new Date().toISOString(),
             conversationId: convId,
+            workspaceId: DEFAULT_WORKSPACE_ID,
             memories: memoryContext,
           },
         }),
