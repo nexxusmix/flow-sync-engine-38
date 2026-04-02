@@ -274,19 +274,25 @@ export default function InstagramEnginePage() {
           hook: result.hook || null, script: result.script || null,
           caption_short: result.caption_short || null, caption_medium: result.caption_medium || null, caption_long: result.caption_long || null,
           cta: result.cta || null, pinned_comment: result.pinned_comment || null, hashtags: result.hashtags || [],
-          cover_suggestion: result.cover_suggestion || null, carousel_slides: carouselSlidesWithImages,
-          story_sequence: result.story_sequence || [], checklist: result.checklist || [], ai_generated: true, position: 0,
+          cover_suggestion: result.cover_suggestion || null,
+          carousel_slides: carouselSlidesWithImages as unknown as Json,
+          story_sequence: (result.story_sequence || []) as unknown as Json,
+          checklist: (result.checklist || []) as unknown as Json,
+          ai_generated: true, position: 0,
           thumbnail_url: thumbnailUrl,
-        } as any);
+        });
         if (isFullPackage && result.story_sequence?.length > 0) {
           const storyDate = new Date(scheduledDate); storyDate.setHours(18, 0, 0, 0);
           await createPost.mutateAsync({
             title: `Stories: ${result.title || genTopic}`, format: 'story_sequence', pillar: result.pillar || genPillar,
             objective: 'engagement', status: 'planned', scheduled_at: storyDate.toISOString(),
             hook: null, script: null, caption_short: null, caption_medium: null, caption_long: null,
-            cta: null, pinned_comment: null, hashtags: [], cover_suggestion: null, carousel_slides: [],
-            story_sequence: result.story_sequence, checklist: [], ai_generated: true, position: 1,
-          } as any);
+            cta: null, pinned_comment: null, hashtags: [], cover_suggestion: null,
+            carousel_slides: [] as unknown as Json,
+            story_sequence: result.story_sequence as unknown as Json,
+            checklist: [] as unknown as Json,
+            ai_generated: true, position: 1,
+          });
         }
         if (result.hook) {
           await saveHooks.mutateAsync([{ hook_text: result.hook, category: result.pillar || genPillar, format: result.format || formatForAI, hook_score: 85, score_breakdown: null, ai_generated: true }]);
