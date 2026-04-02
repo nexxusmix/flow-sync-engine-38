@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,126 +11,137 @@ import { useThemeColors } from "./hooks/useThemeColors";
 import { ProductProvider } from "./hooks/useProductContext";
 import { UndoRedoProvider } from "./components/layout/UndoRedoProvider";
 import { BackgroundUploadIndicator } from "./components/ui/BackgroundUploadIndicator";
-
-import Dashboard from "./pages/Dashboard";
-import ExecutiveDashboardPage from "./pages/ExecutiveDashboardPage";
-import CommandCenterPage from "./pages/CommandCenterPage";
-import NotFound from "./pages/NotFound";
-import LoginPage from "./pages/LoginPage";
-import AcceptInvitePage from "./pages/AcceptInvitePage";
-import LandingPage from "./pages/LandingPage";
-
-// Pages
-import CRMPage from "./pages/CRMPage";
-import InboxPage from "./pages/InboxPage";
-import ProjectsListPage from "./pages/projects/ProjectsListPage";
-import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
-import ClientPortalPage from "./pages/ClientPortalPageNew";
-import ProposalsListPage from "./pages/proposals/ProposalsListPage";
-import ProposalDetailPage from "./pages/proposals/ProposalDetailPage";
-import ProposalPreviewPage from "./pages/proposals/ProposalPreviewPage";
-import ProposalClientPage from "./pages/proposals/ProposalClientPage";
-import ContractsPage from "./pages/ContractsPage";
-import ContractsListPage from "./pages/contracts/ContractsListPage";
-import ContractTemplatesPage from "./pages/contracts/ContractTemplatesPage";
-import ContractDetailPage from "./pages/contracts/ContractDetailPage";
-import ContractPreviewPage from "./pages/contracts/ContractPreviewPage";
-import ContractClientPage from "./pages/contracts/ContractClientPage";
-import ContentPage from "./pages/ContentPage";
-import KnowledgePage from "./pages/KnowledgePage";
-import ReportsDashboard from "./pages/reports/ReportsDashboard";
-import Report360Page from "./pages/reports/Report360Page";
-import OwnerDailyReport from "./pages/reports/OwnerDailyReport";
-import SalesReport from "./pages/reports/SalesReport";
-import OperationsReport from "./pages/reports/OperationsReport";
-import FinancialReport from "./pages/reports/FinancialReport";
-import FinanceReportPage from "./pages/reports/FinanceReportPage";
-import MarketingReport from "./pages/reports/MarketingReport";
-import ProjectsReport from "./pages/reports/ProjectsReport";
-import ClientsReport from "./pages/reports/ClientsReport";
-import CRMReport from "./pages/reports/CRMReport";
-// Settings Pages
-import SettingsDashboard from "./pages/settings/SettingsDashboard";
-import WorkspaceSettingsPage from "./pages/settings/WorkspaceSettingsPage";
-import RolesSettingsPage from "./pages/settings/RolesSettingsPage";
-import ProjectStagesSettingsPage from "./pages/settings/ProjectStagesSettingsPage";
-import FinanceSettingsPage from "./pages/settings/FinanceSettingsPage";
-import ProposalSettingsPage from "./pages/settings/ProposalSettingsPage";
-import ContractSettingsPage from "./pages/settings/ContractSettingsPage";
-import MarketingSettingsPage from "./pages/settings/MarketingSettingsPage";
-import ProspectingSettingsPage from "./pages/settings/ProspectingSettingsPage";
-import IntegrationsSettingsPage from "./pages/settings/IntegrationsSettingsPage";
-import IntegrationsPage from "./pages/settings/IntegrationsPage";
-import NotificationSettingsPage from "./pages/settings/NotificationSettingsPage";
-import BrandingSettingsPage from "./pages/settings/BrandingSettingsPage";
-import AuditSettingsPage from "./pages/settings/AuditSettingsPage";
-import DangerZoneSettingsPage from "./pages/settings/DangerZoneSettingsPage";
-import UsersSettingsPage from "./pages/settings/UsersSettingsPage";
-import TeamSettingsPage from "./pages/settings/TeamSettingsPage";
-import AiUsageDashboardPage from "./pages/settings/AiUsageDashboardPage";
-import InstallPage from "./pages/InstallPage";
+import { PageLoader } from "./components/ui/PageLoader";
 import { PWAInstallBanner } from "./components/pwa/PWAInstallBanner";
 
-// Prospecção Pages
-import ProspectingPage from "./pages/prospecting/ProspectingPage";
-import TargetsPage from "./pages/prospecting/TargetsPage";
-import OpportunitiesPage from "./pages/prospecting/OpportunitiesPage";
-import ActivitiesPage from "./pages/prospecting/ActivitiesPage";
-import CadencesPage from "./pages/prospecting/CadencesPage";
-import ScoutPage from "./pages/prospecting/ScoutPage";
+// ── Core Pages ──────────────────────────────────────────────────────────
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ExecutiveDashboardPage = lazy(() => import("./pages/ExecutiveDashboardPage"));
+const CommandCenterPage = lazy(() => import("./pages/CommandCenterPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const AcceptInvitePage = lazy(() => import("./pages/AcceptInvitePage"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const UnifiedCalendarPage = lazy(() => import("./pages/CalendarPage"));
+const AgendaPage = lazy(() => import("./pages/AgendaPage"));
+const TasksPage = lazy(() => import("./pages/TasksPage"));
+const AlertsBoardPage = lazy(() => import("./pages/AlertsBoardPage"));
+const ActionHubPage = lazy(() => import("./pages/ActionHubPage"));
+const ClientesPage = lazy(() => import("./pages/ClientesPage"));
+const UnifiedInboxPage = lazy(() => import("./pages/UnifiedInboxPage"));
+const InstallPage = lazy(() => import("./pages/InstallPage"));
+const InstagramEnginePage = lazy(() => import("./pages/InstagramEnginePage"));
+const AgencyAutomationsPage = lazy(() => import("./pages/AgencyAutomationsPage"));
+const AIGovernanceDashboardPage = lazy(() => import("./pages/AIGovernanceDashboardPage"));
+const PlaybooksPage = lazy(() => import("./pages/PlaybooksPage"));
+const BillingPage = lazy(() => import("./pages/BillingPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
 
-// Finance Pages
-import FinanceDashboard from "./pages/finance/FinanceDashboard";
-import RevenuesPage from "./pages/finance/RevenuesPage";
-import ExpensesPage from "./pages/finance/ExpensesPage";
-import CashflowPage from "./pages/finance/CashflowPage";
-import FinanceContractsPage from "./pages/finance/ContractsPage";
-import ProjectsFinancePage from "./pages/finance/ProjectsFinancePage";
+// ── CRM & Inbox ─────────────────────────────────────────────────────────
+const CRMPage = lazy(() => import("./pages/CRMPage"));
+const InboxPage = lazy(() => import("./pages/InboxPage"));
+const ClientPortalPage = lazy(() => import("./pages/ClientPortalPageNew"));
+const ContentPage = lazy(() => import("./pages/ContentPage"));
+const KnowledgePage = lazy(() => import("./pages/KnowledgePage"));
 
-// Marketing Pages
-import MarketingDashboard from "./pages/marketing/MarketingDashboard";
-import MarketingCalendarPage from "./pages/marketing/CalendarPage";
-import IdeasPage from "./pages/marketing/IdeasPage";
-import PipelinePage from "./pages/marketing/PipelinePage";
-import AiHistoryPage from "./pages/marketing/AiHistoryPage";
-import CampaignsPage from "./pages/marketing/CampaignsPage";
-import AssetsPage from "./pages/marketing/AssetsPage";
-import InstagramPage from "./pages/marketing/InstagramPage";
-import StudioCreativoPage from "./pages/marketing/StudioCreativoPage";
-import CreativeStudioPage from "./pages/marketing/CreativeStudioPage";
-import LibraryPage from "./pages/marketing/LibraryPage";
-import ContentDetailPage from "./pages/marketing/ContentDetailPage";
-import ReferencesPage from "./pages/marketing/ReferencesPage";
-import AutomationsPage from "./pages/marketing/AutomationsPage";
-import TranscribePage from "./pages/marketing/TranscribePage";
-import UnifiedCalendarPage from "./pages/CalendarPage";
-import AgendaPage from "./pages/AgendaPage";
-import TasksPage from "./pages/TasksPage";
-import AlertsBoardPage from "./pages/AlertsBoardPage";
-import ActionHubPage from "./pages/ActionHubPage";
-import ClientesPage from "./pages/ClientesPage";
-import UnifiedInboxPage from "./pages/UnifiedInboxPage";
+// ── Projects ─────────────────────────────────────────────────────────────
+const ProjectsListPage = lazy(() => import("./pages/projects/ProjectsListPage"));
+const ProjectDetailPage = lazy(() => import("./pages/projects/ProjectDetailPage"));
 
-// Marketing Hub Pages
-import MkDashboardPage from "./pages/marketing-hub/MkDashboardPage";
-import MkCampaignsPage from "./pages/marketing-hub/MkCampaignsPage";
-import MkContentsPage from "./pages/marketing-hub/MkContentsPage";
-import MkCalendarPage from "./pages/marketing-hub/MkCalendarPage";
-import MkBrandingPage from "./pages/marketing-hub/MkBrandingPage";
-import MkAssetsPage from "./pages/marketing-hub/MkAssetsPage";
-import MkApprovalsPage from "./pages/marketing-hub/MkApprovalsPage";
-import MkReportsPage from "./pages/marketing-hub/MkReportsPage";
-import MkAutomationsPage from "./pages/marketing-hub/MkAutomationsPage";
-import MkSettingsPage from "./pages/marketing-hub/MkSettingsPage";
-import MkInstagramPage from "./pages/marketing-hub/MkInstagramPage";
-import MkTemplatesPage from "./pages/marketing-hub/MkTemplatesPage";
-import MkIdeasPage from "./pages/marketing-hub/MkIdeasPage";
-import InstagramEnginePage from "./pages/InstagramEnginePage";
-import AgencyAutomationsPage from "./pages/AgencyAutomationsPage";
-import AIGovernanceDashboardPage from "./pages/AIGovernanceDashboardPage";
-import PlaybooksPage from "./pages/PlaybooksPage";
-import BillingPage from "./pages/BillingPage";
-import OnboardingPage from "./pages/OnboardingPage";
+// ── Proposals ────────────────────────────────────────────────────────────
+const ProposalsListPage = lazy(() => import("./pages/proposals/ProposalsListPage"));
+const ProposalDetailPage = lazy(() => import("./pages/proposals/ProposalDetailPage"));
+const ProposalPreviewPage = lazy(() => import("./pages/proposals/ProposalPreviewPage"));
+const ProposalClientPage = lazy(() => import("./pages/proposals/ProposalClientPage"));
+
+// ── Contracts ────────────────────────────────────────────────────────────
+const ContractsPage = lazy(() => import("./pages/ContractsPage"));
+const ContractsListPage = lazy(() => import("./pages/contracts/ContractsListPage"));
+const ContractTemplatesPage = lazy(() => import("./pages/contracts/ContractTemplatesPage"));
+const ContractDetailPage = lazy(() => import("./pages/contracts/ContractDetailPage"));
+const ContractPreviewPage = lazy(() => import("./pages/contracts/ContractPreviewPage"));
+const ContractClientPage = lazy(() => import("./pages/contracts/ContractClientPage"));
+
+// ── Prospecting ──────────────────────────────────────────────────────────
+const ProspectingPage = lazy(() => import("./pages/prospecting/ProspectingPage"));
+const TargetsPage = lazy(() => import("./pages/prospecting/TargetsPage"));
+const OpportunitiesPage = lazy(() => import("./pages/prospecting/OpportunitiesPage"));
+const ActivitiesPage = lazy(() => import("./pages/prospecting/ActivitiesPage"));
+const CadencesPage = lazy(() => import("./pages/prospecting/CadencesPage"));
+const ScoutPage = lazy(() => import("./pages/prospecting/ScoutPage"));
+
+// ── Finance ──────────────────────────────────────────────────────────────
+const FinanceDashboard = lazy(() => import("./pages/finance/FinanceDashboard"));
+const RevenuesPage = lazy(() => import("./pages/finance/RevenuesPage"));
+const ExpensesPage = lazy(() => import("./pages/finance/ExpensesPage"));
+const CashflowPage = lazy(() => import("./pages/finance/CashflowPage"));
+const FinanceContractsPage = lazy(() => import("./pages/finance/ContractsPage"));
+const ProjectsFinancePage = lazy(() => import("./pages/finance/ProjectsFinancePage"));
+
+// ── Marketing ────────────────────────────────────────────────────────────
+const MarketingDashboard = lazy(() => import("./pages/marketing/MarketingDashboard"));
+const MarketingCalendarPage = lazy(() => import("./pages/marketing/CalendarPage"));
+const IdeasPage = lazy(() => import("./pages/marketing/IdeasPage"));
+const PipelinePage = lazy(() => import("./pages/marketing/PipelinePage"));
+const AiHistoryPage = lazy(() => import("./pages/marketing/AiHistoryPage"));
+const CampaignsPage = lazy(() => import("./pages/marketing/CampaignsPage"));
+const AssetsPage = lazy(() => import("./pages/marketing/AssetsPage"));
+const InstagramPage = lazy(() => import("./pages/marketing/InstagramPage"));
+const StudioCreativoPage = lazy(() => import("./pages/marketing/StudioCreativoPage"));
+const CreativeStudioPage = lazy(() => import("./pages/marketing/CreativeStudioPage"));
+const LibraryPage = lazy(() => import("./pages/marketing/LibraryPage"));
+const ContentDetailPage = lazy(() => import("./pages/marketing/ContentDetailPage"));
+const ReferencesPage = lazy(() => import("./pages/marketing/ReferencesPage"));
+const AutomationsPage = lazy(() => import("./pages/marketing/AutomationsPage"));
+const TranscribePage = lazy(() => import("./pages/marketing/TranscribePage"));
+
+// ── Marketing Hub ────────────────────────────────────────────────────────
+const MkDashboardPage = lazy(() => import("./pages/marketing-hub/MkDashboardPage"));
+const MkCampaignsPage = lazy(() => import("./pages/marketing-hub/MkCampaignsPage"));
+const MkContentsPage = lazy(() => import("./pages/marketing-hub/MkContentsPage"));
+const MkCalendarPage = lazy(() => import("./pages/marketing-hub/MkCalendarPage"));
+const MkBrandingPage = lazy(() => import("./pages/marketing-hub/MkBrandingPage"));
+const MkAssetsPage = lazy(() => import("./pages/marketing-hub/MkAssetsPage"));
+const MkApprovalsPage = lazy(() => import("./pages/marketing-hub/MkApprovalsPage"));
+const MkReportsPage = lazy(() => import("./pages/marketing-hub/MkReportsPage"));
+const MkAutomationsPage = lazy(() => import("./pages/marketing-hub/MkAutomationsPage"));
+const MkSettingsPage = lazy(() => import("./pages/marketing-hub/MkSettingsPage"));
+const MkInstagramPage = lazy(() => import("./pages/marketing-hub/MkInstagramPage"));
+const MkTemplatesPage = lazy(() => import("./pages/marketing-hub/MkTemplatesPage"));
+const MkIdeasPage = lazy(() => import("./pages/marketing-hub/MkIdeasPage"));
+
+// ── Reports ──────────────────────────────────────────────────────────────
+const ReportsDashboard = lazy(() => import("./pages/reports/ReportsDashboard"));
+const Report360Page = lazy(() => import("./pages/reports/Report360Page"));
+const OwnerDailyReport = lazy(() => import("./pages/reports/OwnerDailyReport"));
+const SalesReport = lazy(() => import("./pages/reports/SalesReport"));
+const OperationsReport = lazy(() => import("./pages/reports/OperationsReport"));
+const FinancialReport = lazy(() => import("./pages/reports/FinancialReport"));
+const FinanceReportPage = lazy(() => import("./pages/reports/FinanceReportPage"));
+const MarketingReport = lazy(() => import("./pages/reports/MarketingReport"));
+const ProjectsReport = lazy(() => import("./pages/reports/ProjectsReport"));
+const ClientsReport = lazy(() => import("./pages/reports/ClientsReport"));
+const CRMReport = lazy(() => import("./pages/reports/CRMReport"));
+
+// ── Settings ─────────────────────────────────────────────────────────────
+const SettingsDashboard = lazy(() => import("./pages/settings/SettingsDashboard"));
+const WorkspaceSettingsPage = lazy(() => import("./pages/settings/WorkspaceSettingsPage"));
+const RolesSettingsPage = lazy(() => import("./pages/settings/RolesSettingsPage"));
+const ProjectStagesSettingsPage = lazy(() => import("./pages/settings/ProjectStagesSettingsPage"));
+const FinanceSettingsPage = lazy(() => import("./pages/settings/FinanceSettingsPage"));
+const ProposalSettingsPage = lazy(() => import("./pages/settings/ProposalSettingsPage"));
+const ContractSettingsPage = lazy(() => import("./pages/settings/ContractSettingsPage"));
+const MarketingSettingsPage = lazy(() => import("./pages/settings/MarketingSettingsPage"));
+const ProspectingSettingsPage = lazy(() => import("./pages/settings/ProspectingSettingsPage"));
+const IntegrationsSettingsPage = lazy(() => import("./pages/settings/IntegrationsSettingsPage"));
+const IntegrationsPage = lazy(() => import("./pages/settings/IntegrationsPage"));
+const NotificationSettingsPage = lazy(() => import("./pages/settings/NotificationSettingsPage"));
+const BrandingSettingsPage = lazy(() => import("./pages/settings/BrandingSettingsPage"));
+const AuditSettingsPage = lazy(() => import("./pages/settings/AuditSettingsPage"));
+const DangerZoneSettingsPage = lazy(() => import("./pages/settings/DangerZoneSettingsPage"));
+const UsersSettingsPage = lazy(() => import("./pages/settings/UsersSettingsPage"));
+const TeamSettingsPage = lazy(() => import("./pages/settings/TeamSettingsPage"));
+const AiUsageDashboardPage = lazy(() => import("./pages/settings/AiUsageDashboardPage"));
 
 const queryClient = new QueryClient();
 
@@ -151,6 +163,7 @@ function AppRoutes() {
   useThemeColors();
 
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       <Route 
         path="/login" 
@@ -280,6 +293,7 @@ function AppRoutes() {
       
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 }
 
