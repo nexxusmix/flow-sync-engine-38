@@ -140,21 +140,21 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const body2: RequestBody = body as RequestBody;
-    const { system, msgs } = convertMessages(body.messages || []);
+    const { system, msgs } = convertMessages(body2.messages || []);
     const model = "claude-sonnet-4-20250514";
 
     const anthropicBody: Record<string, unknown> = {
       model,
       messages: msgs,
-      max_tokens: body.max_tokens || 4096,
-      stream: !!body.stream,
+      max_tokens: body2.max_tokens || 4096,
+      stream: !!body2.stream,
     };
     if (system) anthropicBody.system = system;
-    if (body.temperature !== undefined) anthropicBody.temperature = body.temperature;
-    if (body.tools?.length) {
-      anthropicBody.tools = convertTools(body.tools);
-      if (body.tool_choice === "auto") anthropicBody.tool_choice = { type: "auto" };
-      else if (body.tool_choice === "required") anthropicBody.tool_choice = { type: "any" };
+    if (body2.temperature !== undefined) anthropicBody.temperature = body2.temperature;
+    if (body2.tools?.length) {
+      anthropicBody.tools = convertTools(body2.tools);
+      if (body2.tool_choice === "auto") anthropicBody.tool_choice = { type: "auto" };
+      else if (body2.tool_choice === "required") anthropicBody.tool_choice = { type: "any" };
     }
 
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -176,7 +176,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     // --- Streaming ---
-    if (body.stream && anthropicRes.body) {
+    if (body2.stream && anthropicRes.body) {
       const { readable, writable } = new TransformStream();
       const writer = writable.getWriter();
       const encoder = new TextEncoder();
