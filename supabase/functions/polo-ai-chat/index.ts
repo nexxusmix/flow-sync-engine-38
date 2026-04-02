@@ -242,6 +242,9 @@ REGRAS:
     }
     
     // Inject context
+    if (context?.workspaceId) {
+      systemPrompt += `\n\nWorkspace ID: ${context.workspaceId} — use este ID em todos os campos workspace_id dos planos de execução.`;
+    }
     if (context?.currentRoute) {
       systemPrompt += `\n\nContexto atual: Usuário está em ${context.currentRoute}`;
     }
