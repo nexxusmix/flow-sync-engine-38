@@ -76,6 +76,46 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+async function handleInstagramConnect(body: any): Promise<Response> {
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://gfyeuhfapscxfvjnrssn.supabase.co";
+  const SUPABASE_ANON = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const username = (body.username || "").replace(/^@/, "").trim();
+  if (!username) return new Response(JSON.stringify({ error: "username required" }), { status: 400, headers: { ...CORS, "Content-Type": "application/json" } });
+
+  // Scrape profile
+  let profile: any = null;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/scrape-instagram-profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ username }),
+    });
+    if (r.ok) { const d = await r.json(); if (d.success) profile = d.data; }
+  } catch {}
+
+  // Upsert connection via Supabase (uses anon key - needs RLS to allow)
+  const headers = { "Content-Type": "application/json", apikey: SUPABASE_ANON!, Authorization: `Bearer ${SUPABASE_ANON}`, Prefer: "return=representation,resolution=merge-duplicates" };
+  await fetch(`${SUPABASE_URL}/rest/v1/instagram_profile_config`, {
+    method: "POST", headers,
+    body: JSON.stringify({
+      workspace_id: body.workspace_id || "00000000-0000-0000-0000-000000000001",
+      profile_handle: username,
+      profile_name: profile?.full_name || username,
+      profile_bio: profile?.bio || "",
+      profile_picture_url: profile?.profile_pic || null,
+      followers_count: profile?.followers || 0,
+      following_count: profile?.following || 0,
+      posts_count: profile?.posts_count || 0,
+    }),
+  });
+
+  return new Response(JSON.stringify({
+    success: true,
+    profile,
+    message: `@${username} conectado! ${profile ? `${profile.followers} seguidores, ${profile.posts_count} posts` : "Dados de perfil salvos."}`,
+  }), { headers: { ...CORS, "Content-Type": "application/json" } });
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
@@ -85,8 +125,18 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+
+  try {
+    const body = await req.json();
+
+    // Route: Instagram Connect
+    if (body._action === "instagram_connect") {
+      return handleInstagramConnect(body);
+    }
+
+    // Route: AI Chat (default)
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
   try {
