@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useInstagramAI, useCreatePost, PILLARS, FORMATS } from '@/hooks/useInstagramEngine';
+import { useInstagramAI, useCreatePost, PILLARS, FORMATS, type Json } from '@/hooks/useInstagramEngine';
 import { Loader2, Sparkles, Copy, Check, Save, Calendar, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
