@@ -116,6 +116,7 @@ async function handleInstagramConnect(body: any): Promise<Response> {
   }), { headers: { ...CORS, "Content-Type": "application/json" } });
 }
 
+// v2 - instagram connect support
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
