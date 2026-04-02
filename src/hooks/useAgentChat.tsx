@@ -12,7 +12,9 @@ import type {
 } from '@/types/agent';
 import type { Json } from '@/integrations/supabase/types';
 import { DEFAULT_WORKSPACE_ID } from '@/constants/workspace';
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/polo-ai-chat`;
+// Use Vercel API proxy for Claude AI (primary), fallback to Supabase edge function
+const CHAT_URL = '/api/ai-chat';
+const CHAT_URL_FALLBACK = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/polo-ai-chat`;
 
 export function useAgentChat() {
   const { user, session } = useAuth();

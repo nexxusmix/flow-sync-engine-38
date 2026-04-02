@@ -54,15 +54,39 @@ export async function runAiAction<T = unknown>(
       runId = runRecord?.id;
     }
 
-    // Call the unified ai-run edge function
-    const { data, error } = await supabase.functions.invoke('ai-run', {
-      body: {
-        actionKey: options.actionKey,
-        input: options.input,
-        entityType: options.entityType,
-        entityId: options.entityId,
-      },
-    });
+    // Call the Vercel AI proxy (primary) with fallback to Supabase edge function
+    let data: any = null;
+    let error: any = null;
+
+    try {
+      const res = await fetch('/api/ai-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          actionKey: options.actionKey,
+          input: options.input,
+          entityType: options.entityType,
+          entityId: options.entityId,
+        }),
+      });
+      if (res.ok) {
+        data = await res.json();
+      } else {
+        throw new Error(`Vercel AI proxy: ${res.status}`);
+      }
+    } catch (vercelErr) {
+      console.warn('Vercel AI proxy failed, falling back to Supabase:', vercelErr);
+      const fallback = await supabase.functions.invoke('ai-run', {
+        body: {
+          actionKey: options.actionKey,
+          input: options.input,
+          entityType: options.entityType,
+          entityId: options.entityId,
+        },
+      });
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     const durationMs = Date.now() - startTime;
 
