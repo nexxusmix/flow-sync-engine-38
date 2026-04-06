@@ -211,6 +211,40 @@ export default function Dashboard() {
         {/* KPI Strip — dados operacionais em tempo real */}
         <KPIStrip />
 
+        {/* Squad Brain Preview */}
+        <motion.div
+          className="glass-card rounded-xl md:rounded-[2rem] overflow-hidden"
+          initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 70, damping: 18 }}
+        >
+          <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-border/30">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary text-lg">neurology</span>
+              <div>
+                <h2 className="text-sm font-normal text-foreground">Squad Brain</h2>
+                <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-light">Neural Command Center — Live</p>
+              </div>
+            </div>
+            <Link to="/squad-brain">
+              <Button variant="ghost" size="sm" className="text-xs text-primary">
+                <Eye className="w-3 h-3 mr-1" />
+                Abrir
+                <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <div className="h-[280px] md:h-[360px] w-full">
+            <iframe
+              src="https://squad-brain.vercel.app"
+              className="w-full h-full border-0"
+              title="Squad Brain Preview"
+              loading="lazy"
+            />
+          </div>
+        </motion.div>
+
         {/* AI Daily Summary */}
         <AIDailySummary />
 

@@ -18,6 +18,7 @@ import { PWAInstallBanner } from "./components/pwa/PWAInstallBanner";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ExecutiveDashboardPage = lazy(() => import("./pages/ExecutiveDashboardPage"));
 const CommandCenterPage = lazy(() => import("./pages/CommandCenterPage"));
+const SquadBrainPage = lazy(() => import("./pages/SquadBrainPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const AcceptInvitePage = lazy(() => import("./pages/AcceptInvitePage"));
@@ -175,6 +176,7 @@ function AppRoutes() {
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <LandingPage />} />
       <Route path="/executivo" element={<ProtectedRoute><ExecutiveDashboardPage /></ProtectedRoute>} />
       <Route path="/command-center" element={<ProtectedRoute><CommandCenterPage /></ProtectedRoute>} />
+      <Route path="/squad-brain" element={<ProtectedRoute><SquadBrainPage /></ProtectedRoute>} />
       <Route path="/calendario" element={<ProtectedRoute><UnifiedCalendarPage /></ProtectedRoute>} />
       <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
       <Route path="/tarefas" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
