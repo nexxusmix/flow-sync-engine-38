@@ -93,12 +93,18 @@ export function CloseProjectDialog({
     f.type.includes("officedocument") ||
     /\.(mp3|wav|m4a|ogg|webm|mp4|mov|pdf|docx?|rtf)$/i.test(f.name);
 
-  const transcribeFile = async (f: File): Promise<string> => {
+  const transcribeByStoragePath = async (
+    storagePath: string,
+    f: File,
+  ): Promise<string> => {
     try {
-      const audioBase64 = await readAsBase64(f);
-      if (!audioBase64) return "";
       const { data, error } = await supabase.functions.invoke("transcribe-media", {
-        body: { audioBase64, mimeType: f.type, fileName: f.name },
+        body: {
+          storageBucket: "project-files",
+          storagePath,
+          mimeType: f.type,
+          fileName: f.name,
+        },
       });
       if (error) throw error;
       return data?.transcription || "";
@@ -108,17 +114,22 @@ export function CloseProjectDialog({
     }
   };
 
-  const uploadFiles = async (): Promise<string[]> => {
+  const uploadFiles = async (): Promise<{ path: string; file: File }[]> => {
     if (files.length === 0) return [];
-    const urls: string[] = [];
+    const out: { path: string; file: File }[] = [];
     for (const f of files) {
-      const path = `retrospectives/${projectId}/${Date.now()}-${f.name}`;
+      const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `retrospectives/${projectId}/${Date.now()}-${safeName}`;
       const { data, error } = await supabase.storage
         .from("project-files")
         .upload(path, f, { upsert: true });
-      if (!error && data) urls.push(data.path);
+      if (error) {
+        console.error("upload error", f.name, error);
+        throw new Error(`Falha ao subir ${f.name}: ${error.message}`);
+      }
+      if (data) out.push({ path: data.path, file: f });
     }
-    return urls;
+    return out;
   };
 
   const handleSubmit = async () => {
@@ -129,14 +140,15 @@ export function CloseProjectDialog({
     setProcessing(true);
     try {
       setUploading(true);
-      const attachment_urls = await uploadFiles();
+      const uploaded = await uploadFiles();
+      const attachment_urls = uploaded.map((u) => u.path);
       setUploading(false);
 
-      // Extract text from attachments: plain text inline, audio/video/pdf via transcribe-media
+      // Extract text from attachments: plain text inline, audio/video/pdf via transcribe-media (via storage)
       let attachment_text = "";
-      const toTranscribe = files.filter(isTranscribable);
-      if (toTranscribe.length > 0) setTranscribing(true);
-      for (const f of files) {
+      const hasTranscribable = uploaded.some(({ file }) => isTranscribable(file));
+      if (hasTranscribable) setTranscribing(true);
+      for (const { path, file: f } of uploaded) {
         if (
           f.type.startsWith("text/") ||
           f.name.match(/\.(txt|md|json|csv)$/i)
@@ -144,7 +156,7 @@ export function CloseProjectDialog({
           const t = await readAsText(f);
           attachment_text += `\n\n--- ${f.name} ---\n${t.slice(0, 8000)}`;
         } else if (isTranscribable(f)) {
-          const t = await transcribeFile(f);
+          const t = await transcribeByStoragePath(path, f);
           if (t) {
             attachment_text += `\n\n--- ${f.name} (transcrição IA) ---\n${t.slice(0, 12000)}`;
           }
