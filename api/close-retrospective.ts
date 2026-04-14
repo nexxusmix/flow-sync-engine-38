@@ -12,10 +12,12 @@ const CORS = {
 };
 
 const SUPABASE_URL =
-  process.env.VITE_SUPABASE_URL || "https://gfyeuhfapscxfvjnrssn.supabase.co";
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  "https://gfyeuhfapscxfvjnrssn.supabase.co";
 const SUPABASE_ANON =
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_ANON_KEY ||
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   "";
 
 const SYSTEM = `Você é um consultor sênior fazendo retrospectiva de projeto audiovisual concluído. Seu trabalho é gerar um relatório FRANCO e ACIONÁVEL para ajudar o gestor a evoluir.
@@ -188,7 +190,7 @@ async function generateReport(
   return { report, model: "gemini-2.5-flash" };
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function handlerInner(req: Request): Promise<Response> {
   if (req.method === "OPTIONS")
     return new Response(null, { status: 204, headers: CORS });
   if (req.method !== "POST")
@@ -333,6 +335,21 @@ Gere a retrospectiva completa em JSON seguindo o schema.`;
     console.error("close-retrospective error:", err);
     return new Response(
       JSON.stringify({ error: err.message || "Erro desconhecido" }),
+      { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
+    );
+  }
+}
+
+export default async function handler(req: Request): Promise<Response> {
+  try {
+    return await handlerInner(req);
+  } catch (err: any) {
+    console.error("close-retrospective fatal:", err?.stack || err);
+    return new Response(
+      JSON.stringify({
+        error: `Fatal: ${err?.message || String(err)}`,
+        stack: err?.stack?.slice(0, 500),
+      }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
     );
   }
