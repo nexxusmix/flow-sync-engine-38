@@ -159,27 +159,46 @@ export function CloseProjectDialog({
       }
       setTranscribing(false);
 
-      const { data, error } = await supabase.functions.invoke(
-        "close-project-retrospective",
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+      const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const session = (await supabase.auth.getSession()).data.session;
+      const res = await fetch(
+        `${SUPABASE_URL}/functions/v1/close-project-retrospective`,
         {
-          body: {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: ANON_KEY,
+            Authorization: `Bearer ${session?.access_token || ANON_KEY}`,
+          },
+          body: JSON.stringify({
             project_id: projectId,
-            reason: reason || REASON_CATEGORIES.find((r) => r.value === category)?.label,
+            reason:
+              reason ||
+              REASON_CATEGORIES.find((r) => r.value === category)?.label ||
+              "Projeto encerrado",
             reason_category: category,
             user_notes: notes,
             attachment_urls,
             attachment_text,
-          },
+          }),
         },
       );
-
-      if (error) {
-        console.error("close-project-retrospective error", error, data);
+      const text = await res.text();
+      let payload: any = {};
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = { error: text };
+      }
+      if (!res.ok) {
+        console.error("close-project-retrospective error", res.status, payload);
         throw new Error(
-          (data as any)?.error || error.message || "Falha ao gerar retrospectiva",
+          payload?.error ||
+            `Retrospectiva falhou (${res.status}). Verifique ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY no Supabase.`,
         );
       }
-      setReport(data.report);
+      setReport(payload.report);
       toast.success("Retrospectiva IA gerada · projeto encerrado");
       onClosed?.();
     } catch (e: any) {
