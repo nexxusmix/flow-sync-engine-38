@@ -53,6 +53,7 @@ export function CloseProjectDialog({
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [report, setReport] = useState<any | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -72,6 +73,40 @@ export function CloseProjectDialog({
       r.onerror = () => resolve("");
       r.readAsText(f);
     });
+
+  const readAsBase64 = (f: File): Promise<string> =>
+    new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const result = String(r.result || "");
+        resolve(result.split(",")[1] || "");
+      };
+      r.onerror = () => resolve("");
+      r.readAsDataURL(f);
+    });
+
+  const isTranscribable = (f: File) =>
+    f.type.startsWith("audio/") ||
+    f.type.startsWith("video/") ||
+    f.type.includes("pdf") ||
+    f.type.includes("word") ||
+    f.type.includes("officedocument") ||
+    /\.(mp3|wav|m4a|ogg|webm|mp4|mov|pdf|docx?|rtf)$/i.test(f.name);
+
+  const transcribeFile = async (f: File): Promise<string> => {
+    try {
+      const audioBase64 = await readAsBase64(f);
+      if (!audioBase64) return "";
+      const { data, error } = await supabase.functions.invoke("transcribe-media", {
+        body: { audioBase64, mimeType: f.type, fileName: f.name },
+      });
+      if (error) throw error;
+      return data?.transcription || "";
+    } catch (e: any) {
+      console.error("transcribe error", f.name, e);
+      return "";
+    }
+  };
 
   const uploadFiles = async (): Promise<string[]> => {
     if (files.length === 0) return [];
@@ -97,17 +132,25 @@ export function CloseProjectDialog({
       const attachment_urls = await uploadFiles();
       setUploading(false);
 
-      // Extract text from text-based attachments (txt, md, json)
+      // Extract text from attachments: plain text inline, audio/video/pdf via transcribe-media
       let attachment_text = "";
+      const toTranscribe = files.filter(isTranscribable);
+      if (toTranscribe.length > 0) setTranscribing(true);
       for (const f of files) {
         if (
           f.type.startsWith("text/") ||
           f.name.match(/\.(txt|md|json|csv)$/i)
         ) {
           const t = await readAsText(f);
-          attachment_text += `\n\n--- ${f.name} ---\n${t.slice(0, 4000)}`;
+          attachment_text += `\n\n--- ${f.name} ---\n${t.slice(0, 8000)}`;
+        } else if (isTranscribable(f)) {
+          const t = await transcribeFile(f);
+          if (t) {
+            attachment_text += `\n\n--- ${f.name} (transcrição IA) ---\n${t.slice(0, 12000)}`;
+          }
         }
       }
+      setTranscribing(false);
 
       const { data, error } = await supabase.functions.invoke(
         "close-project-retrospective",
@@ -255,7 +298,11 @@ export function CloseProjectDialog({
                 {processing ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {uploading ? "Subindo anexos…" : "Analisando com IA…"}
+                    {uploading
+                      ? "Subindo anexos…"
+                      : transcribing
+                        ? "Transcrevendo áudio/vídeo…"
+                        : "Analisando com IA…"}
                   </>
                 ) : (
                   <>
