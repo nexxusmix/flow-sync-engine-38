@@ -10,6 +10,7 @@ import { ActionHubOverviewCard } from "@/components/action-hub/ActionHubOverview
 import { TimelineForecast30D } from "@/components/timeline/TimelineForecast30D";
 import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { AIDailySummary } from "@/components/dashboard/AIDailySummary";
+import { ProjectHealthRadar } from "@/components/dashboard/ProjectHealthRadar";
 import { TasksWidget } from "@/components/dashboard/TasksWidget";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { PipelineChart } from "@/components/dashboard/PipelineChart";
@@ -490,6 +491,9 @@ export default function Dashboard() {
             </div>
           )}
         </motion.div>
+
+        {/* AI Project Health Radar */}
+        <ProjectHealthRadar />
 
         {/* Action Hub Rail - Horizontal Section */}
         <ActionHubRail />
