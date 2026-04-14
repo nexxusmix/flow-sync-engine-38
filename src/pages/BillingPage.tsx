@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useUrlState } from '@/hooks/useUrlState';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BillingOverview } from '@/components/billing/BillingOverview';
@@ -10,7 +10,7 @@ import { BillingUsage } from '@/components/billing/BillingUsage';
 import { BillingRevenue } from '@/components/billing/BillingRevenue';
 
 export default function BillingPage() {
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useUrlState('tab', 'overview');
 
   return (
     <DashboardLayout title="Billing & Monetização">

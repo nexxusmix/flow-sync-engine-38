@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useUrlState } from "@/hooks/useUrlState";
 import { MkAppShell } from "@/components/marketing-hub/MkAppShell";
 import { MkCard, MkSectionHeader, MkEmptyState } from "@/components/marketing-hub/mk-ui";
 import { useContentAnalytics } from "@/hooks/useContentAnalytics";
@@ -123,7 +124,7 @@ export default function MkReportsPage() {
   const [selectedItem, setSelectedItem] = useState("");
   const [metricsForm, setMetricsForm] = useState({ views: "", likes: "", comments: "", shares: "", reach: "" });
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useUrlState("tab", "overview");
 
   const handleSaveMetrics = async () => {
     if (!selectedItem) { toast.error("Selecione um conteúdo"); return; }

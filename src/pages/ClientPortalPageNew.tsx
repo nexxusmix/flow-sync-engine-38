@@ -4,6 +4,7 @@
 
 import { useParams } from "react-router-dom";
 import { useState, useRef } from "react";
+import { useUrlState } from "@/hooks/useUrlState";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
 import { Lock, AlertTriangle, Sparkles } from "lucide-react";
@@ -58,7 +59,7 @@ function BackgroundParticles() {
 export default function ClientPortalPage() {
   const { shareToken } = useParams();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useUrlState("tab", "overview");
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

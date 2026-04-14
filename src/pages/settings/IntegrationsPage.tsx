@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUrlState } from "@/hooks/useUrlState";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WebhookManager } from "@/components/integrations/WebhookManager";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { toast } from "sonner";
 export default function IntegrationsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useUrlState("tab", "overview");
   const [googleConnected, setGoogleConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
