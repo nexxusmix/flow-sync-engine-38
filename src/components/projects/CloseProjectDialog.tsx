@@ -159,16 +159,12 @@ export function CloseProjectDialog({
       }
       setTranscribing(false);
 
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
       const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
       const session = (await supabase.auth.getSession()).data.session;
-      const res = await fetch(
-        `${SUPABASE_URL}/functions/v1/close-project-retrospective`,
-        {
+      const res = await fetch(`/api/close-retrospective`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            apikey: ANON_KEY,
             Authorization: `Bearer ${session?.access_token || ANON_KEY}`,
           },
           body: JSON.stringify({
@@ -182,8 +178,7 @@ export function CloseProjectDialog({
             attachment_urls,
             attachment_text,
           }),
-        },
-      );
+        });
       const text = await res.text();
       let payload: any = {};
       try {
