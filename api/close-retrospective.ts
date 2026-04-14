@@ -11,14 +11,16 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const SUPABASE_URL =
+const SUPABASE_URL = (
   process.env.SUPABASE_URL ||
   process.env.VITE_SUPABASE_URL ||
-  "https://gfyeuhfapscxfvjnrssn.supabase.co";
-const SUPABASE_ANON =
-  process.env.SUPABASE_ANON_KEY ||
+  "https://gfyeuhfapscxfvjnrssn.supabase.co"
+).trim();
+const SUPABASE_ANON = (
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  "";
+  process.env.SUPABASE_ANON_KEY ||
+  ""
+).trim();
 
 const SYSTEM = `Você é um consultor sênior fazendo retrospectiva de projeto audiovisual concluído. Seu trabalho é gerar um relatório FRANCO e ACIONÁVEL para ajudar o gestor a evoluir.
 
