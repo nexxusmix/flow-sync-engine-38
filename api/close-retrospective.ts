@@ -138,6 +138,56 @@ async function callGemini(prompt: string, apiKey: string): Promise<any> {
   return JSON.parse(text);
 }
 
+async function callClaude(prompt: string, apiKey: string): Promise<any> {
+  const instructions = `${SYSTEM}\n\nRetorne APENAS JSON válido com este schema:\n${JSON.stringify(RESPONSE_SCHEMA)}`;
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
+      temperature: 0.4,
+      system: instructions,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`Claude ${r.status}: ${txt.slice(0, 300)}`);
+  }
+  const data = await r.json();
+  const text = (data.content || [])
+    .filter((b: any) => b.type === "text")
+    .map((b: any) => b.text)
+    .join("");
+  if (!text) throw new Error("Claude retornou vazio");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  return JSON.parse(jsonMatch ? jsonMatch[0] : text);
+}
+
+async function generateReport(
+  prompt: string,
+): Promise<{ report: any; model: string }> {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+
+  if (anthropicKey) {
+    try {
+      const report = await callClaude(prompt, anthropicKey);
+      return { report, model: "claude-sonnet-4" };
+    } catch (e) {
+      console.warn("Claude falhou, caindo pra Gemini:", e);
+    }
+  }
+  if (!geminiKey) throw new Error("Nenhuma chave de IA configurada");
+  const report = await callGemini(prompt, geminiKey);
+  return { report, model: "gemini-2.5-flash" };
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS")
     return new Response(null, { status: 204, headers: CORS });
@@ -147,10 +197,11 @@ export default async function handler(req: Request): Promise<Response> {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey)
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.GEMINI_API_KEY)
     return new Response(
-      JSON.stringify({ error: "GEMINI_API_KEY não configurada no Vercel" }),
+      JSON.stringify({
+        error: "Nenhuma chave de IA configurada (ANTHROPIC_API_KEY ou GEMINI_API_KEY)",
+      }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
     );
 
@@ -231,7 +282,7 @@ ${
 
 Gere a retrospectiva completa em JSON seguindo o schema.`;
 
-    const aiReport = await callGemini(prompt, apiKey);
+    const { report: aiReport, model: modelUsed } = await generateReport(prompt);
 
     // Insert retrospective row
     const insertRes = await sbFetch("project_retrospectives", auth, {
@@ -253,7 +304,7 @@ Gere a retrospectiva completa em JSON seguindo o schema.`;
         lessons_learned: aiReport.lessons_learned,
         actions_for_next: aiReport.actions_for_next,
         efficiency_metrics: aiReport.efficiency_metrics,
-        model_used: "gemini-2.5-flash",
+        model_used: modelUsed,
       }),
     });
     if (!insertRes.ok) {
