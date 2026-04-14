@@ -93,18 +93,11 @@ export function CloseProjectDialog({
     f.type.includes("officedocument") ||
     /\.(mp3|wav|m4a|ogg|webm|mp4|mov|pdf|docx?|rtf)$/i.test(f.name);
 
-  const transcribeByStoragePath = async (
-    storagePath: string,
-    f: File,
-  ): Promise<string> => {
+  const transcribeBase64 = async (f: File): Promise<string> => {
     try {
+      const audioBase64 = await readAsBase64(f);
       const { data, error } = await supabase.functions.invoke("transcribe-media", {
-        body: {
-          storageBucket: "project-files",
-          storagePath,
-          mimeType: f.type,
-          fileName: f.name,
-        },
+        body: { audioBase64, mimeType: f.type, fileName: f.name },
       });
       if (error) throw error;
       return data?.transcription || "";
@@ -156,7 +149,7 @@ export function CloseProjectDialog({
           const t = await readAsText(f);
           attachment_text += `\n\n--- ${f.name} ---\n${t.slice(0, 8000)}`;
         } else if (isTranscribable(f) && f.size <= MAX_INLINE) {
-          const t = await transcribeByStoragePath(path, f);
+          const t = await transcribeBase64(f);
           if (t) {
             attachment_text += `\n\n--- ${f.name} (transcrição IA) ---\n${t.slice(0, 12000)}`;
           }
@@ -180,7 +173,12 @@ export function CloseProjectDialog({
         },
       );
 
-      if (error) throw error;
+      if (error) {
+        console.error("close-project-retrospective error", error, data);
+        throw new Error(
+          (data as any)?.error || error.message || "Falha ao gerar retrospectiva",
+        );
+      }
       setReport(data.report);
       toast.success("Retrospectiva IA gerada · projeto encerrado");
       onClosed?.();
