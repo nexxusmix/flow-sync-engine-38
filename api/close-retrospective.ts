@@ -238,9 +238,15 @@ async function handlerInner(req: Request): Promise<Response> {
         auth,
       ),
     ]);
-    const projects = pRes.ok ? await pRes.json() : [];
-    const project = projects?.[0];
-    if (!project) throw new Error("Projeto não encontrado ou sem acesso");
+    const pBody = await pRes.text();
+    let projects: any[] = [];
+    try { projects = JSON.parse(pBody); } catch {}
+    const project = Array.isArray(projects) ? projects[0] : null;
+    if (!project) {
+      throw new Error(
+        `Projeto não encontrado ou sem acesso (status=${pRes.status}, authLen=${auth.length}, anonLen=${SUPABASE_ANON.length}, body=${pBody.slice(0, 200)})`,
+      );
+    }
     const tasks = tRes.ok ? await tRes.json() : [];
     const revenues = rRes.ok ? await rRes.json() : [];
     const stages = sRes.ok ? await sRes.json() : [];
