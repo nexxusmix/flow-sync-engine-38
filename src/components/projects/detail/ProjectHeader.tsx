@@ -579,6 +579,13 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
         onOpenChange={setSendToClientOpen}
         project={project}
       />
+
+      <CloseProjectDialog
+        open={closeDialogOpen}
+        onClose={() => setCloseDialogOpen(false)}
+        projectId={project.id}
+        projectName={project.name}
+      />
     </>
   );
 }
