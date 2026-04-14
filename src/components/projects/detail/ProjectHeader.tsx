@@ -24,7 +24,9 @@ import {
   Check,
   X,
   Wrench,
+  CheckCircle2,
 } from "lucide-react";
+import { CloseProjectDialog } from "@/components/projects/CloseProjectDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -57,6 +59,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const [sendToClientOpen, setSendToClientOpen] = useState(false);
   const [isSyncingFinance, setIsSyncingFinance] = useState(false);
   const [isAutoUpdating, setIsAutoUpdating] = useState(false);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [isEditingValue, setIsEditingValue] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [isSavingValue, setIsSavingValue] = useState(false);
@@ -324,6 +327,17 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 <Upload className="w-4 h-4" />
                 Material
               </Button>
+              {project.status !== 'completed' && project.status !== 'archived' && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCloseDialogOpen(true)}
+                  className="h-9 gap-2 border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Encerrar</span>
+                </Button>
+              )}
 
               {/* Tier 3 — Ferramentas consolidated dropdown */}
               <DropdownMenu>
