@@ -144,9 +144,13 @@ export function CloseProjectDialog({
       const attachment_urls = uploaded.map((u) => u.path);
       setUploading(false);
 
-      // Extract text from attachments: plain text inline, audio/video/pdf via transcribe-media (via storage)
+      // Extract text from attachments. Files <4MB are transcribed inline via edge function;
+      // larger files are passed as storage paths only (backend pode processar depois).
+      const MAX_INLINE = 4 * 1024 * 1024;
       let attachment_text = "";
-      const hasTranscribable = uploaded.some(({ file }) => isTranscribable(file));
+      const hasTranscribable = uploaded.some(
+        ({ file }) => isTranscribable(file) && file.size <= MAX_INLINE,
+      );
       if (hasTranscribable) setTranscribing(true);
       for (const { path, file: f } of uploaded) {
         if (
@@ -155,11 +159,13 @@ export function CloseProjectDialog({
         ) {
           const t = await readAsText(f);
           attachment_text += `\n\n--- ${f.name} ---\n${t.slice(0, 8000)}`;
-        } else if (isTranscribable(f)) {
+        } else if (isTranscribable(f) && f.size <= MAX_INLINE) {
           const t = await transcribeByStoragePath(path, f);
           if (t) {
             attachment_text += `\n\n--- ${f.name} (transcrição IA) ---\n${t.slice(0, 12000)}`;
           }
+        } else if (isTranscribable(f)) {
+          attachment_text += `\n\n--- ${f.name} (anexo grande, ${(f.size / 1024 / 1024).toFixed(1)}MB — não transcrito inline) ---`;
         }
       }
       setTranscribing(false);
