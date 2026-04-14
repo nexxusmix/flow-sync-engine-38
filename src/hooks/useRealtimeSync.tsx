@@ -27,7 +27,11 @@ type TableName =
   | 'content_items'
   | 'content_ideas'
   | 'tasks'
-  | 'panorama_snapshots';
+  | 'panorama_snapshots'
+  | 'project_health_snapshots'
+  | 'project_retrospectives'
+  | 'project_updates'
+  | 'project_milestones';
 
 interface QueryKeyMapping {
   table: TableName;
@@ -180,6 +184,36 @@ const TABLE_QUERY_MAPPINGS: QueryKeyMapping[] = [
       ['tasks'],
       ['dashboard-metrics'],
     ],
+  },
+  {
+    table: 'project_health_snapshots',
+    queryKeys: [
+      ['project-health-snapshots'],
+      ['dashboard-metrics'],
+    ],
+    getProjectId: (payload) => payload.new?.project_id || payload.old?.project_id,
+  },
+  {
+    table: 'project_retrospectives',
+    queryKeys: [
+      ['project-retrospectives'],
+      ['projects'],
+    ],
+    getProjectId: (payload) => payload.new?.project_id || payload.old?.project_id,
+  },
+  {
+    table: 'project_updates',
+    queryKeys: [
+      ['project-updates'],
+    ],
+    getProjectId: (payload) => payload.new?.project_id || payload.old?.project_id,
+  },
+  {
+    table: 'project_milestones',
+    queryKeys: [
+      ['project-milestones'],
+    ],
+    getProjectId: (payload) => payload.new?.project_id || payload.old?.project_id,
   },
 ];
 
