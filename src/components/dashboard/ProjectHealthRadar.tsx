@@ -99,15 +99,15 @@ export function ProjectHealthRadar() {
     }
 
     const ids = projects.map((p) => p.id);
-    const { data: snaps } = await supabase
+    const { data: snaps } = await (supabase as any)
       .from("project_health_snapshots")
       .select("*")
       .in("project_id", ids)
       .order("created_at", { ascending: false });
 
     const latest: Record<string, HealthSnapshot> = {};
-    for (const s of snaps || []) {
-      if (!latest[s.project_id]) latest[s.project_id] = s as any;
+    for (const s of (snaps || []) as HealthSnapshot[]) {
+      if (!latest[s.project_id]) latest[s.project_id] = s;
     }
 
     setRows(
