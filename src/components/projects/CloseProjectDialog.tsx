@@ -133,10 +133,6 @@ export function CloseProjectDialog({
   };
 
   const handleSubmit = async () => {
-    if (!reason.trim() && category !== "delivered") {
-      toast.error("Descreva o motivo do encerramento");
-      return;
-    }
     setProcessing(true);
     try {
       setUploading(true);
@@ -245,7 +241,7 @@ export function CloseProjectDialog({
             </div>
 
             <div>
-              <Label>Descrição detalhada (opcional mas recomendado)</Label>
+              <Label>Descrição detalhada (opcional · IA processa anexos)</Label>
               <Textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
