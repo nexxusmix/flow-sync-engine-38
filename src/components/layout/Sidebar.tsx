@@ -20,41 +20,69 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
+// Menu reorganizado em grupos semânticos para reduzir fadiga cognitiva.
+// Rotas /executivo, /billing, /avisos e /squad-brain continuam funcionando;
+// foram agrupadas ou escondidas do menu porque eram redundantes com outras telas.
 const mainMenuItems: MenuItem[] = [
   { name: "Overview", href: "/", icon: "space_dashboard" },
-  { name: "Brain Obsidian", href: "/squad-brain", icon: "neurology" },
   { name: "Command Center", href: "/command-center", icon: "terminal" },
-  { name: "Executivo", href: "/executivo", icon: "monitoring" },
-  { name: "Projetos", href: "/projetos", icon: "movie_filter", badge: 8 },
-  { name: "Tarefas", href: "/tarefas", icon: "checklist" },
+  {
+    name: "Operação",
+    href: "/projetos",
+    icon: "movie_filter",
+    children: [
+      { name: "Projetos", href: "/projetos", icon: "movie_filter", badge: 8 },
+      { name: "Tarefas", href: "/tarefas", icon: "checklist" },
+      { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
+      { name: "Calendário", href: "/calendario", icon: "event" },
+      { name: "Inbox", href: "/inbox-operacional", icon: "inbox" },
+    ],
+  },
+  {
+    name: "Vendas & Clientes",
+    href: "/crm",
+    icon: "handshake",
+    children: [
+      { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
+      { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
+      { name: "Clientes", href: "/clientes", icon: "groups" },
+      { name: "Onboarding", href: "/onboarding-clientes", icon: "rocket_launch" },
+    ],
+  },
   {
     name: "Studio & Marketing",
     href: "/marketing",
     icon: "brush",
     children: [
       { name: "Marketing", href: "/marketing", icon: "campaign", badge: 12 },
+      { name: "Studio Criativo", href: "/marketing/studio", icon: "palette" },
       { name: "Gerar Posts", href: "/marketing/studio?tab=templates", icon: "edit_square" },
       { name: "Transcrição", href: "/marketing/transcricao", icon: "subtitles" },
-      { name: "Studio Criativo", href: "/marketing/studio", icon: "palette" },
+      { name: "Instagram Engine", href: "/instagram-engine", icon: "photo_camera", customIcon: instagramIcon },
     ],
   },
-  { name: "Instagram Engine", href: "/instagram-engine", icon: "photo_camera", customIcon: instagramIcon },
-  { name: "Central de Ações", href: "/central-acoes", icon: "electric_bolt" },
-  { name: "Automações", href: "/automacoes-agencia", icon: "manufacturing" },
-  { name: "Playbooks", href: "/playbooks", icon: "menu_book" },
-  { name: "Onboarding", href: "/onboarding-clientes", icon: "rocket_launch" },
-  { name: "Inbox Operacional", href: "/inbox-operacional", icon: "inbox" },
-  { name: "IA & Governança", href: "/ia-governanca", icon: "psychology" },
-  { name: "CRM", href: "/crm", icon: "handshake", badge: 3 },
-  { name: "Clientes", href: "/clientes", icon: "groups" },
-  { name: "Prospecção", href: "/prospeccao", icon: "person_search", badge: 5 },
-  { name: "Calendário", href: "/calendario", icon: "event" },
-  { name: "Financeiro", href: "/financeiro", icon: "payments" },
-  { name: "Propostas", href: "/propostas", icon: "request_quote" },
-  { name: "Contratos", href: "/contratos", icon: "gavel" },
-  { name: "Relatórios", href: "/relatorios", icon: "bar_chart" },
-  { name: "Billing", href: "/billing", icon: "credit_card" },
-  { name: "Avisos", href: "/avisos", icon: "notifications_active" },
+  {
+    name: "Financeiro",
+    href: "/financeiro",
+    icon: "payments",
+    children: [
+      { name: "Visão Geral", href: "/financeiro", icon: "payments" },
+      { name: "Propostas", href: "/propostas", icon: "request_quote" },
+      { name: "Contratos", href: "/contratos", icon: "gavel" },
+      { name: "Relatórios", href: "/relatorios", icon: "bar_chart" },
+    ],
+  },
+  {
+    name: "IA & Automação",
+    href: "/ia-governanca",
+    icon: "psychology",
+    children: [
+      { name: "IA & Governança", href: "/ia-governanca", icon: "psychology" },
+      { name: "Automações", href: "/automacoes-agencia", icon: "manufacturing" },
+      { name: "Playbooks", href: "/playbooks", icon: "menu_book" },
+      { name: "Brain Obsidian", href: "/squad-brain", icon: "neurology" },
+    ],
+  },
 ];
 
 const settingsItems = [
