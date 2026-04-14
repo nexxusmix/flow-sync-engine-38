@@ -28,6 +28,7 @@ import { MoreVertical, Pencil, CheckCircle2, Archive, Trash2, ExternalLink, Refr
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { CloseProjectDialog } from "./CloseProjectDialog";
 
 interface ProjectActionsMenuProps {
   project?: ProjectWithStages;
@@ -274,23 +275,17 @@ export function ProjectActionsMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Complete Dialog */}
-      <AlertDialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Finalizar projeto?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O projeto <strong>{projectName}</strong> será marcado como concluído.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmComplete} className="bg-emerald-600 hover:bg-emerald-700">
-              Finalizar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Close Project + AI Retrospective Dialog */}
+      <CloseProjectDialog
+        open={showCompleteDialog}
+        onClose={() => setShowCompleteDialog(false)}
+        projectId={projectId}
+        projectName={projectName}
+        onClosed={() => {
+          queryClient.invalidateQueries({ queryKey: ["projects"] });
+          queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+        }}
+      />
 
       {/* Archive Dialog */}
       <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
