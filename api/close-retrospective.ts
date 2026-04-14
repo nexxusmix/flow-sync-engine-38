@@ -338,4 +338,4 @@ Gere a retrospectiva completa em JSON seguindo o schema.`;
   }
 }
 
-export const config = { runtime: "edge" };
+export const config = { maxDuration: 300 };
