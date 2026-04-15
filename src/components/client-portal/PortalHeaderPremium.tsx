@@ -1,19 +1,23 @@
 /**
- * PortalHeaderPremium - Header do portal premium com animações impactantes
+ * PortalHeaderPremium - Header do portal premium com animacoes impactantes
  * Text reveal, magnetic buttons, parallax effects
+ *
+ * v2: Topbar com logo Squad Hub + avatar/nome do cliente fixos no topo.
  */
 
 import { memo, useState, useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { toast } from "sonner";
-import { 
+import {
   Link as LinkIcon,
   Loader2,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getInitials } from "@/lib/file-utils";
 import { TextReveal, Magnetic, Shimmer, PulseRing } from "./animations";
+import squadHubLogo from "@/assets/squad-hub-logo.png";
 import type { ProjectInfo } from "@/hooks/useClientPortalEnhanced";
 
 interface PortalHeaderPremiumProps {
@@ -27,13 +31,13 @@ interface PortalHeaderPremiumProps {
 const STAGE_NAMES: Record<string, string> = {
   briefing: 'Briefing',
   roteiro: 'Roteiro',
-  pre_producao: 'Pré-Produção',
-  captacao: 'Captação',
-  edicao: 'Edição',
-  revisao: 'Revisão',
-  aprovacao: 'Aprovação',
+  pre_producao: 'Pre-Producao',
+  captacao: 'Captacao',
+  edicao: 'Edicao',
+  revisao: 'Revisao',
+  aprovacao: 'Aprovacao',
   entrega: 'Entrega',
-  pos_venda: 'Pós-Venda',
+  pos_venda: 'Pos-Venda',
 };
 
 // Animation variants
@@ -50,11 +54,11 @@ const containerVariants = {
 
 const badgeVariants = {
   hidden: { opacity: 0, scale: 0.8, y: -10 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
     y: 0,
-    transition: { 
+    transition: {
       type: "spring" as const,
       stiffness: 300,
       damping: 20,
@@ -64,7 +68,7 @@ const badgeVariants = {
 
 const lineVariants = {
   hidden: { scaleX: 0 },
-  visible: { 
+  visible: {
     scaleX: 1,
     transition: { duration: 0.8, ease: "easeOut" as const },
   },
@@ -78,7 +82,7 @@ function PortalHeaderPremiumComponent({
 }: PortalHeaderPremiumProps) {
   const [copied, setCopied] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
-  
+
   // Parallax scroll effect
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 300], [0, -50]);
@@ -95,29 +99,80 @@ function PortalHeaderPremiumComponent({
   };
 
   const templateLabel = project.template?.replace(/_/g, ' ') || 'custom';
-  const stageName = project.stage_current 
-    ? STAGE_NAMES[project.stage_current] || project.stage_current 
-    : 'Pré-produção';
+  const stageName = project.stage_current
+    ? STAGE_NAMES[project.stage_current] || project.stage_current
+    : 'Pre-producao';
+
+  const clientName = project.client_name || 'Cliente';
+  const clientInitials = getInitials(clientName);
 
   return (
-    <motion.div 
+    <motion.div
       ref={headerRef}
-      className="space-y-0 relative py-8 md:py-12"
+      className="space-y-0 relative py-6 md:py-10"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-60px" }}
       variants={containerVariants}
       style={{ y: springY, opacity, scale }}
     >
+      {/* ====================== TOPBAR: Logo SquadHub + Client Avatar ====================== */}
+      <motion.div
+        className="flex items-center justify-between gap-4 pb-6 mb-6 border-b border-border/40"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Left: Squad Hub brand */}
+        <div className="flex items-center gap-3">
+          <img
+            src={squadHubLogo}
+            alt="SQUAD Hub"
+            className="h-7 md:h-8 w-auto object-contain"
+          />
+          <span className="hidden sm:inline-block text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-l border-border pl-3">
+            Portal do Cliente
+          </span>
+        </div>
+
+        {/* Right: Client avatar + name */}
+        <motion.div
+          className="flex items-center gap-3 min-w-0"
+          whileHover={{ scale: 1.02 }}
+        >
+          <div className="flex flex-col items-end min-w-0 text-right">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground leading-none">
+              Cliente
+            </span>
+            <span className="text-sm md:text-base font-medium text-foreground uppercase tracking-wide truncate max-w-[60vw] md:max-w-none">
+              {clientName}
+            </span>
+          </div>
+          {project.logo_url ? (
+            <img
+              src={project.logo_url}
+              alt={clientName}
+              className="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border border-primary/30 flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0">
+              <span className="text-xs md:text-sm font-semibold text-primary tracking-wider">
+                {clientInitials}
+              </span>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+
       {/* Decorative Line */}
-      <motion.div 
+      <motion.div
         className="absolute top-0 left-0 h-px bg-gradient-to-r from-primary via-primary/50 to-transparent"
         style={{ width: '40%' }}
         variants={lineVariants}
       />
 
       {/* Badges Row */}
-      <motion.div 
+      <motion.div
         className="flex flex-wrap items-center gap-2 mb-6"
         variants={containerVariants}
       >
@@ -132,18 +187,18 @@ function PortalHeaderPremiumComponent({
             </Shimmer>
           </PulseRing>
         </motion.div>
-        
+
         {/* Template Badge */}
-        <motion.span 
+        <motion.span
           variants={badgeVariants}
           whileHover={{ scale: 1.05, borderColor: 'rgba(255,255,255,0.3)' }}
           className="text-[10px] px-3 py-1 uppercase tracking-[0.15em] text-muted-foreground border border-border transition-colors cursor-default"
         >
           {templateLabel}
         </motion.span>
-        
+
         {/* Stage Badge */}
-        <motion.span 
+        <motion.span
           variants={badgeVariants}
           whileHover={{ scale: 1.05, borderColor: 'rgba(255,255,255,0.3)' }}
           className="text-[10px] px-3 py-1 uppercase tracking-[0.15em] text-muted-foreground border border-border transition-colors cursor-default"
@@ -153,7 +208,7 @@ function PortalHeaderPremiumComponent({
       </motion.div>
 
       {/* Title Section */}
-      <motion.div 
+      <motion.div
         className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -162,47 +217,47 @@ function PortalHeaderPremiumComponent({
         <div className="space-y-3">
           {/* Project Name with Text Reveal */}
           <div className="overflow-hidden pb-2">
-            <TextReveal 
+            <TextReveal
               text={project.name}
               className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-foreground uppercase leading-tight"
               delay={0.4}
             />
           </div>
-          
+
           {/* Client Info with Fade */}
-          <motion.p 
+          <motion.p
             className="text-muted-foreground text-sm flex items-center gap-2 flex-wrap"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.4 }}
           >
-            Cliente: 
-            <motion.span 
+            Cliente:
+            <motion.span
               className="text-foreground uppercase font-medium"
               whileHover={{ color: 'hsl(var(--primary))' }}
             >
-              {project.client_name || 'Cliente'}
+              {clientName}
             </motion.span>
-            <span className="text-muted-foreground/50">•</span>
+            <span className="text-muted-foreground/50">|</span>
             <span className="text-muted-foreground/70">ID: #{project.template?.toUpperCase() || 'PROJETO'}</span>
           </motion.p>
         </div>
 
         {/* Actions with Magnetic Effect */}
-        <motion.div 
+        <motion.div
           className="flex items-center gap-3 flex-shrink-0"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5, duration: 0.4 }}
         >
           <Magnetic strength={0.2}>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="text-muted-foreground hover:text-foreground h-10 gap-2 border border-border hover:border-primary/50 rounded-none transition-all duration-300 hover:bg-primary/5 group"
             >
-              <motion.span 
-                className="material-symbols-outlined" 
+              <motion.span
+                className="material-symbols-outlined"
                 style={{ fontSize: 16 }}
                 whileHover={{ rotate: 15 }}
               >
@@ -211,11 +266,11 @@ function PortalHeaderPremiumComponent({
               <span className="hidden sm:inline group-hover:text-primary transition-colors">Suporte</span>
             </Button>
           </Magnetic>
-          
+
           <Magnetic strength={0.2}>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleCopyLink}
               className={cn(
                 "text-muted-foreground hover:text-foreground h-10 w-10 border border-border hover:border-primary/50 rounded-none transition-all duration-300",
@@ -230,11 +285,11 @@ function PortalHeaderPremiumComponent({
               </motion.div>
             </Button>
           </Magnetic>
-          
+
           <Magnetic strength={0.2}>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onExportPdf}
               disabled={isExporting}
               className="text-muted-foreground hover:text-foreground h-10 w-10 border border-border hover:border-primary/50 rounded-none transition-all duration-300 hover:bg-primary/5"
@@ -242,8 +297,8 @@ function PortalHeaderPremiumComponent({
               {isExporting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <motion.span 
-                  className="material-symbols-outlined" 
+                <motion.span
+                  className="material-symbols-outlined"
                   style={{ fontSize: 16 }}
                   whileHover={{ y: -2 }}
                 >
@@ -254,9 +309,9 @@ function PortalHeaderPremiumComponent({
           </Magnetic>
         </motion.div>
       </motion.div>
-      
+
       {/* Decorative Bottom Line */}
-      <motion.div 
+      <motion.div
         className="h-px bg-gradient-to-r from-transparent via-border to-transparent"
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
