@@ -1,6 +1,9 @@
 /**
- * PortalMaterialCard - Card de material com versão, tags e changelog inline
- * Inclui botão de "Solicitar Ajuste" para acesso rápido ao drawer de revisão
+ * PortalMaterialCard - Card de material com versao, tags e changelog inline
+ * Inclui botao de "Solicitar Ajuste" para acesso rapido ao drawer de revisao
+ *
+ * v2: titulo com cadeia de fallback + thumbnail universal (imagem renderiza
+ * preview real, outros tipos mostram icone com cor por categoria).
  */
 
 import { memo, useState } from "react";
@@ -12,6 +15,12 @@ import {
   FileVideo,
   FileText,
   Image as ImageIcon,
+  Music,
+  FileSpreadsheet,
+  Presentation,
+  Archive,
+  Palette,
+  File as FileIcon,
   Youtube,
   Link as LinkIcon,
   CheckCircle2,
@@ -27,6 +36,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getYouTubeThumbnail } from "@/lib/youtube-utils";
+import {
+  getDisplayName,
+  getFileKind,
+  getFilePreviewUrl,
+  KIND_LABEL,
+  KIND_ACCENT,
+  type FileKind,
+} from "@/lib/file-utils";
 import type { PortalDeliverable, PortalComment, PortalApproval, PortalVersion } from "@/hooks/useClientPortalEnhanced";
 import { getTagConfig, type ChangelogItem } from "./types";
 
@@ -41,6 +58,19 @@ interface PortalMaterialCardProps {
   onRequestRevision?: (material: PortalDeliverable) => void;
 }
 
+const KIND_ICON: Record<FileKind, JSX.Element> = {
+  image: <ImageIcon className="w-6 h-6" />,
+  video: <FileVideo className="w-6 h-6" />,
+  audio: <Music className="w-6 h-6" />,
+  pdf: <FileText className="w-6 h-6" />,
+  document: <FileText className="w-6 h-6" />,
+  spreadsheet: <FileSpreadsheet className="w-6 h-6" />,
+  presentation: <Presentation className="w-6 h-6" />,
+  archive: <Archive className="w-6 h-6" />,
+  design: <Palette className="w-6 h-6" />,
+  other: <FileIcon className="w-6 h-6" />,
+};
+
 function PortalMaterialCardComponent({
   material,
   versions,
@@ -52,6 +82,7 @@ function PortalMaterialCardComponent({
   onRequestRevision,
 }: PortalMaterialCardProps) {
   const [showVersions, setShowVersions] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Get the latest version data (if available)
   const latestVersion = versions
@@ -68,19 +99,34 @@ function PortalMaterialCardComponent({
     .filter(v => v.deliverable_id === material.id && v.version_number < material.current_version)
     .sort((a, b) => b.version_number - a.version_number);
 
-  // Determine material type for icon
-  const getTypeIcon = () => {
-    if (material.youtube_url) return <Youtube className="w-5 h-5" />;
-    if (material.external_url) return <LinkIcon className="w-5 h-5" />;
-    if (material.type?.includes('video')) return <FileVideo className="w-5 h-5" />;
-    if (material.type?.includes('image')) return <ImageIcon className="w-5 h-5" />;
-    return <FileText className="w-5 h-5" />;
-  };
+  // ========== Nome de exibicao com fallback ==========
+  const displayName = getDisplayName({
+    title: material.title,
+    client_upload_name: material.client_upload_name,
+    file_url: material.file_url,
+    fallback: 'Material sem titulo',
+  });
 
-  const thumbnail = material.thumbnail_url ||
-    (material.youtube_url ? getYouTubeThumbnail(material.youtube_url) : null);
+  // ========== Tipo do arquivo ==========
+  const kind: FileKind = material.youtube_url
+    ? 'video'
+    : getFileKind(material.type, material.file_url, displayName);
 
-  const isVideo = material.youtube_url || material.type?.includes('video');
+  // ========== Thumbnail universal ==========
+  // Prioridade:
+  //  1. thumbnail_url explicito
+  //  2. thumbnail YouTube
+  //  3. preview auto (imagem = ela mesma)
+  const thumbnail = material.thumbnail_url
+    || (material.youtube_url ? getYouTubeThumbnail(material.youtube_url) : null)
+    || getFilePreviewUrl({
+      file_url: material.file_url,
+      file_type: material.type,
+      name: displayName,
+    });
+
+  const isVideo = kind === 'video';
+  const canPreview = !!thumbnail && !imageError;
 
   const handleRequestRevision = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -101,21 +147,36 @@ function PortalMaterialCardComponent({
       onClick={onSelect}
     >
       {/* Thumbnail/Preview */}
-      <div className="relative aspect-video bg-[#111] flex items-center justify-center">
-        {thumbnail ? (
+      <div className="relative aspect-video bg-[#111] flex items-center justify-center overflow-hidden">
+        {canPreview ? (
           <img
-            src={thumbnail}
-            alt={material.title}
+            src={thumbnail!}
+            alt={displayName}
+            loading="lazy"
+            onError={() => setImageError(true)}
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-14 h-14 rounded-xl bg-[#1a1a1a] flex items-center justify-center text-gray-600">
-            {getTypeIcon()}
+          <div className="flex flex-col items-center gap-2">
+            <div className={cn(
+              "w-14 h-14 rounded-xl flex items-center justify-center border",
+              KIND_ACCENT[kind]
+            )}>
+              {material.youtube_url ? <Youtube className="w-6 h-6" /> :
+               material.external_url ? <LinkIcon className="w-6 h-6" /> :
+               KIND_ICON[kind]}
+            </div>
+            <span className={cn(
+              "text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 rounded border",
+              KIND_ACCENT[kind]
+            )}>
+              {KIND_LABEL[kind]}
+            </span>
           </div>
         )}
 
         {/* Play overlay for videos */}
-        {isVideo && thumbnail && (
+        {isVideo && canPreview && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
             <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
               <Play className="w-5 h-5 text-gray-900 ml-1" />
@@ -156,7 +217,7 @@ function PortalMaterialCardComponent({
                 e.stopPropagation();
                 const a = document.createElement("a");
                 a.href = material.file_url!;
-                a.setAttribute("download", material.title || "download");
+                a.setAttribute("download", displayName);
                 a.setAttribute("target", "_blank");
                 document.body.appendChild(a);
                 a.click();
@@ -185,8 +246,8 @@ function PortalMaterialCardComponent({
       <div className="p-4 space-y-3">
         {/* Title and Date */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-medium text-white text-sm leading-tight flex-1">
-            {material.title}
+          <h3 className="font-medium text-white text-sm leading-tight flex-1" title={displayName}>
+            {displayName}
           </h3>
           <span className="text-mono text-gray-600 whitespace-nowrap">
             {format(new Date(material.updated_at || material.created_at), "dd/MM/yy", { locale: ptBR })}
@@ -220,13 +281,13 @@ function PortalMaterialCardComponent({
             <ul className="space-y-0.5">
               {changelogItems.slice(0, 3).map((item, idx) => (
                 <li key={idx} className="text-xs text-gray-400 flex items-start gap-1.5">
-                  <span className="text-cyan-500 mt-0.5">•</span>
+                  <span className="text-cyan-500 mt-0.5">-</span>
                   <span>{item.description}</span>
                 </li>
               ))}
               {changelogItems.length > 3 && (
                 <li className="text-mono text-gray-600">
-                  +{changelogItems.length - 3} alterações
+                  +{changelogItems.length - 3} alteracoes
                 </li>
               )}
             </ul>
@@ -276,7 +337,7 @@ function PortalMaterialCardComponent({
               }}
             >
               {showVersions ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
-              V{previousVersions.map(v => String(v.version_number).padStart(2, '0')).join(' • V')}
+              V{previousVersions.map(v => String(v.version_number).padStart(2, '0')).join(' | V')}
             </Button>
           )}
         </div>
@@ -302,7 +363,7 @@ function PortalMaterialCardComponent({
                   <Badge variant="outline" className="text-mono font-mono">
                     V{String(version.version_number).padStart(2, '0')}
                   </Badge>
-                  <span className="text-xs text-gray-400">{version.title || 'Versão anterior'}</span>
+                  <span className="text-xs text-gray-400">{version.title || 'Versao anterior'}</span>
                 </div>
                 <span className="text-mono text-gray-600">
                   {format(new Date(version.created_at), "dd/MM", { locale: ptBR })}
