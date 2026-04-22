@@ -5,10 +5,11 @@
 
 import { memo, useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileVideo, Plus, Upload, Download, CheckSquare, X } from "lucide-react";
+import { FileVideo, Plus, Upload, Download, CheckSquare, X, Search, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PortalMaterialCard } from "./PortalMaterialCard";
 import { AddVersionDialog } from "./AddVersionDialog";
@@ -100,6 +101,9 @@ function PortalMaterialsTabComponent({
   // Category filter
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
+  // Search query
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Lightbox state
   const [lightboxMaterialId, setLightboxMaterialId] = useState<string | null>(null);
   
@@ -152,16 +156,76 @@ function PortalMaterialsTabComponent({
   };
 
   const allMaterials = deliverables.filter(d => d.visible_in_portal);
-  
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    allMaterials.forEach(m => { if (m.material_category) cats.add(m.material_category); });
-    return Array.from(cats).sort();
-  }, [allMaterials]);
 
-  const materials = categoryFilter 
-    ? allMaterials.filter(m => m.material_category === categoryFilter)
-    : allMaterials;
+  // Infer a category label from material_category OR from the title prefix (before " · ").
+  // Falls back to "Outros" when we cannot infer one.
+  const inferCategory = useCallback((m: PortalDeliverable): string => {
+    if (m.material_category && m.material_category.trim()) {
+      return m.material_category.trim();
+    }
+    const title = (m.title || m.client_upload_name || "").trim();
+    if (title.includes(" · ")) {
+      return title.split(" · ")[0].trim() || "Outros";
+    }
+    if (title.includes(" - ")) {
+      return title.split(" - ")[0].trim() || "Outros";
+    }
+    return "Outros";
+  }, []);
+
+  const materialsWithCategory = useMemo(
+    () => allMaterials.map(m => ({ material: m, category: inferCategory(m) })),
+    [allMaterials, inferCategory]
+  );
+
+  // Sorted list of categories with counts, biggest first
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    materialsWithCategory.forEach(({ category }) => {
+      counts.set(category, (counts.get(category) ?? 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => {
+        // "Outros" always last
+        if (a.name === "Outros") return 1;
+        if (b.name === "Outros") return -1;
+        return b.count - a.count || a.name.localeCompare(b.name, "pt-BR");
+      });
+  }, [materialsWithCategory]);
+
+  // Apply category filter + search query to produce the visible flat list
+  const materials = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return materialsWithCategory
+      .filter(({ material, category }) => {
+        if (categoryFilter && category !== categoryFilter) return false;
+        if (q) {
+          const hay = `${material.title ?? ""} ${material.client_upload_name ?? ""} ${material.description ?? ""}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      })
+      .map(({ material }) => material);
+  }, [materialsWithCategory, categoryFilter, searchQuery]);
+
+  // Group filtered materials by category for sectioned view
+  const groupedByCategory = useMemo(() => {
+    const groups = new Map<string, PortalDeliverable[]>();
+    materialsWithCategory.forEach(({ material, category }) => {
+      if (!materials.includes(material)) return;
+      const arr = groups.get(category) ?? [];
+      arr.push(material);
+      groups.set(category, arr);
+    });
+    // Keep the same sort order as `categories`
+    return categories
+      .map(({ name, count }) => ({ name, count, items: groups.get(name) ?? [] }))
+      .filter(g => g.items.length > 0);
+  }, [materialsWithCategory, materials, categories]);
+
+  // Sectioned view only when no explicit filter + no search and more than one category
+  const showGroupedView = !categoryFilter && !searchQuery && categories.length > 1;
 
   const handleAddNewVersion = (material: PortalDeliverable) => {
     setAddVersionForMaterial(material);
@@ -251,6 +315,59 @@ function PortalMaterialsTabComponent({
     m => selectedIds.has(m.id) && m.file_url
   ).length;
 
+  const renderCard = (material: PortalDeliverable) => (
+    <div key={material.id} className="relative">
+      {selectionMode && (
+        <div
+          className="absolute top-3 left-3 z-10"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Checkbox
+            checked={selectedIds.has(material.id)}
+            onCheckedChange={() => toggleSelectItem(material.id)}
+            className="bg-background/80 backdrop-blur-sm border-border"
+          />
+        </div>
+      )}
+      <div
+        className={cn(
+          selectionMode && selectedIds.has(material.id) && "ring-2 ring-primary rounded-lg"
+        )}
+        onClick={() => {
+          if (selectionMode) {
+            toggleSelectItem(material.id);
+          } else {
+            setLightboxMaterialId(material.id);
+            onSelectMaterial(material.id);
+          }
+        }}
+      >
+        <PortalMaterialCard
+          material={material}
+          versions={versions.filter(v => v.deliverable_id === material.id)}
+          comments={comments.filter(c => c.deliverable_id === material.id)}
+          approval={approvals.find(a => a.deliverable_id === material.id)}
+          isSelected={selectedMaterialId === material.id}
+          onSelect={() => {}}
+          onViewVersion={(version) => console.log('View version:', version)}
+          onRequestRevision={handleQuickRevisionFromCard}
+        />
+      </div>
+
+      {isManager && selectedMaterialId === material.id && !selectionMode && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-3 border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary/30"
+          onClick={() => handleAddNewVersion(material)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Enviar Nova Versão
+        </Button>
+      )}
+    </div>
+  );
+
   if (allMaterials.length === 0) {
     return (
       <motion.div
@@ -272,11 +389,29 @@ function PortalMaterialsTabComponent({
   return (
     <div className="space-y-6">
       {/* Header with actions */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         {isManager && portalLinkId && (
           <h2 className="text-lg font-medium text-foreground">Materiais do Projeto</h2>
         )}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="relative flex-1 max-w-md ml-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar material..."
+            className="pl-9 h-9 bg-background/40 border-border text-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
           {/* Selection mode toggle */}
           <Button
             variant={selectionMode ? "default" : "outline"}
@@ -314,21 +449,30 @@ function PortalMaterialsTabComponent({
         <div className="flex items-center gap-2 flex-wrap">
           <Badge
             variant={categoryFilter === null ? "default" : "outline"}
-            className="cursor-pointer text-xs"
+            className="cursor-pointer text-xs px-2.5 py-1"
             onClick={() => setCategoryFilter(null)}
           >
             Todos ({allMaterials.length})
           </Badge>
-          {categories.map(cat => (
+          {categories.map(({ name, count }) => (
             <Badge
-              key={cat}
-              variant={categoryFilter === cat ? "default" : "outline"}
-              className="cursor-pointer text-xs capitalize"
-              onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)}
+              key={name}
+              variant={categoryFilter === name ? "default" : "outline"}
+              className="cursor-pointer text-xs px-2.5 py-1 capitalize"
+              onClick={() => setCategoryFilter(categoryFilter === name ? null : name)}
             >
-              {cat} ({allMaterials.filter(m => m.material_category === cat).length})
+              {name} ({count})
             </Badge>
           ))}
+        </div>
+      )}
+
+      {/* Search result summary */}
+      {(searchQuery || categoryFilter) && (
+        <div className="text-xs text-muted-foreground">
+          {materials.length} {materials.length === 1 ? "material encontrado" : "materiais encontrados"}
+          {categoryFilter && <> em <span className="text-foreground capitalize">{categoryFilter}</span></>}
+          {searchQuery && <> para "<span className="text-foreground">{searchQuery}</span>"</>}
         </div>
       )}
 
@@ -346,62 +490,51 @@ function PortalMaterialsTabComponent({
         </div>
       )}
 
-      {/* Materials Grid */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {materials.map((material) => (
-          <div key={material.id} className="relative">
-            {/* Selection checkbox */}
-            {selectionMode && (
-              <div
-                className="absolute top-3 left-3 z-10"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Checkbox
-                  checked={selectedIds.has(material.id)}
-                  onCheckedChange={() => toggleSelectItem(material.id)}
-                  className="bg-background/80 backdrop-blur-sm border-border"
-                />
-              </div>
-            )}
-            <div
-              className={cn(
-                selectionMode && selectedIds.has(material.id) && "ring-2 ring-primary rounded-lg"
-              )}
-              onClick={() => {
-                if (selectionMode) {
-                  toggleSelectItem(material.id);
-                } else {
-                  setLightboxMaterialId(material.id);
-                  onSelectMaterial(material.id);
-                }
-              }}
+      {/* Materials: grouped sections OR flat grid */}
+      {materials.length === 0 ? (
+        <div className="bg-card/40 border border-border rounded-lg p-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nenhum material encontrado com os filtros atuais.
+          </p>
+          {(searchQuery || categoryFilter) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3 text-xs"
+              onClick={() => { setSearchQuery(""); setCategoryFilter(null); }}
             >
-              <PortalMaterialCard
-                material={material}
-                versions={versions.filter(v => v.deliverable_id === material.id)}
-                comments={comments.filter(c => c.deliverable_id === material.id)}
-                approval={approvals.find(a => a.deliverable_id === material.id)}
-                isSelected={selectedMaterialId === material.id}
-                onSelect={() => {}}
-                onViewVersion={(version) => console.log('View version:', version)}
-                onRequestRevision={handleQuickRevisionFromCard}
-              />
-            </div>
-
-            {isManager && selectedMaterialId === material.id && !selectionMode && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-3 border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary/30"
-                onClick={() => handleAddNewVersion(material)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Enviar Nova Versão
-              </Button>
-            )}
-          </div>
-        ))}
-      </div>
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+      ) : showGroupedView ? (
+        <div className="space-y-8">
+          {groupedByCategory.map(group => (
+            <section key={group.name} className="space-y-3">
+              <header className="flex items-center gap-2 sticky top-0 z-[5] bg-background/85 backdrop-blur-sm py-2 -mx-1 px-1 border-b border-border/40">
+                <Folder className="w-4 h-4 text-primary/70" />
+                <h3 className="text-sm font-medium text-foreground capitalize">
+                  {group.name}
+                </h3>
+                <span className="text-xs text-muted-foreground">{group.count}</span>
+                <button
+                  onClick={() => setCategoryFilter(group.name)}
+                  className="ml-auto text-[11px] text-muted-foreground hover:text-foreground uppercase tracking-wider"
+                >
+                  Ver todos →
+                </button>
+              </header>
+              <div className="grid md:grid-cols-2 gap-4">
+                {group.items.map(material => renderCard(material))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4">
+          {materials.map(material => renderCard(material))}
+        </div>
+      )}
 
       {/* Floating bulk download toolbar */}
       <AnimatePresence>
