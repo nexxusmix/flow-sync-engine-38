@@ -71,6 +71,25 @@ const KIND_ICON: Record<FileKind, JSX.Element> = {
   other: <FileIcon className="w-6 h-6" />,
 };
 
+// Rich gradient backgrounds per file kind — used as thumbnail fallback
+// so cards without preview never look visually empty.
+const KIND_GRADIENT: Record<FileKind, string> = {
+  image: "bg-gradient-to-br from-emerald-900/50 via-emerald-950 to-black",
+  video: "bg-gradient-to-br from-purple-900/50 via-purple-950 to-black",
+  audio: "bg-gradient-to-br from-pink-900/50 via-pink-950 to-black",
+  pdf: "bg-gradient-to-br from-red-900/50 via-red-950 to-black",
+  document: "bg-gradient-to-br from-blue-900/50 via-blue-950 to-black",
+  spreadsheet: "bg-gradient-to-br from-green-900/50 via-green-950 to-black",
+  presentation: "bg-gradient-to-br from-orange-900/50 via-orange-950 to-black",
+  archive: "bg-gradient-to-br from-yellow-900/50 via-yellow-950 to-black",
+  design: "bg-gradient-to-br from-fuchsia-900/50 via-fuchsia-950 to-black",
+  other: "bg-gradient-to-br from-slate-800/60 via-slate-900 to-black",
+};
+
+function gradientForKind(k: FileKind): string {
+  return KIND_GRADIENT[k] ?? KIND_GRADIENT.other;
+}
+
 function PortalMaterialCardComponent({
   material,
   versions,
@@ -147,7 +166,13 @@ function PortalMaterialCardComponent({
       onClick={onSelect}
     >
       {/* Thumbnail/Preview */}
-      <div className="relative aspect-video bg-[#111] flex items-center justify-center overflow-hidden">
+      <div
+        className={cn(
+          "relative aspect-video flex items-center justify-center overflow-hidden",
+          // Rich gradient background derived from file kind — guarantees no card is ever visually empty
+          !canPreview && !(isVideo && material.file_url) && gradientForKind(kind)
+        )}
+      >
         {canPreview ? (
           <img
             src={thumbnail!}
@@ -156,29 +181,41 @@ function PortalMaterialCardComponent({
             onError={() => setImageError(true)}
             className="w-full h-full object-cover"
           />
+        ) : isVideo && material.file_url ? (
+          // Auto-thumbnail from video file itself — seek to 0.5s frame
+          <video
+            src={`${material.file_url}#t=0.5`}
+            preload="metadata"
+            muted
+            playsInline
+            disablePictureInPicture
+            onError={(e) => { (e.currentTarget as HTMLVideoElement).style.display = "none"; setImageError(true); }}
+            className="w-full h-full object-cover pointer-events-none"
+          />
         ) : (
-          <div className="flex flex-col items-center gap-2">
+          // Rich fallback: big icon, label and truncated title right on the thumbnail
+          <div className="flex flex-col items-center justify-center gap-3 px-6 text-center w-full">
             <div className={cn(
-              "w-14 h-14 rounded-xl flex items-center justify-center border",
+              "w-16 h-16 rounded-2xl flex items-center justify-center border backdrop-blur-sm bg-background/40",
               KIND_ACCENT[kind]
             )}>
-              {material.youtube_url ? <Youtube className="w-6 h-6" /> :
-               material.external_url ? <LinkIcon className="w-6 h-6" /> :
+              {material.youtube_url ? <Youtube className="w-7 h-7" /> :
+               material.external_url ? <LinkIcon className="w-7 h-7" /> :
                KIND_ICON[kind]}
             </div>
-            <span className={cn(
-              "text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 rounded border",
-              KIND_ACCENT[kind]
-            )}>
+            <span className="text-xs text-white/80 font-medium uppercase tracking-[0.18em]">
               {KIND_LABEL[kind]}
+            </span>
+            <span className="text-[11px] text-white/50 line-clamp-2 max-w-[22ch]">
+              {displayName}
             </span>
           </div>
         )}
 
-        {/* Play overlay for videos */}
-        {isVideo && canPreview && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+        {/* Play overlay for videos with any preview (image thumb or video tag) */}
+        {isVideo && (canPreview || material.file_url) && !imageError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
               <Play className="w-5 h-5 text-gray-900 ml-1" />
             </div>
           </div>
