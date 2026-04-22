@@ -9,6 +9,9 @@ interface TextRevealByCharProps {
   staggerDelay?: number;
   className?: string;
   as?: 'h1' | 'h2' | 'h3' | 'p' | 'span' | 'div';
+  highlightWords?: string[];
+  highlightClassName?: string;
+  delay?: number;
 }
 
 const effectVariants: Record<RevealEffect, Variants> = {
@@ -36,34 +39,48 @@ export function TextRevealByChar({
   staggerDelay = 0.02,
   className = '',
   as: Component = 'p',
+  highlightWords = [],
+  highlightClassName = '',
+  delay = 0,
 }: TextRevealByCharProps) {
+  void highlightWords; void highlightClassName; void delay;
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.8 });
 
   const variants = effectVariants[effect];
-  const chars = useMemo(() => text.split(''), [text]);
+  const words = useMemo(() => text.split(' '), [text]);
+
+  let charIndex = 0;
 
   return (
     <Component ref={ref as any} className={className}>
       <motion.span
         initial="hidden"
         animate={isInView ? 'visible' : 'hidden'}
-        className="inline-block"
+        className="inline"
       >
-        {chars.map((char, index) => (
-          <motion.span
-            key={index}
-            variants={variants}
-            transition={{
-              duration: 0.4,
-              delay: index * staggerDelay,
-              ease: [0.25, 0.1, 0.25, 1],
-            }}
-            className="inline-block"
-            style={{ perspective: '1000px' }}
-          >
-            {char === ' ' ? '\u00A0' : char}
-          </motion.span>
+        {words.map((word, wi) => (
+          <span key={wi} className="inline-block whitespace-nowrap">
+            {word.split('').map((char) => {
+              const idx = charIndex++;
+              return (
+                <motion.span
+                  key={idx}
+                  variants={variants}
+                  transition={{
+                    duration: 0.4,
+                    delay: idx * staggerDelay,
+                    ease: [0.25, 0.1, 0.25, 1],
+                  }}
+                  className="inline-block"
+                  style={{ perspective: '1000px' }}
+                >
+                  {char}
+                </motion.span>
+              );
+            })}
+            {wi < words.length - 1 && ' '}
+          </span>
         ))}
       </motion.span>
     </Component>

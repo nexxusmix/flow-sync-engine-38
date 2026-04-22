@@ -8,7 +8,7 @@ export function LandingHero() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center px-4 md:px-6">
+    <section className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center px-4 md:px-6 pt-28 md:pt-32 pb-12">
       {/* Text content */}
       <div className="text-center max-w-5xl mb-6 md:mb-10">
         <motion.div
@@ -18,16 +18,16 @@ export function LandingHero() {
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           <span className="text-[10px] md:text-xs text-white font-medium uppercase tracking-wider leading-tight text-center">
-            CRM · Projetos · Financeiro · Portal · IA · Automacao — Tudo em um
+            CRM · Projetos · Financeiro · Portal · IA · Automação — Tudo em um
           </span>
         </motion.div>
 
         <TextRevealByChar
-          text="O sistema operacional da agencia moderna."
+          text="O sistema operacional da agência moderna."
           as="h1"
           effect="rise"
           className="text-3xl sm:text-4xl md:text-6xl lg:text-[5.5rem] font-light text-white tracking-tight leading-[1.08]"
-          highlightWords={["agencia moderna"]}
+          highlightWords={["agência moderna"]}
           highlightClassName="text-primary font-normal"
           delay={0.3}
         />
@@ -38,7 +38,7 @@ export function LandingHero() {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.4, duration: 0.6 }}
         >
-          Centralize operacao, clientes, projetos, financeiro e automacoes.
+          Centralize operação, clientes, projetos, financeiro e automações.
           <br className="hidden md:block" />
           Menos caos. Mais controle e crescimento.
         </motion.p>
@@ -55,7 +55,7 @@ export function LandingHero() {
               onClick={() => navigate("/login")}
               className="gap-2 bg-primary hover:bg-primary/90 h-12 md:h-14 px-8 md:px-10 text-sm md:text-base pointer-events-auto hover-invert w-full sm:w-auto"
             >
-              Agendar Demonstracao <ArrowRight className="w-4 h-4" />
+              Agendar Demonstração <ArrowRight className="w-4 h-4" />
             </Button>
           </MagneticElement>
           <MagneticElement strength={0.3}>

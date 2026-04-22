@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import squadHubLogo from "@/assets/squad-hub-logo.png";
 import { toast } from 'sonner';
-import { lovable } from '@/integrations/lovable';
+import { supabase } from '@/integrations/supabase/client';
 
 type AuthMode = 'login' | 'signup' | 'reset';
 
@@ -209,8 +209,9 @@ export default function LoginPage() {
               onClick={async () => {
                 setIsLoading(true);
                 try {
-                  const { error } = await lovable.auth.signInWithOAuth('google', {
-                    redirect_uri: window.location.origin,
+                  const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.location.origin },
                   });
                   if (error) setError(error.message || 'Erro ao conectar com Google');
                 } catch {
