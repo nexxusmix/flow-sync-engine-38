@@ -35,9 +35,13 @@ BEGIN
   );
 
   -- Call edge function asynchronously via pg_net
+  -- Reads anon key from Postgres setting (set via: ALTER DATABASE postgres SET app.supabase_anon_key = '<key>';)
   PERFORM net.http_post(
-    url := 'https://gfyeuhfapscxfvjnrssn.supabase.co/functions/v1/run-task-automations',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmeWV1aGZhcHNjeGZ2am5yc3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODY3OTEsImV4cCI6MjA4NTg2Mjc5MX0.GcimU4cwBUTiQHuGfSLQfEP_W2FaytVnpN9QuJTX8-E"}'::jsonb,
+    url := current_setting('app.supabase_url', true) || '/functions/v1/run-task-automations',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || current_setting('app.supabase_anon_key', true)
+    ),
     body := _payload
   );
 
